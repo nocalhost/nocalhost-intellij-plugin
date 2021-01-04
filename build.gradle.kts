@@ -2,6 +2,7 @@ plugins {
     id("org.jetbrains.intellij") version "0.6.5"
     java
     kotlin("jvm") version "1.4.21"
+    id("io.franzbecker.gradle-lombok") version "2.1"
 }
 
 java {
@@ -18,6 +19,15 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
+
+
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
+    implementation("com.auth0:java-jwt:3.12.0")
+    implementation("com.google.code.gson:gson:2.8.6")
+
+    annotationProcessor("org.projectlombok:lombok:1.18.16")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.16")
+
     testImplementation("junit", "junit", "4.12")
 }
 
