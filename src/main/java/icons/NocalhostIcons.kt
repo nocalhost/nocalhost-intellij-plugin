@@ -1,0 +1,4 @@
+package icons
+
+class NocalhostIcons {
+}

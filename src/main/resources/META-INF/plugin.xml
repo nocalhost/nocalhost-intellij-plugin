@@ -1,0 +1,42 @@
+<idea-plugin>
+    <id>dev.nocalhost.nocalhost-intellij-plugin</id>
+    <name>Nocalhost</name>
+    <vendor url="https://nocalhost.dev/">Nocalhost</vendor>
+
+    <description>
+        <![CDATA[
+        <html>
+            <p>Nocalhost is Cloud Native Development Environment. </p>
+            <p>This is a Intellij plugin for nocalhost to help connect IDE and Kubernetes smoothly.</p>
+        </html>
+        ]]>
+    </description>
+
+    <change-notes>
+        <![CDATA[
+        <html>
+            <p>initialize repo</p>
+        </html>
+        ]]>
+    </change-notes>
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+        <action id="HelloNocalhostWithKTAction" class="dev.nocalhost.plugin.intellij.HelloNocalhostWithKTAction"
+                text="Hello Nocalhost with Kotlin">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+        <action id="HelloNocalhostWithJavaAction" class="dev.nocalhost.plugin.intellij.HelloNocalhostWithJavaAction"
+                text="Hello Nocalhost with Java">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+    </actions>
+</idea-plugin>
