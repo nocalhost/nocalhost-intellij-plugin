@@ -23,9 +23,17 @@
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>Git4Idea</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
+
+        <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.TestService" />
+
+        <toolWindow id="Nocalhost" anchor="right"
+                    factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostWindowFactory" />
+        <toolWindow id="Nocalhost Console" anchor="bottom"
+                    factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostConsoleWindowFactory" />
     </extensions>
 
     <actions>

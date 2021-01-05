@@ -13,6 +13,8 @@ java {
 group = "dev.nocalhost"
 version = "0.0.1-SNAPSHOT"
 
+val git4idea = "git4idea"
+
 repositories {
     mavenCentral()
 }
@@ -24,6 +26,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.0")
     implementation("com.auth0:java-jwt:3.12.0")
     implementation("com.google.code.gson:gson:2.8.6")
+    implementation("com.google.inject:guice:4.2.3")
+
 
     annotationProcessor("org.projectlombok:lombok:1.18.16")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.16")
@@ -34,6 +38,10 @@ dependencies {
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     version = "2020.3"
+    val plugins = mutableListOf(
+        git4idea
+    )
+    setPlugins(*plugins.toTypedArray())
 }
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes("""
