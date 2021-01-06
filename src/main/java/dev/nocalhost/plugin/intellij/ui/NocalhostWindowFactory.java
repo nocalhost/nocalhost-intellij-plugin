@@ -8,8 +8,10 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
-import dev.nocalhost.plugin.intellij.NocalhostModule;
+
 import org.jetbrains.annotations.NotNull;
+
+import dev.nocalhost.plugin.intellij.NocalhostModule;
 
 public class NocalhostWindowFactory implements ToolWindowFactory, DumbAware {
     @Override

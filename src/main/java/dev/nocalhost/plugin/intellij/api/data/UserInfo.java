@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.api.data;
 
 import com.google.gson.annotations.SerializedName;
+
 import lombok.Data;
 
 @Data

@@ -38,13 +38,18 @@
 
     <actions>
         <!-- Add your actions here -->
-        <action id="HelloNocalhostWithKTAction" class="dev.nocalhost.plugin.intellij.HelloNocalhostWithKTAction"
-                text="Hello Nocalhost with Kotlin">
-            <add-to-group group-id="ToolsMenu" anchor="first"/>
+
+        <group id="Nocalhost.Toolbar">
+            <separator />
+        </group>
+
+        <action id="Nocalhost.Refresh" text="Refresh"
+                class="dev.nocalhost.plugin.intellij.ui.action.RefreshAction">
+            <add-to-group group-id="Nocalhost.Toolbar" anchor="first"/>
         </action>
-        <action id="HelloNocalhostWithJavaAction" class="dev.nocalhost.plugin.intellij.HelloNocalhostWithJavaAction"
-                text="Hello Nocalhost with Java">
-            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        <action id="Nocalhost.Settings" text="Settings"
+                class="dev.nocalhost.plugin.intellij.ui.action.SettingsAction">
+            <add-to-group group-id="Nocalhost.Toolbar" anchor="last"/>
         </action>
     </actions>
 </idea-plugin>

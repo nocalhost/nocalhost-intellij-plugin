@@ -1,14 +1,19 @@
 package dev.nocalhost.plugin.intellij.utils;
 
-import com.google.gson.*;
-import dev.nocalhost.plugin.intellij.exception.NocalhostJsonException;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.io.mandatory.NullCheckingFactory;
 
 import java.io.IOException;
 import java.util.Map;
+
+import dev.nocalhost.plugin.intellij.exception.NocalhostJsonException;
 
 public class JSON {
 
@@ -18,7 +23,7 @@ public class JSON {
         GsonBuilder builder = new GsonBuilder();
         builder.setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         builder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
-        builder.registerTypeAdapterFactory(NullCheckingFactory.INSTANCE);
+//        builder.registerTypeAdapterFactory(NullCheckingFactory.INSTANCE);
         return builder.create();
     }
 
@@ -62,5 +67,9 @@ public class JSON {
             throw new NocalhostJsonException("Empty Json response");
         }
         return res;
+    }
+
+    public static String toJson(@Nullable Object obj) {
+        return getGson().toJson(obj);
     }
 }
