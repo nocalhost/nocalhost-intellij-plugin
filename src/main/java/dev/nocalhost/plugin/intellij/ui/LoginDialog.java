@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.api.data.AuthData;
 import dev.nocalhost.plugin.intellij.api.data.UserInfo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.utils.CommonUtils;
@@ -66,15 +67,19 @@ public class LoginDialog extends DialogWrapper {
         final String email = loginPanel.getEmail();
         final String password = loginPanel.getPassword();
         final String host = loginPanel.getHost();
+        AuthData authData = new AuthData(host, email);
         try {
-            String token = commonUtils.checkCredentials(project, host, email, password);
+            String token = commonUtils.checkCredentials(project, authData, password);
             if (StringUtils.isNotBlank(token)) {
                 nocalhostSettings.setEmail(email);
                 nocalhostSettings.setPassword(password);
                 nocalhostSettings.setHost(host);
                 nocalhostSettings.setToken(token);
                 UserInfo userInfo = commonUtils.decodedJWT(token);
-                nocalhostSettings.setUser(userInfo);
+
+                authData.setToken(token);
+                authData.setUser(userInfo);
+                nocalhostSettings.setAuth(authData);
                 super.doOKAction();
             } else {
                 setErrorText("Can't login with given credentials");

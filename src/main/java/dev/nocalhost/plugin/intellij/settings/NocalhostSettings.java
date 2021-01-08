@@ -9,7 +9,7 @@ import com.intellij.openapi.components.Storage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import dev.nocalhost.plugin.intellij.api.data.UserInfo;
+import dev.nocalhost.plugin.intellij.api.data.AuthData;
 
 @State(name = "NocalhostSettings", storages = {
         @Storage(value = "nocalhost.xml"),
@@ -62,12 +62,12 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         myState.TOKEN = Strings.nullToEmpty(token);
     }
 
-    public UserInfo getUser() {
-        return myState.USER;
+    public AuthData getAuth() {
+        return myState.AUTH;
     }
 
-    public void setUser(UserInfo userInfo) {
-        myState.USER = userInfo;
+    public void setAuth(AuthData authData) {
+        myState.AUTH = authData;
     }
 
     static class State {
@@ -80,7 +80,7 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         @Nullable
         public String PASSWORD = null;
         @Nullable
-        public UserInfo USER = null;
+        public AuthData AUTH = null;
     }
 
     public void clearAuth() {
@@ -88,7 +88,7 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         myState.EMAIL = null;
         myState.TOKEN = null;
         myState.PASSWORD = null;
-        myState.USER = null;
+        myState.AUTH = null;
     }
 
 }

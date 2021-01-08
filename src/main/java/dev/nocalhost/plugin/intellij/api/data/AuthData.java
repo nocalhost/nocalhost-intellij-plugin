@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.utils;
+package dev.nocalhost.plugin.intellij.api.data;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -12,12 +12,13 @@ public class AuthData {
     private final String host;
     @NotNull
     private final String email;
-    @NotNull
-    private final String token;
 
-    public AuthData(@NotNull String host, @NotNull String email, @NotNull String token) {
+    private UserInfo user;
+
+    private String token;
+
+    public AuthData(@NotNull String host, @NotNull String email) {
         this.host = host;
         this.email = email;
-        this.token = token;
     }
 }

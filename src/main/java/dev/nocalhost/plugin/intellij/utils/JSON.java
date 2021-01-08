@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Map;
 
 import dev.nocalhost.plugin.intellij.exception.NocalhostJsonException;
@@ -71,5 +72,23 @@ public class JSON {
 
     public static String toJson(@Nullable Object obj) {
         return getGson().toJson(obj);
+    }
+
+    public static <T> T fromJson(JsonElement json, Type listType) throws NocalhostJsonException {
+        if (json == null) {
+            throw new NocalhostJsonException("Unexpected empty response");
+        }
+        T res;
+        try {
+            //cast as workaround for early java 1.6 bug
+            //noinspection RedundantCast
+            res = getGson().fromJson(json, listType);
+        } catch (ClassCastException | JsonParseException e) {
+            throw new NocalhostJsonException("Parse exception while converting JSON to object " + Type.class.getName(), e);
+        }
+        if (res == null) {
+            throw new NocalhostJsonException("Empty Json response");
+        }
+        return res;
     }
 }
