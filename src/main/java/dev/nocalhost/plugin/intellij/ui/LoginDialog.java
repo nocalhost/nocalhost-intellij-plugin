@@ -1,51 +1,103 @@
 package dev.nocalhost.plugin.intellij.ui;
 
 import com.intellij.ide.BrowserUtil;
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBPasswordField;
+import com.intellij.ui.components.JBTextField;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.*;
+import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 
-import dev.nocalhost.plugin.intellij.api.data.AuthData;
-import dev.nocalhost.plugin.intellij.api.data.UserInfo;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
-import dev.nocalhost.plugin.intellij.utils.CommonUtils;
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 
 
 public class LoginDialog extends DialogWrapper {
 
-    private final Logger log;
+    private final JPanel loginPanel;
+    private final JBLabel hostLabel;
+    private final JBTextField hostTextField;
+    private final JBLabel emailLabel;
+    private final JBTextField emailTextField;
+    private final JBLabel passwordLabel;
+    private final JBPasswordField passwordField;
 
-    private final LoginPanel loginPanel;
-    private final Project project;
-    private final NocalhostSettings nocalhostSettings;
-    private final CommonUtils commonUtils;
+    protected LoginDialog() {
+        super(true);
 
-    protected LoginDialog(@Nullable Project project, NocalhostSettings nocalhostSettings, CommonUtils commonUtils, Logger log) {
-        super(project, true);
-        this.nocalhostSettings = nocalhostSettings;
-        this.commonUtils = commonUtils;
-        this.log = log;
-        this.project = project;
-        loginPanel = new LoginPanel(this);
-//        loginPanel.setHost(nocalhostSettings.getHost());
-//        loginPanel.setEmail(nocalhostSettings.getEmail());
-//        loginPanel.setPassword(nocalhostSettings.getPassword());
+        setTitle("Login Nocalhost Server");
+        loginPanel = new JPanel(new GridLayout(3, 1));
 
-        loginPanel.setHost("http://106.55.223.21:8080/");
-        loginPanel.setEmail("fatjyc@gmail.com");
-        loginPanel.setPassword("123123");
-        setTitle("Login to Nocalhost");
+        hostLabel = new JBLabel("Host: ");
+        hostTextField = new JBTextField();
+        emailLabel = new JBLabel("Email: ");
+        emailTextField = new JBTextField();
+        passwordLabel = new JBLabel("Password: ");
+        passwordField = new JBPasswordField();
+
+        loginPanel.add(hostLabel);
+        loginPanel.add(hostTextField);
+        loginPanel.add(emailLabel);
+        loginPanel.add(emailTextField);
+        loginPanel.add(passwordLabel);
+        loginPanel.add(passwordField);
+
+
+        hostTextField.getEmptyText().appendText("Input your api server url");
+        emailTextField.getEmptyText().appendText("Input your email");
+        passwordField.getEmptyText().appendText("Input your password");
+
+        hostTextField.getEmptyText().setText("http://106.55.223.21:8080/");
+
+        hostTextField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                fixUrl(hostTextField);
+            }
+        });
+        DocumentListener listener = new DocumentAdapter() {
+            @Override
+            protected void textChanged(DocumentEvent e) {
+                clearErrors();
+            }
+        };
+        emailTextField.getDocument().addDocumentListener(listener);
+        passwordField.getDocument().addDocumentListener(listener);
+        
         setOKButtonText("Login");
         init();
+    }
+
+
+    @Override
+    protected @Nullable ValidationInfo doValidate() {
+        if (!StringUtils.isNotEmpty(getHost())) {
+            return new ValidationInfo("Server url cannot be empty", hostTextField);
+        }
+        if (!StringUtils.isNotEmpty(getEmail())) {
+            return new ValidationInfo("Email cannot be empty", emailTextField);
+        }
+        if (!StringUtils.isNotEmpty(getPassword())) {
+            return new ValidationInfo("Password cannot be empty", passwordField);
+        }
+        return null;
+    }
+
+    @Override
+    protected @Nullable JComponent createCenterPanel() {
+        return getPanel();
     }
 
     @Override
@@ -60,50 +112,62 @@ public class LoginDialog extends DialogWrapper {
     }
 
     @Override
-    protected @Nullable JComponent createCenterPanel() {
-        return loginPanel.getPanel();
-    }
-
-    @Override
     public JComponent getPreferredFocusedComponent() {
-        return loginPanel.getPreferrableFocusComponent();
+        return hostTextField.getText().isEmpty() ? hostTextField : emailTextField;
     }
 
     @Override
     protected void doOKAction() {
-        final String email = loginPanel.getEmail();
-        final String password = loginPanel.getPassword();
-        final String host = loginPanel.getHost();
-        AuthData authData = new AuthData(host, email);
+        final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
         try {
-            String token = commonUtils.checkCredentials(project, authData, password);
-            if (StringUtils.isNotBlank(token)) {
-                nocalhostSettings.setEmail(email);
-                nocalhostSettings.setPassword(password);
-                nocalhostSettings.setHost(host);
-                nocalhostSettings.setToken(token);
-                UserInfo userInfo = commonUtils.decodedJWT(token);
-
-                authData.setToken(token);
-                authData.setUser(userInfo);
-                nocalhostSettings.setAuth(authData);
-
-                final Application application = ApplicationManager.getApplication();
-                NocalhostAccountChangedNotifier publisher = application.getMessageBus()
-                                                                       .syncPublisher(NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC);
-                publisher.action();
-
-                super.doOKAction();
-            } else {
-                setErrorText("Can't login with given credentials");
-            }
+            nocalhostApi.login(getHost(), getEmail(), getPassword());
+            super.doOKAction();
         } catch (Exception e) {
-            log.info(e);
-            setErrorText("Can't login: " + commonUtils.getErrorTextFromException(e));
+            // FIXME: replace with balloon notification for showing errors asynchronously
+            setErrorText(e.getMessage());
         }
     }
 
     public void clearErrors() {
         setErrorText(null);
+    }
+
+    public JComponent getPanel() {
+        return loginPanel;
+    }
+
+    public void setHost(final String host) {
+        hostTextField.setText(host);
+    }
+
+    public void setEmail(final String login) {
+        emailTextField.setText(login);
+    }
+
+    public void setPassword(final String password) {
+        passwordField.setText(password);
+    }
+
+    public String getHost() {
+        return hostTextField.getText().trim();
+    }
+
+    public String getEmail() {
+        return emailTextField.getText().trim();
+    }
+
+    public String getPassword() {
+        return String.valueOf(passwordField.getPassword());
+    }
+
+    public static void fixUrl(JTextField textField) {
+        String text = textField.getText();
+        if (text.endsWith("/")) {
+            text = text.substring(0, text.length() - 1);
+        }
+        if (!text.isEmpty() && !text.contains("://")) {
+            text = "http://" + text;
+        }
+        textField.setText(text);
     }
 }

@@ -16,7 +16,8 @@ public class DevSpace {
     @SerializedName("devspace_id")
     private int devSpaceId;
     private int id;
-    private int install_status;
+    @SerializedName("install_status")
+    private int installStatus;
     @SerializedName("kubeconfig")
     private String kubeConfig;
     private int memory;

@@ -6,6 +6,6 @@ public class NocalhostActionModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(RefreshAction.class);
-        bind(SettingsAction.class);
+        bind(LogoutAction.class);
     }
 }

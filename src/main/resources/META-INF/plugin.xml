@@ -28,29 +28,24 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
 
-        <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.TestService" />
         <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.commands.NhctlClient" />
+        <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.commands.NhctlCommand" />
+        <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.commands.KubectlCommand" />
+        <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.api.NocalhostApi" />
+        <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostSettings" />
 
-        <toolWindow id="Nocalhost" anchor="right"
+        <toolWindow id="Nocalhost" anchor="right" icon="NocalhostIcons.Logo"
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostWindowFactory" />
-        <toolWindow id="Nocalhost Console" anchor="bottom"
+        <toolWindow id="Nocalhost Console" anchor="bottom"  icon="NocalhostIcons.Logo"
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostConsoleWindowFactory" />
     </extensions>
 
     <actions>
         <!-- Add your actions here -->
 
-        <group id="Nocalhost.Toolbar">
-            <separator />
-        </group>
-
-        <action id="Nocalhost.Refresh" text="Refresh"
-                class="dev.nocalhost.plugin.intellij.ui.action.RefreshAction">
-            <add-to-group group-id="Nocalhost.Toolbar" anchor="first"/>
-        </action>
-        <action id="Nocalhost.Settings" text="Settings"
-                class="dev.nocalhost.plugin.intellij.ui.action.SettingsAction">
-            <add-to-group group-id="Nocalhost.Toolbar" anchor="last"/>
-        </action>
+        <action id="Nocalhost.RefreshAction" text="Refresh"
+                class="dev.nocalhost.plugin.intellij.ui.action.RefreshAction" />
+        <action id="Nocalhost.LogoutAction"  text="Logout"
+                class="dev.nocalhost.plugin.intellij.ui.action.LogoutAction"/>
     </actions>
 </idea-plugin>

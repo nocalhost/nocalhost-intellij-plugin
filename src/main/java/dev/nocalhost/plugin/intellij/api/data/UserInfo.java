@@ -4,14 +4,12 @@ import lombok.Data;
 
 @Data
 public class UserInfo {
-    private String email;
-    private Long exp;
-    private Long iat;
-    private Short isAdmin;
-    private Long nbf;
-    private Long userId;
+    private long id;
+    private String name;
     private String username;
-    private String uuid;
-
-    private String token;
+    private long phone;
+    private String email;
+    private boolean isAdmin;
+    private int state;
+    private String avatar;
 }

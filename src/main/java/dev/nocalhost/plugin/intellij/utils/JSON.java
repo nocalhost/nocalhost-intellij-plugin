@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.Type;
 import java.util.Map;
 
@@ -74,15 +75,15 @@ public class JSON {
         return getGson().toJson(obj);
     }
 
-    public static <T> T fromJson(JsonElement json, Type listType) throws NocalhostJsonException {
-        if (json == null) {
+    public static <T> T fromJson(Reader charStream, Type type) throws NocalhostJsonException {
+        if (charStream == null) {
             throw new NocalhostJsonException("Unexpected empty response");
         }
         T res;
         try {
             //cast as workaround for early java 1.6 bug
             //noinspection RedundantCast
-            res = getGson().fromJson(json, listType);
+            res = getGson().fromJson(charStream, type);
         } catch (ClassCastException | JsonParseException e) {
             throw new NocalhostJsonException("Parse exception while converting JSON to object " + Type.class.getName(), e);
         }

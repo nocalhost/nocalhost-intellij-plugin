@@ -4,19 +4,25 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.api.data.AuthData;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.api.data.LoginRequest;
 import dev.nocalhost.plugin.intellij.api.data.LoginResponse;
+import dev.nocalhost.plugin.intellij.api.data.NocalhostApiResponse;
+import dev.nocalhost.plugin.intellij.api.data.UserInfo;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
-import dev.nocalhost.plugin.intellij.utils.JSON;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -28,65 +34,89 @@ public class NocalhostApi {
     public static final MediaType MEDIA_TYPE = MediaType.get("application/json; charset=utf-8");
 
     private final OkHttpClient client = new OkHttpClient.Builder().callTimeout(1, TimeUnit.SECONDS).build();
+    private final Gson gson = new Gson();
 
     @Inject
     private Logger log;
-    @Inject
-    private NocalhostApiUrl nocalhostApiUrl;
 
-    public String login(AuthData authData, String password) {
-        LoginRequest loginRequest = new LoginRequest(authData.getEmail(), password);
-        RequestBody requestBody = RequestBody.create(JSON.toJson(loginRequest), MEDIA_TYPE);
-        String url = nocalhostApiUrl.login(authData);
+    public void login(String host, String email, String password) throws IOException {
+        LoginRequest loginRequest = new LoginRequest(email, password);
+        RequestBody requestBody = RequestBody.create(gson.toJson(loginRequest), MEDIA_TYPE);
+        String url = NocalhostApiUrl.login(host);
         Request request = new Request.Builder().url(url).post(requestBody).build();
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 throw new NocalhostApiException(String.format("Failed to login, connect server API %s, respond HTTP %d", url, response.code()));
             }
-            String body = response.body().string();
-            NocalhostApiResponse responseBody = JSON.fromJson(body, NocalhostApiResponse.class);
-            if (responseBody.getCode() != 0) {
-                log.error("Login response error, " + responseBody.getMessage());
-                return null;
+            NocalhostApiResponse<LoginResponse> resp = gson.fromJson(response.body().charStream(),
+                    TypeToken.getParameterized(NocalhostApiResponse.class, LoginResponse.class).getType());
+            if (resp.getCode() != 0) {
+                throw new NocalhostApiException(String.format("Failed to login nocalhost server: %s", resp.getMessage()));
             }
-            LoginResponse loginResponse = JSON.fromJson(responseBody.getData(), LoginResponse.class);
-            return loginResponse.getToken();
-        } catch (IOException e) {
-            log.error("Login nocalhost error, ", e);
-            return null;
+
+            final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+            nocalhostSettings.setBaseUrl(host);
+            nocalhostSettings.setJwt(resp.getData().getToken());
+
+            refreshUserInfo();
+
+            final Application application = ApplicationManager.getApplication();
+            NocalhostAccountChangedNotifier publisher = application.getMessageBus()
+                                                                   .syncPublisher(NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC);
+            publisher.action();
         }
     }
 
-    public List<DevSpace> listDevSpace(AuthData authData) {
-        String url = nocalhostApiUrl.devSpaces(authData);
-        Request request = new Request.Builder().url(url).addHeader("authorization", "Bearer " + authData.getToken()).get().build();
+    private void refreshUserInfo() throws IOException {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+
+        String url = NocalhostApiUrl.me(nocalhostSettings.getBaseUrl());
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("Authorization", "Bearer " + nocalhostSettings.getJwt())
+                .get()
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new NocalhostApiException(String.format("Failed to get user info, connect server API %s, respond HTTP %d", url, response.code()));
+            }
+            NocalhostApiResponse<UserInfo> resp = gson.fromJson(response.body().charStream(),
+                    TypeToken.getParameterized(NocalhostApiResponse.class, UserInfo.class).getType());
+            if (resp.getCode() != 0) {
+                throw new NocalhostApiException(String.format("Failed to get user info : %s", resp.getMessage()));
+            }
+
+            nocalhostSettings.setUserInfo(resp.getData());
+        }
+    }
+
+    public List<DevSpace> listDevSpace() throws IOException {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+
+        String url = NocalhostApiUrl.devSpaces(nocalhostSettings.getBaseUrl());
+
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("authorization", "Bearer " + nocalhostSettings.getJwt())
+                .get()
+                .build();
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 throw new NocalhostApiException(String.format("Failed to get devSpaces, connect server API %s, respond HTTP %d", url, response.code()));
             }
-
-            String result = response.body().string();
-            NocalhostApiResponse responseBody = JSON.fromJson(result, NocalhostApiResponse.class);
-            if (responseBody.getCode() != 0) {
-                log.error("list application response error, " + responseBody.getMessage());
-                return null;
+            String body = response.body().string();
+            NocalhostApiResponse<List<DevSpace>> resp = gson.fromJson(body,
+                    TypeToken.getParameterized(
+                            NocalhostApiResponse.class,
+                            TypeToken.getParameterized(List.class, DevSpace.class).getType()
+                    ).getType());
+            if (resp.getCode() != 0) {
+                throw new NocalhostApiException(String.format("Failed to get devSpaces, %s", resp.getMessage()));
             }
-            Type listType = new TypeToken<List<DevSpace>>() {}.getType();
-
-            List<DevSpace> devSpaces = new Gson().fromJson(responseBody.getData(), listType);
-            devSpaces.forEach(devSpace -> {
-                try {
-                    devSpace.setContext(JSON.fromJson(devSpace.getContextStr(), DevSpace.Context.class));
-                } catch (IOException e) {
-                    log.error("gson convert context error, ", e);
-                }
-            });
-            return devSpaces;
-        } catch (IOException e) {
-            log.error("list application error, ", e);
-            return null;
+            List<DevSpace> devSpaces = resp.getData();
+            return devSpaces.stream().peek(devSpace -> devSpace.setContext(gson.fromJson(devSpace.getContextStr(), DevSpace.Context.class))).collect(Collectors.toList());
         }
     }
 }

@@ -4,183 +4,221 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.ActionToolbar;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
-import com.intellij.ui.CheckedTreeNode;
-import com.intellij.ui.components.JBLabel;
+import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.List;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
-import dev.nocalhost.plugin.intellij.api.data.AuthData;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
+import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
-import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
-import dev.nocalhost.plugin.intellij.ui.action.SettingsAction;
-import dev.nocalhost.plugin.intellij.utils.CommonUtils;
+import dev.nocalhost.plugin.intellij.ui.tree.AccountNode;
+import dev.nocalhost.plugin.intellij.ui.tree.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.NodeRenderer;
+import dev.nocalhost.plugin.intellij.ui.tree.PlainNode;
+import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
 
 public class NocalhostWindow {
 
-    @Inject
-    private SettingsAction settingsAction;
-    @Inject
-    private RefreshAction refreshAction;
-    @Inject
-    private NocalhostSettings nocalhostSettings;
-    @Inject
-    private NocalhostApi nocalhostApi;
-    @Inject
-    private CommonUtils commonUtils;
+    private final Project project;
+    private final ToolWindow toolWindow;
+
+    private JPanel panel;
+    private Tree tree;
+    private JButton loginButton;
+
     @Inject
     private Logger log;
 
-    Tree tree;
-    JScrollPane treeView;
-    JLabel label;
-    SimpleToolWindowPanel panel;
-    JButton loginButton;
-    JButton logoutButton;
+    public NocalhostWindow(Project project, ToolWindow toolWindow) {
+        this.project = project;
+        this.toolWindow = toolWindow;
 
-    public SimpleToolWindowPanel createToolWindowContent(final Project project) {
-        panel = new SimpleToolWindowPanel(true, true);
-        ActionToolbar toolbar = createToolbar(project);
-        panel.setToolbar(toolbar.getComponent());
-        label = new JBLabel();
-        AuthData authData = nocalhostSettings.getAuth();
-        if (authData == null) {
-            label.setText("Nocalhost");
-        } else {
-            label.setText(authData.getEmail());
-        }
-        panel.add(label, BorderLayout.NORTH);
-        loginButton = new JButton("Login");
-        logoutButton = new JButton("Logout");
-
-
-        buttonPanel(project, label, loginButton, logoutButton);
         final Application application = ApplicationManager.getApplication();
         application.getMessageBus().connect().subscribe(
                 NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC,
-                () -> buttonPanel(project, label, loginButton, logoutButton)
+                NocalhostWindow.this::toggleContent
+        );
+        application.getMessageBus().connect().subscribe(
+                DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC,
+                NocalhostWindow.this::updateTree
         );
 
+        panel = new SimpleToolWindowPanel(true, true);
+        loginButton = new JButton("Login");
         tree = new Tree();
-//        treeView = new JScrollPane(tree, 20, 30);
-//        treeView.add(tree);
         panel.add(tree, BorderLayout.LINE_START);
-        panel.setVisible(true);
-        return panel;
+        panel.add(loginButton, BorderLayout.SOUTH);
+
+        loginButton.addActionListener(e -> {
+            new LoginDialog().showAndGet();
+        });
     }
 
-    private void buttonPanel(Project project, JLabel label, JButton loginButton, JButton logoutButton) {
+    private void toggleContent() {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
+        String jwt = nocalhostSettings.getJwt();
+        if (StringUtils.isNotBlank(jwt)) {
+            setupTree();
 
-        if (nocalhostSettings.getAuth() == null) {
-            panel.remove(logoutButton);
-            loginButton.addActionListener(e -> {
-                final LoginDialog dialog = new LoginDialog(project, nocalhostSettings, commonUtils, log);
-                dialog.show();
-                if (dialog.isOK()) {
-                    List<DevSpace> devSpaceList = nocalhostApi.listDevSpace(nocalhostSettings.getAuth());
-                    updateTree(devSpaceList);
-
-                }
-            });
-            panel.add(loginButton, BorderLayout.SOUTH);
+            toolWindow.setTitleActions(Lists.newArrayList(
+                    ActionManager.getInstance().getAction("Nocalhost.RefreshAction"),
+                    ActionManager.getInstance().getAction("Nocalhost.LogoutAction")
+            ));
+            loginButton.setVisible(false);
+            tree.setVisible(true);
         } else {
-            panel.remove(loginButton);
-            label.setText(nocalhostSettings.getAuth().getEmail());
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            DefaultMutableTreeNode root = (DefaultMutableTreeNode)model.getRoot();
-            root.removeAllChildren();
-            tree.removeAll();
-            logoutButton.addActionListener(e -> {
-                nocalhostSettings.clearAuth();
-                label.setText("Nocalhost");
-                final Application application = ApplicationManager.getApplication();
-                NocalhostAccountChangedNotifier publisher = application.getMessageBus()
-                                                                       .syncPublisher(NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC);
-                publisher.action();
-            });
-            panel.add(logoutButton, BorderLayout.SOUTH);
+            toolWindow.setTitleActions(Lists.newArrayList());
+            tree.setVisible(false);
+            loginButton.setVisible(true);
         }
-
     }
 
+    private void setupTree() {
+        tree.setRootVisible(false);
+        tree.setCellRenderer(new NodeRenderer());
 
-    private void updateTree(List<DevSpace> devSpaceList) {
-        CheckedTreeNode devSpaceNode = new CheckedTreeNode("DevSpace");
-        devSpaceList.forEach(devSpace -> {
-            CheckedTreeNode devNode = new CheckedTreeNode(devSpace.getSpaceName());
-
-
-            CheckedTreeNode workloads = new CheckedTreeNode("Workloads");
-            CheckedTreeNode deployments = new CheckedTreeNode("Deployments");
-            CheckedTreeNode statefulSets = new CheckedTreeNode("StatefulSets");
-            CheckedTreeNode daemonSets = new CheckedTreeNode("DaemonSets");
-            CheckedTreeNode jobs = new CheckedTreeNode("Jobs");
-            CheckedTreeNode cronJobs = new CheckedTreeNode("CronJobs");
-            CheckedTreeNode pods = new CheckedTreeNode("Pods");
-            List<CheckedTreeNode> workloadsChildren = Lists.newArrayList(deployments, statefulSets, daemonSets, jobs, cronJobs, pods);
-            TreeUtil.addChildrenTo(workloads, workloadsChildren);
-
-            CheckedTreeNode networks = new CheckedTreeNode("Networks");
-            CheckedTreeNode services = new CheckedTreeNode("Services");
-            CheckedTreeNode endpoints = new CheckedTreeNode("Endpoints");
-            CheckedTreeNode ingresses = new CheckedTreeNode("Ingresses");
-            CheckedTreeNode networkPolicies = new CheckedTreeNode("Network Policies");
-            List<CheckedTreeNode> networksChildren = Lists.newArrayList(services, endpoints, ingresses, networkPolicies);
-            TreeUtil.addChildrenTo(networks, networksChildren);
-
-            CheckedTreeNode configurations = new CheckedTreeNode("Configurations");
-            CheckedTreeNode configMaps = new CheckedTreeNode("ConfigMaps");
-            CheckedTreeNode secrets = new CheckedTreeNode("Secrets");
-            CheckedTreeNode hpa = new CheckedTreeNode("HPA");
-            CheckedTreeNode resourceQuotas = new CheckedTreeNode("Resource Quotas");
-            CheckedTreeNode podDisruptionBudgets = new CheckedTreeNode("Pod Disruption Budgets");
-            List<CheckedTreeNode> configurationsChildren = Lists.newArrayList(configMaps, secrets, hpa, resourceQuotas, podDisruptionBudgets);
-            TreeUtil.addChildrenTo(configurations, configurationsChildren);
-
-            CheckedTreeNode storage = new CheckedTreeNode("Storage");
-            CheckedTreeNode persistentVolumes = new CheckedTreeNode("Persistent Volumes");
-            CheckedTreeNode persistentVolumeClaims = new CheckedTreeNode("Persistent Volume Claims");
-            CheckedTreeNode storageClasses = new CheckedTreeNode("Storage Classes");
-            List<CheckedTreeNode> storageChildren = Lists.newArrayList(persistentVolumes, persistentVolumeClaims, storageClasses);
-            TreeUtil.addChildrenTo(storage, storageChildren);
-
-            List<CheckedTreeNode> devSpaceChildren = Lists.newArrayList(workloads, networks, configurations, storage);
-            TreeUtil.addChildrenTo(devNode, devSpaceChildren);
-
-            devSpaceNode.add(devNode);
+        tree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    TreePath treePath = tree.getPathForLocation(e.getX(), e.getY());
+                    Object component = treePath.getLastPathComponent();
+                    if (component instanceof DefaultMutableTreeNode) {
+                        DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) component;
+                        Object userObject = treeNode.getUserObject();
+                        if (userObject instanceof DevSpaceNode) {
+                            DevSpaceNode node = (DevSpaceNode) userObject;
+                            new InstallDevSpaceDialog(node.getDevSpace()).showAndGet();
+                        }
+                    }
+                }
+            }
         });
 
-        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-        DefaultMutableTreeNode root = (DefaultMutableTreeNode)model.getRoot();
-        root.removeAllChildren();
-        root.add(devSpaceNode);
-        model.reload(root);
-        tree.repaint();
-        panel.repaint();
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode();
+        root.add(new DefaultMutableTreeNode(new AccountNode(nocalhostSettings.getUserInfo().getName())));
+        ((DefaultTreeModel) tree.getModel()).setRoot(root);
+
+        final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+        try {
+            List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
+            updateTree(devSpaces);
+        } catch (IOException e) {
+            // TODO: show balloon with error message
+            e.printStackTrace();
+        }
     }
 
-    private ActionToolbar createToolbar(final Project project) {
-        DefaultActionGroup groupFromConfig = (DefaultActionGroup) ActionManager.getInstance().getAction("Nocalhost.Toolbar");
-//        DefaultActionGroup group = new DefaultActionGroup(groupFromConfig); // copy required (otherwise config action group gets modified)
-//        group.add(refreshAction);
-//        group.add(settingsAction);
-        return ActionManager.getInstance().createActionToolbar("Nocalhost.Toolbar", groupFromConfig, true);
+    private void updateTree(List<DevSpace> devSpaces) {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode();
+        root.add(new DefaultMutableTreeNode(new AccountNode(nocalhostSettings.getUserInfo().getName())));
+        for (DevSpace devSpace : devSpaces) {
+            DefaultMutableTreeNode node = new DefaultMutableTreeNode(new DevSpaceNode(devSpace));
+            root.add(node);
+            if (devSpace.getInstallStatus() == 0) {
+                continue;
+            }
+
+            DefaultMutableTreeNode workloadsNode = new DefaultMutableTreeNode(new PlainNode("Workloads"));
+            node.add(workloadsNode);
+            DefaultMutableTreeNode deploymentsNode = new DefaultMutableTreeNode(new PlainNode("Deployments"));
+            workloadsNode.add(deploymentsNode);
+
+            try {
+                KubeResourceList list = kubectlCommand.getResourceList("deployments", devSpace);
+                for (KubeResource resource : list.getItems()) {
+                    String name = resource.getMetadata().getName();
+                    WorkloadNode.Status status = WorkloadNode.Status.UNKNOWN;
+                    boolean available = false;
+                    boolean progressing = false;
+                    for (KubeResource.Status.Condition condition : resource.getStatus().getConditions()) {
+                        if (StringUtils.equals(condition.getType(), "Available") && StringUtils.equals(condition.getStatus(), "True")) {
+                            status = WorkloadNode.Status.RUNNING;
+                            available = true;
+                        } else if (StringUtils.equals(condition.getType(), "Progressing") && StringUtils.equals(condition.getStatus(), "True")) {
+                            progressing = true;
+                        }
+                    }
+                    if (progressing && !available) {
+                        status = WorkloadNode.Status.STARTING;
+                    }
+                    deploymentsNode.add(new DefaultMutableTreeNode(new WorkloadNode(name, status)));
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            workloadsNode.add(new DefaultMutableTreeNode(new PlainNode("StatefulSets")));
+            workloadsNode.add(new DefaultMutableTreeNode(new PlainNode("DaemonSets")));
+            workloadsNode.add(new DefaultMutableTreeNode(new PlainNode("Jobs")));
+            workloadsNode.add(new DefaultMutableTreeNode(new PlainNode("CronJobs")));
+            workloadsNode.add(new DefaultMutableTreeNode(new PlainNode("Pods")));
+
+
+            DefaultMutableTreeNode networks = new DefaultMutableTreeNode(new PlainNode("Networks"));
+            DefaultMutableTreeNode services = new DefaultMutableTreeNode(new PlainNode("Services"));
+            DefaultMutableTreeNode endpoints = new DefaultMutableTreeNode(new PlainNode("Endpoints"));
+            DefaultMutableTreeNode ingresses = new DefaultMutableTreeNode(new PlainNode("Ingresses"));
+            DefaultMutableTreeNode networkPolicies = new DefaultMutableTreeNode(new PlainNode("Network Policies"));
+            List<DefaultMutableTreeNode> networksChildren = Lists.newArrayList(services, endpoints, ingresses, networkPolicies);
+            TreeUtil.addChildrenTo(networks, networksChildren);
+            node.add(networks);
+
+            DefaultMutableTreeNode configurations = new DefaultMutableTreeNode(new PlainNode("Configurations"));
+            DefaultMutableTreeNode configMaps = new DefaultMutableTreeNode(new PlainNode("ConfigMaps"));
+            DefaultMutableTreeNode secrets = new DefaultMutableTreeNode(new PlainNode("Secrets"));
+            DefaultMutableTreeNode hpa = new DefaultMutableTreeNode(new PlainNode("HPA"));
+            DefaultMutableTreeNode resourceQuotas = new DefaultMutableTreeNode(new PlainNode("Resource Quotas"));
+            DefaultMutableTreeNode podDisruptionBudgets = new DefaultMutableTreeNode(new PlainNode("Pod Disruption Budgets"));
+            List<DefaultMutableTreeNode> configurationsChildren = Lists.newArrayList(configMaps, secrets, hpa, resourceQuotas, podDisruptionBudgets);
+            TreeUtil.addChildrenTo(configurations, configurationsChildren);
+            node.add(configurations);
+
+
+            DefaultMutableTreeNode storage = new DefaultMutableTreeNode(new PlainNode("Storage"));
+            DefaultMutableTreeNode persistentVolumes = new DefaultMutableTreeNode(new PlainNode("Persistent Volumes"));
+            DefaultMutableTreeNode persistentVolumeClaims = new DefaultMutableTreeNode(new PlainNode("Persistent Volume Claims"));
+            DefaultMutableTreeNode storageClasses = new DefaultMutableTreeNode(new PlainNode("Storage Classes"));
+            List<DefaultMutableTreeNode> storageChildren = Lists.newArrayList(persistentVolumes, persistentVolumeClaims, storageClasses);
+            TreeUtil.addChildrenTo(storage, storageChildren);
+            node.add(storage);
+
+        }
+        ((DefaultTreeModel) tree.getModel()).setRoot(root);
+    }
+
+    public JPanel getPanel() {
+        return panel;
     }
 }
