@@ -1,6 +1,8 @@
 package dev.nocalhost.plugin.intellij.ui;
 
 import com.intellij.ide.BrowserUtil;
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -14,6 +16,7 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.api.data.AuthData;
 import dev.nocalhost.plugin.intellij.api.data.UserInfo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
 import dev.nocalhost.plugin.intellij.utils.CommonUtils;
 
 
@@ -33,9 +36,13 @@ public class LoginDialog extends DialogWrapper {
         this.log = log;
         this.project = project;
         loginPanel = new LoginPanel(this);
-        loginPanel.setHost(nocalhostSettings.getHost());
-        loginPanel.setEmail(nocalhostSettings.getEmail());
-        loginPanel.setPassword(nocalhostSettings.getPassword());
+//        loginPanel.setHost(nocalhostSettings.getHost());
+//        loginPanel.setEmail(nocalhostSettings.getEmail());
+//        loginPanel.setPassword(nocalhostSettings.getPassword());
+
+        loginPanel.setHost("http://106.55.223.21:8080/");
+        loginPanel.setEmail("fatjyc@gmail.com");
+        loginPanel.setPassword("123123");
         setTitle("Login to Nocalhost");
         setOKButtonText("Login");
         init();
@@ -80,6 +87,12 @@ public class LoginDialog extends DialogWrapper {
                 authData.setToken(token);
                 authData.setUser(userInfo);
                 nocalhostSettings.setAuth(authData);
+
+                final Application application = ApplicationManager.getApplication();
+                NocalhostAccountChangedNotifier publisher = application.getMessageBus()
+                                                                       .syncPublisher(NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC);
+                publisher.action();
+
                 super.doOKAction();
             } else {
                 setErrorText("Can't login with given credentials");

@@ -1,5 +1,8 @@
 package dev.nocalhost.plugin.intellij.ui;
 
+import com.google.common.collect.Lists;
+
+import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
@@ -19,6 +22,10 @@ public class NocalhostWindowFactory implements ToolWindowFactory, DumbAware {
         NocalhostWindow nocalhostWindow = NocalhostModule.getInstance(NocalhostWindow.class);
 
         SimpleToolWindowPanel toolWindowPanel = nocalhostWindow.createToolWindowContent(project);
+
+        toolWindow.setTitleActions(Lists.newArrayList(
+                ActionManager.getInstance().getAction("Nocalhost.Refresh")
+        ));
 
         ContentManager contentManager = toolWindow.getContentManager();
         Content content = ContentFactory.SERVICE.getInstance().createContent(toolWindowPanel, "", false);

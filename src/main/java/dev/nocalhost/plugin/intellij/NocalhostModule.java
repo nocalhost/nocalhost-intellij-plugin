@@ -9,6 +9,7 @@ import com.intellij.openapi.diagnostic.Logger;
 
 import java.util.function.Supplier;
 
+import dev.nocalhost.plugin.intellij.commands.NocalhostCommandModule;
 import dev.nocalhost.plugin.intellij.ui.NocalhostConsoleWindow;
 import dev.nocalhost.plugin.intellij.ui.NocalhostWindow;
 import dev.nocalhost.plugin.intellij.ui.action.NocalhostActionModule;
@@ -30,5 +31,6 @@ public class NocalhostModule extends AbstractModule {
         bind(NocalhostConsoleWindow.class);
 
         install(new NocalhostActionModule());
+        install(new NocalhostCommandModule());
     }
 }

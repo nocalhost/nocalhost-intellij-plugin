@@ -29,6 +29,7 @@
         <!-- Add your extensions here -->
 
         <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.TestService" />
+        <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.commands.NhctlClient" />
 
         <toolWindow id="Nocalhost" anchor="right"
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostWindowFactory" />

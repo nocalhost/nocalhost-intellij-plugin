@@ -6,10 +6,13 @@ import com.google.inject.Inject;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.ui.CheckedTreeNode;
+import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 
@@ -17,11 +20,14 @@ import java.awt.*;
 import java.util.List;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.AuthData;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
 import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
 import dev.nocalhost.plugin.intellij.ui.action.SettingsAction;
 import dev.nocalhost.plugin.intellij.utils.CommonUtils;
@@ -41,11 +47,18 @@ public class NocalhostWindow {
     @Inject
     private Logger log;
 
+    Tree tree;
+    JScrollPane treeView;
+    JLabel label;
+    SimpleToolWindowPanel panel;
+    JButton loginButton;
+    JButton logoutButton;
+
     public SimpleToolWindowPanel createToolWindowContent(final Project project) {
-        SimpleToolWindowPanel panel = new SimpleToolWindowPanel(true, true);
+        panel = new SimpleToolWindowPanel(true, true);
         ActionToolbar toolbar = createToolbar(project);
         panel.setToolbar(toolbar.getComponent());
-        JLabel label = new JLabel();
+        label = new JBLabel();
         AuthData authData = nocalhostSettings.getAuth();
         if (authData == null) {
             label.setText("Nocalhost");
@@ -53,17 +66,63 @@ public class NocalhostWindow {
             label.setText(authData.getEmail());
         }
         panel.add(label, BorderLayout.NORTH);
-        JPanel treePanel = new JPanel();
-        panel.add(treePanel,BorderLayout.LINE_START);
-        panel.add(addButtonPanel(project, label, treePanel), BorderLayout.SOUTH);
+        loginButton = new JButton("Login");
+        logoutButton = new JButton("Logout");
+
+
+        buttonPanel(project, label, loginButton, logoutButton);
+        final Application application = ApplicationManager.getApplication();
+        application.getMessageBus().connect().subscribe(
+                NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC,
+                () -> buttonPanel(project, label, loginButton, logoutButton)
+        );
+
+        tree = new Tree();
+//        treeView = new JScrollPane(tree, 20, 30);
+//        treeView.add(tree);
+        panel.add(tree, BorderLayout.LINE_START);
         panel.setVisible(true);
         return panel;
     }
 
+    private void buttonPanel(Project project, JLabel label, JButton loginButton, JButton logoutButton) {
 
-    private Tree getDevSpaceTree(List<DevSpace> devSpaceList) {
+
+        if (nocalhostSettings.getAuth() == null) {
+            panel.remove(logoutButton);
+            loginButton.addActionListener(e -> {
+                final LoginDialog dialog = new LoginDialog(project, nocalhostSettings, commonUtils, log);
+                dialog.show();
+                if (dialog.isOK()) {
+                    List<DevSpace> devSpaceList = nocalhostApi.listDevSpace(nocalhostSettings.getAuth());
+                    updateTree(devSpaceList);
+
+                }
+            });
+            panel.add(loginButton, BorderLayout.SOUTH);
+        } else {
+            panel.remove(loginButton);
+            label.setText(nocalhostSettings.getAuth().getEmail());
+            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            DefaultMutableTreeNode root = (DefaultMutableTreeNode)model.getRoot();
+            root.removeAllChildren();
+            tree.removeAll();
+            logoutButton.addActionListener(e -> {
+                nocalhostSettings.clearAuth();
+                label.setText("Nocalhost");
+                final Application application = ApplicationManager.getApplication();
+                NocalhostAccountChangedNotifier publisher = application.getMessageBus()
+                                                                       .syncPublisher(NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC);
+                publisher.action();
+            });
+            panel.add(logoutButton, BorderLayout.SOUTH);
+        }
+
+    }
+
+
+    private void updateTree(List<DevSpace> devSpaceList) {
         CheckedTreeNode devSpaceNode = new CheckedTreeNode("DevSpace");
-
         devSpaceList.forEach(devSpace -> {
             CheckedTreeNode devNode = new CheckedTreeNode(devSpace.getSpaceName());
 
@@ -104,48 +163,17 @@ public class NocalhostWindow {
 
             List<CheckedTreeNode> devSpaceChildren = Lists.newArrayList(workloads, networks, configurations, storage);
             TreeUtil.addChildrenTo(devNode, devSpaceChildren);
+
             devSpaceNode.add(devNode);
         });
 
-        return new Tree(devSpaceNode);
-    }
-
-    private JPanel addButtonPanel(final Project project, JLabel label, JPanel treePanel) {
-        JPanel panel = new JPanel(new GridLayout(2, 1));
-
-
-        JButton loginButton = new JButton("Login");
-        JButton logoutButton = new JButton("Logout");
-
-        panel.add(logoutButton);
-        panel.add(loginButton);
-
-        loginButton.addActionListener(e -> {
-            final LoginDialog dialog = new LoginDialog(project, nocalhostSettings, commonUtils, log);
-            dialog.show();
-            if (dialog.isOK()) {
-                AuthData _authData = nocalhostSettings.getAuth();
-                if (_authData != null) {
-                    label.setText(_authData.getEmail());
-                    loginButton.setVisible(false);
-                    logoutButton.setVisible(true);
-                }
-                List<DevSpace> devSpaceList = nocalhostApi.listDevSpace(_authData);
-                treePanel.add(getDevSpaceTree(devSpaceList));
-                treePanel.repaint();
-            }
-        });
-        loginButton.setVisible(true);
-
-        logoutButton.addActionListener(e -> {
-            nocalhostSettings.clearAuth();
-            label.setText("Nocalhost");
-            treePanel.removeAll();
-            loginButton.setVisible(true);
-            logoutButton.setVisible(false);
-        });
-        logoutButton.setVisible(false);
-        return panel;
+        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode)model.getRoot();
+        root.removeAllChildren();
+        root.add(devSpaceNode);
+        model.reload(root);
+        tree.repaint();
+        panel.repaint();
     }
 
     private ActionToolbar createToolbar(final Project project) {

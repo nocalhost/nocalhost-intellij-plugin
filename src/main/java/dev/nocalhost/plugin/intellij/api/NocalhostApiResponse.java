@@ -7,7 +7,7 @@ import java.io.Serializable;
 import lombok.Data;
 
 @Data
-public class NocalhostResponseBody implements Serializable {
+public class NocalhostApiResponse implements Serializable {
 
     private long code;
     private String message;
