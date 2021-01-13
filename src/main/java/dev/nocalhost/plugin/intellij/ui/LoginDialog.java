@@ -9,6 +9,7 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPasswordField;
 import com.intellij.ui.components.JBTextField;
 
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,7 +60,10 @@ public class LoginDialog extends DialogWrapper {
         emailTextField.getEmptyText().appendText("Input your email");
         passwordField.getEmptyText().appendText("Input your password");
 
-        hostTextField.getEmptyText().setText("http://106.55.223.21:8080/");
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        if (StringUtils.isNotEmpty(nocalhostSettings.getBaseUrl())) {
+            hostTextField.setText(nocalhostSettings.getBaseUrl());
+        }
 
         hostTextField.addFocusListener(new FocusAdapter() {
             @Override

@@ -37,7 +37,6 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
     }
 
     public void clearAuth() {
-        baseUrl = null;
         jwt = null;
         userInfo = null;
     }
