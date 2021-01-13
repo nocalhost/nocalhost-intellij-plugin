@@ -125,7 +125,7 @@ public class NocalhostApi {
     public void syncInstallStatus(DevSpace devSpace, int status) throws IOException {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
-        String url = NocalhostApiUrl.updateAppStatus(nocalhostSettings.getBaseUrl(), devSpace.getId(), status);
+        String url = NocalhostApiUrl.updateAppStatus(nocalhostSettings.getBaseUrl(), devSpace.getId(), devSpace.getDevSpaceId());
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("authorization", "Bearer " + nocalhostSettings.getJwt())
