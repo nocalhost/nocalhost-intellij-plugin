@@ -12,6 +12,7 @@ public class LoginRequest implements Serializable {
     private String email;
     @NotNull
     private String password;
+    private String from = "plugin";
 
     public LoginRequest(@NotNull String email, @NotNull String password) {
         this.email = email;
