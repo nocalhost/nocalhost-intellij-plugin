@@ -3,21 +3,25 @@ package dev.nocalhost.plugin.intellij.commands;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
+
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
+
+
 public final class NhctlCommand {
-    private static final String KUBECTL_COMMAND = "nhctl";
+    private static final String NHCTL_COMMAND = "/usr/local/bin/nhctl";
 
     public void install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException {
-        List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "install", name);
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "install", name);
         if (StringUtils.isNotEmpty(opts.getConfig())) {
             args.add("--config");
             args.add(opts.getConfig());
@@ -65,13 +69,15 @@ public final class NhctlCommand {
             args.add("--resource-path");
             args.add(path);
         }
-        if (opts.getValues() != null && !opts.getValues().isEmpty()) {
-            String values = opts.getValues().entrySet()
-                    .stream()
-                    .map((e) -> e.getKey() + "=" + e.getValue())
-                    .collect(Collectors.toList())
-                    .stream()
-                    .reduce(",", String::concat);
+
+        Map<String, String> valuesMap = opts.getValues();
+        if (valuesMap != null && !valuesMap.isEmpty()) {
+            String values = valuesMap.entrySet()
+                                     .stream()
+                                     .map((e) -> e.getKey() + "=" + e.getValue())
+                                     .collect(Collectors.toList())
+                                     .stream()
+                                     .reduce(",", String::concat);
             if (StringUtils.isNotEmpty(values)) {
                 args.add("--set");
                 args.add(values);
@@ -100,7 +106,7 @@ public final class NhctlCommand {
     }
 
     public void uninstall(String name, NhctlUninstallOptions opts) throws InterruptedException, IOException {
-        List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "uninstall", name);
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "uninstall", name);
         if (opts.isForce()) {
             args.add("--force");
         }

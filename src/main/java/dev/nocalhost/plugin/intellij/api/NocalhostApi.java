@@ -9,12 +9,14 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 
+import org.apache.groovy.util.Maps;
+
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.api.data.AuthData;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.api.data.LoginRequest;
 import dev.nocalhost.plugin.intellij.api.data.LoginResponse;
@@ -117,6 +119,27 @@ public class NocalhostApi {
             }
             List<DevSpace> devSpaces = resp.getData();
             return devSpaces.stream().peek(devSpace -> devSpace.setContext(gson.fromJson(devSpace.getContextStr(), DevSpace.Context.class))).collect(Collectors.toList());
+        }
+    }
+
+    public void syncInstallStatus(DevSpace devSpace, int status) throws IOException {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+
+        String url = NocalhostApiUrl.updateAppStatus(nocalhostSettings.getBaseUrl(), devSpace.getId(), status);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("authorization", "Bearer " + nocalhostSettings.getJwt())
+                .put(RequestBody.create(gson.toJson(Maps.of("status", status)).getBytes(StandardCharsets.UTF_8), MEDIA_TYPE))
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new NocalhostApiException(String.format("Failed to sync install status, connect server API %s, respond HTTP %d", url, response.code()));
+            }
+            NocalhostApiResponse<Object> resp = gson.fromJson(response.body().charStream(),
+                    TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType());
+            if (resp.getCode() != 0) {
+                throw new NocalhostApiException(String.format("Failed to sync install status, %s", resp.getMessage()));
+            }
         }
     }
 }

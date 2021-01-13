@@ -38,10 +38,15 @@
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostWindowFactory" />
         <toolWindow id="Nocalhost Console" anchor="bottom"  icon="NocalhostIcons.Logo"
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostConsoleWindowFactory" />
+
+        <notificationGroup id="Nocalhost.Notification" displayType="BALLOON"/>
     </extensions>
 
     <actions>
         <!-- Add your actions here -->
+        <group id="Nocalhost.DevSpace.Controller" text="DevSpace" popup="true">
+            <separator />
+        </group>
 
         <action id="Nocalhost.RefreshAction" text="Refresh"
                 class="dev.nocalhost.plugin.intellij.ui.action.RefreshAction" />

@@ -8,6 +8,9 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
@@ -15,17 +18,15 @@ import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.List;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
@@ -39,6 +40,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.NodeRenderer;
 import dev.nocalhost.plugin.intellij.ui.tree.PlainNode;
+import dev.nocalhost.plugin.intellij.ui.tree.TreeMouseListener;
 import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
 
 public class NocalhostWindow {
@@ -103,39 +105,25 @@ public class NocalhostWindow {
     private void setupTree() {
         tree.setRootVisible(false);
         tree.setCellRenderer(new NodeRenderer());
+        tree.addMouseListener(new TreeMouseListener(tree));
+        updateTree();
+    }
 
-        tree.addMouseListener(new MouseAdapter() {
+    public void updateTree() {
+        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Fetching data from Nocalhost server", false) {
+
             @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    TreePath treePath = tree.getPathForLocation(e.getX(), e.getY());
-                    Object component = treePath.getLastPathComponent();
-                    if (component instanceof DefaultMutableTreeNode) {
-                        DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) component;
-                        Object userObject = treeNode.getUserObject();
-                        if (userObject instanceof DevSpaceNode) {
-                            DevSpaceNode node = (DevSpaceNode) userObject;
-                            new InstallDevSpaceDialog(node.getDevSpace()).showAndGet();
-                        }
-                    }
+            public void run(@NotNull ProgressIndicator indicator) {
+                final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+                try {
+                    List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
+                    updateTree(devSpaces);
+                } catch (IOException e) {
+                    // TODO: show balloon with error message
+                    e.printStackTrace();
                 }
             }
         });
-
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode();
-        root.add(new DefaultMutableTreeNode(new AccountNode(nocalhostSettings.getUserInfo().getName())));
-        ((DefaultTreeModel) tree.getModel()).setRoot(root);
-
-        final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-        try {
-            List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
-            updateTree(devSpaces);
-        } catch (IOException e) {
-            // TODO: show balloon with error message
-            e.printStackTrace();
-        }
     }
 
     private void updateTree(List<DevSpace> devSpaces) {

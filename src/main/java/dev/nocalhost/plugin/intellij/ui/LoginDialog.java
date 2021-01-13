@@ -79,7 +79,10 @@ public class LoginDialog extends DialogWrapper {
         };
         emailTextField.getDocument().addDocumentListener(listener);
         passwordField.getDocument().addDocumentListener(listener);
-        
+
+        setHost("http://106.55.223.21:8080/");
+        setEmail("fatjyc@gmail.com");
+        setPassword("123123");
         setOKButtonText("Login");
         init();
     }
