@@ -4,14 +4,15 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
@@ -65,19 +66,19 @@ public final class NhctlCommand {
             args.add("--outer-config");
             args.add(opts.getOuterConfig());
         }
-        for (String path : opts.getResourcesPath()) {
-            args.add("--resource-path");
-            args.add(path);
+        if (opts.getResourcesPath() != null) {
+            for (String path : opts.getResourcesPath()) {
+                args.add("--resource-path");
+                args.add(path);
+            }
         }
-
-        Map<String, String> valuesMap = opts.getValues();
-        if (valuesMap != null && !valuesMap.isEmpty()) {
-            String values = valuesMap.entrySet()
-                                     .stream()
-                                     .map((e) -> e.getKey() + "=" + e.getValue())
-                                     .collect(Collectors.toList())
-                                     .stream()
-                                     .reduce(",", String::concat);
+        if (opts.getValues() != null) {
+            String values = opts.getValues().entrySet()
+                    .stream()
+                    .map((e) -> e.getKey() + "=" + e.getValue())
+                    .collect(Collectors.toList())
+                    .stream()
+                    .reduce(",", String::concat);
             if (StringUtils.isNotEmpty(values)) {
                 args.add("--set");
                 args.add(values);
@@ -109,6 +110,68 @@ public final class NhctlCommand {
         List<String> args = Lists.newArrayList(NHCTL_COMMAND, "uninstall", name);
         if (opts.isForce()) {
             args.add("--force");
+        }
+        addGlobalOptions(args, opts);
+
+        String cmd = String.join(" ", args.toArray(new String[]{}));
+        System.out.println("Execute command: " + cmd);
+
+        Process process = Runtime.getRuntime().exec(cmd);
+        if (process.waitFor() != 0) {
+            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
+                    process.getErrorStream(), Charsets.UTF_8)));
+        }
+    }
+
+    public void devStart(String name, NhctlDevStartOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "dev", "start", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        if (StringUtils.isNotEmpty(opts.getImage())) {
+            args.add("--image");
+            args.add(opts.getImage());
+        }
+        if (opts.getLocalSync() != null) {
+            for (String s : opts.getLocalSync()) {
+                args.add("--local-sync");
+                args.add(s);
+            }
+        }
+        if (StringUtils.isNotEmpty(opts.getSidecarImage())) {
+            args.add("--sidecar-image");
+            args.add(opts.getSidecarImage());
+        }
+        if (StringUtils.isNotEmpty(opts.getStorageClass())) {
+            args.add("--storage-class");
+            args.add(opts.getStorageClass());
+        }
+        if (StringUtils.isNotEmpty(opts.getSyncthingVersion())) {
+            args.add("--syncthing-version");
+            args.add(opts.getSyncthingVersion());
+        }
+        if (StringUtils.isNotEmpty(opts.getWorkDir())) {
+            args.add("--work-dir");
+            args.add(opts.getWorkDir());
+        }
+        addGlobalOptions(args, opts);
+
+        String cmd = String.join(" ", args.toArray(new String[]{}));
+        System.out.println("Execute command: " + cmd);
+
+        Process process = Runtime.getRuntime().exec(cmd);
+        if (process.waitFor() != 0) {
+            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
+                    process.getErrorStream(), Charsets.UTF_8)));
+        }
+    }
+
+    public void devEnd(String name, NhctlDevEndOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "dev", "end", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
         }
         addGlobalOptions(args, opts);
 

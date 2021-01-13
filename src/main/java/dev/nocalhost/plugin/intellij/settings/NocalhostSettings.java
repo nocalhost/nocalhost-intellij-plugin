@@ -1,5 +1,8 @@
 package dev.nocalhost.plugin.intellij.settings;
 
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.RoamingType;
 import com.intellij.openapi.components.State;
@@ -10,6 +13,10 @@ import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+import java.util.Set;
+
+import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.UserInfo;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,6 +32,8 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
     private String baseUrl;
     private String jwt;
     private UserInfo userInfo;
+    private Map<String, DevModeService> devModeProjectBasePath2Service = Maps.newHashMap();
+    private Set<DevModeService> startedDevModeService = Sets.newHashSet();
 
     @Override
     public @Nullable NocalhostSettings getState() {
@@ -40,5 +49,4 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         jwt = null;
         userInfo = null;
     }
-
 }

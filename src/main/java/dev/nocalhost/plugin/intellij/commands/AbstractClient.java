@@ -10,7 +10,7 @@ public abstract class AbstractClient {
         return processBuilder;
     }
 
-    protected ProcessBuilder createProcessBuilder(String ...cmd) {
+    protected ProcessBuilder createProcessBuilder(String... cmd) {
         ProcessBuilder processBuilder = new ProcessBuilder(cmd);
         processBuilder.environment().clear();
         return processBuilder;

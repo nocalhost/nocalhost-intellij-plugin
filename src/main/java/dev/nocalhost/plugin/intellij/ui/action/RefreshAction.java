@@ -21,7 +21,7 @@ public class RefreshAction extends AnAction implements DumbAware {
     public void actionPerformed(@NotNull AnActionEvent e) {
         final Application application = ApplicationManager.getApplication();
         DevSpaceListUpdatedNotifier publisher = application.getMessageBus()
-                                                           .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
+                .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
         publisher.action();
     }
 }

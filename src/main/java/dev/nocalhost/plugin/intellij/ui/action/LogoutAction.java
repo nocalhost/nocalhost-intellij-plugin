@@ -26,7 +26,7 @@ public class LogoutAction extends AnAction implements DumbAware {
 
         final Application application = ApplicationManager.getApplication();
         NocalhostAccountChangedNotifier publisher = application.getMessageBus()
-                                                               .syncPublisher(NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC);
+                .syncPublisher(NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC);
         publisher.action();
     }
 }

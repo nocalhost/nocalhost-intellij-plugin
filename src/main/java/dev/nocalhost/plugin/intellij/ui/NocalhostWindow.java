@@ -3,6 +3,9 @@ package dev.nocalhost.plugin.intellij.ui;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
@@ -29,10 +32,13 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
+import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
@@ -42,6 +48,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.NodeRenderer;
 import dev.nocalhost.plugin.intellij.ui.tree.PlainNode;
 import dev.nocalhost.plugin.intellij.ui.tree.TreeMouseListener;
 import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class NocalhostWindow {
 
@@ -69,10 +76,50 @@ public class NocalhostWindow {
                 NocalhostWindow.this::updateTree
         );
 
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        DevModeService devModeService = nocalhostSettings.getDevModeProjectBasePath2Service().get(project.getBasePath());
+        if (devModeService != null) {
+            ProgressManager.getInstance().run(new Task.Backgroundable(null, "Starting DevMode", false) {
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+                    try {
+                        DevSpace devSpace = null;
+                        for (DevSpace s : nocalhostApi.listDevSpace()) {
+                            if (s.getId() == devModeService.getApplicationId() && s.getDevSpaceId() == devModeService.getDevSpaceId()) {
+                                devSpace = s;
+                                break;
+                            }
+                        }
+                        if (devSpace == null) {
+                            return;
+                        }
+
+                        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+
+                        NhctlDevStartOptions opts = new NhctlDevStartOptions();
+                        opts.setDeployment(devModeService.getName());
+                        opts.setLocalSync(Lists.newArrayList(project.getBasePath()));
+                        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
+
+                        nhctlCommand.devStart(devSpace.getContext().getApplicationName(), opts);
+
+                        nocalhostSettings.getStartedDevModeService().add(devModeService);
+
+                        Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode started", "", NotificationType.INFORMATION), project);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+
         panel = new SimpleToolWindowPanel(true, true);
         loginButton = new JButton("Login");
         tree = new Tree();
-        panel.add(tree, BorderLayout.LINE_START);
+        panel.add(tree);
         panel.add(loginButton, BorderLayout.SOUTH);
 
         loginButton.addActionListener(e -> {
@@ -105,7 +152,7 @@ public class NocalhostWindow {
     private void setupTree() {
         tree.setRootVisible(false);
         tree.setCellRenderer(new NodeRenderer());
-        tree.addMouseListener(new TreeMouseListener(tree));
+        tree.addMouseListener(new TreeMouseListener(tree, project));
         updateTree();
     }
 
@@ -162,7 +209,7 @@ public class NocalhostWindow {
                     if (progressing && !available) {
                         status = WorkloadNode.Status.STARTING;
                     }
-                    deploymentsNode.add(new DefaultMutableTreeNode(new WorkloadNode(name, status)));
+                    deploymentsNode.add(new DefaultMutableTreeNode(new WorkloadNode(name, status, devSpace)));
 
                 }
             } catch (Exception e) {

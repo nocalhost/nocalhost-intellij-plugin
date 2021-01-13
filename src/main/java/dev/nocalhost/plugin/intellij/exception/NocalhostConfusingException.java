@@ -30,8 +30,7 @@ public class NocalhostConfusingException extends IOException {
     public String getMessage() {
         if (myDetails == null) {
             return super.getMessage();
-        }
-        else {
+        } else {
             return myDetails + "\n\n" + super.getMessage();
         }
     }

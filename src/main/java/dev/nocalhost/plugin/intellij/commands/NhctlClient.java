@@ -19,7 +19,7 @@ public class NhctlClient extends AbstractClient {
     }
 
     public String version() throws IOException {
-        String[] command = new String[] {
+        String[] command = new String[]{
                 NHCTL_COMMAND,
                 "version"
         };
@@ -35,7 +35,7 @@ public class NhctlClient extends AbstractClient {
         DevSpace.Context context = devSpace.getContext();
         String resourcePath = Arrays.stream(context.getResourceDir()).map(dir -> "--resource-path " + dir).collect(Collectors.joining(" "));
         // TODO: helm values.yaml
-        String[] command = new String[] {
+        String[] command = new String[]{
                 NHCTL_COMMAND,
                 "install",
                 context.getApplicationName(),

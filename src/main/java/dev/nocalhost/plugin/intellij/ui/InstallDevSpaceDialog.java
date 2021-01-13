@@ -94,7 +94,7 @@ public class InstallDevSpaceDialog extends DialogWrapper {
 
                     final Application application = ApplicationManager.getApplication();
                     DevSpaceListUpdatedNotifier publisher = application.getMessageBus()
-                                                                       .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
+                            .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
                     publisher.action();
 
                     Notifications.Bus.notify(new Notification("Nocalhost.Notification", "Application " + context.getApplicationName() + " installed", "", NotificationType.INFORMATION));
