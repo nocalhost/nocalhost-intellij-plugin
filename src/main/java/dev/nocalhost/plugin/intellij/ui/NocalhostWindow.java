@@ -76,6 +76,8 @@ public class NocalhostWindow {
         loginButton.addActionListener(e -> {
             new LoginDialog().showAndGet();
         });
+
+        toggleContent();
     }
 
     private void toggleContent() {
