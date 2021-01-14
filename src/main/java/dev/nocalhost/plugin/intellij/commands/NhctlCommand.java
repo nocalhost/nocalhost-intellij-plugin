@@ -13,12 +13,14 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeResult;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
@@ -87,11 +89,11 @@ public final class NhctlCommand {
         }
         if (opts.getValues() != null) {
             String values = opts.getValues().entrySet()
-                    .stream()
-                    .map((e) -> e.getKey() + "=" + e.getValue())
-                    .collect(Collectors.toList())
-                    .stream()
-                    .reduce(",", String::concat);
+                                .stream()
+                                .map((e) -> e.getKey() + "=" + e.getValue())
+                                .collect(Collectors.toList())
+                                .stream()
+                                .reduce(",", String::concat);
             if (StringUtils.isNotEmpty(values)) {
                 args.add("--set");
                 args.add(values);
@@ -216,9 +218,57 @@ public final class NhctlCommand {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
-
         String result = execute(args, opts);
         return yaml.loadAs(result, NhctlDescribeResult.class);
+    }
+
+    public void reset(String name, NhctlResetOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "dev", "reset", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        execute(args, opts);
+    }
+
+    public String getConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "config", "get", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        addGlobalOptions(args, opts);
+
+        return execute(args, opts);
+    }
+
+    public void getTemplateConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "config", "template", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        execute(args, opts);
+    }
+
+    public void saveConfig(String name, NhctlConfigOptions opts, String content) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "config", "get", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        args.add("--content");
+        args.add(content);
+        execute(args, opts);
+    }
+
+    public void getPluginInfo(String name, NhctlPluginOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "plugin", "get", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        execute(args, opts);
     }
 
     private String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException {

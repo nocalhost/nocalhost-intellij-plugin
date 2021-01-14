@@ -14,6 +14,7 @@ group = "dev.nocalhost"
 version = "0.0.1-SNAPSHOT"
 
 val git4idea = "git4idea"
+val terminal = "terminal"
 
 repositories {
     mavenCentral()
@@ -41,7 +42,8 @@ intellij {
     version = "2020.3"
     val plugins = mutableListOf(
         git4idea,
-        "com.jetbrains.sh"
+        "com.jetbrains.sh",
+        terminal
     )
     setPlugins(*plugins.toTypedArray())
 }
