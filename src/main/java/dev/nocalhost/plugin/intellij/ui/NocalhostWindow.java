@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui;
 
 import com.google.common.collect.Lists;
+import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 
 import com.intellij.notification.Notification;
@@ -17,6 +18,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.sh.run.ShRunner;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 
@@ -115,6 +117,25 @@ public class NocalhostWindow {
 
                         // TODO: nhctl port-forward ...
 
+                        final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+                        final KubeResource deployment = kubectlCommand.getResource("deployment", devModeService.getName(), devSpace);
+                        final KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
+                        final String podName = pods.getItems().get(0).getMetadata().getName();
+                        final String containerName = pods.getItems().get(0).getSpec().getContainers().get(0).getName();
+                        final List<String> args = Lists.newArrayList(
+                                "kubectl",
+                                "exec",
+                                "-it", podName,
+                                "-c", containerName,
+                                "--kubeconfig", KubeConfigUtil.kubeConfigPath(devSpace).toString(),
+                                "--", "sh"
+                        );
+                        final String cmd = String.join(" ", args.toArray(new String[]{}));
+                        ApplicationManager.getApplication().invokeLater(() -> {
+                            ShRunner shRunner = project.getService(ShRunner.class);
+                            shRunner.run(cmd, System.getProperty("user.home"), "DevSpace Terminal", true);
+                        });
+
                         nocalhostSettings.getStartedDevModeService().add(devModeService);
 
                         Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode started", "", NotificationType.INFORMATION), project);
@@ -203,7 +224,7 @@ public class NocalhostWindow {
             workloadsNode.add(deploymentsNode);
 
             try {
-                KubeResourceList list = kubectlCommand.getResourceList("deployments", devSpace);
+                KubeResourceList list = kubectlCommand.getResourceList("deployments", null, devSpace);
                 for (KubeResource resource : list.getItems()) {
                     String name = resource.getMetadata().getName();
                     WorkloadNode.Status status = WorkloadNode.Status.UNKNOWN;

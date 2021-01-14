@@ -102,7 +102,6 @@ public final class NhctlCommand {
         if (opts.isForce()) {
             args.add("--force");
         }
-        addGlobalOptions(args, opts);
 
         execute(args, opts);
     }
@@ -139,7 +138,6 @@ public final class NhctlCommand {
             args.add("--work-dir");
             args.add(opts.getWorkDir());
         }
-        addGlobalOptions(args, opts);
 
         execute(args, opts);
     }
@@ -150,7 +148,6 @@ public final class NhctlCommand {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
-        addGlobalOptions(args, opts);
 
         execute(args, opts);
     }
