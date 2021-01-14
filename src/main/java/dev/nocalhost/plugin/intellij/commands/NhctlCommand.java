@@ -15,6 +15,8 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 
 
@@ -91,19 +93,8 @@ public final class NhctlCommand {
         if (opts.isWait()) {
             args.add("--wait");
         }
-        addGlobalOptions(args, opts);
 
-        String cmd = String.join(" ", args.toArray(new String[]{}));
-        System.out.println("Execute command: " + cmd);
-
-        Process process = Runtime.getRuntime().exec(cmd);
-        if (process.waitFor() != 0) {
-            System.out.println(CharStreams.toString(new InputStreamReader(
-                    process.getInputStream(), Charsets.UTF_8)));
-            System.err.println(CharStreams.toString(new InputStreamReader(
-                    process.getErrorStream(), Charsets.UTF_8)));
-            throw new RuntimeException();
-        }
+        execute(args, opts);
     }
 
     public void uninstall(String name, NhctlUninstallOptions opts) throws InterruptedException, IOException {
@@ -113,14 +104,7 @@ public final class NhctlCommand {
         }
         addGlobalOptions(args, opts);
 
-        String cmd = String.join(" ", args.toArray(new String[]{}));
-        System.out.println("Execute command: " + cmd);
-
-        Process process = Runtime.getRuntime().exec(cmd);
-        if (process.waitFor() != 0) {
-            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
-                    process.getErrorStream(), Charsets.UTF_8)));
-        }
+        execute(args, opts);
     }
 
     public void devStart(String name, NhctlDevStartOptions opts) throws IOException, InterruptedException {
@@ -157,14 +141,7 @@ public final class NhctlCommand {
         }
         addGlobalOptions(args, opts);
 
-        String cmd = String.join(" ", args.toArray(new String[]{}));
-        System.out.println("Execute command: " + cmd);
-
-        Process process = Runtime.getRuntime().exec(cmd);
-        if (process.waitFor() != 0) {
-            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
-                    process.getErrorStream(), Charsets.UTF_8)));
-        }
+        execute(args, opts);
     }
 
     public void devEnd(String name, NhctlDevEndOptions opts) throws IOException, InterruptedException {
@@ -175,11 +152,68 @@ public final class NhctlCommand {
         }
         addGlobalOptions(args, opts);
 
+        execute(args, opts);
+    }
+
+    public void sync(String name, NhctlSyncOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "sync", name);
+        if (opts.isDaemon()) {
+            args.add("--daemon");
+        }
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        if (opts.isDoubleSideSync()) {
+            args.add("--double");
+        }
+        if (opts.getIgnoredPatterns() != null) {
+            for (String pattern : opts.getIgnoredPatterns()) {
+                args.add("--ignored-pattern");
+                args.add(pattern);
+            }
+        }
+        if (opts.getSyncedPatterns() != null) {
+            for (String pattern : opts.getSyncedPatterns()) {
+                args.add("--synced-pattern");
+                args.add(pattern);
+            }
+        }
+
+        execute(args, opts);
+    }
+
+    public void portForward(String name, NhctlPortForwardOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "port-forward", name);
+        if (opts.isDaemon()) {
+            args.add("--daemon");
+        }
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        if (opts.getDevPorts() != null) {
+            for (String port : opts.getDevPorts()) {
+                args.add("--dev-port");
+                args.add(port);
+            }
+        }
+
+        execute(args, opts);
+    }
+
+    private void execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException {
+        addGlobalOptions(args, opts);
+
         String cmd = String.join(" ", args.toArray(new String[]{}));
         System.out.println("Execute command: " + cmd);
 
         Process process = Runtime.getRuntime().exec(cmd);
         if (process.waitFor() != 0) {
+            System.out.println(CharStreams.toString(new InputStreamReader(
+                    process.getInputStream(), Charsets.UTF_8)));
+            System.err.println(CharStreams.toString(new InputStreamReader(
+                    process.getErrorStream(), Charsets.UTF_8)));
             throw new RuntimeException(CharStreams.toString(new InputStreamReader(
                     process.getErrorStream(), Charsets.UTF_8)));
         }

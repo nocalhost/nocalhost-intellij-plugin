@@ -39,6 +39,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
@@ -96,13 +97,23 @@ public class NocalhostWindow {
                         }
 
                         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
+                        final String appName = devSpace.getContext().getApplicationName();
 
-                        NhctlDevStartOptions opts = new NhctlDevStartOptions();
-                        opts.setDeployment(devModeService.getName());
-                        opts.setLocalSync(Lists.newArrayList(project.getBasePath()));
-                        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
+                        // nhctl dev start ...
+                        NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions();
+                        nhctlDevStartOptions.setDeployment(devModeService.getName());
+                        nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
+                        nhctlDevStartOptions.setKubeconfig(kubeconfigPath);
+                        nhctlCommand.devStart(appName, nhctlDevStartOptions);
 
-                        nhctlCommand.devStart(devSpace.getContext().getApplicationName(), opts);
+                        // nhctl sync ...
+                        NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions();
+                        nhctlSyncOptions.setDeployment(devModeService.getName());
+                        nhctlSyncOptions.setKubeconfig(kubeconfigPath);
+                        nhctlCommand.sync(appName, nhctlSyncOptions);
+
+                        // TODO: nhctl port-forward ...
 
                         nocalhostSettings.getStartedDevModeService().add(devModeService);
 
