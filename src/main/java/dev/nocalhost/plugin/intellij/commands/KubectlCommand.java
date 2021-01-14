@@ -7,8 +7,6 @@ import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +24,6 @@ public class KubectlCommand {
 
     public KubeResourceList getResourceList(String kind, Map<String, String> labels, DevSpace devSpace) throws IOException, InterruptedException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
-        ensureKubeconfigExisted(kubeconfigPath, devSpace.getKubeConfig());
 
         List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "get", kind);
         args.add("-n");
@@ -57,7 +54,6 @@ public class KubectlCommand {
 
     public KubeResource getResource(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
-        ensureKubeconfigExisted(kubeconfigPath, devSpace.getKubeConfig());
 
         List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "get", kind, name);
         args.add("-n");
@@ -81,7 +77,6 @@ public class KubectlCommand {
 
     public String exec(String podName, String containerName, String command, DevSpace devSpace) throws IOException, InterruptedException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
-        ensureKubeconfigExisted(kubeconfigPath, devSpace.getKubeConfig());
 
         List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "exec", podName);
         args.add("--container");
@@ -101,13 +96,5 @@ public class KubectlCommand {
         }
 
         return CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
-    }
-
-    private void ensureKubeconfigExisted(Path path, String content) throws IOException {
-        if (Files.exists(path)) {
-            return;
-        }
-        Files.createDirectories(path.getParent());
-        Files.write(path, content.getBytes(StandardCharsets.UTF_8));
     }
 }
