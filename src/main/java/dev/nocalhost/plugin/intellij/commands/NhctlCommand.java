@@ -5,12 +5,16 @@ import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
 import org.apache.commons.lang3.StringUtils;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeResult;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
@@ -22,6 +26,13 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 
 public final class NhctlCommand {
     private static final String NHCTL_COMMAND = "/usr/local/bin/nhctl";
+    private final Yaml yaml;
+
+    public NhctlCommand() {
+        Representer representer = new Representer();
+        representer.getPropertyUtils().setSkipMissingProperties(true);
+        this.yaml = new Yaml(representer);
+    }
 
     public void install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException {
         List<String> args = Lists.newArrayList(NHCTL_COMMAND, "install", name);
@@ -199,7 +210,18 @@ public final class NhctlCommand {
         execute(args, opts);
     }
 
-    private void execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException {
+    public NhctlDescribeResult describe(String name, NhctlDescribeOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "describe", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+
+        String result = execute(args, opts);
+        return yaml.loadAs(result, NhctlDescribeResult.class);
+    }
+
+    private String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException {
         addGlobalOptions(args, opts);
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
@@ -214,6 +236,8 @@ public final class NhctlCommand {
             throw new RuntimeException(CharStreams.toString(new InputStreamReader(
                     process.getErrorStream(), Charsets.UTF_8)));
         }
+
+        return CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
     }
 
     private void addGlobalOptions(List<String> args, NhctlGlobalOptions opts) {

@@ -27,6 +27,7 @@ dependencies {
     implementation("com.auth0:java-jwt:3.12.0")
     implementation("com.google.code.gson:gson:2.8.6")
     implementation("com.google.inject:guice:4.2.3")
+    implementation("org.yaml:snakeyaml:1.27")
 
 
     annotationProcessor("org.projectlombok:lombok:1.18.16")

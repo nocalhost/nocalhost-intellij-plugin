@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui;
 
 import com.google.common.collect.Lists;
-import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 
 import com.intellij.notification.Notification;
@@ -40,6 +39,7 @@ import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
@@ -102,6 +102,13 @@ public class NocalhostWindow {
                         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
                         final String appName = devSpace.getContext().getApplicationName();
 
+                        // check if devmode already started
+                        final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
+                        nhctlDescribeOptions.setDeployment(devModeService.getName());
+                        if (nhctlCommand.describe(devSpace.getContext().getApplicationName(), nhctlDescribeOptions).isDeveloping()) {
+                            return;
+                        }
+
                         // nhctl dev start ...
                         NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions();
                         nhctlDevStartOptions.setDeployment(devModeService.getName());
@@ -136,8 +143,6 @@ public class NocalhostWindow {
                             shRunner.run(cmd, System.getProperty("user.home"), "DevSpace Terminal", true);
                         });
 
-                        nocalhostSettings.getStartedDevModeService().add(devModeService);
-
                         Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode started", "", NotificationType.INFORMATION), project);
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -147,6 +152,7 @@ public class NocalhostWindow {
                 }
             });
         }
+
 
         panel = new SimpleToolWindowPanel(true, true);
         loginButton = new JButton("Login");

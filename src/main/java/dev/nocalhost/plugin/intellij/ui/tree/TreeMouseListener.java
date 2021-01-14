@@ -36,12 +36,13 @@ import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeResult;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
-import dev.nocalhost.plugin.intellij.utils.CommonUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class TreeMouseListener extends MouseAdapter {
@@ -161,72 +162,73 @@ public class TreeMouseListener extends MouseAdapter {
 
                     JBPopupMenu menu = new JBPopupMenu();
 
-                    final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-                    final DevModeService devModeService = CommonUtils.findDevModeService(
-                            node.getDevSpace().getId(),
-                            node.getDevSpace().getDevSpaceId(),
-                            node.getName()
-                    );
+                    final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                    final NhctlDescribeOptions opts = new NhctlDescribeOptions();
+                    opts.setDeployment(node.getName());
+                    try {
+                        final NhctlDescribeResult describeResult = nhctlCommand.describe(node.getDevSpace().getContext().getApplicationName(), opts);
+                        if (!describeResult.isDeveloping()) {
+                            JBMenuItem item = new JBMenuItem("Start Develop");
+                            item.addActionListener(e12 -> {
+                                int exitCode = MessageDialogBuilder.yesNoCancel("To start develop, you must specify source code directory.", "")
+                                        .yesText("Clone from Git Repo")
+                                        .noText("Open local directly")
+                                        .guessWindowAndAsk();
+                                switch (exitCode) {
+                                    case Messages.YES:
+                                        // TODO: Git.getInstance().clone(...)
+                                        break;
+                                    case Messages.NO:
+                                        final FileChooserDescriptor dirChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor();
+                                        dirChooser.setShowFileSystemRoots(true);
+                                        FileChooser.chooseFiles(dirChooser, null, null, paths -> {
+                                            Path bashPath = paths.get(0).toNioPath();
 
-                    if (devModeService == null) {
-                        JBMenuItem item = new JBMenuItem("Start Develop");
-                        item.addActionListener(e12 -> {
-                            int exitCode = MessageDialogBuilder.yesNoCancel("To start develop, you must specify source code directory.", "")
-                                    .yesText("Clone from Git Repo")
-                                    .noText("Open local directly")
-                                    .guessWindowAndAsk();
-                            switch (exitCode) {
-                                case Messages.YES:
-                                    // TODO: Git.getInstance().clone(...)
-                                    break;
-                                case Messages.NO:
-                                    final FileChooserDescriptor dirChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-                                    dirChooser.setShowFileSystemRoots(true);
-                                    FileChooser.chooseFiles(dirChooser, null, null, paths -> {
-                                        Path bashPath = paths.get(0).toNioPath();
+                                            final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+                                            nocalhostSettings.getDevModeProjectBasePath2Service().put(
+                                                    bashPath.toString(),
+                                                    new DevModeService(node.getDevSpace().getId(), node.getDevSpace().getDevSpaceId(), node.getName())
+                                            );
 
-                                        nocalhostSettings.getDevModeProjectBasePath2Service().put(
-                                                bashPath.toString(),
-                                                new DevModeService(node.getDevSpace().getId(), node.getDevSpace().getDevSpaceId(), node.getName())
-                                        );
-
-                                        ProjectManagerEx.getInstanceEx().openProject(bashPath, new OpenProjectTask());
-                                    });
-                                    break;
-                                default:
-                                    // Empty
-                            }
-
-                        });
-                        menu.add(item);
-                    } else {
-                        JBMenuItem item = new JBMenuItem("End Develop");
-                        item.addActionListener(e1 -> {
-                            ProgressManager.getInstance().run(new Task.Backgroundable(null, "Ending DevMode", false) {
-                                @Override
-                                public void run(@NotNull ProgressIndicator indicator) {
-                                    final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-
-                                    NhctlDevEndOptions opts = new NhctlDevEndOptions();
-                                    opts.setDeployment(node.getName());
-                                    opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
-
-                                    try {
-                                        nhctlCommand.devEnd(node.getDevSpace().getContext().getApplicationName(), opts);
-
-                                        nocalhostSettings.getStartedDevModeService().remove(devModeService);
-
-                                        Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode ended", "", NotificationType.INFORMATION), project);
-
-                                    } catch (IOException ioException) {
-                                        ioException.printStackTrace();
-                                    } catch (InterruptedException interruptedException) {
-                                        interruptedException.printStackTrace();
-                                    }
+                                            ProjectManagerEx.getInstanceEx().openProject(bashPath, new OpenProjectTask());
+                                        });
+                                        break;
+                                    default:
+                                        // Empty
                                 }
                             });
-                        });
-                        menu.add(item);
+                            menu.add(item);
+                        } else {
+                            JBMenuItem item = new JBMenuItem("End Develop");
+                            item.addActionListener(e1 -> {
+                                ProgressManager.getInstance().run(new Task.Backgroundable(null, "Ending DevMode", false) {
+                                    @Override
+                                    public void run(@NotNull ProgressIndicator indicator) {
+                                        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+
+                                        NhctlDevEndOptions opts = new NhctlDevEndOptions();
+                                        opts.setDeployment(node.getName());
+                                        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
+
+                                        try {
+                                            nhctlCommand.devEnd(node.getDevSpace().getContext().getApplicationName(), opts);
+
+                                            Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode ended", "", NotificationType.INFORMATION), project);
+
+                                        } catch (IOException ioException) {
+                                            ioException.printStackTrace();
+                                        } catch (InterruptedException interruptedException) {
+                                            interruptedException.printStackTrace();
+                                        }
+                                    }
+                                });
+                            });
+                            menu.add(item);
+                        }
+                    } catch (IOException ioException) {
+                        throw new RuntimeException(ioException);
+                    } catch (InterruptedException interruptedException) {
+                        throw new RuntimeException(interruptedException);
                     }
 
                     menu.add(new JBMenuItem("Config"));
