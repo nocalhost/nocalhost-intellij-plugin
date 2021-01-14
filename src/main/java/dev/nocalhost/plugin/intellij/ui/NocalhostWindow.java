@@ -79,7 +79,7 @@ public class NocalhostWindow {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
         DevModeService devModeService = nocalhostSettings.getDevModeProjectBasePath2Service().get(project.getBasePath());
         if (devModeService != null) {
-            ProgressManager.getInstance().run(new Task.Backgroundable(null, "Starting DevMode", false) {
+            ProgressManager.getInstance().run(new Task.Backgroundable(project, "Starting DevMode", false) {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
                     final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
