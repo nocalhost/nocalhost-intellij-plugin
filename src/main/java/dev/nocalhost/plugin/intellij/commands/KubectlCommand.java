@@ -81,10 +81,10 @@ public class KubectlCommand {
         List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "exec", podName);
         args.add("--container");
         args.add(containerName);
-        args.add("--");
-        args.add(command);
         args.add("--kubeconfig");
         args.add(kubeconfigPath.toString());
+        args.add("--");
+        args.add(command);
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
         System.out.println("Execute command: " + cmd);
@@ -95,6 +95,8 @@ public class KubectlCommand {
                     process.getErrorStream(), Charsets.UTF_8)));
         }
 
-        return CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
+        String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
+        System.out.println(output);
+        return output;
     }
 }

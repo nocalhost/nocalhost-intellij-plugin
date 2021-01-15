@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.*;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -129,19 +130,39 @@ public class NocalhostWindow {
                         final KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
                         final String podName = pods.getItems().get(0).getMetadata().getName();
                         final String containerName = pods.getItems().get(0).getSpec().getContainers().get(0).getName();
-                        final List<String> args = Lists.newArrayList(
-                                "kubectl",
-                                "exec",
-                                "-it", podName,
-                                "-c", containerName,
-                                "--kubeconfig", KubeConfigUtil.kubeConfigPath(devSpace).toString(),
-                                "--", "sh"
-                        );
-                        final String cmd = String.join(" ", args.toArray(new String[]{}));
-                        ApplicationManager.getApplication().invokeLater(() -> {
-                            ShRunner shRunner = project.getService(ShRunner.class);
-                            shRunner.run(cmd, System.getProperty("user.home"), "DevSpace Terminal", true);
-                        });
+
+                        final DevSpace ds = devSpace;
+                        final List<String> availableShells = Lists.newArrayList("zsh", "bash", "sh").stream().filter((e) -> {
+                            try {
+                                String shellPath = kubectlCommand.exec(podName, containerName, "which " + e, ds);
+                                if (StringUtils.isNotEmpty(shellPath)) {
+                                    return true;
+                                }
+                            } catch (RuntimeException runtimeException) {
+                                return false;
+                            } catch (InterruptedException interruptedException) {
+                                interruptedException.printStackTrace();
+                            } catch (IOException ioException) {
+                                ioException.printStackTrace();
+                            }
+                            return false;
+                        }).collect(Collectors.toList());
+
+                        if (availableShells.size() > 0) {
+                            final List<String> args = Lists.newArrayList(
+                                    "kubectl",
+                                    "exec",
+                                    "-it", podName,
+                                    "-c", containerName,
+                                    "--kubeconfig", KubeConfigUtil.kubeConfigPath(devSpace).toString(),
+                                    "--", availableShells.get(0)
+                            );
+                            final String cmd = String.join(" ", args.toArray(new String[]{}));
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                ShRunner shRunner = project.getService(ShRunner.class);
+                                shRunner.run(cmd, System.getProperty("user.home"), "DevSpace Terminal", true);
+                            });
+                        }
 
                         Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode started", "", NotificationType.INFORMATION), project);
                     } catch (IOException e) {

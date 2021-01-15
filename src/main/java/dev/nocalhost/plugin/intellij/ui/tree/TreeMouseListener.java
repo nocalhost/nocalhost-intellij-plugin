@@ -126,7 +126,7 @@ public class TreeMouseListener extends MouseAdapter {
 
                                         final Application application = ApplicationManager.getApplication();
                                         DevSpaceListUpdatedNotifier publisher = application.getMessageBus()
-                                                                                           .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
+                                                .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
                                         publisher.action();
 
                                         Notifications.Bus.notify(new Notification("Nocalhost.Notification", "Application " + appName + " uninstalled", "", NotificationType.INFORMATION));
@@ -181,9 +181,9 @@ public class TreeMouseListener extends MouseAdapter {
                             JBMenuItem item = new JBMenuItem("Start Develop");
                             item.addActionListener(e12 -> {
                                 int exitCode = MessageDialogBuilder.yesNoCancel("To start develop, you must specify source code directory.", "")
-                                                                   .yesText("Clone from Git Repo")
-                                                                   .noText("Open local directly")
-                                                                   .guessWindowAndAsk();
+                                        .yesText("Clone from Git Repo")
+                                        .noText("Open local directly")
+                                        .guessWindowAndAsk();
                                 switch (exitCode) {
                                     case Messages.YES:
                                         // TODO: Git.getInstance().clone(...)

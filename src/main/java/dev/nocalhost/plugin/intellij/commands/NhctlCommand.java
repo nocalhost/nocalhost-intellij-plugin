@@ -89,11 +89,11 @@ public final class NhctlCommand {
         }
         if (opts.getValues() != null) {
             String values = opts.getValues().entrySet()
-                                .stream()
-                                .map((e) -> e.getKey() + "=" + e.getValue())
-                                .collect(Collectors.toList())
-                                .stream()
-                                .reduce(",", String::concat);
+                    .stream()
+                    .map((e) -> e.getKey() + "=" + e.getValue())
+                    .collect(Collectors.toList())
+                    .stream()
+                    .reduce(",", String::concat);
             if (StringUtils.isNotEmpty(values)) {
                 args.add("--set");
                 args.add(values);
