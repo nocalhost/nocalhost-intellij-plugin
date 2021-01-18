@@ -64,10 +64,18 @@ public class TreeMouseListener extends MouseAdapter {
         this.project = project;
     }
 
+    private TreePath getPath(MouseEvent e) {
+        TreePath treePath = tree.getClosestPathForLocation(e.getX(), e.getY());
+        if (treePath == null) {
+            treePath = tree.getPathForLocation(e.getX(), e.getY());
+        }
+        return treePath;
+    }
+
     @Override
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1) {
-            TreePath treePath = tree.getPathForLocation(e.getX(), e.getY());
+            TreePath treePath = getPath(e);
             if (treePath == null) {
                 return;
             }
@@ -89,7 +97,7 @@ public class TreeMouseListener extends MouseAdapter {
     @Override
     public void mouseReleased(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON3) {
-            TreePath treePath = tree.getPathForLocation(e.getX(), e.getY());
+            TreePath treePath = getPath(e);
             if (treePath == null) {
                 return;
             }
