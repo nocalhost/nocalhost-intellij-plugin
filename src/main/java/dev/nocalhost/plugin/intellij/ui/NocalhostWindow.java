@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeSelectionModel;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
@@ -210,13 +211,14 @@ public class NocalhostWindow {
 
     private void setupTree() {
         tree.setRootVisible(false);
+        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.setCellRenderer(new NodeRenderer());
         tree.addMouseListener(new TreeMouseListener(tree, project));
         updateTree();
     }
 
     public void updateTree() {
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Fetching data from Nocalhost server", false) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Fetching nocalhost data", false) {
 
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
