@@ -16,12 +16,12 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="e2580" class="javax.swing.JLabel">
+          <component id="e2580" class="javax.swing.JLabel" binding="messageLabel">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Which branch to install (Manifests in Git Repo) ?"/>
+              <text value=""/>
             </properties>
           </component>
           <vspacer id="f76e9">
@@ -29,12 +29,12 @@
               <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
             </constraints>
           </vspacer>
-          <component id="37bc1" class="javax.swing.JRadioButton" binding="defaultBranchRadioButton" default-binding="true">
+          <component id="37bc1" class="javax.swing.JRadioButton" binding="defaultRadioButton" default-binding="true">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Default branch"/>
+              <text value="Default"/>
             </properties>
           </component>
           <component id="ebe90" class="javax.swing.JRadioButton" binding="specifyOneRadioButton" default-binding="true">

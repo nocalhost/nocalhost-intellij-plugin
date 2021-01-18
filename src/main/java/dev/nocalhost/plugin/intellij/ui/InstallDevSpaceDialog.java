@@ -27,10 +27,12 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class InstallDevSpaceDialog extends DialogWrapper {
     private JPanel dialogPanel;
-    private JRadioButton defaultBranchRadioButton;
+    private JLabel messageLabel;
+    private JRadioButton defaultRadioButton;
     private JRadioButton specifyOneRadioButton;
     private JTextField gitRefField;
     private DevSpace devSpace;
@@ -43,13 +45,26 @@ public class InstallDevSpaceDialog extends DialogWrapper {
         this.devSpace = devSpace;
 
         ButtonGroup buttonGroup = new ButtonGroup();
-        buttonGroup.add(defaultBranchRadioButton);
+        buttonGroup.add(defaultRadioButton);
         buttonGroup.add(specifyOneRadioButton);
 
-        specifyOneRadioButton.addChangeListener(e -> gitRefField.setEnabled(specifyOneRadioButton.isSelected()));
+        specifyOneRadioButton.addChangeListener(e -> {
+            gitRefField.setEnabled(specifyOneRadioButton.isSelected());
+            if (specifyOneRadioButton.isSelected()) {
+                gitRefField.grabFocus();
+            }
+        });
 
         gitRefField.setEnabled(false);
-        defaultBranchRadioButton.setSelected(true);
+        defaultRadioButton.setSelected(true);
+
+        if (StringUtils.equals(devSpace.getContext().getInstallType(), "helmRepo")) {
+            messageLabel.setText("Which version to install?");
+            defaultRadioButton.setText("Default Version");
+        } else {
+            messageLabel.setText("Which branch to install(Manifests in Git Repo)?");
+            defaultRadioButton.setText("Default Branch");
+        }
     }
 
     @Override
@@ -73,7 +88,7 @@ public class InstallDevSpaceDialog extends DialogWrapper {
 
         NhctlInstallOptions opts = new NhctlInstallOptions();
         opts.setGitUrl(context.getApplicationUrl());
-        opts.setType(context.getInstallType());
+        opts.setType(NhctlUtil.generateInstallType(context.getSource(), context.getInstallType()));
         opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
         opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
         opts.setNamespace(devSpace.getNamespace());
