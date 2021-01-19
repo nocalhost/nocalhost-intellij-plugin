@@ -99,4 +99,26 @@ public class KubectlCommand {
         System.out.println(output);
         return output;
     }
+
+    public String logs(String podName, String containerName, DevSpace devSpace) throws IOException, InterruptedException {
+        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
+
+        List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "logs", podName);
+        args.add("--container");
+        args.add(containerName);
+        args.add("--kubeconfig");
+        args.add(kubeconfigPath.toString());
+        String cmd = String.join(" ", args.toArray(new String[]{}));
+        System.out.println("Execute command: " + cmd);
+
+        Process process = Runtime.getRuntime().exec(cmd);
+        if (process.waitFor() != 0) {
+            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
+                    process.getErrorStream(), Charsets.UTF_8)));
+        }
+
+        String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
+        System.out.println(output);
+        return output;
+    }
 }

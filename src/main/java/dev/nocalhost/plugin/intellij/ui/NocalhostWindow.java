@@ -62,7 +62,7 @@ public class NocalhostWindow {
 
     private JPanel panel;
     private Tree tree;
-    private JButton loginButton;
+    private final JButton loginButton;
 
     @Inject
     private Logger log;
