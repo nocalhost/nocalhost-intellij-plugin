@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
+import dev.nocalhost.plugin.intellij.ui.console.Action;
 import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
 
 public class Logs implements ActionListener {
@@ -24,6 +25,6 @@ public class Logs implements ActionListener {
         final Application application = ApplicationManager.getApplication();
         NocalhostConsoleExecuteNotifier publisher = application.getMessageBus()
                 .syncPublisher(NocalhostConsoleExecuteNotifier.NOCALHOST_CONSOLE_EXECUTE_NOTIFIER_TOPIC);
-        publisher.action(node);
+        publisher.action(node, Action.LOGS);
     }
 }

@@ -43,7 +43,8 @@
         <toolWindow id="Nocalhost" anchor="right" icon="NocalhostIcons.Logo"
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostWindowFactory"/>
         <toolWindow id="Nocalhost Console" anchor="bottom" icon="NocalhostIcons.Logo"
-                    factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostConsoleWindowFactory"/>
+                    factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostConsoleWindowFactory"
+                    canCloseContents="true"/>
 
         <notificationGroup id="Nocalhost.Notification" displayType="BALLOON"/>
     </extensions>
