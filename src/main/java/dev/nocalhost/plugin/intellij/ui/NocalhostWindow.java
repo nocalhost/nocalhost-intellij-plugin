@@ -70,10 +70,11 @@ public class NocalhostWindow {
 
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
         DevModeService devModeService = nocalhostSettings.getDevModeProjectBasePath2Service().get(project.getBasePath());
-        if (devModeService != null) {
+        if (nocalhostSettings.getUserInfo() != null && devModeService != null) {
             ProgressManager.getInstance().run(new Task.Backgroundable(project, "Starting DevMode", false) {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
+
                     final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
                     try {
                         DevSpace devSpace = null;
@@ -186,6 +187,8 @@ public class NocalhostWindow {
                     ActionManager.getInstance().getAction("Nocalhost.RefreshAction"),
                     ActionManager.getInstance().getAction("Nocalhost.LogoutAction")
             ));
+            tree.clear();
+            tree.updateDevSpaces();
             loginButton.setVisible(false);
             scrollPane.setVisible(true);
         } else {

@@ -55,11 +55,6 @@ public class NocalhostTree extends Tree {
     }
 
     private void init() {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        model.insertNodeInto(new AccountNode(nocalhostSettings.getUserInfo()), root, 0);
-
-        updateDevSpaces();
-
         this.expandPath(new TreePath(root.getPath()));
         this.setRootVisible(false);
         this.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -139,6 +134,16 @@ public class NocalhostTree extends Tree {
         });
     }
 
+    public void clear() {
+        for (int i = model.getChildCount(root) - 1; i >= 0; i--) {
+            model.removeNodeFromParent((MutableTreeNode) model.getChild(root, i));
+        }
+
+        model.insertNodeInto(new LoadingNode(), root, 0);
+
+        model.reload();
+    }
+
     public void updateDevSpaces() {
         if (!updatingDecSpaces.compareAndSet(false, true)) {
             return;
@@ -179,13 +184,18 @@ public class NocalhostTree extends Tree {
             }
         }
 
-        for (int i = model.getChildCount(root) - 1; i >= 1; i--) {
+        for (int i = model.getChildCount(root) - 1; i >= 0; i--) {
             model.removeNodeFromParent((MutableTreeNode) model.getChild(root, i));
         }
+
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        model.insertNodeInto(new AccountNode(nocalhostSettings.getUserInfo()), root, 0);
 
         for (DevSpaceNode devSpaceNode : devSpaceNodes) {
             model.insertNodeInto(devSpaceNode, root, model.getChildCount(root));
         }
+
+        model.reload();
 
         for (int i = 1; i < model.getChildCount(root); i++) {
             makeExpandedVisible((DevSpaceNode) model.getChild(root, i));
