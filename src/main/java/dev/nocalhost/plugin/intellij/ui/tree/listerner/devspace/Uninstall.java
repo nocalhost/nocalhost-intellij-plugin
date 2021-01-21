@@ -22,7 +22,7 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
-import dev.nocalhost.plugin.intellij.ui.tree.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class Uninstall implements ActionListener {
@@ -35,7 +35,8 @@ public class Uninstall implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        DevSpace.Context context = node.getDevSpace().getContext();
+        DevSpace devSpace = node.getDevSpace();
+        DevSpace.Context context = devSpace.getContext();
         String appName = context.getApplicationName();
 
         if (!MessageDialogBuilder.yesNo("Uninstall application: " + appName, "").guessWindowAndAsk()) {
@@ -49,16 +50,16 @@ public class Uninstall implements ActionListener {
 
                 NhctlUninstallOptions opts = new NhctlUninstallOptions();
                 opts.setForce(true);
-                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
+                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                 try {
                     nhctlCommand.uninstall(appName, opts);
 
                     final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-                    nocalhostApi.syncInstallStatus(node.getDevSpace(), 0);
+                    nocalhostApi.syncInstallStatus(devSpace, 0);
 
                     final Application application = ApplicationManager.getApplication();
                     DevSpaceListUpdatedNotifier publisher = application.getMessageBus()
-                                                                       .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
+                            .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
                     publisher.action();
 
                     Notifications.Bus.notify(new Notification("Nocalhost.Notification", "Application " + appName + " uninstalled", "", NotificationType.INFORMATION));

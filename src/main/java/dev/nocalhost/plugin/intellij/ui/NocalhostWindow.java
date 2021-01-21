@@ -18,8 +18,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.sh.run.ShRunner;
-import com.intellij.ui.treeStructure.Tree;
-import com.intellij.util.ui.tree.TreeUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -30,9 +28,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeSelectionModel;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
@@ -47,12 +42,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
-import dev.nocalhost.plugin.intellij.ui.tree.AccountNode;
-import dev.nocalhost.plugin.intellij.ui.tree.DevSpaceNode;
-import dev.nocalhost.plugin.intellij.ui.tree.NodeRenderer;
-import dev.nocalhost.plugin.intellij.ui.tree.PlainNode;
-import dev.nocalhost.plugin.intellij.ui.tree.TreeMouseListener;
-import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
+import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class NocalhostWindow {
@@ -61,7 +51,7 @@ public class NocalhostWindow {
     private final ToolWindow toolWindow;
 
     private JPanel panel;
-    private Tree tree;
+    private NocalhostTree tree;
     private final JButton loginButton;
 
     @Inject
@@ -178,7 +168,7 @@ public class NocalhostWindow {
 
         panel = new SimpleToolWindowPanel(true, true);
         loginButton = new JButton("Login");
-        tree = new Tree();
+        tree = new NocalhostTree(project);
         panel.add(tree);
         panel.add(loginButton, BorderLayout.SOUTH);
 
@@ -194,8 +184,6 @@ public class NocalhostWindow {
 
         String jwt = nocalhostSettings.getJwt();
         if (StringUtils.isNotBlank(jwt)) {
-            setupTree();
-
             toolWindow.setTitleActions(Lists.newArrayList(
                     ActionManager.getInstance().getAction("Nocalhost.RefreshAction"),
                     ActionManager.getInstance().getAction("Nocalhost.LogoutAction")
@@ -209,111 +197,14 @@ public class NocalhostWindow {
         }
     }
 
-    private void setupTree() {
-        tree.setRootVisible(false);
-        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        tree.setCellRenderer(new NodeRenderer());
-        tree.addMouseListener(new TreeMouseListener(tree, project));
-        updateTree();
-    }
-
-    public void updateTree() {
+    private void updateTree() {
         ProgressManager.getInstance().run(new Task.Backgroundable(null, "Fetching nocalhost data", false) {
 
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-                try {
-                    List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
-                    updateTree(devSpaces);
-                } catch (IOException e) {
-                    // TODO: show balloon with error message
-                    e.printStackTrace();
-                }
+                tree.updateDevSpaces();
             }
         });
-    }
-
-    private void updateTree(List<DevSpace> devSpaces) {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode();
-        root.add(new DefaultMutableTreeNode(new AccountNode(nocalhostSettings.getUserInfo().getName())));
-        for (DevSpace devSpace : devSpaces) {
-            DefaultMutableTreeNode node = new DefaultMutableTreeNode(new DevSpaceNode(devSpace));
-            root.add(node);
-            if (devSpace.getInstallStatus() == 0) {
-                continue;
-            }
-
-            DefaultMutableTreeNode workloadsNode = new DefaultMutableTreeNode(new PlainNode("Workloads"));
-            node.add(workloadsNode);
-            DefaultMutableTreeNode deploymentsNode = new DefaultMutableTreeNode(new PlainNode("Deployments"));
-            workloadsNode.add(deploymentsNode);
-
-            try {
-                KubeResourceList list = kubectlCommand.getResourceList("deployments", null, devSpace);
-                for (KubeResource resource : list.getItems()) {
-                    String name = resource.getMetadata().getName();
-                    WorkloadNode.Status status = WorkloadNode.Status.UNKNOWN;
-                    boolean available = false;
-                    boolean progressing = false;
-                    for (KubeResource.Status.Condition condition : resource.getStatus().getConditions()) {
-                        if (StringUtils.equals(condition.getType(), "Available") && StringUtils.equals(condition.getStatus(), "True")) {
-                            status = WorkloadNode.Status.RUNNING;
-                            available = true;
-                        } else if (StringUtils.equals(condition.getType(), "Progressing") && StringUtils.equals(condition.getStatus(), "True")) {
-                            progressing = true;
-                        }
-                    }
-                    if (progressing && !available) {
-                        status = WorkloadNode.Status.STARTING;
-                    }
-                    deploymentsNode.add(new DefaultMutableTreeNode(new WorkloadNode(name, status, devSpace)));
-
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            workloadsNode.add(new DefaultMutableTreeNode(new PlainNode("StatefulSets")));
-            workloadsNode.add(new DefaultMutableTreeNode(new PlainNode("DaemonSets")));
-            workloadsNode.add(new DefaultMutableTreeNode(new PlainNode("Jobs")));
-            workloadsNode.add(new DefaultMutableTreeNode(new PlainNode("CronJobs")));
-            workloadsNode.add(new DefaultMutableTreeNode(new PlainNode("Pods")));
-
-
-            DefaultMutableTreeNode networks = new DefaultMutableTreeNode(new PlainNode("Networks"));
-            DefaultMutableTreeNode services = new DefaultMutableTreeNode(new PlainNode("Services"));
-            DefaultMutableTreeNode endpoints = new DefaultMutableTreeNode(new PlainNode("Endpoints"));
-            DefaultMutableTreeNode ingresses = new DefaultMutableTreeNode(new PlainNode("Ingresses"));
-            DefaultMutableTreeNode networkPolicies = new DefaultMutableTreeNode(new PlainNode("Network Policies"));
-            List<DefaultMutableTreeNode> networksChildren = Lists.newArrayList(services, endpoints, ingresses, networkPolicies);
-            TreeUtil.addChildrenTo(networks, networksChildren);
-            node.add(networks);
-
-            DefaultMutableTreeNode configurations = new DefaultMutableTreeNode(new PlainNode("Configurations"));
-            DefaultMutableTreeNode configMaps = new DefaultMutableTreeNode(new PlainNode("ConfigMaps"));
-            DefaultMutableTreeNode secrets = new DefaultMutableTreeNode(new PlainNode("Secrets"));
-            DefaultMutableTreeNode hpa = new DefaultMutableTreeNode(new PlainNode("HPA"));
-            DefaultMutableTreeNode resourceQuotas = new DefaultMutableTreeNode(new PlainNode("Resource Quotas"));
-            DefaultMutableTreeNode podDisruptionBudgets = new DefaultMutableTreeNode(new PlainNode("Pod Disruption Budgets"));
-            List<DefaultMutableTreeNode> configurationsChildren = Lists.newArrayList(configMaps, secrets, hpa, resourceQuotas, podDisruptionBudgets);
-            TreeUtil.addChildrenTo(configurations, configurationsChildren);
-            node.add(configurations);
-
-
-            DefaultMutableTreeNode storage = new DefaultMutableTreeNode(new PlainNode("Storage"));
-            DefaultMutableTreeNode persistentVolumes = new DefaultMutableTreeNode(new PlainNode("Persistent Volumes"));
-            DefaultMutableTreeNode persistentVolumeClaims = new DefaultMutableTreeNode(new PlainNode("Persistent Volume Claims"));
-            DefaultMutableTreeNode storageClasses = new DefaultMutableTreeNode(new PlainNode("Storage Classes"));
-            List<DefaultMutableTreeNode> storageChildren = Lists.newArrayList(persistentVolumes, persistentVolumeClaims, storageClasses);
-            TreeUtil.addChildrenTo(storage, storageChildren);
-            node.add(storage);
-
-        }
-        ((DefaultTreeModel) tree.getModel()).setRoot(root);
     }
 
     public JPanel getPanel() {

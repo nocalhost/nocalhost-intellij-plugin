@@ -15,33 +15,40 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 
+import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlResetOptions;
-import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class Reset implements ActionListener {
-    private final WorkloadNode node;
+    private final ResourceNode node;
     private final Project project;
 
-    public Reset(WorkloadNode node, Project project) {
+    public Reset(ResourceNode node, Project project) {
         this.node = node;
         this.project = project;
     }
+
     @Override
     public void actionPerformed(ActionEvent e) {
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Resetting " + node.getName(), false) {
+        final String workloadName = node.getKubeResource().getMetadata().getName();
+        final DevSpace devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
+
+
+        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Resetting " + workloadName, false) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
                 NhctlResetOptions opts = new NhctlResetOptions();
-                opts.setDeployment(node.getName());
-                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
+                opts.setDeployment(workloadName);
+                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
 
                 try {
-                    nhctlCommand.reset(node.getDevSpace().getContext().getApplicationName(), opts);
-                    Notifications.Bus.notify(new Notification("Nocalhost.Notification", node.getName() + " reset complete", "", NotificationType.INFORMATION), project);
+                    nhctlCommand.reset(devSpace.getContext().getApplicationName(), opts);
+                    Notifications.Bus.notify(new Notification("Nocalhost.Notification", workloadName + " reset complete", "", NotificationType.INFORMATION), project);
 
                 } catch (IOException ioException) {
                     ioException.printStackTrace();

@@ -39,17 +39,18 @@ public class KubectlCommand {
                     .collect(Collectors.joining(","))
             );
         }
-
         String cmd = String.join(" ", args.toArray(new String[]{}));
         System.out.println("Execute command: " + cmd);
 
-        Process process = Runtime.getRuntime().exec(cmd);
+        Process process = new ProcessBuilder(args).start();
+        String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
+
         if (process.waitFor() != 0) {
             throw new RuntimeException(CharStreams.toString(new InputStreamReader(
                     process.getErrorStream(), Charsets.UTF_8)));
         }
 
-        return gson.fromJson(new InputStreamReader(process.getInputStream(), Charsets.UTF_8), KubeResourceList.class);
+        return gson.fromJson(output, KubeResourceList.class);
     }
 
     public KubeResource getResource(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException {

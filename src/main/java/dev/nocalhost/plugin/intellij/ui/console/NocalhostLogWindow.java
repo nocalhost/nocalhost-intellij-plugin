@@ -15,16 +15,18 @@ import java.util.Optional;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.ui.ContainerSelectorDialog;
-import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class NocalhostLogWindow extends NocalhostConsoleWindow {
     private final Project project;
     private final ToolWindow toolWindow;
-    private final WorkloadNode node;
+    private final ResourceNode node;
 
     private JPanel panel;
     private JBScrollPane scrollPane;
@@ -33,7 +35,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
     private ContainerSelectorDialog containerSelectorDialog;
 
 
-    public NocalhostLogWindow(Project project, ToolWindow toolWindow, WorkloadNode node) {
+    public NocalhostLogWindow(Project project, ToolWindow toolWindow, ResourceNode node) {
         this.project = project;
         this.toolWindow = toolWindow;
         this.node = node;
@@ -42,10 +44,13 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
 
         final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+        final String workloadName = node.getKubeResource().getMetadata().getName();
+        final DevSpace devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
+
         toolWindow.show();
         KubeResourceList pods = null;
         try {
-            pods = kubectlCommand.getResourceList("pods", Map.of("app", node.getName()), node.getDevSpace());
+            pods = kubectlCommand.getResourceList("pods", Map.of("app", workloadName), devSpace);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -69,11 +74,11 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
             String logs = null;
             try {
-                logs = kubectlCommand.logs(kubeResource.getMetadata().getName(), node.getName(), node.getDevSpace());
+                logs = kubectlCommand.logs(kubeResource.getMetadata().getName(), workloadName, devSpace);
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
-            title = String.format("%s/%s.log", kubeResource.getMetadata().getName(), node.getName());
+            title = String.format("%s/%s.log", kubeResource.getMetadata().getName(), workloadName);
             panel = new SimpleToolWindowPanel(true);
 
             textArea = new JBTextArea(logs, 24, 50);

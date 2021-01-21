@@ -24,7 +24,7 @@ import dev.nocalhost.plugin.intellij.ui.console.Action;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostLogWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostTerminalWindow;
-import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAware {
 
@@ -49,7 +49,7 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
         );
     }
 
-    private void updateTab(WorkloadNode node, Action action) {
+    private void updateTab(ResourceNode node, Action action) {
         NocalhostConsoleWindow nocalhostConsoleWindow;
         switch (action) {
             case LOGS:

@@ -14,23 +14,25 @@ import java.awt.event.ActionListener;
 import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
+import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class StartDevelop implements ActionListener {
 
-    private final WorkloadNode node;
+    private final ResourceNode node;
 
-    public StartDevelop(WorkloadNode node) {
+    public StartDevelop(ResourceNode node) {
         this.node = node;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         int exitCode = MessageDialogBuilder.yesNoCancel("To start develop, you must specify source code directory.", "")
-                                           .yesText("Clone from Git Repo")
-                                           .noText("Open local directly")
-                                           .guessWindowAndAsk();
+                .yesText("Clone from Git Repo")
+                .noText("Open local directly")
+                .guessWindowAndAsk();
         switch (exitCode) {
             case Messages.YES:
                 // TODO: Git.getInstance().clone(...)
@@ -42,9 +44,12 @@ public class StartDevelop implements ActionListener {
                     Path bashPath = paths.get(0).toNioPath();
 
                     final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+                    final String workloadName = node.getKubeResource().getMetadata().getName();
+                    DevSpace devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
+
                     nocalhostSettings.getDevModeProjectBasePath2Service().put(
                             bashPath.toString(),
-                            new DevModeService(node.getDevSpace().getId(), node.getDevSpace().getDevSpaceId(), node.getName())
+                            new DevModeService(devSpace.getId(), devSpace.getDevSpaceId(), workloadName)
                     );
 
                     ProjectManagerEx.getInstanceEx().openProject(bashPath, new OpenProjectTask());

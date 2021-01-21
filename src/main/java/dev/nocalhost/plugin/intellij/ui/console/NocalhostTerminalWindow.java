@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
@@ -32,13 +33,14 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeResult;
 import dev.nocalhost.plugin.intellij.ui.ContainerSelectorDialog;
-import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
     private final Project project;
     private final ToolWindow toolWindow;
-    private final WorkloadNode node;
+    private final ResourceNode node;
 
     private JComponent panel;
 
@@ -46,29 +48,32 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
 
     private ContainerSelectorDialog containerSelectorDialog;
 
-    public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, WorkloadNode node) {
+    public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, ResourceNode node) {
         this.project = project;
         this.toolWindow = toolWindow;
         this.node = node;
 
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        final String workloadName = node.getKubeResource().getMetadata().getName();
+        final DevSpace devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
+
         final NhctlDescribeOptions opts = new NhctlDescribeOptions();
-        opts.setDeployment(node.getName());
+        opts.setDeployment(workloadName);
         try {
-            final NhctlDescribeResult describeResult = nhctlCommand.describe(node.getDevSpace().getContext().getApplicationName(), opts);
+            final NhctlDescribeResult describeResult = nhctlCommand.describe(devSpace.getContext().getApplicationName(), opts);
             List<String> args;
             if (describeResult.isDeveloping()) {
                 args = Lists.newArrayList(
                         "nhctl",
                         "dev",
-                        "terminal", node.getDevSpace().getContext().getApplicationName(),
-                        "--deployment", node.getName(),
-                        "--kubeconfig", KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString()
+                        "terminal", devSpace.getContext().getApplicationName(),
+                        "--deployment", workloadName,
+                        "--kubeconfig", KubeConfigUtil.kubeConfigPath(devSpace).toString()
                 );
             } else {
                 final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-                final KubeResource deployment = kubectlCommand.getResource("deployment", node.getName(), node.getDevSpace());
-                final KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), node.getDevSpace());
+                final KubeResource deployment = kubectlCommand.getResource("deployment", workloadName, devSpace);
+                final KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
 
                 KubeResource kubeResource;
                 String[] containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).toArray(String[]::new);
@@ -87,11 +92,11 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                     kubeResource = pods.getItems().get(0);
                 }
                 final String podName = kubeResource.getMetadata().getName();
-                final String containerName = node.getName();
+                final String containerName = workloadName;
 
                 final List<String> availableShells = Lists.newArrayList("zsh", "bash", "sh").stream().filter((shell) -> {
                     try {
-                        String shellPath = kubectlCommand.exec(podName, containerName, "which " + shell, node.getDevSpace());
+                        String shellPath = kubectlCommand.exec(podName, containerName, "which " + shell, devSpace);
                         if (StringUtils.isNotEmpty(shellPath)) {
                             return true;
                         }
@@ -108,13 +113,13 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                         "exec",
                         "-it", podName,
                         "-c", containerName,
-                        "--kubeconfig", KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString(),
+                        "--kubeconfig", KubeConfigUtil.kubeConfigPath(devSpace).toString(),
                         "--", availableShells.get(0)
                 );
 
             }
             final String cmd = String.join(" ", args.toArray(new String[]{}));
-            title = String.format("%s-%s-%s Terminal", node.getDevSpace().getNamespace(), node.getDevSpace().getContext().getApplicationName(), node.getName());
+            title = String.format("%s-%s-%s Terminal", devSpace.getNamespace(), devSpace.getContext().getApplicationName(), workloadName);
 
             LocalTerminalDirectRunner localTerminalDirectRunner = LocalTerminalDirectRunner.createTerminalRunner(project);
             PtyProcess ptyProcess = localTerminalDirectRunner.createProcess(project.getBasePath());
@@ -143,7 +148,8 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
     protected static final class TermDisposable implements Disposable {
         private volatile boolean myDisposed;
 
-        public TermDisposable() { }
+        public TermDisposable() {
+        }
 
         @Override
         public void dispose() {

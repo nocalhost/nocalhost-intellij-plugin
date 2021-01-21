@@ -9,13 +9,13 @@ import java.awt.event.ActionListener;
 
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.Action;
-import dev.nocalhost.plugin.intellij.ui.tree.WorkloadNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class Logs implements ActionListener {
-    private final WorkloadNode node;
+    private final ResourceNode node;
     private final Project project;
 
-    public Logs(WorkloadNode node, Project project) {
+    public Logs(ResourceNode node, Project project) {
         this.node = node;
         this.project = project;
     }
