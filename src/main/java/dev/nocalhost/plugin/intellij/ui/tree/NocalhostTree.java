@@ -12,6 +12,7 @@ import com.intellij.ui.treeStructure.Tree;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
@@ -41,6 +42,7 @@ public class NocalhostTree extends Tree {
     private final Project project;
     private final DefaultTreeModel model;
     private final DefaultMutableTreeNode root;
+    private final AtomicBoolean updatingDecSpaces = new AtomicBoolean(false);
 
     public NocalhostTree(Project project) {
         super(new DefaultTreeModel(new DefaultMutableTreeNode(new Object())));
@@ -138,18 +140,25 @@ public class NocalhostTree extends Tree {
     }
 
     public void updateDevSpaces() {
-        final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-        try {
-            List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
-            updateDevSpaces(devSpaces);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (!updatingDecSpaces.compareAndSet(false, true)) {
+            return;
         }
+        ApplicationManager.getApplication().invokeLater(() -> {
+            final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+            try {
+                List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
+                updateDevSpaces(devSpaces);
+            } catch (IOException e) {
+                LOG.error(e);
+            } catch (InterruptedException e) {
+                LOG.error(e);
+            } finally {
+                updatingDecSpaces.set(false);
+            }
+        });
     }
 
-    private synchronized void updateDevSpaces(List<DevSpace> devSpaces) throws IOException, InterruptedException {
+    private void updateDevSpaces(List<DevSpace> devSpaces) throws IOException, InterruptedException {
         List<DevSpaceNode> devSpaceNodes = Lists.newArrayList();
         for (DevSpace devSpace : devSpaces) {
             boolean added = false;

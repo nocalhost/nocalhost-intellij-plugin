@@ -196,13 +196,7 @@ public class NocalhostWindow {
     }
 
     private void updateTree() {
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Fetching nocalhost data", false) {
-
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                tree.updateDevSpaces();
-            }
-        });
+        tree.updateDevSpaces();
     }
 
     public JPanel getPanel() {
