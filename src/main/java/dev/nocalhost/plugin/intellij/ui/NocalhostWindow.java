@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui;
 
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
@@ -10,7 +9,6 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -18,6 +16,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.sh.run.ShRunner;
+import com.intellij.ui.components.JBScrollPane;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -52,10 +51,8 @@ public class NocalhostWindow {
 
     private JPanel panel;
     private NocalhostTree tree;
+    private JBScrollPane scrollPane;
     private final JButton loginButton;
-
-    @Inject
-    private Logger log;
 
     public NocalhostWindow(Project project, ToolWindow toolWindow) {
         this.project = project;
@@ -169,7 +166,8 @@ public class NocalhostWindow {
         panel = new SimpleToolWindowPanel(true, true);
         loginButton = new JButton("Login");
         tree = new NocalhostTree(project);
-        panel.add(tree);
+        scrollPane = new JBScrollPane(tree);
+        panel.add(scrollPane);
         panel.add(loginButton, BorderLayout.SOUTH);
 
         loginButton.addActionListener(e -> {
@@ -189,10 +187,10 @@ public class NocalhostWindow {
                     ActionManager.getInstance().getAction("Nocalhost.LogoutAction")
             ));
             loginButton.setVisible(false);
-            tree.setVisible(true);
+            scrollPane.setVisible(true);
         } else {
             toolWindow.setTitleActions(Lists.newArrayList());
-            tree.setVisible(false);
+            scrollPane.setVisible(false);
             loginButton.setVisible(true);
         }
     }

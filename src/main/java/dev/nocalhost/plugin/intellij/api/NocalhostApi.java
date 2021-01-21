@@ -2,12 +2,10 @@ package dev.nocalhost.plugin.intellij.api;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.google.inject.Inject;
 
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.diagnostic.Logger;
 
 import org.apache.groovy.util.Maps;
 
@@ -37,9 +35,6 @@ public class NocalhostApi {
 
     private final OkHttpClient client = new OkHttpClient.Builder().callTimeout(1, TimeUnit.SECONDS).build();
     private final Gson gson = new Gson();
-
-    @Inject
-    private Logger log;
 
     public void login(String host, String email, String password) throws IOException {
         LoginRequest loginRequest = new LoginRequest(email, password);

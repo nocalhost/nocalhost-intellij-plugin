@@ -4,6 +4,9 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
+import com.intellij.execution.ExecutionException;
+import com.intellij.execution.configurations.GeneralCommandLine;
+
 import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.representer.Representer;
@@ -11,6 +14,7 @@ import org.yaml.snakeyaml.representer.Representer;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
@@ -27,7 +31,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 
 
 public final class NhctlCommand {
-    private static final String NHCTL_COMMAND = "/usr/local/bin/nhctl";
+    private static final String NHCTL_COMMAND = "nhctl";
     private final Yaml yaml;
 
     public NhctlCommand() {

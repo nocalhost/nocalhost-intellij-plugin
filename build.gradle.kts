@@ -27,7 +27,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.0")
     implementation("com.auth0:java-jwt:3.12.0")
     implementation("com.google.code.gson:gson:2.8.6")
-    implementation("com.google.inject:guice:4.2.3")
+    implementation("com.google.guava:guava:27.1-jre")
     implementation("org.yaml:snakeyaml:1.27")
 
 

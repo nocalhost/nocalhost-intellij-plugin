@@ -40,8 +40,6 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
         this.toolWindow = toolWindow;
         this.node = node;
 
-        scrollPane = new JBScrollPane();
-
 
         final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
         final String workloadName = node.getKubeResource().getMetadata().getName();
@@ -83,12 +81,10 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
             textArea = new JBTextArea(logs, 24, 50);
             textArea.setEditable(false);
-//            scrollPane.add(textArea);
-//            scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-//            scrollPane.setVisible(true);
-//            panel.setPreferredSize(new Dimension(450, 110));
-//            panel.add(scrollPane);
-            panel.add(textArea);
+            textArea.setLineWrap(true);
+            scrollPane = new JBScrollPane(textArea);
+            scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+            panel.add(scrollPane);
         }
     }
 

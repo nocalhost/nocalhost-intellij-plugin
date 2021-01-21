@@ -5,6 +5,9 @@ import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
 
+import com.intellij.execution.ExecutionException;
+import com.intellij.execution.configurations.GeneralCommandLine;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
@@ -18,7 +21,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class KubectlCommand {
-    private static final String KUBECTL_COMMAND = "/usr/local/bin/kubectl";
+    private static final String KUBECTL_COMMAND = "kubectl";
 
     private final Gson gson = new Gson();
 
