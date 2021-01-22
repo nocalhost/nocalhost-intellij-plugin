@@ -277,17 +277,14 @@ public final class NhctlCommand {
         String cmd = String.join(" ", args.toArray(new String[]{}));
         System.out.println("Execute command: " + cmd);
 
-        Process process = Runtime.getRuntime().exec(cmd);
+        Process process = new ProcessBuilder(args).redirectErrorStream(true).start();
+        String output = CharStreams.toString(new InputStreamReader(
+                process.getInputStream(), Charsets.UTF_8));
         if (process.waitFor() != 0) {
-            System.out.println(CharStreams.toString(new InputStreamReader(
-                    process.getInputStream(), Charsets.UTF_8)));
-            System.err.println(CharStreams.toString(new InputStreamReader(
-                    process.getErrorStream(), Charsets.UTF_8)));
-            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
-                    process.getErrorStream(), Charsets.UTF_8)));
+            throw new RuntimeException(output);
         }
 
-        return CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
+        return output;
     }
 
     private void addGlobalOptions(List<String> args, NhctlGlobalOptions opts) {
