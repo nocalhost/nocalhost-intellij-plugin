@@ -5,10 +5,16 @@ import com.google.common.collect.Lists;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.ui.LoadingNode;
 import com.intellij.ui.treeStructure.Tree;
+
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,14 +33,18 @@ import javax.swing.tree.TreeSelectionModel;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class NocalhostTree extends Tree {
     private static final Logger LOG = Logger.getInstance(NocalhostTree.class);
@@ -148,17 +158,18 @@ public class NocalhostTree extends Tree {
         if (!updatingDecSpaces.compareAndSet(false, true)) {
             return;
         }
-        ApplicationManager.getApplication().invokeLater(() -> {
-            final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-            try {
-                List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
-                updateDevSpaces(devSpaces);
-            } catch (IOException e) {
-                LOG.error(e);
-            } catch (InterruptedException e) {
-                LOG.error(e);
-            } finally {
-                updatingDecSpaces.set(false);
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Fetching nocalhost data", false) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+                try {
+                    List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
+                    updateDevSpaces(devSpaces);
+                } catch (IOException | InterruptedException e) {
+                    LOG.error(e);
+                } finally {
+                    updatingDecSpaces.set(false);
+                }
             }
         });
     }
@@ -309,13 +320,31 @@ public class NocalhostTree extends Tree {
         final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
         final DevSpace devSpace = ((DevSpaceNode) resourceTypeNode.getParent().getParent()).getDevSpace();
         String resourceName = resourceTypeNode.getName().toLowerCase().replaceAll(" ", "");
-        KubeResourceList kubeResourceList = kubectlCommand.getResourceList(
-                resourceName, null, devSpace);
+        KubeResourceList kubeResourceList = kubectlCommand.getResourceList(resourceName, null, devSpace);
+
+        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
+        List<ResourceNode> resourceNodes = Lists.newArrayList();
+        for (KubeResource kubeResource : kubeResourceList.getItems()) {
+            if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "Deployment")) {
+                NhctlDescribeOptions opts = new NhctlDescribeOptions();
+                opts.setDeployment(kubeResource.getMetadata().getName());
+                opts.setKubeconfig(kubeconfigPath);
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                        devSpace.getContext().getApplicationName(),
+                        opts,
+                        NhctlDescribeService.class);
+                resourceNodes.add(new ResourceNode(kubeResource, nhctlDescribeService));
+            } else {
+                resourceNodes.add(new ResourceNode(kubeResource));
+            }
+        }
+
         for (int k = model.getChildCount(resourceTypeNode) - 1; k >= 0; k--) {
             model.removeNodeFromParent((MutableTreeNode) model.getChild(resourceTypeNode, k));
         }
-        for (KubeResource kubeResource : kubeResourceList.getItems()) {
-            model.insertNodeInto(new ResourceNode(kubeResource), resourceTypeNode, model.getChildCount(resourceTypeNode));
+        for (ResourceNode resourceNode : resourceNodes) {
+            model.insertNodeInto(resourceNode, resourceTypeNode, model.getChildCount(resourceTypeNode));
         }
     }
 }

@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.tree;
 
 
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.JBMenuItem;
 import com.intellij.openapi.ui.JBPopupMenu;
@@ -11,13 +10,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 
 import javax.swing.tree.TreePath;
 
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeResult;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Uninstall;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Config;
@@ -111,24 +106,15 @@ public class TreeMouseListener extends MouseAdapter {
                 }
 
                 JBPopupMenu menu = new JBPopupMenu();
-
-                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                final NhctlDescribeOptions opts = new NhctlDescribeOptions();
-                opts.setDeployment(resourceNode.resourceName());
-                try {
-                    final NhctlDescribeResult describeResult = nhctlCommand.describe(resourceNode.devSpace().getContext().getApplicationName(), opts);
-                    if (!describeResult.isDeveloping()) {
-                        JBMenuItem item = new JBMenuItem("Start Develop");
-                        item.addActionListener(new StartDevelop(resourceNode));
-                        menu.add(item);
-                    } else {
-                        JBMenuItem item = new JBMenuItem("End Develop");
-                        item.addActionListener(new EndDevelop(resourceNode, project));
-                        menu.add(item);
-                    }
-                } catch (IOException | InterruptedException ioException) {
-                    throw new RuntimeException(ioException);
+                JBMenuItem item;
+                if (!resourceNode.getNhctlDescribeService().isDeveloping()) {
+                    item = new JBMenuItem("Start Develop");
+                    item.addActionListener(new StartDevelop(resourceNode));
+                } else {
+                    item = new JBMenuItem("End Develop");
+                    item.addActionListener(new EndDevelop(resourceNode, project));
                 }
+                menu.add(item);
                 JBMenuItem clearPersistentDataItem = new JBMenuItem("Clear persistent data");
                 JBMenuItem configItem = new JBMenuItem("Config");
                 configItem.addActionListener(new Config(resourceNode, project));

@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeResult;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
@@ -212,14 +211,14 @@ public final class NhctlCommand {
         execute(args, opts);
     }
 
-    public NhctlDescribeResult describe(String name, NhctlDescribeOptions opts) throws IOException, InterruptedException {
+    public <T> T describe(String name, NhctlDescribeOptions opts, Class<T> type) throws IOException, InterruptedException {
         List<String> args = Lists.newArrayList(NHCTL_COMMAND, "describe", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
         String result = execute(args, opts);
-        return yaml.loadAs(result, NhctlDescribeResult.class);
+        return yaml.loadAs(result, type);
     }
 
     public void reset(String name, NhctlResetOptions opts) throws IOException, InterruptedException {

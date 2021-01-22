@@ -30,7 +30,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeResult;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.ui.ContainerSelectorDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -52,11 +52,16 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
         this.node = node;
 
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
 
         final NhctlDescribeOptions opts = new NhctlDescribeOptions();
         opts.setDeployment(node.resourceName());
+        opts.setKubeconfig(kubeconfigPath);
         try {
-            final NhctlDescribeResult describeResult = nhctlCommand.describe(node.devSpace().getContext().getApplicationName(), opts);
+            final NhctlDescribeService describeResult = nhctlCommand.describe(
+                    node.devSpace().getContext().getApplicationName(),
+                    opts,
+                    NhctlDescribeService.class);
             List<String> args;
             if (describeResult.isDeveloping()) {
                 args = Lists.newArrayList(

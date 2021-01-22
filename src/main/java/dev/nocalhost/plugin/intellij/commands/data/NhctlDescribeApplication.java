@@ -5,9 +5,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NhctlDescribeResult {
+public class NhctlDescribeApplication {
+    private String name;
+    private String releasename;
     private String actualName;
-    private boolean developing;
-    private boolean portForwarded;
-    private boolean syncing;
 }

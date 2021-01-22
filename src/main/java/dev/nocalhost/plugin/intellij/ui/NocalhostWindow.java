@@ -36,6 +36,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
@@ -95,7 +96,12 @@ public class NocalhostWindow {
                         // check if devmode already started
                         final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
                         nhctlDescribeOptions.setDeployment(devModeService.getName());
-                        if (nhctlCommand.describe(devSpace.getContext().getApplicationName(), nhctlDescribeOptions).isDeveloping()) {
+                        nhctlDescribeOptions.setKubeconfig(kubeconfigPath);
+                        if (nhctlCommand.describe(
+                                devSpace.getContext().getApplicationName(),
+                                nhctlDescribeOptions,
+                                NhctlDescribeService.class
+                        ).isDeveloping()) {
                             return;
                         }
 
@@ -152,6 +158,12 @@ public class NocalhostWindow {
                                 shRunner.run(cmd, System.getProperty("user.home"), "DevSpace Terminal", true);
                             });
                         }
+
+                        ApplicationManager.getApplication().getMessageBus()
+                                .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
+                                .action();
+
+                        nocalhostSettings.getDevModeProjectBasePath2Service().remove(project.getBasePath());
 
                         Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode started", "", NotificationType.INFORMATION), project);
                     } catch (IOException e) {

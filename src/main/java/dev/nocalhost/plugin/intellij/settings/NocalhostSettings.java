@@ -30,7 +30,7 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
     private String baseUrl;
     private String jwt;
     private UserInfo userInfo;
-    private Map<String, DevModeService> devModeProjectBasePath2Service = Maps.newHashMap();
+    private Map<String, DevModeService> devModeProjectBasePath2Service = Maps.newConcurrentMap();
 
     @Override
     public @Nullable NocalhostSettings getState() {
