@@ -24,7 +24,6 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.*;
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.swing.*;
 
@@ -46,7 +45,6 @@ import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class NocalhostWindow {
-
     private final Project project;
     private final ToolWindow toolWindow;
 
@@ -127,30 +125,28 @@ public class NocalhostWindow {
                         final String containerName = pods.getItems().get(0).getSpec().getContainers().get(0).getName();
 
                         final DevSpace ds = devSpace;
-                        final List<String> availableShells = Lists.newArrayList("zsh", "bash", "sh").stream().filter((e) -> {
+                        String availableShell = "";
+                        for (String shell : Lists.newArrayList("zsh", "bash", "sh")) {
                             try {
-                                String shellPath = kubectlCommand.exec(podName, containerName, "which " + e, ds);
+                                String shellPath = kubectlCommand.exec(podName, containerName, "which " + shell, ds);
                                 if (StringUtils.isNotEmpty(shellPath)) {
-                                    return true;
+                                    availableShell = shell;
+                                    break;
                                 }
-                            } catch (RuntimeException runtimeException) {
-                                return false;
-                            } catch (InterruptedException interruptedException) {
-                                interruptedException.printStackTrace();
-                            } catch (IOException ioException) {
-                                ioException.printStackTrace();
+                            } catch (RuntimeException e) {
+                                // Ignore
+                            } catch (InterruptedException | IOException e) {
+                                e.printStackTrace();
                             }
-                            return false;
-                        }).collect(Collectors.toList());
-
-                        if (availableShells.size() > 0) {
+                        }
+                        if (StringUtils.isNotEmpty(availableShell)) {
                             final List<String> args = Lists.newArrayList(
                                     "kubectl",
                                     "exec",
                                     "-it", podName,
                                     "-c", containerName,
                                     "--kubeconfig", KubeConfigUtil.kubeConfigPath(devSpace).toString(),
-                                    "--", availableShells.get(0)
+                                    "--", availableShell
                             );
                             final String cmd = String.join(" ", args.toArray(new String[]{}));
                             ApplicationManager.getApplication().invokeLater(() -> {

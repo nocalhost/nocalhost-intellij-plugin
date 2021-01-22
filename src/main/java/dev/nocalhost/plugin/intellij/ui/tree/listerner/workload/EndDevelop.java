@@ -41,7 +41,6 @@ public class EndDevelop implements ActionListener {
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-
                 NhctlDevEndOptions opts = new NhctlDevEndOptions();
                 opts.setDeployment(node.resourceName());
                 opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
