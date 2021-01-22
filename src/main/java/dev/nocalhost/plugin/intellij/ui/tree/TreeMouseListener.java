@@ -15,7 +15,6 @@ import java.io.IOException;
 
 import javax.swing.tree.TreePath;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeResult;
@@ -111,16 +110,13 @@ public class TreeMouseListener extends MouseAdapter {
                     return;
                 }
 
-                final String workloadName = resourceNode.getKubeResource().getMetadata().getName();
-                final DevSpace devSpace = ((DevSpaceNode) resourceNode.getParent().getParent().getParent()).getDevSpace();
-
                 JBPopupMenu menu = new JBPopupMenu();
 
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
                 final NhctlDescribeOptions opts = new NhctlDescribeOptions();
-                opts.setDeployment(workloadName);
+                opts.setDeployment(resourceNode.resourceName());
                 try {
-                    final NhctlDescribeResult describeResult = nhctlCommand.describe(devSpace.getContext().getApplicationName(), opts);
+                    final NhctlDescribeResult describeResult = nhctlCommand.describe(resourceNode.devSpace().getContext().getApplicationName(), opts);
                     if (!describeResult.isDeveloping()) {
                         JBMenuItem item = new JBMenuItem("Start Develop");
                         item.addActionListener(new StartDevelop(resourceNode));

@@ -15,10 +15,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
@@ -37,16 +35,14 @@ public class EndDevelop implements ActionListener {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                final String workloadName = node.getKubeResource().getMetadata().getName();
-                final DevSpace devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
 
 
                 NhctlDevEndOptions opts = new NhctlDevEndOptions();
-                opts.setDeployment(workloadName);
-                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
+                opts.setDeployment(node.resourceName());
+                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
                 try {
-                    nhctlCommand.devEnd(devSpace.getContext().getApplicationName(), opts);
+                    nhctlCommand.devEnd(node.devSpace().getContext().getApplicationName(), opts);
 
                     Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode ended", "", NotificationType.INFORMATION), project);
 

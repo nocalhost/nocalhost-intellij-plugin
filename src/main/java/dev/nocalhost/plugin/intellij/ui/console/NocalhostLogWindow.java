@@ -15,12 +15,10 @@ import java.util.Optional;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.ui.ContainerSelectorDialog;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class NocalhostLogWindow extends NocalhostConsoleWindow {
@@ -42,13 +40,11 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
 
         final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-        final String workloadName = node.getKubeResource().getMetadata().getName();
-        final DevSpace devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
 
         toolWindow.show();
         KubeResourceList pods = null;
         try {
-            pods = kubectlCommand.getResourceList("pods", Map.of("app", workloadName), devSpace);
+            pods = kubectlCommand.getResourceList("pods", Map.of("app", node.resourceName()), node.devSpace());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -72,11 +68,11 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
             String logs = null;
             try {
-                logs = kubectlCommand.logs(kubeResource.getMetadata().getName(), workloadName, devSpace);
+                logs = kubectlCommand.logs(kubeResource.getMetadata().getName(), node.resourceName(), node.devSpace());
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
-            title = String.format("%s/%s.log", kubeResource.getMetadata().getName(), workloadName);
+            title = String.format("%s/%s.log", kubeResource.getMetadata().getName(), node.resourceName());
             panel = new SimpleToolWindowPanel(true);
 
             textArea = new JBTextArea(logs, 24, 50);

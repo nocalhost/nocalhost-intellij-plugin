@@ -14,9 +14,7 @@ import java.awt.event.ActionListener;
 import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class StartDevelop implements ActionListener {
@@ -44,12 +42,10 @@ public class StartDevelop implements ActionListener {
                     Path bashPath = paths.get(0).toNioPath();
 
                     final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-                    final String workloadName = node.getKubeResource().getMetadata().getName();
-                    DevSpace devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
 
                     nocalhostSettings.getDevModeProjectBasePath2Service().put(
                             bashPath.toString(),
-                            new DevModeService(devSpace.getId(), devSpace.getDevSpaceId(), workloadName)
+                            new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName())
                     );
 
                     ProjectManagerEx.getInstanceEx().openProject(bashPath, new OpenProjectTask());

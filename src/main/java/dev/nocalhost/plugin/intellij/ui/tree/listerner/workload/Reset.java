@@ -15,10 +15,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlResetOptions;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
@@ -33,22 +31,20 @@ public class Reset implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        final String workloadName = node.getKubeResource().getMetadata().getName();
-        final DevSpace devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
 
 
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Resetting " + workloadName, false) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Resetting " + node.resourceName(), false) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
                 NhctlResetOptions opts = new NhctlResetOptions();
-                opts.setDeployment(workloadName);
-                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
+                opts.setDeployment(node.resourceName());
+                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
                 try {
-                    nhctlCommand.reset(devSpace.getContext().getApplicationName(), opts);
-                    Notifications.Bus.notify(new Notification("Nocalhost.Notification", workloadName + " reset complete", "", NotificationType.INFORMATION), project);
+                    nhctlCommand.reset(node.devSpace().getContext().getApplicationName(), opts);
+                    Notifications.Bus.notify(new Notification("Nocalhost.Notification", node.resourceName() + " reset complete", "", NotificationType.INFORMATION), project);
 
                 } catch (IOException ioException) {
                     ioException.printStackTrace();

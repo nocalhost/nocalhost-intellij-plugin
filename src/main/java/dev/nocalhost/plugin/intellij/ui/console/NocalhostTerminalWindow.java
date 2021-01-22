@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
@@ -33,7 +32,6 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeResult;
 import dev.nocalhost.plugin.intellij.ui.ContainerSelectorDialog;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
@@ -54,26 +52,24 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
         this.node = node;
 
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        final String workloadName = node.getKubeResource().getMetadata().getName();
-        final DevSpace devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
 
         final NhctlDescribeOptions opts = new NhctlDescribeOptions();
-        opts.setDeployment(workloadName);
+        opts.setDeployment(node.resourceName());
         try {
-            final NhctlDescribeResult describeResult = nhctlCommand.describe(devSpace.getContext().getApplicationName(), opts);
+            final NhctlDescribeResult describeResult = nhctlCommand.describe(node.devSpace().getContext().getApplicationName(), opts);
             List<String> args;
             if (describeResult.isDeveloping()) {
                 args = Lists.newArrayList(
                         "nhctl",
                         "dev",
-                        "terminal", devSpace.getContext().getApplicationName(),
-                        "--deployment", workloadName,
-                        "--kubeconfig", KubeConfigUtil.kubeConfigPath(devSpace).toString()
+                        "terminal", node.devSpace().getContext().getApplicationName(),
+                        "--deployment", node.resourceName(),
+                        "--kubeconfig", KubeConfigUtil.kubeConfigPath(node.devSpace()).toString()
                 );
             } else {
                 final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-                final KubeResource deployment = kubectlCommand.getResource("deployment", workloadName, devSpace);
-                final KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
+                final KubeResource deployment = kubectlCommand.getResource("deployment", node.resourceName(), node.devSpace());
+                final KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), node.devSpace());
 
                 KubeResource kubeResource;
                 String[] containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).toArray(String[]::new);
@@ -92,11 +88,11 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                     kubeResource = pods.getItems().get(0);
                 }
                 final String podName = kubeResource.getMetadata().getName();
-                final String containerName = workloadName;
+                final String containerName = node.resourceName();
 
                 final List<String> availableShells = Lists.newArrayList("zsh", "bash", "sh").stream().filter((shell) -> {
                     try {
-                        String shellPath = kubectlCommand.exec(podName, containerName, "which " + shell, devSpace);
+                        String shellPath = kubectlCommand.exec(podName, containerName, "which " + shell, node.devSpace());
                         if (StringUtils.isNotEmpty(shellPath)) {
                             return true;
                         }
@@ -113,13 +109,13 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                         "exec",
                         "-it", podName,
                         "-c", containerName,
-                        "--kubeconfig", KubeConfigUtil.kubeConfigPath(devSpace).toString(),
+                        "--kubeconfig", KubeConfigUtil.kubeConfigPath(node.devSpace()).toString(),
                         "--", availableShells.get(0)
                 );
 
             }
             final String cmd = String.join(" ", args.toArray(new String[]{}));
-            title = String.format("%s-%s-%s Terminal", devSpace.getNamespace(), devSpace.getContext().getApplicationName(), workloadName);
+            title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), node.devSpace().getContext().getApplicationName(), node.resourceName());
 
             LocalTerminalDirectRunner localTerminalDirectRunner = LocalTerminalDirectRunner.createTerminalRunner(project);
             PtyProcess ptyProcess = localTerminalDirectRunner.createProcess(project.getBasePath());
