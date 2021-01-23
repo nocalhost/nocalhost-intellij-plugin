@@ -37,12 +37,14 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class NocalhostWindow {
     private final Project project;
@@ -67,6 +69,47 @@ public class NocalhostWindow {
                 NocalhostWindow.this::updateTree
         );
 
+        devStart();
+
+        panel = new SimpleToolWindowPanel(true, true);
+        loginButton = new JButton("Login");
+        tree = new NocalhostTree(project);
+        scrollPane = new JBScrollPane(tree);
+        panel.add(scrollPane);
+        panel.add(loginButton, BorderLayout.SOUTH);
+
+        loginButton.addActionListener(e -> {
+            new LoginDialog().showAndGet();
+        });
+
+        toggleContent();
+    }
+
+    private void toggleContent() {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+
+        String jwt = nocalhostSettings.getJwt();
+        if (StringUtils.isNotBlank(jwt)) {
+            toolWindow.setTitleActions(Lists.newArrayList(
+                    ActionManager.getInstance().getAction("Nocalhost.RefreshAction"),
+                    ActionManager.getInstance().getAction("Nocalhost.LogoutAction")
+            ));
+            tree.clear();
+            tree.updateDevSpaces();
+            loginButton.setVisible(false);
+            scrollPane.setVisible(true);
+        } else {
+            toolWindow.setTitleActions(Lists.newArrayList());
+            scrollPane.setVisible(false);
+            loginButton.setVisible(true);
+        }
+    }
+
+    private void updateTree() {
+        tree.updateDevSpaces();
+    }
+
+    private void devStart() {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
         DevModeService devModeService = nocalhostSettings.getDevModeProjectBasePath2Service().get(project.getBasePath());
         if (nocalhostSettings.getUserInfo() != null && devModeService != null) {
@@ -91,15 +134,16 @@ public class NocalhostWindow {
                         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
                         final String appName = devSpace.getContext().getApplicationName();
 
-                        // check if devmode already started
                         final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
                         nhctlDescribeOptions.setDeployment(devModeService.getName());
                         nhctlDescribeOptions.setKubeconfig(kubeconfigPath);
-                        if (nhctlCommand.describe(
+                        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                                 devSpace.getContext().getApplicationName(),
                                 nhctlDescribeOptions,
-                                NhctlDescribeService.class
-                        ).isDeveloping()) {
+                                NhctlDescribeService.class);
+
+                        // check if devmode already started
+                        if (nhctlDescribeService.isDeveloping()) {
                             return;
                         }
 
@@ -116,19 +160,31 @@ public class NocalhostWindow {
                         nhctlSyncOptions.setKubeconfig(kubeconfigPath);
                         nhctlCommand.sync(appName, nhctlSyncOptions);
 
-                        // TODO: nhctl port-forward ...
+                        // nhctl port-forward ...
+                        NhctlPortForwardOptions nhctlPortForwardOptions = new NhctlPortForwardOptions();
+                        nhctlPortForwardOptions.setDeployment(devModeService.getName());
+                        nhctlPortForwardOptions.setDevPorts(nhctlDescribeService.getRawConfig().getDevPorts());
+                        nhctlPortForwardOptions.setKubeconfig(kubeconfigPath);
+                        nhctlCommand.portForward(appName, nhctlPortForwardOptions);
 
+                        // wait for dev mode started
                         final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-                        final KubeResource deployment = kubectlCommand.getResource("deployment", devModeService.getName(), devSpace);
+                        KubeResource deployment;
+                        do {
+                            Thread.sleep(3000);
+                            deployment = kubectlCommand.getResource("deployment", devModeService.getName(), devSpace);
+
+                        } while (!NhctlUtil.isKubeResourceAvailable(deployment));
+
+                        // start dev space terminal
                         final KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
                         final String podName = pods.getItems().get(0).getMetadata().getName();
                         final String containerName = pods.getItems().get(0).getSpec().getContainers().get(0).getName();
 
-                        final DevSpace ds = devSpace;
                         String availableShell = "";
                         for (String shell : Lists.newArrayList("zsh", "bash", "sh")) {
                             try {
-                                String shellPath = kubectlCommand.exec(podName, containerName, "which " + shell, ds);
+                                String shellPath = kubectlCommand.exec(podName, containerName, "which " + shell, devSpace);
                                 if (StringUtils.isNotEmpty(shellPath)) {
                                     availableShell = shell;
                                     break;
@@ -171,43 +227,6 @@ public class NocalhostWindow {
             });
         }
 
-
-        panel = new SimpleToolWindowPanel(true, true);
-        loginButton = new JButton("Login");
-        tree = new NocalhostTree(project);
-        scrollPane = new JBScrollPane(tree);
-        panel.add(scrollPane);
-        panel.add(loginButton, BorderLayout.SOUTH);
-
-        loginButton.addActionListener(e -> {
-            new LoginDialog().showAndGet();
-        });
-
-        toggleContent();
-    }
-
-    private void toggleContent() {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-
-        String jwt = nocalhostSettings.getJwt();
-        if (StringUtils.isNotBlank(jwt)) {
-            toolWindow.setTitleActions(Lists.newArrayList(
-                    ActionManager.getInstance().getAction("Nocalhost.RefreshAction"),
-                    ActionManager.getInstance().getAction("Nocalhost.LogoutAction")
-            ));
-            tree.clear();
-            tree.updateDevSpaces();
-            loginButton.setVisible(false);
-            scrollPane.setVisible(true);
-        } else {
-            toolWindow.setTitleActions(Lists.newArrayList());
-            scrollPane.setVisible(false);
-            loginButton.setVisible(true);
-        }
-    }
-
-    private void updateTree() {
-        tree.updateDevSpaces();
     }
 
     public JPanel getPanel() {
