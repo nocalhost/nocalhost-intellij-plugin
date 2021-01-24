@@ -14,6 +14,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.tree.TreePath;
 
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
+import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Install;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Uninstall;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Config;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.EndDevelop;
@@ -85,9 +86,7 @@ public class TreeMouseListener extends MouseAdapter {
                     menu.add(new JBMenuItem("Load resource"));
                 } else if (devSpaceNode.getDevSpace().getInstallStatus() == 0) {
                     JBMenuItem item = new JBMenuItem("Install App");
-                    item.addActionListener(e -> {
-                        new InstallDevSpaceDialog(devSpaceNode.getDevSpace()).showAndGet();
-                    });
+                    item.addActionListener(new Install(devSpaceNode));
                     menu.add(item);
 
                     menu.addSeparator();

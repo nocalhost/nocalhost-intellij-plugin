@@ -40,12 +40,12 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
+import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class NocalhostWindow {
     private static final String NOCALHOST_DEV_CONTAINER_NAME = "nocalhost-dev";
@@ -167,7 +167,7 @@ public class NocalhostWindow {
                             deployment = kubectlCommand.getResource("deployment", devModeService.getName(), devSpace);
                             KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
                             containerName = pods.getItems().get(0).getSpec().getContainers().get(0).getName();
-                        } while (!NhctlUtil.isKubeResourceAvailable(deployment) || !StringUtils.equals(containerName, NOCALHOST_DEV_CONTAINER_NAME));
+                        } while (!KubectlHelper.isKubeResourceAvailable(deployment) || !StringUtils.equals(containerName, NOCALHOST_DEV_CONTAINER_NAME));
 
                         // nhctl sync ...
                         NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions();

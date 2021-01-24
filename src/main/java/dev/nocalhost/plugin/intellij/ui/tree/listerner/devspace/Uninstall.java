@@ -10,6 +10,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.ui.MessageDialogBuilder;
+import com.intellij.openapi.ui.Messages;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -21,6 +22,7 @@ import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
+import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -34,11 +36,20 @@ public class Uninstall implements ActionListener {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        DevSpace devSpace = node.getDevSpace();
-        DevSpace.Context context = devSpace.getContext();
-        String appName = context.getApplicationName();
+    public void actionPerformed(ActionEvent event) {
+        final DevSpace devSpace = node.getDevSpace();
 
+        try {
+            if (!NhctlHelper.isApplicationInstalled(devSpace)) {
+                Messages.showMessageDialog("", "Application has not been installed", null);
+                return;
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        final String appName = devSpace.getContext().getApplicationName();
         if (!MessageDialogBuilder.yesNo("Uninstall application: " + appName, "").guessWindowAndAsk()) {
             return;
         }

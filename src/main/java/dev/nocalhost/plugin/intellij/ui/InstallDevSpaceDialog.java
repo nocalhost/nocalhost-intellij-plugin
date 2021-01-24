@@ -25,9 +25,9 @@ import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class InstallDevSpaceDialog extends DialogWrapper {
     private JPanel dialogPanel;
@@ -88,7 +88,7 @@ public class InstallDevSpaceDialog extends DialogWrapper {
 
         NhctlInstallOptions opts = new NhctlInstallOptions();
         opts.setGitUrl(context.getApplicationUrl());
-        opts.setType(NhctlUtil.generateInstallType(context.getSource(), context.getInstallType()));
+        opts.setType(NhctlHelper.generateInstallType(context.getSource(), context.getInstallType()));
         opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
         opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
         opts.setNamespace(devSpace.getNamespace());
