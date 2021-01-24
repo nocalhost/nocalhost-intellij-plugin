@@ -40,6 +40,26 @@ public class StartDevelop implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent event) {
+        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
+        NhctlDescribeOptions opts = new NhctlDescribeOptions();
+        opts.setDeployment(node.resourceName());
+        opts.setKubeconfig(kubeconfigPath);
+        NhctlDescribeService nhctlDescribeService;
+        try {
+            nhctlDescribeService = nhctlCommand.describe(
+                    node.devSpace().getContext().getApplicationName(),
+                    opts,
+                    NhctlDescribeService.class);
+            if (nhctlDescribeService.isDeveloping()) {
+                Messages.showMessageDialog("", "Dev mode has been started", null);
+                return;
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return;
+        }
+
         int exitCode = MessageDialogBuilder.yesNoCancel("To start develop, you must specify source code directory.", "")
                 .yesText("Clone from Git Repo")
                 .noText("Open local directly")
@@ -52,44 +72,30 @@ public class StartDevelop implements ActionListener {
                     Path parentDir = paths.get(0).toNioPath();
 
                     final GitCommand gitCommand = ServiceManager.getService(GitCommand.class);
-                    final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                    final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
+                    final String gitUrl = nhctlDescribeService.getRawConfig().getGitUrl();
 
-                    NhctlDescribeOptions opts = new NhctlDescribeOptions();
-                    opts.setDeployment(node.resourceName());
-                    opts.setKubeconfig(kubeconfigPath);
-                    try {
-                        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                                node.devSpace().getContext().getApplicationName(),
-                                opts,
-                                NhctlDescribeService.class);
-                        String gitUrl = nhctlDescribeService.getRawConfig().getGitUrl();
+                    ProgressManager.getInstance().run(new Task.Backgroundable(null, "Cloning " + gitUrl, false) {
+                        @Override
+                        public void run(@NotNull ProgressIndicator indicator) {
+                            try {
+                                gitCommand.clone(parentDir, gitUrl, node.resourceName());
 
-                        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Cloning " + gitUrl, false) {
-                            @Override
-                            public void run(@NotNull ProgressIndicator indicator) {
-                                try {
-                                    gitCommand.clone(parentDir, gitUrl, node.resourceName());
+                                final Path gitDir = parentDir.resolve(node.resourceName());
 
-                                    final Path gitDir = parentDir.resolve(node.resourceName());
+                                final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
-                                    final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+                                nocalhostSettings.getDevModeProjectBasePath2Service().put(
+                                        gitDir.toString(),
+                                        new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName())
+                                );
 
-                                    nocalhostSettings.getDevModeProjectBasePath2Service().put(
-                                            gitDir.toString(),
-                                            new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName())
-                                    );
-
-                                    ProjectManagerEx.getInstanceEx().openProject(gitDir, new OpenProjectTask());
-                                } catch (IOException | InterruptedException e) {
-                                    e.printStackTrace();
-                                }
+                                ProjectManagerEx.getInstanceEx().openProject(gitDir, new OpenProjectTask());
+                            } catch (IOException | InterruptedException e) {
+                                e.printStackTrace();
                             }
-                        });
+                        }
+                    });
 
-                    } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
-                    }
                 });
 
                 break;
