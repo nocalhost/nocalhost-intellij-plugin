@@ -45,7 +45,7 @@
               <text value="Specify one"/>
             </properties>
           </component>
-          <component id="65932" class="javax.swing.JTextField" binding="gitRefField">
+          <component id="65932" class="com.intellij.ui.components.JBTextField" binding="specifyOneTextField">
             <constraints>
               <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>

@@ -6,17 +6,23 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.fileChooser.FileChooser;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.ui.components.JBTextField;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 import javax.swing.*;
@@ -34,7 +40,7 @@ public class InstallDevSpaceDialog extends DialogWrapper {
     private JLabel messageLabel;
     private JRadioButton defaultRadioButton;
     private JRadioButton specifyOneRadioButton;
-    private JTextField gitRefField;
+    private JBTextField specifyOneTextField;
     private DevSpace devSpace;
 
     public InstallDevSpaceDialog(DevSpace devSpace) {
@@ -49,21 +55,23 @@ public class InstallDevSpaceDialog extends DialogWrapper {
         buttonGroup.add(specifyOneRadioButton);
 
         specifyOneRadioButton.addChangeListener(e -> {
-            gitRefField.setEnabled(specifyOneRadioButton.isSelected());
+            specifyOneTextField.setEnabled(specifyOneRadioButton.isSelected());
             if (specifyOneRadioButton.isSelected()) {
-                gitRefField.grabFocus();
+                specifyOneTextField.grabFocus();
             }
         });
 
-        gitRefField.setEnabled(false);
+        specifyOneTextField.setEnabled(false);
         defaultRadioButton.setSelected(true);
 
         if (StringUtils.equals(devSpace.getContext().getInstallType(), "helmRepo")) {
             messageLabel.setText("Which version to install?");
             defaultRadioButton.setText("Default Version");
+            specifyOneTextField.getEmptyText().appendText("input the version of chart");
         } else {
             messageLabel.setText("Which branch to install(Manifests in Git Repo)?");
             defaultRadioButton.setText("Default Branch");
+            specifyOneTextField.getEmptyText().appendText("input the branch of repository");
         }
     }
 
@@ -74,8 +82,12 @@ public class InstallDevSpaceDialog extends DialogWrapper {
 
     @Override
     protected @Nullable ValidationInfo doValidate() {
-        if (specifyOneRadioButton.isSelected() && !StringUtils.isNotEmpty(gitRefField.getText())) {
-            return new ValidationInfo("Git ref cannot be empty", gitRefField);
+        if (specifyOneRadioButton.isSelected() && !StringUtils.isNotEmpty(specifyOneTextField.getText())) {
+            if (StringUtils.equals(devSpace.getContext().getInstallType(), "helmRepo")) {
+                return new ValidationInfo("Chart version cannot be empty", specifyOneTextField);
+            } else {
+                return new ValidationInfo("Git ref cannot be empty", specifyOneTextField);
+            }
         }
         return null;
     }
@@ -86,7 +98,20 @@ public class InstallDevSpaceDialog extends DialogWrapper {
 
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-        NhctlInstallOptions opts = new NhctlInstallOptions();
+        final NhctlInstallOptions opts = new NhctlInstallOptions();
+
+        final String installType = devSpace.getContext().getInstallType();
+        if (StringUtils.equals(installType, "helmGit") || StringUtils.equals(installType, "helmRepo")
+                && MessageDialogBuilder.yesNo("Do you want to specify a values.yaml?", "")
+                .yesText("Specify One").noText("Use Default values").guessWindowAndAsk()) {
+            final FileChooserDescriptor valueFileChooser = FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor();
+            valueFileChooser.setShowFileSystemRoots(true);
+            FileChooser.chooseFiles(valueFileChooser, null, null, paths -> {
+                Path valueFilePath = paths.get(0).toNioPath();
+                opts.setHelmValues(valueFilePath.toString());
+            });
+        }
+
         opts.setGitUrl(context.getApplicationUrl());
         opts.setType(NhctlHelper.generateInstallType(context.getSource(), context.getInstallType()));
         opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
@@ -94,7 +119,13 @@ public class InstallDevSpaceDialog extends DialogWrapper {
         opts.setNamespace(devSpace.getNamespace());
 
         if (specifyOneRadioButton.isSelected()) {
-            opts.setGitRef(gitRefField.getText());
+            if (StringUtils.equals(installType, "helmRepo")) {
+                opts.setHelmRepoUrl(context.getApplicationUrl());
+                opts.setHelmChartName(context.getApplicationName());
+                opts.setHelmRepoVersion(specifyOneTextField.getText());
+            } else {
+                opts.setGitRef(specifyOneTextField.getText());
+            }
         }
 
         ProgressManager.getInstance().run(new Task.Backgroundable(null, "Installing application: " + context.getApplicationName(), false) {
@@ -112,10 +143,12 @@ public class InstallDevSpaceDialog extends DialogWrapper {
                             .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
                     publisher.action();
 
-                    Notifications.Bus.notify(new Notification("Nocalhost.Notification", "Application " + context.getApplicationName() + " installed", "", NotificationType.INFORMATION));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
+                    Notifications.Bus.notify(new Notification(
+                            "Nocalhost.Notification",
+                            "Application " + context.getApplicationName() + " installed",
+                            "",
+                            NotificationType.INFORMATION));
+                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }
