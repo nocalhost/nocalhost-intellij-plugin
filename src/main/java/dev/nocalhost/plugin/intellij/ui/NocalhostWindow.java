@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import com.intellij.notification.Notification;
@@ -47,6 +48,9 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class NocalhostWindow {
+    private static final String NOCALHOST_DEV_CONTAINER_NAME = "nocalhost-dev";
+    private static final List<String> SUPPORTED_SHELLS = ImmutableList.of("zsh", "bash", "sh");
+
     private final Project project;
     private final ToolWindow toolWindow;
 
@@ -154,6 +158,17 @@ public class NocalhostWindow {
                         nhctlDevStartOptions.setKubeconfig(kubeconfigPath);
                         nhctlCommand.devStart(appName, nhctlDevStartOptions);
 
+                        // wait for nocalhost-dev container started
+                        final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+                        KubeResource deployment;
+                        String containerName;
+                        do {
+                            Thread.sleep(1000);
+                            deployment = kubectlCommand.getResource("deployment", devModeService.getName(), devSpace);
+                            KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
+                            containerName = pods.getItems().get(0).getSpec().getContainers().get(0).getName();
+                        } while (!NhctlUtil.isKubeResourceAvailable(deployment) || !StringUtils.equals(containerName, NOCALHOST_DEV_CONTAINER_NAME));
+
                         // nhctl sync ...
                         NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions();
                         nhctlSyncOptions.setDeployment(devModeService.getName());
@@ -167,24 +182,14 @@ public class NocalhostWindow {
                         nhctlPortForwardOptions.setKubeconfig(kubeconfigPath);
                         nhctlCommand.portForward(appName, nhctlPortForwardOptions);
 
-                        // wait for dev mode started
-                        final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-                        KubeResource deployment;
-                        do {
-                            Thread.sleep(3000);
-                            deployment = kubectlCommand.getResource("deployment", devModeService.getName(), devSpace);
-
-                        } while (!NhctlUtil.isKubeResourceAvailable(deployment));
-
                         // start dev space terminal
                         final KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
                         final String podName = pods.getItems().get(0).getMetadata().getName();
-                        final String containerName = pods.getItems().get(0).getSpec().getContainers().get(0).getName();
 
                         String availableShell = "";
-                        for (String shell : Lists.newArrayList("zsh", "bash", "sh")) {
+                        for (String shell : SUPPORTED_SHELLS) {
                             try {
-                                String shellPath = kubectlCommand.exec(podName, containerName, "which " + shell, devSpace);
+                                String shellPath = kubectlCommand.exec(podName, NOCALHOST_DEV_CONTAINER_NAME, "which " + shell, devSpace);
                                 if (StringUtils.isNotEmpty(shellPath)) {
                                     availableShell = shell;
                                     break;
@@ -200,7 +205,7 @@ public class NocalhostWindow {
                                     "kubectl",
                                     "exec",
                                     "-it", podName,
-                                    "-c", containerName,
+                                    "-c", NOCALHOST_DEV_CONTAINER_NAME,
                                     "--kubeconfig", KubeConfigUtil.kubeConfigPath(devSpace).toString(),
                                     "--", availableShell
                             );
@@ -218,9 +223,7 @@ public class NocalhostWindow {
                         nocalhostSettings.getDevModeProjectBasePath2Service().remove(project.getBasePath());
 
                         Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode started", "", NotificationType.INFORMATION), project);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (InterruptedException e) {
+                    } catch (IOException | InterruptedException e) {
                         e.printStackTrace();
                     }
                 }

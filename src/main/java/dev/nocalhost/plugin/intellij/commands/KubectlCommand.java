@@ -97,7 +97,6 @@ public class KubectlCommand {
         }
 
         String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
-        System.out.println(output);
         return output;
     }
 

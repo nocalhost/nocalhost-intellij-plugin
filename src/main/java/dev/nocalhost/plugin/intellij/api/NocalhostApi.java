@@ -12,7 +12,6 @@ import org.apache.groovy.util.Maps;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
@@ -33,7 +32,7 @@ public class NocalhostApi {
 
     public static final MediaType MEDIA_TYPE = MediaType.get("application/json; charset=utf-8");
 
-    private final OkHttpClient client = new OkHttpClient.Builder().callTimeout(1, TimeUnit.SECONDS).build();
+    private final OkHttpClient client = new OkHttpClient.Builder().build();
     private final Gson gson = new Gson();
 
     public void login(String host, String email, String password) throws IOException {
