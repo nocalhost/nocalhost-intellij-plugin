@@ -19,8 +19,10 @@ import java.util.List;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.Action;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostLogWindow;
@@ -48,6 +50,15 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
                 NocalhostConsoleExecuteNotifier.NOCALHOST_CONSOLE_EXECUTE_NOTIFIER_TOPIC,
                 this::updateTab
         );
+        application.getMessageBus().connect().subscribe(
+                NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC,
+                this::newTerminal
+        );
+    }
+
+    private void newTerminal(DevSpace devSpace, String deploymentName) {
+        NocalhostConsoleWindow nocalhostConsoleWindow = new NocalhostTerminalWindow(project, toolWindow, devSpace, deploymentName);
+        addContent(nocalhostConsoleWindow);
     }
 
     private void updateTab(ResourceNode node, KubeResourceType type, Action action) {
@@ -62,6 +73,10 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
             default:
                 throw new IllegalStateException("Unexpected value: " + action);
         }
+        addContent(nocalhostConsoleWindow);
+    }
+
+    private void addContent(NocalhostConsoleWindow nocalhostConsoleWindow) {
         JComponent panel = nocalhostConsoleWindow.getPanel();
         String title = nocalhostConsoleWindow.getTitle();
         if (panel == null || StringUtils.isBlank(title)) {

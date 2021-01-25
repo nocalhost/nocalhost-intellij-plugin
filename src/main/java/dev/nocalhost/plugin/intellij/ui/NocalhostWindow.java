@@ -15,12 +15,13 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.openapi.util.NlsContexts;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.sh.run.ShRunner;
 import com.intellij.ui.components.JBScrollPane;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.IOException;
@@ -44,6 +45,7 @@ import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
@@ -117,119 +119,116 @@ public class NocalhostWindow {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
         DevModeService devModeService = nocalhostSettings.getDevModeProjectBasePath2Service().get(project.getBasePath());
         if (nocalhostSettings.getUserInfo() != null && devModeService != null) {
-            ProgressManager.getInstance().run(new Task.Backgroundable(project, "Starting DevMode", false) {
-                @Override
-                public void run(@NotNull ProgressIndicator indicator) {
-
-                    final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-                    try {
-                        DevSpace devSpace = null;
-                        for (DevSpace s : nocalhostApi.listDevSpace()) {
-                            if (s.getId() == devModeService.getApplicationId() && s.getDevSpaceId() == devModeService.getDevSpaceId()) {
-                                devSpace = s;
-                                break;
-                            }
-                        }
-                        if (devSpace == null) {
-                            return;
-                        }
-
-                        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
-                        final String appName = devSpace.getContext().getApplicationName();
-
-                        final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
-                        nhctlDescribeOptions.setDeployment(devModeService.getName());
-                        nhctlDescribeOptions.setKubeconfig(kubeconfigPath);
-                        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                                devSpace.getContext().getApplicationName(),
-                                nhctlDescribeOptions,
-                                NhctlDescribeService.class);
-
-                        // check if devmode already started
-                        if (nhctlDescribeService.isDeveloping()) {
-                            return;
-                        }
-
-                        // nhctl dev start ...
-                        NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions();
-                        nhctlDevStartOptions.setDeployment(devModeService.getName());
-                        nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
-                        nhctlDevStartOptions.setKubeconfig(kubeconfigPath);
-                        nhctlCommand.devStart(appName, nhctlDevStartOptions);
-
-                        // wait for nocalhost-dev container started
-                        final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-                        KubeResource deployment;
-                        String containerName;
-                        do {
-                            Thread.sleep(1000);
-                            deployment = kubectlCommand.getResource("deployment", devModeService.getName(), devSpace);
-                            KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
-                            containerName = pods.getItems().get(0).getSpec().getContainers().get(0).getName();
-                        } while (!KubectlHelper.isKubeResourceAvailable(deployment) || !StringUtils.equals(containerName, NOCALHOST_DEV_CONTAINER_NAME));
-
-                        // nhctl sync ...
-                        NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions();
-                        nhctlSyncOptions.setDeployment(devModeService.getName());
-                        nhctlSyncOptions.setKubeconfig(kubeconfigPath);
-                        nhctlCommand.sync(appName, nhctlSyncOptions);
-
-                        // nhctl port-forward ...
-                        NhctlPortForwardOptions nhctlPortForwardOptions = new NhctlPortForwardOptions();
-                        nhctlPortForwardOptions.setDeployment(devModeService.getName());
-                        nhctlPortForwardOptions.setDevPorts(nhctlDescribeService.getRawConfig().getDevPorts());
-                        nhctlPortForwardOptions.setKubeconfig(kubeconfigPath);
-                        nhctlCommand.portForward(appName, nhctlPortForwardOptions);
-
-                        // start dev space terminal
-                        final KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
-                        final String podName = pods.getItems().get(0).getMetadata().getName();
-
-                        String availableShell = "";
-                        for (String shell : SUPPORTED_SHELLS) {
-                            try {
-                                String shellPath = kubectlCommand.exec(podName, NOCALHOST_DEV_CONTAINER_NAME, "which " + shell, devSpace);
-                                if (StringUtils.isNotEmpty(shellPath)) {
-                                    availableShell = shell;
-                                    break;
-                                }
-                            } catch (RuntimeException e) {
-                                // Ignore
-                            } catch (InterruptedException | IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        if (StringUtils.isNotEmpty(availableShell)) {
-                            final List<String> args = Lists.newArrayList(
-                                    "kubectl",
-                                    "exec",
-                                    "-it", podName,
-                                    "-c", NOCALHOST_DEV_CONTAINER_NAME,
-                                    "--kubeconfig", KubeConfigUtil.kubeConfigPath(devSpace).toString(),
-                                    "--", availableShell
-                            );
-                            final String cmd = String.join(" ", args.toArray(new String[]{}));
-                            ApplicationManager.getApplication().invokeLater(() -> {
-                                ShRunner shRunner = project.getService(ShRunner.class);
-                                shRunner.run(cmd, System.getProperty("user.home"), "DevSpace Terminal", true);
-                            });
-                        }
-
-                        ApplicationManager.getApplication().getMessageBus()
-                                .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
-                                .action();
-
-                        nocalhostSettings.getDevModeProjectBasePath2Service().remove(project.getBasePath());
-
-                        Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode started", "", NotificationType.INFORMATION), project);
-                    } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
+            ProgressManager.getInstance().run(new StartingDevModeTask(project, nocalhostSettings, devModeService));
         }
 
+    }
+
+    class StartingDevModeTask extends Task.Backgroundable {
+
+        DevSpace devSpace;
+        NocalhostSettings nocalhostSettings;
+        DevModeService devModeService;
+
+        public StartingDevModeTask(Project project, NocalhostSettings nocalhostSettings, DevModeService devModeService) {
+            super(project, "Starting DevMode", false);
+            this.nocalhostSettings = nocalhostSettings;
+            this.devModeService = devModeService;
+            final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+            try {
+                for (DevSpace s : nocalhostApi.listDevSpace()) {
+                    if (s.getId() == this.devModeService.getApplicationId() && s.getDevSpaceId() == this.devModeService.getDevSpaceId()) {
+                        devSpace = s;
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (devSpace == null) {
+                return;
+            }
+        }
+
+        @Override
+        public void onSuccess() {
+            super.onSuccess();
+            // start dev space terminal
+            final Application application = ApplicationManager.getApplication();
+            NocalhostConsoleTerminalNotifier nocalhostConsoleTerminalNotifier = application.getMessageBus()
+                                                                                           .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC);
+
+            nocalhostConsoleTerminalNotifier.action(devSpace, devModeService.getName());
+        }
+
+        @Override
+        public void onFinished() {
+            super.onFinished();
+            nocalhostSettings.getDevModeProjectBasePath2Service().remove(project.getBasePath());
+        }
+
+        @Override
+        public void run(@NotNull ProgressIndicator indicator) {
+
+            try {
+
+                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
+                final String appName = devSpace.getContext().getApplicationName();
+
+                final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
+                nhctlDescribeOptions.setDeployment(devModeService.getName());
+                nhctlDescribeOptions.setKubeconfig(kubeconfigPath);
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                        devSpace.getContext().getApplicationName(),
+                        nhctlDescribeOptions,
+                        NhctlDescribeService.class);
+
+                // check if devmode already started
+                if (nhctlDescribeService.isDeveloping()) {
+                    return;
+                }
+
+                // nhctl dev start ...
+                NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions();
+                nhctlDevStartOptions.setDeployment(devModeService.getName());
+                nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
+                nhctlDevStartOptions.setKubeconfig(kubeconfigPath);
+                nhctlCommand.devStart(appName, nhctlDevStartOptions);
+
+                // wait for nocalhost-dev container started
+                final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+                KubeResource deployment;
+                String containerName;
+                do {
+                    Thread.sleep(1000);
+                    deployment = kubectlCommand.getResource("deployment", devModeService.getName(), devSpace);
+                    KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), devSpace);
+                    containerName = pods.getItems().get(0).getSpec().getContainers().get(0).getName();
+                } while (!KubectlHelper.isKubeResourceAvailable(deployment) || !StringUtils.equals(containerName, NOCALHOST_DEV_CONTAINER_NAME));
+
+                // nhctl sync ...
+                NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions();
+                nhctlSyncOptions.setDeployment(devModeService.getName());
+                nhctlSyncOptions.setKubeconfig(kubeconfigPath);
+                nhctlCommand.sync(appName, nhctlSyncOptions);
+
+                // nhctl port-forward ...
+                NhctlPortForwardOptions nhctlPortForwardOptions = new NhctlPortForwardOptions();
+                nhctlPortForwardOptions.setDeployment(devModeService.getName());
+                nhctlPortForwardOptions.setDevPorts(nhctlDescribeService.getRawConfig().getDevPorts());
+                nhctlPortForwardOptions.setKubeconfig(kubeconfigPath);
+                nhctlCommand.portForward(appName, nhctlPortForwardOptions);
+
+                ApplicationManager.getApplication().getMessageBus()
+                                  .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
+                                  .action();
+
+                Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode started", "", NotificationType.INFORMATION), project);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public JPanel getPanel() {

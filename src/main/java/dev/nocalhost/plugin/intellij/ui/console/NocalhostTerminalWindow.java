@@ -11,7 +11,6 @@ import com.jediterm.pty.PtyProcessTtyConnector;
 import com.jediterm.terminal.TtyConnector;
 import com.pty4j.PtyProcess;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.plugins.terminal.JBTerminalSystemSettingsProvider;
 import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner;
 import org.jetbrains.plugins.terminal.ShellTerminalWidget;
@@ -21,17 +20,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.ui.ContainerSelectorDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -40,6 +37,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
     private final Project project;
     private final ToolWindow toolWindow;
     private final ResourceNode node;
+    private final DevSpace devSpace;
 
     private JComponent panel;
 
@@ -47,30 +45,47 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
 
     private ContainerSelectorDialog containerSelectorDialog;
 
+    public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, DevSpace devSpace, String deploymentName) {
+        this.project = project;
+        this.toolWindow = toolWindow;
+        this.devSpace = devSpace;
+        this.node = null;
+
+        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
+
+        List<String> args = Lists.newArrayList(
+                "nhctl",
+                "dev",
+                "terminal", devSpace.getContext().getApplicationName(),
+                "--deployment", deploymentName,
+                "--kubeconfig", kubeconfigPath
+        );
+        final String cmd = String.join(" ", args.toArray(new String[]{}));
+        title = String.format("%s-%s-%s Terminal", devSpace.getNamespace(), devSpace.getContext().getApplicationName(), deploymentName);
+
+        toTerminal(cmd);
+    }
+
     public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, KubeResourceType type, ResourceNode node) {
         this.project = project;
         this.toolWindow = toolWindow;
         this.node = node;
+        this.devSpace = node.devSpace();
 
-        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
 
         final NhctlDescribeOptions opts = new NhctlDescribeOptions();
         opts.setDeployment(node.resourceName());
         opts.setKubeconfig(kubeconfigPath);
         try {
-            final NhctlDescribeService describeResult = nhctlCommand.describe(
-                    node.devSpace().getContext().getApplicationName(),
-                    opts,
-                    NhctlDescribeService.class);
             List<String> args;
-            if (describeResult.isDeveloping()) {
+            if (node.getNhctlDescribeService().isDeveloping()) {
                 args = Lists.newArrayList(
                         "nhctl",
                         "dev",
                         "terminal", node.devSpace().getContext().getApplicationName(),
                         "--deployment", node.resourceName(),
-                        "--kubeconfig", KubeConfigUtil.kubeConfigPath(node.devSpace()).toString()
+                        "--kubeconfig", kubeconfigPath
                 );
             } else {
                 final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
@@ -96,33 +111,27 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                 final String podName = kubeResource.getMetadata().getName();
                 final String containerName = node.resourceName();
 
-                final List<String> availableShells = Lists.newArrayList("zsh", "bash", "sh").stream().filter((shell) -> {
-                    try {
-                        String shellPath = kubectlCommand.exec(podName, containerName, "which " + shell, node.devSpace());
-                        if (StringUtils.isNotEmpty(shellPath)) {
-                            return true;
-                        }
-                    } catch (RuntimeException runtimeException) {
-                        return false;
-                    } catch (InterruptedException | IOException interruptedException) {
-                        interruptedException.printStackTrace();
-                    }
-                    return false;
-                }).collect(Collectors.toList());
-
                 args = Lists.newArrayList(
                         "kubectl",
                         "exec",
                         "-it", podName,
                         "-c", containerName,
-                        "--kubeconfig", KubeConfigUtil.kubeConfigPath(node.devSpace()).toString(),
-                        "--", availableShells.get(0)
+                        "--kubeconfig", kubeconfigPath,
+                        "--", "sh -c \"clear; (zsh || bash || ash || sh)\""
                 );
 
             }
             final String cmd = String.join(" ", args.toArray(new String[]{}));
             title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), node.devSpace().getContext().getApplicationName(), node.resourceName());
 
+            toTerminal(cmd);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void toTerminal(String cmd) {
+        try {
             LocalTerminalDirectRunner localTerminalDirectRunner = LocalTerminalDirectRunner.createTerminalRunner(project);
             PtyProcess ptyProcess = localTerminalDirectRunner.createProcess(project.getBasePath());
             TtyConnector connector = new PtyProcessTtyConnector(ptyProcess, StandardCharsets.UTF_8);
@@ -132,7 +141,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
             terminal.start(connector);
             terminal.executeCommand(cmd);
             panel = terminal;
-        } catch (ExecutionException | IOException | InterruptedException e) {
+        } catch (ExecutionException | IOException e) {
             e.printStackTrace();
         }
     }

@@ -27,7 +27,6 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Deployment;
-import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Job;
 import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Pod;
 
 public class TreeMouseListener extends MouseAdapter {
