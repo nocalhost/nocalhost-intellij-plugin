@@ -148,9 +148,6 @@ public class TreeMouseListener extends MouseAdapter {
                     case Statefulset:
                         break;
                     case Job:
-                        logsItem.addActionListener(new Logs(resourceNode, Job, project));
-
-                        menu.add(logsItem);
                         menu.add(portForwardItem);
                         JBPopupMenu.showByEvent(mouseEvent, menu);
                         break;

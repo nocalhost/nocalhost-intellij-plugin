@@ -10,6 +10,7 @@ import com.intellij.ui.components.JBTextArea;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -85,14 +86,12 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
             case Statefulset:
                 break;
             case Job:
-                podName = node.getKubeResource().getMetadata().getName();
-                containerName = node.getKubeResource().getSpec().getContainers().get(0).getName();
                 break;
             case CronJobs:
                 break;
             case Pod:
                 podName = node.getKubeResource().getMetadata().getName();
-                containerName = node.getKubeResource().getMetadata().getLabels().get("app");
+                containerName = node.getKubeResource().getSpec().getContainers().get(0).getName();
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
