@@ -19,6 +19,7 @@ import java.util.List;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.Action;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleWindow;
@@ -49,14 +50,14 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
         );
     }
 
-    private void updateTab(ResourceNode node, Action action) {
+    private void updateTab(ResourceNode node, KubeResourceType type, Action action) {
         NocalhostConsoleWindow nocalhostConsoleWindow;
         switch (action) {
             case LOGS:
-                nocalhostConsoleWindow = new NocalhostLogWindow(project, toolWindow, node);
+                nocalhostConsoleWindow = new NocalhostLogWindow(project, toolWindow, type, node);
                 break;
             case TERMINAL:
-                nocalhostConsoleWindow = new NocalhostTerminalWindow(project, toolWindow, node);
+                nocalhostConsoleWindow = new NocalhostTerminalWindow(project, toolWindow, type, node);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + action);

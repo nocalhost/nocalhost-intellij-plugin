@@ -6,13 +6,14 @@ import com.intellij.openapi.ui.JBMenuItem;
 import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.ui.treeStructure.Tree;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.EnumUtils;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.tree.TreePath;
 
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Install;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Uninstall;
@@ -24,6 +25,10 @@ import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.StartDevelop;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Terminal;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+
+import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Deployment;
+import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Job;
+import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Pod;
 
 public class TreeMouseListener extends MouseAdapter {
     private final Project project;
@@ -100,40 +105,69 @@ public class TreeMouseListener extends MouseAdapter {
 
             if (object instanceof ResourceNode) {
                 ResourceNode resourceNode = (ResourceNode) object;
-                if (!StringUtils.equalsIgnoreCase(resourceNode.getKubeResource().getKind(), "Deployment")) {
-                    return;
-                }
-
                 JBPopupMenu menu = new JBPopupMenu();
-                JBMenuItem item;
-                if (!resourceNode.getNhctlDescribeService().isDeveloping()) {
-                    item = new JBMenuItem("Start Develop");
-                    item.addActionListener(new StartDevelop(resourceNode));
-                } else {
-                    item = new JBMenuItem("End Develop");
-                    item.addActionListener(new EndDevelop(resourceNode, project));
-                }
-                menu.add(item);
                 JBMenuItem clearPersistentDataItem = new JBMenuItem("Clear persistent data");
                 JBMenuItem configItem = new JBMenuItem("Config");
-                configItem.addActionListener(new Config(resourceNode, project));
                 JBMenuItem logsItem = new JBMenuItem("Logs");
-                logsItem.addActionListener(new Logs(resourceNode, project));
                 JBMenuItem portForwardItem = new JBMenuItem("Port Forward");
                 JBMenuItem resetItem = new JBMenuItem("Reset");
-                resetItem.addActionListener(new Reset(resourceNode, project));
                 JBMenuItem terminalItem = new JBMenuItem("Terminal");
-                terminalItem.addActionListener(new Terminal(resourceNode, project));
-                menu.add(configItem);
-                menu.addSeparator();
-                menu.add(clearPersistentDataItem);
-                menu.addSeparator();
-                menu.add(logsItem);
-                menu.add(portForwardItem);
-                menu.add(resetItem);
-                menu.add(terminalItem);
-                JBPopupMenu.showByEvent(mouseEvent, menu);
-                return;
+
+                String kind = resourceNode.getKubeResource().getKind().toLowerCase();
+                KubeResourceType type = EnumUtils.getEnumIgnoreCase(KubeResourceType.class, kind);
+                switch (type) {
+                    case Deployment:
+                        JBMenuItem devItem;
+                        if (!resourceNode.getNhctlDescribeService().isDeveloping()) {
+                            devItem = new JBMenuItem("Start Develop");
+                            devItem.addActionListener(new StartDevelop(resourceNode));
+                        } else {
+                            devItem = new JBMenuItem("End Develop");
+                            devItem.addActionListener(new EndDevelop(resourceNode, project));
+                        }
+
+                        menu.add(devItem);
+
+                        configItem.addActionListener(new Config(resourceNode, project));
+                        logsItem.addActionListener(new Logs(resourceNode, Deployment, project));
+                        resetItem.addActionListener(new Reset(resourceNode, project));
+                        terminalItem.addActionListener(new Terminal(resourceNode, Deployment, project));
+
+                        menu.add(configItem);
+                        menu.addSeparator();
+                        menu.add(clearPersistentDataItem);
+                        menu.addSeparator();
+                        menu.add(logsItem);
+                        menu.add(portForwardItem);
+                        menu.add(resetItem);
+                        menu.add(terminalItem);
+                        JBPopupMenu.showByEvent(mouseEvent, menu);
+                        break;
+                    case Daemonset:
+                        break;
+                    case Statefulset:
+                        break;
+                    case Job:
+                        logsItem.addActionListener(new Logs(resourceNode, Job, project));
+
+                        menu.add(logsItem);
+                        menu.add(portForwardItem);
+                        JBPopupMenu.showByEvent(mouseEvent, menu);
+                        break;
+                    case CronJobs:
+                        break;
+                    case Pod:
+                        logsItem.addActionListener(new Logs(resourceNode, Pod, project));
+                        terminalItem.addActionListener(new Terminal(resourceNode, Deployment, project));
+
+                        menu.add(logsItem);
+                        menu.add(portForwardItem);
+                        menu.add(terminalItem);
+                        JBPopupMenu.showByEvent(mouseEvent, menu);
+                        break;
+                    default:
+                        throw new IllegalStateException("Unexpected value: " + kind);
+                }
             }
         }
     }

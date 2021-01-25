@@ -29,6 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.ui.ContainerSelectorDialog;
@@ -46,7 +47,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
 
     private ContainerSelectorDialog containerSelectorDialog;
 
-    public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, ResourceNode node) {
+    public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, KubeResourceType type, ResourceNode node) {
         this.project = project;
         this.toolWindow = toolWindow;
         this.node = node;
