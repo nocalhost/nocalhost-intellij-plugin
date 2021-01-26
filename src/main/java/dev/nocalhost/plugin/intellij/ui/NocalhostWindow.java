@@ -15,13 +15,11 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
-import com.intellij.openapi.util.NlsContexts;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBScrollPane;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.IOException;
@@ -154,7 +152,7 @@ public class NocalhostWindow {
             // start dev space terminal
             final Application application = ApplicationManager.getApplication();
             NocalhostConsoleTerminalNotifier nocalhostConsoleTerminalNotifier = application.getMessageBus()
-                                                                                           .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC);
+                    .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC);
 
             nocalhostConsoleTerminalNotifier.action(devSpace, devModeService.getName());
         }
@@ -222,8 +220,8 @@ public class NocalhostWindow {
                 nhctlCommand.portForward(appName, nhctlPortForwardOptions);
 
                 ApplicationManager.getApplication().getMessageBus()
-                                  .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
-                                  .action();
+                        .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
+                        .action();
 
                 Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode started", "", NotificationType.INFORMATION), project);
             } catch (IOException | InterruptedException e) {

@@ -11,14 +11,18 @@ import org.yaml.snakeyaml.representer.Representer;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
@@ -266,6 +270,53 @@ public final class NhctlCommand {
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
+        }
+        execute(args, opts);
+    }
+
+    public List<NhctlPVCItem> listPVC(NhctlListPVCOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "pvc", "list");
+        if (StringUtils.isNotEmpty(opts.getApp())) {
+            args.add("--app");
+            args.add(opts.getApp());
+        }
+        if (StringUtils.isNotEmpty(opts.getSvc())) {
+            args.add("--svc");
+            args.add(opts.getSvc());
+        }
+        args.add("--yaml");
+        String output = execute(args, opts);
+
+        List<Map> mapItems = yaml.load(output);
+        List<NhctlPVCItem> nhctlPVCItems = Lists.newArrayList();
+        for (Map map : mapItems) {
+            NhctlPVCItem nhctlPVCItem = new NhctlPVCItem();
+            nhctlPVCItem.setName((String) map.get("name"));
+            nhctlPVCItem.setAppName((String) map.get("appName"));
+            nhctlPVCItem.setServiceName((String) map.get("serviceName"));
+            nhctlPVCItem.setCapacity((String) map.get("capacity"));
+            nhctlPVCItem.setStorageClass((String) map.get("storageClass"));
+            nhctlPVCItem.setStatus((String) map.get("status"));
+            nhctlPVCItem.setMountPath((String) map.get("mountPath"));
+            nhctlPVCItems.add(nhctlPVCItem);
+        }
+
+        return nhctlPVCItems;
+    }
+
+    public void cleanPVC(NhctlCleanPVCOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "pvc", "clean");
+        if (StringUtils.isNotEmpty(opts.getApp())) {
+            args.add("--app");
+            args.add(opts.getApp());
+        }
+        if (StringUtils.isNotEmpty(opts.getSvc())) {
+            args.add("--svc");
+            args.add(opts.getSvc());
+        }
+        if (StringUtils.isNotEmpty(opts.getName())) {
+            args.add("--name");
+            args.add(opts.getName());
         }
         execute(args, opts);
     }

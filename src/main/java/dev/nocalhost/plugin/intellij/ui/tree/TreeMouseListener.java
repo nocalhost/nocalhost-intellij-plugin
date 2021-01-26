@@ -14,9 +14,11 @@ import java.awt.event.MouseEvent;
 import javax.swing.tree.TreePath;
 
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
+import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Install;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Uninstall;
+import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.ClearPersistentData;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Config;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.EndDevelop;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Logs;
@@ -83,7 +85,9 @@ public class TreeMouseListener extends MouseAdapter {
                     menu.add(item);
 
                     menu.addSeparator();
-                    menu.add(new JBMenuItem("Clear persistent data"));
+                    JBMenuItem clearPersistentDataMenuItem = new JBMenuItem("Clear persistent data");
+                    clearPersistentDataMenuItem.addActionListener(new dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.ClearPersistentData(devSpaceNode));
+                    menu.add(clearPersistentDataMenuItem);
                     menu.add(new JBMenuItem("Reset"));
 
                     menu.addSeparator();
@@ -94,7 +98,6 @@ public class TreeMouseListener extends MouseAdapter {
                     menu.add(item);
 
                     menu.addSeparator();
-                    menu.add(new JBMenuItem("Clear persistent data"));
                     menu.add(new JBMenuItem("Reset"));
                 }
 
@@ -104,6 +107,11 @@ public class TreeMouseListener extends MouseAdapter {
 
             if (object instanceof ResourceNode) {
                 ResourceNode resourceNode = (ResourceNode) object;
+
+                if (!KubectlHelper.isKubeResourceAvailable(resourceNode.getKubeResource())) {
+                    return;
+                }
+
                 JBPopupMenu menu = new JBPopupMenu();
                 JBMenuItem clearPersistentDataItem = new JBMenuItem("Clear persistent data");
                 JBMenuItem configItem = new JBMenuItem("Config");
@@ -127,6 +135,7 @@ public class TreeMouseListener extends MouseAdapter {
 
                         menu.add(devItem);
 
+                        clearPersistentDataItem.addActionListener(new ClearPersistentData(resourceNode));
                         configItem.addActionListener(new Config(resourceNode, project));
                         logsItem.addActionListener(new Logs(resourceNode, Deployment, project));
                         resetItem.addActionListener(new Reset(resourceNode, project));
