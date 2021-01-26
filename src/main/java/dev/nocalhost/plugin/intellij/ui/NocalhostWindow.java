@@ -145,9 +145,7 @@ public class NocalhostWindow {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if (devSpace == null) {
-                return;
-            }
+
         }
 
         @Override
@@ -169,6 +167,9 @@ public class NocalhostWindow {
 
         @Override
         public void run(@NotNull ProgressIndicator indicator) {
+            if (devSpace == null) {
+                return;
+            }
 
             try {
 
