@@ -14,6 +14,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.MessageDialogBuilder;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.components.JBTextField;
 
@@ -24,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.*;
 
@@ -64,14 +66,15 @@ public class InstallDevSpaceDialog extends DialogWrapper {
         specifyOneTextField.setEnabled(false);
         defaultRadioButton.setSelected(true);
 
-        if (StringUtils.equals(devSpace.getContext().getInstallType(), "helmRepo")) {
+        final String nhctlInstallType = NhctlHelper.generateInstallType(devSpace.getContext());
+        if (StringUtils.equals(nhctlInstallType, "helmRepo")) {
             messageLabel.setText("Which version to install?");
             defaultRadioButton.setText("Default Version");
-            specifyOneTextField.getEmptyText().appendText("input the version of chart");
+            specifyOneTextField.getEmptyText().appendText("Input the version of chart");
         } else {
             messageLabel.setText("Which branch to install(Manifests in Git Repo)?");
             defaultRadioButton.setText("Default Branch");
-            specifyOneTextField.getEmptyText().appendText("input the branch of repository");
+            specifyOneTextField.getEmptyText().appendText("Input the branch of repository");
         }
     }
 
@@ -82,8 +85,9 @@ public class InstallDevSpaceDialog extends DialogWrapper {
 
     @Override
     protected @Nullable ValidationInfo doValidate() {
+        final String nhctlInstallType = NhctlHelper.generateInstallType(devSpace.getContext());
         if (specifyOneRadioButton.isSelected() && !StringUtils.isNotEmpty(specifyOneTextField.getText())) {
-            if (StringUtils.equals(devSpace.getContext().getInstallType(), "helmRepo")) {
+            if (StringUtils.equals(nhctlInstallType, "helmRepo")) {
                 return new ValidationInfo("Chart version cannot be empty", specifyOneTextField);
             } else {
                 return new ValidationInfo("Git ref cannot be empty", specifyOneTextField);
@@ -94,66 +98,85 @@ public class InstallDevSpaceDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
-        DevSpace.Context context = devSpace.getContext();
+        super.doOKAction();
 
-        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        ApplicationManager.getApplication().invokeLater(() -> {
+            final DevSpace.Context context = devSpace.getContext();
+            final String nhctlInstallType = NhctlHelper.generateInstallType(context);
 
-        final NhctlInstallOptions opts = new NhctlInstallOptions();
+            final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-        final String installType = devSpace.getContext().getInstallType();
-        if (StringUtils.equals(installType, "helmGit") || StringUtils.equals(installType, "helmRepo")
-                && MessageDialogBuilder.yesNo("Do you want to specify a values.yaml?", "")
-                .yesText("Specify One").noText("Use Default values").guessWindowAndAsk()) {
-            final FileChooserDescriptor valueFileChooser = FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor();
-            valueFileChooser.setShowFileSystemRoots(true);
-            FileChooser.chooseFiles(valueFileChooser, null, null, paths -> {
-                Path valueFilePath = paths.get(0).toNioPath();
-                opts.setHelmValues(valueFilePath.toString());
-            });
-        }
+            final NhctlInstallOptions opts = new NhctlInstallOptions();
 
-        opts.setGitUrl(context.getApplicationUrl());
-        opts.setType(NhctlHelper.generateInstallType(context.getSource(), context.getInstallType()));
-        opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
-        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
-        opts.setNamespace(devSpace.getNamespace());
-
-        if (specifyOneRadioButton.isSelected()) {
-            if (StringUtils.equals(installType, "helmRepo")) {
-                opts.setHelmRepoUrl(context.getApplicationUrl());
-                opts.setHelmChartName(context.getApplicationName());
-                opts.setHelmRepoVersion(specifyOneTextField.getText());
-            } else {
-                opts.setGitRef(specifyOneTextField.getText());
-            }
-        }
-
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Installing application: " + context.getApplicationName(), false) {
-
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                try {
-                    nhctlCommand.install(context.getApplicationName(), opts);
-
-                    final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-                    nocalhostApi.syncInstallStatus(devSpace, 1);
-
-                    final Application application = ApplicationManager.getApplication();
-                    DevSpaceListUpdatedNotifier publisher = application.getMessageBus()
-                            .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
-                    publisher.action();
-
-                    Notifications.Bus.notify(new Notification(
-                            "Nocalhost.Notification",
-                            "Application " + context.getApplicationName() + " installed",
-                            "",
-                            NotificationType.INFORMATION));
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
+            if (StringUtils.equals(nhctlInstallType, "helmGit") || StringUtils.equals(nhctlInstallType, "helmRepo")) {
+                int specifyValues = MessageDialogBuilder
+                        .yesNoCancel("Do you want to specify a values.yaml?", "")
+                        .yesText("Specify One")
+                        .noText("Use Default values")
+                        .guessWindowAndAsk();
+                if (specifyValues == Messages.CANCEL) {
+                    return;
+                }
+                if (specifyValues == Messages.YES) {
+                    AtomicBoolean hasCanceled = new AtomicBoolean(true);
+                    final FileChooserDescriptor valueFileChooser = FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor();
+                    valueFileChooser.setShowFileSystemRoots(true);
+                    FileChooser.chooseFiles(valueFileChooser, null, null, paths -> {
+                        hasCanceled.set(false);
+                        Path valueFilePath = paths.get(0).toNioPath();
+                        opts.setHelmValues(valueFilePath.toString());
+                    });
+                    if (hasCanceled.get()) {
+                        return;
+                    }
                 }
             }
-        });
 
-        super.doOKAction();
+            opts.setType(nhctlInstallType);
+            opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
+            opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
+            opts.setNamespace(devSpace.getNamespace());
+
+            if (StringUtils.equals(nhctlInstallType, "helmRepo")) {
+                opts.setHelmRepoUrl(context.getApplicationUrl());
+                opts.setHelmChartName(context.getApplicationName());
+            } else {
+                opts.setGitUrl(context.getApplicationUrl());
+            }
+
+            if (specifyOneRadioButton.isSelected()) {
+                if (StringUtils.equals(nhctlInstallType, "helmRepo")) {
+                    opts.setHelmRepoVersion(specifyOneTextField.getText());
+                } else {
+                    opts.setGitRef(specifyOneTextField.getText());
+                }
+            }
+
+            ProgressManager.getInstance().run(new Task.Backgroundable(null, "Installing application: " + context.getApplicationName(), false) {
+
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    try {
+                        nhctlCommand.install(context.getApplicationName(), opts);
+
+                        final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+                        nocalhostApi.syncInstallStatus(devSpace, 1);
+
+                        final Application application = ApplicationManager.getApplication();
+                        DevSpaceListUpdatedNotifier publisher = application.getMessageBus()
+                                .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
+                        publisher.action();
+
+                        Notifications.Bus.notify(new Notification(
+                                "Nocalhost.Notification",
+                                "Application " + context.getApplicationName() + " installed",
+                                "",
+                                NotificationType.INFORMATION));
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        });
     }
 }

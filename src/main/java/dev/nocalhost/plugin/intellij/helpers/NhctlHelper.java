@@ -13,10 +13,14 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public final class NhctlHelper {
-    public static String generateInstallType(String source, String originInstallType) {
-        if (StringUtils.equals(source, "git") && StringUtils.equals(originInstallType, "rawManifest")) {
+    public static String generateInstallType(DevSpace.Context context) {
+        String source = context.getSource();
+        String installType = context.getInstallType();
+        if (StringUtils.equals(source, "git")
+                && StringUtils.equals(installType, "rawManifest")) {
             return "rawManifest";
-        } else if (StringUtils.equals(source, "git") && StringUtils.equals(originInstallType, "rawManifest")) {
+        } else if (StringUtils.equals(source, "git")
+                && StringUtils.equals(installType, "helm_chart")) {
             return "helmGit";
         } else {
             return "helmRepo";
