@@ -17,7 +17,9 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Install;
+import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.LoadResource;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Uninstall;
+import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.ViewKubeConfig;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.ClearPersistentData;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Config;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.EndDevelop;
@@ -88,9 +90,14 @@ public class TreeMouseListener extends MouseAdapter {
                     JBMenuItem clearPersistentDataMenuItem = new JBMenuItem("Clear persistent data");
                     clearPersistentDataMenuItem.addActionListener(new dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.ClearPersistentData(devSpaceNode));
                     menu.add(clearPersistentDataMenuItem);
+                    JBMenuItem viewKubeConfigMenuItem = new JBMenuItem("View KubeConfig");
+                    viewKubeConfigMenuItem.addActionListener(new ViewKubeConfig(devSpaceNode, project));
+                    menu.add(viewKubeConfigMenuItem);
 
                     menu.addSeparator();
-                    menu.add(new JBMenuItem("Load resource"));
+                    JBMenuItem loadResourceMenuItem = new JBMenuItem("Load resource");
+                    loadResourceMenuItem.addActionListener(new LoadResource(devSpaceNode, project));
+                    menu.add(loadResourceMenuItem);
                 } else if (devSpaceNode.getDevSpace().getInstallStatus() == 0) {
                     JBMenuItem item = new JBMenuItem("Install App");
                     item.addActionListener(new Install(devSpaceNode));

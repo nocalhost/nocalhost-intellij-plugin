@@ -215,13 +215,17 @@ public final class NhctlCommand {
         execute(args, opts);
     }
 
-    public <T> T describe(String name, NhctlDescribeOptions opts, Class<T> type) throws IOException, InterruptedException {
+    public String describe(String name, NhctlDescribeOptions opts) throws IOException, InterruptedException {
         List<String> args = Lists.newArrayList(NHCTL_COMMAND, "describe", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
-        String result = execute(args, opts);
+        return execute(args, opts);
+    }
+
+    public <T> T describe(String name, NhctlDescribeOptions opts, Class<T> type) throws IOException, InterruptedException {
+        String result = describe(name, opts);
         return yaml.loadAs(result, type);
     }
 
