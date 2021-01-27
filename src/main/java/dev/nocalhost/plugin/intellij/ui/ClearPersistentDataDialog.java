@@ -1,8 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -92,11 +89,24 @@ public class ClearPersistentDataDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Clearing persistent data", false) {
+        ProgressManager.getInstance().run(new Task.Modal(null, "Clearing persistent data", true) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                for (NhctlPVCItem item : pvcList.getSelectedValuesList()) {
+
+                indicator.setIndeterminate(false);
+
+                List<NhctlPVCItem> nhctlPVCItems = pvcList.getSelectedValuesList();
+                for (int i = 0; i < nhctlPVCItems.size(); i++) {
+                    NhctlPVCItem item = nhctlPVCItems.get(i);
+
+                    indicator.setFraction((i + 1.0) / nhctlPVCItems.size());
+                    if (showSvcNames) {
+                        indicator.setText(String.format("Clearing %s-%s:%s", item.getAppName(), item.getServiceName(), item.getMountPath()));
+                    } else {
+                        indicator.setText(item.getMountPath());
+                    }
+
                     NhctlCleanPVCOptions opts = new NhctlCleanPVCOptions();
                     opts.setApp(item.getAppName());
                     opts.setSvc(item.getServiceName());
@@ -108,12 +118,6 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                         e.printStackTrace();
                     }
                 }
-
-                Notifications.Bus.notify(new Notification(
-                        "Nocalhost.Notification",
-                        "Persistent data cleared",
-                        "",
-                        NotificationType.INFORMATION));
             }
         });
 
