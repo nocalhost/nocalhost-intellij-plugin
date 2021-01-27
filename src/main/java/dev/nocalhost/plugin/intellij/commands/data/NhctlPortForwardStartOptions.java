@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NhctlPortForwardOptions extends NhctlGlobalOptions {
+public class NhctlPortForwardStartOptions extends NhctlGlobalOptions {
     private boolean daemon;
     private String deployment;
     private List<String> devPorts;

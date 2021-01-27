@@ -24,7 +24,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 
@@ -196,8 +196,8 @@ public final class NhctlCommand {
         execute(args, opts);
     }
 
-    public void portForward(String name, NhctlPortForwardOptions opts) throws IOException, InterruptedException {
-        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "port-forward", name);
+    public void startPortForward(String name, NhctlPortForwardStartOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "port-forward", "start", name);
         if (opts.isDaemon()) {
             args.add("--daemon");
         }

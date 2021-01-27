@@ -25,6 +25,7 @@ public class KubeResource {
     @Setter
     public static class Spec {
         private List<Container> containers;
+        private Selector selector;
 
         @Getter
         @Setter
@@ -32,6 +33,11 @@ public class KubeResource {
             private String name;
         }
 
+        @Getter
+        @Setter
+        public static class Selector {
+            private Map<String, String> matchLabels;
+        }
     }
 
     @Getter
