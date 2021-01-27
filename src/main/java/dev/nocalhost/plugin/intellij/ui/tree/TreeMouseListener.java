@@ -88,7 +88,6 @@ public class TreeMouseListener extends MouseAdapter {
                     JBMenuItem clearPersistentDataMenuItem = new JBMenuItem("Clear persistent data");
                     clearPersistentDataMenuItem.addActionListener(new dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.ClearPersistentData(devSpaceNode));
                     menu.add(clearPersistentDataMenuItem);
-                    menu.add(new JBMenuItem("Reset"));
 
                     menu.addSeparator();
                     menu.add(new JBMenuItem("Load resource"));
@@ -96,9 +95,6 @@ public class TreeMouseListener extends MouseAdapter {
                     JBMenuItem item = new JBMenuItem("Install App");
                     item.addActionListener(new Install(devSpaceNode));
                     menu.add(item);
-
-                    menu.addSeparator();
-                    menu.add(new JBMenuItem("Reset"));
                 }
 
                 JBPopupMenu.showByEvent(mouseEvent, menu);
