@@ -16,6 +16,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.components.JBScrollPane;
 
 import org.apache.commons.lang3.StringUtils;
@@ -150,11 +151,12 @@ public class NocalhostWindow {
         public void onSuccess() {
             super.onSuccess();
             // start dev space terminal
-            final Application application = ApplicationManager.getApplication();
-            NocalhostConsoleTerminalNotifier nocalhostConsoleTerminalNotifier = application.getMessageBus()
-                    .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC);
-
-            nocalhostConsoleTerminalNotifier.action(devSpace, devModeService.getName());
+            ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
+                ApplicationManager.getApplication()
+                        .getMessageBus()
+                        .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC)
+                        .action(devSpace, devModeService.getName());
+            });
         }
 
         @Override
