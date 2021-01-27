@@ -122,7 +122,7 @@ public final class NhctlCommand {
         execute(args, opts);
     }
 
-    public void devStart(String name, NhctlDevStartOptions opts) throws IOException, InterruptedException {
+    public String devStart(String name, NhctlDevStartOptions opts) throws IOException, InterruptedException {
         List<String> args = Lists.newArrayList(NHCTL_COMMAND, "dev", "start", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -155,7 +155,7 @@ public final class NhctlCommand {
             args.add(opts.getWorkDir());
         }
 
-        execute(args, opts);
+        return execute(args, opts);
     }
 
     public void devEnd(String name, NhctlDevEndOptions opts) throws IOException, InterruptedException {
@@ -211,6 +211,13 @@ public final class NhctlCommand {
                 args.add(port);
             }
         }
+        if (StringUtils.isNotEmpty(opts.getPod())) {
+            args.add("--pod");
+            args.add(opts.getPod());
+        }
+        args.add("--way");
+        args.add(opts.getWay().getVal());
+
 
         execute(args, opts);
     }

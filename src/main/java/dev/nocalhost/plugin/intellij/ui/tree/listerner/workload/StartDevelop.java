@@ -9,6 +9,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
 import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
@@ -19,6 +20,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.commands.GitCommand;
@@ -26,6 +31,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.MessageUtil;
@@ -34,15 +40,20 @@ public class StartDevelop implements ActionListener {
     private static final Logger LOG = Logger.getInstance(StartDevelop.class);
 
     private final ResourceNode node;
+    private final Project project;
 
-    public StartDevelop(ResourceNode node) {
+    public StartDevelop(ResourceNode node, Project project) {
         this.node = node;
+        this.project = project;
     }
 
     @Override
     public void actionPerformed(ActionEvent event) {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
+        DevModeService devModeService = new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName());
+
         NhctlDescribeOptions opts = new NhctlDescribeOptions();
         opts.setDeployment(node.resourceName());
         opts.setKubeconfig(kubeconfigPath);
@@ -61,6 +72,18 @@ public class StartDevelop implements ActionListener {
             return;
         }
 
+        String path = project.getBasePath();
+        final GitCommand gitCommand = ServiceManager.getService(GitCommand.class);
+        final String gitUrl = nhctlDescribeService.getRawConfig().getGitUrl();
+        try {
+            String ps = gitCommand.remote(path);
+            final Optional<String> optionalPath = Arrays.stream(ps.split("\n")).map(p -> p.split("\t")[1].split(" ")[0]).filter(p -> p.equals(gitUrl)).findFirst();
+            if (optionalPath.isPresent()) {
+                ProgressManager.getInstance().run(new StartingDevModeTask(project, node.devSpace(), devModeService));
+                return;
+            }
+        } catch (Exception ignored) {}
+
         int exitCode = MessageDialogBuilder.yesNoCancel("To start develop, you must specify source code directory.", "")
                 .yesText("Clone from Git Repo")
                 .noText("Open local directly")
@@ -71,9 +94,6 @@ public class StartDevelop implements ActionListener {
                 gitSourceDirChooser.setShowFileSystemRoots(true);
                 FileChooser.chooseFiles(gitSourceDirChooser, null, null, paths -> {
                     Path parentDir = paths.get(0).toNioPath();
-
-                    final GitCommand gitCommand = ServiceManager.getService(GitCommand.class);
-                    final String gitUrl = nhctlDescribeService.getRawConfig().getGitUrl();
 
                     ProgressManager.getInstance().run(new Task.Backgroundable(null, "Cloning " + gitUrl, false) {
                         private Path gitDir;
@@ -91,11 +111,9 @@ public class StartDevelop implements ActionListener {
 
                                 gitDir = parentDir.resolve(node.resourceName());
 
-                                final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-
                                 nocalhostSettings.getDevModeProjectBasePath2Service().put(
                                         gitDir.toString(),
-                                        new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName())
+                                        devModeService
                                 );
                             } catch (IOException | InterruptedException e) {
                                 e.printStackTrace();
@@ -112,11 +130,9 @@ public class StartDevelop implements ActionListener {
                 FileChooser.chooseFiles(sourceDirChooser, null, null, paths -> {
                     Path bashPath = paths.get(0).toNioPath();
 
-                    final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-
                     nocalhostSettings.getDevModeProjectBasePath2Service().put(
                             bashPath.toString(),
-                            new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName())
+                            devModeService
                     );
 
                     ProjectManagerEx.getInstanceEx().openProject(bashPath, new OpenProjectTask());
