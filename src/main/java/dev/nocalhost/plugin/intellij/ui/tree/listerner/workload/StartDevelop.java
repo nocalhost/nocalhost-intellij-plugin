@@ -28,6 +28,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.MessageUtil;
 
 public class StartDevelop implements ActionListener {
     private static final Logger LOG = Logger.getInstance(StartDevelop.class);
@@ -52,7 +53,7 @@ public class StartDevelop implements ActionListener {
                     opts,
                     NhctlDescribeService.class);
             if (nhctlDescribeService.isDeveloping()) {
-                Messages.showMessageDialog("", "Dev mode has been started", null);
+                MessageUtil.showMessageDialog("Dev mode has been started.");
                 return;
             }
         } catch (IOException | InterruptedException e) {

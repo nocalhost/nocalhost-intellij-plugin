@@ -10,7 +10,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -25,6 +24,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.MessageUtil;
 
 public class EndDevelop implements ActionListener {
     private static final Logger LOG = Logger.getInstance(EndDevelop.class);
@@ -51,7 +51,7 @@ public class EndDevelop implements ActionListener {
                     opts,
                     NhctlDescribeService.class);
             if (!nhctlDescribeService.isDeveloping()) {
-                Messages.showMessageDialog("", "Dev mode has been ended", null);
+                MessageUtil.showMessageDialog("Dev mode has been ended.");
                 return;
             }
         } catch (IOException | InterruptedException e) {
