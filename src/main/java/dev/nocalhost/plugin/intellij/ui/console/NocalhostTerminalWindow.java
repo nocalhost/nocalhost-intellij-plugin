@@ -79,7 +79,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
         opts.setKubeconfig(kubeconfigPath);
         try {
             List<String> args;
-            if (node.getNhctlDescribeService().isDeveloping()) {
+            if (node.getNhctlSvcProfile().isDeveloping()) {
                 args = Lists.newArrayList(
                         "nhctl",
                         "dev",

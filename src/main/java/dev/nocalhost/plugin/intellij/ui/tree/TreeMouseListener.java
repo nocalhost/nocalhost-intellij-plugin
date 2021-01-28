@@ -128,7 +128,7 @@ public class TreeMouseListener extends MouseAdapter {
                 switch (type) {
                     case Deployment:
                         JBMenuItem devItem;
-                        if (!resourceNode.getNhctlDescribeService().isDeveloping()) {
+                        if (!resourceNode.getNhctlSvcProfile().isDeveloping()) {
                             devItem = new JBMenuItem("Start Develop");
                             devItem.addActionListener(new StartDevelop(resourceNode, project));
                         } else {

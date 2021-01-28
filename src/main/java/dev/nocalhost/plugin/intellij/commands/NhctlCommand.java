@@ -30,7 +30,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 
 
 public final class NhctlCommand {
-    private static final String NHCTL_COMMAND = "nhctl";
+    private static final String NHCTL_COMMAND = "/usr/local/bin/nhctl";
     private final Yaml yaml;
 
     public NhctlCommand() {
@@ -276,13 +276,14 @@ public final class NhctlCommand {
         execute(args, opts);
     }
 
-    public void getPluginInfo(String name, NhctlPluginOptions opts) throws IOException, InterruptedException {
+    public <T> T getPluginInfo(String name, NhctlPluginOptions opts, Class<T> type) throws IOException, InterruptedException {
         List<String> args = Lists.newArrayList(NHCTL_COMMAND, "plugin", "get", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
-        execute(args, opts);
+        String result = execute(args, opts);
+        return yaml.loadAs(result, type);
     }
 
     public List<NhctlPVCItem> listPVC(NhctlListPVCOptions opts) throws IOException, InterruptedException {

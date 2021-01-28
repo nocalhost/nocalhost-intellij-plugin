@@ -16,7 +16,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.event.TreeExpansionEvent;
@@ -35,8 +37,9 @@ import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginInfo;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSvcProfile;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
@@ -324,16 +327,15 @@ public class NocalhostTree extends Tree {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
         List<ResourceNode> resourceNodes = Lists.newArrayList();
+        NhctlPluginOptions nhctlPluginOptions = new NhctlPluginOptions();
+        nhctlPluginOptions.setKubeconfig(kubeconfigPath);
+        NhctlPluginInfo nhctlPluginInfo = nhctlCommand.getPluginInfo(devSpace.getContext().getApplicationName(), nhctlPluginOptions, NhctlPluginInfo.class);
+        final NhctlSvcProfile[] svcProfile = nhctlPluginInfo.getSvcProfile();
         for (KubeResource kubeResource : kubeResourceList.getItems()) {
-            if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "Deployment")) {
-                NhctlDescribeOptions opts = new NhctlDescribeOptions();
-                opts.setDeployment(kubeResource.getMetadata().getName());
-                opts.setKubeconfig(kubeconfigPath);
-                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                        devSpace.getContext().getApplicationName(),
-                        opts,
-                        NhctlDescribeService.class);
-                resourceNodes.add(new ResourceNode(kubeResource, nhctlDescribeService));
+
+            final Optional<NhctlSvcProfile> nhctlSvcProfile = Arrays.stream(svcProfile).filter(svc -> svc.getName().equals(kubeResource.getMetadata().getName())).findFirst();
+            if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "Deployment") && nhctlSvcProfile.isPresent()) {
+                resourceNodes.add(new ResourceNode(kubeResource, nhctlSvcProfile.get()));
             } else {
                 resourceNodes.add(new ResourceNode(kubeResource));
             }

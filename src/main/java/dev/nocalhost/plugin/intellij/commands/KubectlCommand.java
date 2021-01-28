@@ -18,7 +18,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class KubectlCommand {
-    private static final String KUBECTL_COMMAND = "kubectl";
+    private static final String KUBECTL_COMMAND = "/usr/local/bin/kubectl";
 
     private final Gson gson = new Gson();
 

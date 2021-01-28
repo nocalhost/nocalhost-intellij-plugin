@@ -27,7 +27,7 @@ public class ClearPersistentData implements ActionListener {
 
         NhctlListPVCOptions opts = new NhctlListPVCOptions();
         opts.setApp(node.devSpace().getContext().getApplicationName());
-        opts.setSvc(node.getNhctlDescribeService().getRawConfig().getName());
+        opts.setSvc(node.getNhctlSvcProfile().getName());
         opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
         try {
             List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
