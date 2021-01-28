@@ -76,12 +76,20 @@ public class StartDevelop implements ActionListener {
                     final String gitUrl = nhctlDescribeService.getRawConfig().getGitUrl();
 
                     ProgressManager.getInstance().run(new Task.Backgroundable(null, "Cloning " + gitUrl, false) {
+                        private Path gitDir;
+
+                        @Override
+                        public void onSuccess() {
+                            super.onSuccess();
+                            ProjectManagerEx.getInstanceEx().openProject(gitDir, new OpenProjectTask());
+                        }
+
                         @Override
                         public void run(@NotNull ProgressIndicator indicator) {
                             try {
                                 gitCommand.clone(parentDir, gitUrl, node.resourceName());
 
-                                final Path gitDir = parentDir.resolve(node.resourceName());
+                                gitDir = parentDir.resolve(node.resourceName());
 
                                 final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
@@ -89,8 +97,6 @@ public class StartDevelop implements ActionListener {
                                         gitDir.toString(),
                                         new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName())
                                 );
-
-                                ProjectManagerEx.getInstanceEx().openProject(gitDir, new OpenProjectTask());
                             } catch (IOException | InterruptedException e) {
                                 e.printStackTrace();
                             }
