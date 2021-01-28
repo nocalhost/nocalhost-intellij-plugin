@@ -10,6 +10,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.ui.MessageDialogBuilder;
+import com.intellij.openapi.ui.Messages;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -25,7 +26,6 @@ import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.MessageUtil;
 
 public class Uninstall implements ActionListener {
 
@@ -41,7 +41,7 @@ public class Uninstall implements ActionListener {
 
         try {
             if (!NhctlHelper.isApplicationInstalled(devSpace)) {
-                MessageUtil.showMessageDialog("Application has not been installed.");
+                Messages.showMessageDialog("Application has not been installed.", "Uninstall application", null);
                 return;
             }
         } catch (IOException | InterruptedException e) {
@@ -50,7 +50,7 @@ public class Uninstall implements ActionListener {
         }
 
         final String appName = devSpace.getContext().getApplicationName();
-        if (!MessageDialogBuilder.yesNo("Uninstall application: " + appName, "").guessWindowAndAsk()) {
+        if (!MessageDialogBuilder.yesNo("Uninstall application", "Uninstall application " + appName + "?").guessWindowAndAsk()) {
             return;
         }
 

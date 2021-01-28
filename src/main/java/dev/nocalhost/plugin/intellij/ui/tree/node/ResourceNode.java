@@ -5,7 +5,6 @@ import javax.swing.tree.TreeNode;
 
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSvcProfile;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

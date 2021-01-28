@@ -110,7 +110,7 @@ public class InstallDevSpaceDialog extends DialogWrapper {
 
             if (StringUtils.equals(nhctlInstallType, "helmGit") || StringUtils.equals(nhctlInstallType, "helmRepo")) {
                 int specifyValues = MessageDialogBuilder
-                        .yesNoCancel("Do you want to specify a values.yaml?", "")
+                        .yesNoCancel("Install application", "Do you want to specify a values.yaml?")
                         .yesText("Specify One")
                         .noText("Use Default values")
                         .guessWindowAndAsk();

@@ -21,9 +21,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.commands.GitCommand;
@@ -34,7 +32,6 @@ import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.MessageUtil;
 
 public class StartDevelop implements ActionListener {
     private static final Logger LOG = Logger.getInstance(StartDevelop.class);
@@ -64,7 +61,7 @@ public class StartDevelop implements ActionListener {
                     opts,
                     NhctlDescribeService.class);
             if (nhctlDescribeService.isDeveloping()) {
-                MessageUtil.showMessageDialog("Dev mode has been started.");
+                Messages.showMessageDialog("Dev mode has been started.", "Start develop", null);
                 return;
             }
         } catch (IOException | InterruptedException e) {
@@ -84,7 +81,7 @@ public class StartDevelop implements ActionListener {
             }
         } catch (Exception ignored) {}
 
-        int exitCode = MessageDialogBuilder.yesNoCancel("To start develop, you must specify source code directory.", "")
+        int exitCode = MessageDialogBuilder.yesNoCancel("Start develop", "To start develop, you must specify source code directory.")
                 .yesText("Clone from Git Repo")
                 .noText("Open local directly")
                 .guessWindowAndAsk();
