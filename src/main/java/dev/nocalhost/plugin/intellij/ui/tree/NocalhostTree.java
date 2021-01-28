@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.tree;
 
 import com.google.common.collect.Lists;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -106,19 +105,19 @@ public class NocalhostTree extends Tree {
                     ResourceTypeNode resourceTypeNode = (ResourceTypeNode) node;
                     resourceTypeNode.setExpanded(true);
 
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        if (!resourceTypeNode.isLoaded()) {
-                            try {
-                                loadKubeResources(resourceTypeNode);
-                                resourceTypeNode.setLoaded(true);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
+                    ProgressManager.getInstance().run(new Task.Backgroundable(project, "Fetching nocalhost data", false) {
+                        @Override
+                        public void run(@NotNull ProgressIndicator indicator) {
+                            if (!resourceTypeNode.isLoaded()) {
+                                try {
+                                    loadKubeResources(resourceTypeNode);
+                                    resourceTypeNode.setLoaded(true);
+                                } catch (IOException | InterruptedException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
                     });
-                    return;
                 }
             }
 
