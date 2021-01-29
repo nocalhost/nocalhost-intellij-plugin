@@ -19,6 +19,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
@@ -67,7 +68,8 @@ public class EndDevelop implements ActionListener {
                 opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
                 try {
-                    nhctlCommand.devEnd(node.devSpace().getContext().getApplicationName(), opts);
+                    final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
+                    outputCapturedNhctlCommand.devEnd(node.devSpace().getContext().getApplicationName(), opts);
 
                     ApplicationManager.getApplication().getMessageBus()
                             .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)

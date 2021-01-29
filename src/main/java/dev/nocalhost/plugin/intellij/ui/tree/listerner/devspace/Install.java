@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
 import java.awt.event.ActionEvent;
@@ -12,10 +13,11 @@ import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 
 public class Install implements ActionListener {
-
+    private final Project project;
     private final DevSpaceNode node;
 
-    public Install(DevSpaceNode node) {
+    public Install(Project project, DevSpaceNode node) {
+        this.project = project;
         this.node = node;
     }
 
@@ -33,6 +35,6 @@ public class Install implements ActionListener {
             return;
         }
 
-        new InstallDevSpaceDialog(node.getDevSpace()).showAndGet();
+        new InstallDevSpaceDialog(project, node.getDevSpace()).showAndGet();
     }
 }

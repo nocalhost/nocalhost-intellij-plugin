@@ -40,11 +40,16 @@
         <applicationService
                 serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostSettings"/>
 
+        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand" />
+        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand" />
+
         <toolWindow id="Nocalhost" anchor="right" icon="NocalhostIcons.Logo"
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostWindowFactory"/>
         <toolWindow id="Nocalhost Console" anchor="bottom" icon="NocalhostIcons.Logo"
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostConsoleWindowFactory"
                     canCloseContents="true"/>
+        <toolWindow id="Nocalhost Output" anchor="bottom" icon="NocalhostIcons.Logo"
+                    factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostOutputWindowFactory" />
 
         <notificationGroup id="Nocalhost.Notification" displayType="BALLOON"/>
     </extensions>

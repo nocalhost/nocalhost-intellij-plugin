@@ -98,7 +98,11 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
         if (panel == null || StringUtils.isBlank(title)) {
             return;
         }
-        Content content = ContentFactory.SERVICE.getInstance().createContent(panel, title, false);
+        Content content = contentManager.findContent(title);
+        if (content != null) {
+            contentManager.removeContent(content, true);
+        }
+        content = ContentFactory.SERVICE.getInstance().createContent(panel, title, false);
         contentManager.addContent(content);
         contentManager.setSelectedContent(content);
     }

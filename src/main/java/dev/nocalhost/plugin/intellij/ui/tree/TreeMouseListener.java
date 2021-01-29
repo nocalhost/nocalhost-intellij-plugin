@@ -63,7 +63,7 @@ public class TreeMouseListener extends MouseAdapter {
                 if (devSpaceNode.getDevSpace().getInstallStatus() == 1) {
                     return;
                 }
-                new InstallDevSpaceDialog(devSpaceNode.getDevSpace()).showAndGet();
+                new InstallDevSpaceDialog(project, devSpaceNode.getDevSpace()).showAndGet();
             }
         }
     }
@@ -83,7 +83,7 @@ public class TreeMouseListener extends MouseAdapter {
                 JBPopupMenu menu = new JBPopupMenu();
                 if (devSpaceNode.getDevSpace().getInstallStatus() == 1) {
                     JBMenuItem item = new JBMenuItem("Uninstall App");
-                    item.addActionListener(new Uninstall(devSpaceNode));
+                    item.addActionListener(new Uninstall(project, devSpaceNode));
                     menu.add(item);
 
                     menu.addSeparator();
@@ -100,7 +100,7 @@ public class TreeMouseListener extends MouseAdapter {
                     menu.add(loadResourceMenuItem);
                 } else if (devSpaceNode.getDevSpace().getInstallStatus() == 0) {
                     JBMenuItem item = new JBMenuItem("Install App");
-                    item.addActionListener(new Install(devSpaceNode));
+                    item.addActionListener(new Install(project, devSpaceNode));
                     menu.add(item);
                 }
 

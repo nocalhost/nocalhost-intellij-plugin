@@ -14,6 +14,7 @@ import com.intellij.openapi.project.ex.ProjectManagerEx;
 import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 
+import org.apache.commons.compress.utils.Lists;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.event.ActionEvent;
@@ -21,11 +22,13 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.commands.GitCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
@@ -79,62 +82,81 @@ public class StartDevelop implements ActionListener {
                 ProgressManager.getInstance().run(new StartingDevModeTask(project, node.devSpace(), devModeService));
                 return;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         int exitCode = MessageDialogBuilder.yesNoCancel("Start develop", "To start develop, you must specify source code directory.")
                 .yesText("Clone from Git Repo")
                 .noText("Open local directly")
                 .guessWindowAndAsk();
         switch (exitCode) {
-            case Messages.YES:
+            case Messages.YES: {
+                final List<Path> chosenFiles = Lists.newArrayList();
+
                 final FileChooserDescriptor gitSourceDirChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor();
                 gitSourceDirChooser.setShowFileSystemRoots(true);
                 FileChooser.chooseFiles(gitSourceDirChooser, null, null, paths -> {
-                    Path parentDir = paths.get(0).toNioPath();
-
-                    ProgressManager.getInstance().run(new Task.Backgroundable(null, "Cloning " + gitUrl, false) {
-                        private Path gitDir;
-
-                        @Override
-                        public void onSuccess() {
-                            super.onSuccess();
-                            ProjectManagerEx.getInstanceEx().openProject(gitDir, new OpenProjectTask());
-                        }
-
-                        @Override
-                        public void run(@NotNull ProgressIndicator indicator) {
-                            try {
-                                gitCommand.clone(parentDir, gitUrl, node.resourceName());
-
-                                gitDir = parentDir.resolve(node.resourceName());
-
-                                nocalhostSettings.getDevModeProjectBasePath2Service().put(
-                                        gitDir.toString(),
-                                        devModeService
-                                );
-                            } catch (IOException | InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-
+                    paths.forEach((p) -> chosenFiles.add(p.toNioPath()));
                 });
 
-                break;
-            case Messages.NO:
+                if (chosenFiles.size() <= 0) {
+                    return;
+                }
+
+                Path parentDir = chosenFiles.get(0);
+                ProgressManager.getInstance().run(new Task.Backgroundable(null, "Cloning " + gitUrl, false) {
+                    private Path gitDir;
+
+                    @Override
+                    public void onSuccess() {
+                        super.onSuccess();
+                        ProjectManagerEx.getInstanceEx().openProject(gitDir, new OpenProjectTask());
+                    }
+
+                    @Override
+                    public void run(@NotNull ProgressIndicator indicator) {
+                        try {
+                            final OutputCapturedGitCommand outputCapturedGitCommand = project.getService(OutputCapturedGitCommand.class);
+                            outputCapturedGitCommand.clone(parentDir, gitUrl, node.resourceName());
+
+                            gitDir = parentDir.resolve(node.resourceName());
+
+                            nocalhostSettings.getDevModeProjectBasePath2Service().put(
+                                    gitDir.toString(),
+                                    devModeService
+                            );
+                        } catch (IOException | InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
+
+            break;
+            case Messages.NO: {
+                final List<Path> chosenFiles = Lists.newArrayList();
+
                 final FileChooserDescriptor sourceDirChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor();
                 sourceDirChooser.setShowFileSystemRoots(true);
                 FileChooser.chooseFiles(sourceDirChooser, null, null, paths -> {
-                    Path bashPath = paths.get(0).toNioPath();
+                    paths.forEach((p) -> chosenFiles.add(p.toNioPath()));
 
-                    nocalhostSettings.getDevModeProjectBasePath2Service().put(
-                            bashPath.toString(),
-                            devModeService
-                    );
 
-                    ProjectManagerEx.getInstanceEx().openProject(bashPath, new OpenProjectTask());
                 });
-                break;
+
+                if (chosenFiles.size() <= 0) {
+                    return;
+                }
+
+                Path basePath = chosenFiles.get(0);
+                nocalhostSettings.getDevModeProjectBasePath2Service().put(
+                        basePath.toString(),
+                        devModeService
+                );
+
+                ProjectManagerEx.getInstanceEx().openProject(basePath, new OpenProjectTask());
+            }
+            break;
             default:
         }
     }

@@ -9,6 +9,7 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 
@@ -20,7 +21,7 @@ import java.io.IOException;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
@@ -28,10 +29,11 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class Uninstall implements ActionListener {
-
+    private final Project project;
     private final DevSpaceNode node;
 
-    public Uninstall(DevSpaceNode node) {
+    public Uninstall(Project project, DevSpaceNode node) {
+        this.project = project;
         this.node = node;
     }
 
@@ -57,13 +59,13 @@ public class Uninstall implements ActionListener {
         ProgressManager.getInstance().run(new Task.Backgroundable(null, "Uninstalling application: " + appName, false) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
                 NhctlUninstallOptions opts = new NhctlUninstallOptions();
                 opts.setForce(true);
                 opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                 try {
-                    nhctlCommand.uninstall(appName, opts);
+                    outputCapturedNhctlCommand.uninstall(appName, opts);
 
                     final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
                     nocalhostApi.syncInstallStatus(devSpace, 0);

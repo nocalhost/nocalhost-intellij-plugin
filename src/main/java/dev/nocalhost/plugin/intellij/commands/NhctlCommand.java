@@ -29,7 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 
 
-public final class NhctlCommand {
+public class NhctlCommand {
     private static final String NHCTL_COMMAND = "/usr/local/bin/nhctl";
     private final Yaml yaml;
 
@@ -333,7 +333,7 @@ public final class NhctlCommand {
         execute(args, opts);
     }
 
-    private String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException {
+    protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException {
         addGlobalOptions(args, opts);
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
@@ -349,7 +349,7 @@ public final class NhctlCommand {
         return output;
     }
 
-    private void addGlobalOptions(List<String> args, NhctlGlobalOptions opts) {
+    protected void addGlobalOptions(List<String> args, NhctlGlobalOptions opts) {
         if (opts.isDebug()) {
             args.add("--debug");
         }
