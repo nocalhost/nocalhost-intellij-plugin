@@ -101,6 +101,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             }
 
             // nhctl dev start ...
+            indicator.setText("Starting DevMode: dev start");
             NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions();
             nhctlDevStartOptions.setDeployment(devModeService.getName());
             nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
@@ -120,12 +121,14 @@ public class StartingDevModeTask extends Task.Backgroundable {
             } while (!KubectlHelper.isKubeResourceAvailable(deployment) || !StringUtils.equals(containerName, NOCALHOST_DEV_CONTAINER_NAME));
 
             // nhctl sync ...
+            indicator.setText("Starting DevMode: sync file");
             NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions();
             nhctlSyncOptions.setDeployment(devModeService.getName());
             nhctlSyncOptions.setKubeconfig(kubeconfigPath);
             outputCapturedNhctlCommand.sync(appName, nhctlSyncOptions);
 
             // nhctl port-forward ...
+            indicator.setText("Starting DevMode: port forward");
             NhctlPortForwardStartOptions nhctlPortForwardOptions = new NhctlPortForwardStartOptions();
             nhctlPortForwardOptions.setDeployment(devModeService.getName());
             nhctlPortForwardOptions.setWay(NhctlPortForwardStartOptions.Way.DEV_PORTS);
