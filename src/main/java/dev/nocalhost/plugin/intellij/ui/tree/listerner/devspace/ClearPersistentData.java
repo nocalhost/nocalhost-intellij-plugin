@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace;
 
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,6 +16,8 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class ClearPersistentData implements ActionListener {
+    private static final Logger LOG = Logger.getInstance(ClearPersistentData.class);
+
     private DevSpaceNode node;
 
     public ClearPersistentData(DevSpaceNode node) {
@@ -32,7 +35,7 @@ public class ClearPersistentData implements ActionListener {
             List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
             new ClearPersistentDataDialog(node.getDevSpace(), nhctlPVCItems, true).showAndGet();
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while listing pvc items", e);
         }
     }
 }

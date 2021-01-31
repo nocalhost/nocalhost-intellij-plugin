@@ -68,7 +68,7 @@ public class StartDevelop implements ActionListener {
                 return;
             }
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while checking if service was in development", e);
             return;
         }
 
@@ -126,7 +126,7 @@ public class StartDevelop implements ActionListener {
                                     devModeService
                             );
                         } catch (IOException | InterruptedException e) {
-                            e.printStackTrace();
+                            LOG.error("error occurred while cloning git repository", e);
                         }
                     }
                 });

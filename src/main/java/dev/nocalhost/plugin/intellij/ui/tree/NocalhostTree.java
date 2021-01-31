@@ -116,7 +116,7 @@ public class NocalhostTree extends Tree {
                                     loadKubeResources(resourceTypeNode);
                                     resourceTypeNode.setLoaded(true);
                                 } catch (IOException | InterruptedException e) {
-                                    e.printStackTrace();
+                                    LOG.error("error occurred while loading kube resources", e);
                                 }
                             }
                         }

@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
@@ -32,6 +33,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostOutputActivateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 
 public class NocalhostWindow {
+    private static final Logger LOG = Logger.getInstance(NocalhostWindow.class);
 
     private final Project project;
     private final ToolWindow toolWindow;
@@ -114,7 +116,7 @@ public class NocalhostWindow {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error("error occurred while starting develop", e);
             } finally {
                 nocalhostSettings.getDevModeProjectBasePath2Service().remove(project.getBasePath());
             }
@@ -129,7 +131,7 @@ public class NocalhostWindow {
             } catch (AlreadyDisposedException e) {
                 // Ignore
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.error("error occurred while activate output window", e);
             }
         });
     }

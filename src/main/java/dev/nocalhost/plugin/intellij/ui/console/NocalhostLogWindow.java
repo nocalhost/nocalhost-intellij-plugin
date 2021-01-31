@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.console;
 
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
@@ -25,6 +26,8 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class NocalhostLogWindow extends NocalhostConsoleWindow {
+    private static final Logger LOG = Logger.getInstance(NocalhostLogWindow.class);
+
     private final Project project;
     private final ToolWindow toolWindow;
     private final ResourceNode node;
@@ -58,7 +61,8 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                 try {
                     pods = kubectlCommand.getResourceList("pods", Map.of("app", workloadName), devSpace);
                 } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
+                    LOG.error("error occurred while getting workload pods", e);
+                    return;
                 }
                 if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
                     KubeResource kubeResource;
@@ -99,7 +103,8 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
         try {
             logs = kubectlCommand.logs(podName, containerName, devSpace);
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while getting workload log", e);
+            return;
         }
         title = String.format("%s/%s.log", podName, containerName);
 

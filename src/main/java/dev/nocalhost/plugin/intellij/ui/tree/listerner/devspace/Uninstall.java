@@ -6,6 +6,7 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -29,6 +30,8 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class Uninstall implements ActionListener {
+    private static final Logger LOG = Logger.getInstance(Uninstall.class);
+
     private final Project project;
     private final DevSpaceNode node;
 
@@ -47,7 +50,7 @@ public class Uninstall implements ActionListener {
                 return;
             }
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while checking if application was installed", e);
             return;
         }
 
@@ -76,10 +79,8 @@ public class Uninstall implements ActionListener {
                     publisher.action();
 
                     Notifications.Bus.notify(new Notification("Nocalhost.Notification", "Application " + appName + " uninstalled", "", NotificationType.INFORMATION));
-                } catch (InterruptedException interruptedException) {
-                    interruptedException.printStackTrace();
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                } catch (InterruptedException | IOException e) {
+                    LOG.error("error occurred while uninstalling application", e);
                 }
             }
         });

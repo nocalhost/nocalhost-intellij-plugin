@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.tree.listerner.workload;
 
 import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
@@ -22,6 +22,8 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class Config implements ActionListener {
+    private static final Logger LOG = Logger.getInstance(Config.class);
+
     private final ResourceNode node;
     private final Project project;
 
@@ -31,7 +33,7 @@ public class Config implements ActionListener {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent event) {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
         NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions();
@@ -43,12 +45,10 @@ public class Config implements ActionListener {
             FileUtils.write(configFile, config, Charset.defaultCharset());
             VirtualFile virtualFile = LocalFileSystem.getInstance().findFileByIoFile(configFile);
             if (null != virtualFile) {
-                Editor editor = FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile, 0), true);
+                FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile, 0), true);
             }
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
-        } catch (InterruptedException interruptedException) {
-            interruptedException.printStackTrace();
+        } catch (IOException | InterruptedException e) {
+            LOG.error("error occurred while getting application config", e);
         }
     }
 }

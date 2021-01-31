@@ -7,6 +7,7 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
@@ -35,6 +36,8 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class StartingDevModeTask extends Task.Backgroundable {
+    private static final Logger LOG = Logger.getInstance(StartingDevModeTask.class);
+
     private static final String NOCALHOST_DEV_CONTAINER_NAME = "nocalhost-dev";
 
     private final Project project;
@@ -66,7 +69,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
                     nhctlDescribeOptions,
                     NhctlDescribeService.class);
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while describing application", e);
         }
     }
 
@@ -130,7 +133,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             nhctlPortForwardOptions.setKubeconfig(kubeconfigPath);
             outputCapturedNhctlCommand.startPortForward(appName, nhctlPortForwardOptions);
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while starting dev mode", e);
         }
     }
 }

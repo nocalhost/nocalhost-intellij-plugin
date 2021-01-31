@@ -56,7 +56,7 @@ public class EndDevelop implements ActionListener {
                 return;
             }
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while checking if service was in development", e);
             return;
         }
 
@@ -77,7 +77,7 @@ public class EndDevelop implements ActionListener {
 
                     Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode ended", "", NotificationType.INFORMATION), project);
                 } catch (IOException | InterruptedException e) {
-                    LOG.error(e);
+                    LOG.error("error occurred while ending develop", e);
                 }
             }
         });

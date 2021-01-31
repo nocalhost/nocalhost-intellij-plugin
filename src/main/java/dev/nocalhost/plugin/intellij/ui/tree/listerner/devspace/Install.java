@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
@@ -13,6 +14,8 @@ import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 
 public class Install implements ActionListener {
+    private static final Logger LOG = Logger.getInstance(Install.class);
+
     private final Project project;
     private final DevSpaceNode node;
 
@@ -31,7 +34,7 @@ public class Install implements ActionListener {
                 return;
             }
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while checking if application was installed", e);
             return;
         }
 

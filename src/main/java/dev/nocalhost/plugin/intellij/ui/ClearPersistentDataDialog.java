@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui;
 
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -23,6 +24,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class ClearPersistentDataDialog extends DialogWrapper {
+    private static final Logger LOG = Logger.getInstance(ClearPersistentDataDialog.class);
     private final DevSpace devSpace;
 
     private JPanel contentPane;
@@ -115,7 +117,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                     try {
                         nhctlCommand.cleanPVC(opts);
                     } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
+                        LOG.error("error occurred while clearing persistent data", e);
                     }
                 }
             }

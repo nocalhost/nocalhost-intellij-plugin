@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
@@ -34,6 +35,8 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
+    private static final Logger LOG = Logger.getInstance(NocalhostTerminalWindow.class);
+
     private final Project project;
     private final ToolWindow toolWindow;
     private final ResourceNode node;
@@ -126,7 +129,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
 
             toTerminal(cmd);
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while initializing terminal", e);
         }
     }
 
@@ -142,7 +145,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
             terminal.executeCommand(cmd);
             panel = terminal;
         } catch (ExecutionException | IOException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while starting terminal", e);
         }
     }
 

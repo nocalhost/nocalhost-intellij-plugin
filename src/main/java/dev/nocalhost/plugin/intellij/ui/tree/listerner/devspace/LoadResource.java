@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace;
 
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
@@ -18,6 +19,8 @@ import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class LoadResource implements ActionListener {
+    private static final Logger LOG = Logger.getInstance(LoadResource.class);
+
     private final DevSpaceNode node;
     private final Project project;
 
@@ -39,7 +42,7 @@ public class LoadResource implements ActionListener {
             VirtualFile virtualFile = new ReadOnlyVirtualFile(filename, filename, resource);
             FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile, 0), true);
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("error occurred while describing application", e);
         }
     }
 }

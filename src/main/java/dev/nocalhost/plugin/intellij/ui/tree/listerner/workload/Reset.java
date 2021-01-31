@@ -4,6 +4,7 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -21,6 +22,8 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class Reset implements ActionListener {
+    private static final Logger LOG = Logger.getInstance(Reset.class);
+
     private final ResourceNode node;
     private final Project project;
 
@@ -46,10 +49,8 @@ public class Reset implements ActionListener {
                     nhctlCommand.reset(node.devSpace().getContext().getApplicationName(), opts);
                     Notifications.Bus.notify(new Notification("Nocalhost.Notification", node.resourceName() + " reset complete", "", NotificationType.INFORMATION), project);
 
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
-                } catch (InterruptedException interruptedException) {
-                    interruptedException.printStackTrace();
+                } catch (IOException | InterruptedException e) {
+                    LOG.error("error occurred while resetting workload", e);
                 }
             }
         });

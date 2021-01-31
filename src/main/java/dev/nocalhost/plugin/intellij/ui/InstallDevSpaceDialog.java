@@ -6,6 +6,7 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
@@ -41,6 +42,8 @@ import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class InstallDevSpaceDialog extends DialogWrapper {
+    private static final Logger LOG = Logger.getInstance(InstallDevSpaceDialog.class);
+
     private final Project project;
 
     private JPanel dialogPanel;
@@ -181,7 +184,7 @@ public class InstallDevSpaceDialog extends DialogWrapper {
                                 "",
                                 NotificationType.INFORMATION));
                     } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
+                        LOG.error("error occurred while installing application", e);
                     }
                 }
             });
