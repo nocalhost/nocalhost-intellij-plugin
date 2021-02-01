@@ -1,0 +1,312 @@
+package dev.nocalhost.plugin.intellij.ui;
+
+import com.intellij.ide.plugins.newui.ColorButton;
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.MessageDialogBuilder;
+import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.ui.JBColor;
+import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.components.JBTextField;
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.util.ui.JBEmptyBorder;
+import com.intellij.util.ui.UIUtil;
+
+import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.awt.*;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+
+public class PortForwardConfigurationDialog extends DialogWrapper {
+    private static final Logger LOG = Logger.getInstance(PortForwardConfigurationDialog.class);
+
+    private final ResourceNode node;
+    private final Project project;
+
+    private JPanel dialogPanel;
+    private JScrollPane scrollPane;
+    private JPanel listPanel;
+
+    private JBTextField startTextField;
+    private JButton startButton;
+
+    private List<String> currentPortForwards;
+
+    public PortForwardConfigurationDialog(ResourceNode node, Project project) {
+        super(true);
+        setTitle("Port forward configuration for service " + node.resourceName());
+
+        this.node = node;
+        this.project = project;
+
+        dialogPanel = new SimpleToolWindowPanel(true);
+
+        setupStartPanel();
+        setupStopPanel();
+
+        init();
+
+        updatePortForwardList();
+    }
+
+    @Override
+    protected Action @NotNull [] createActions() {
+        myOKAction.putValue(Action.NAME, "Close");
+        return new Action[]{getOKAction()};
+    }
+
+    @Override
+    protected @Nullable JComponent createCenterPanel() {
+        return dialogPanel;
+    }
+
+    private void updatePortForwardList() {
+        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+
+        NhctlDescribeOptions opts = new NhctlDescribeOptions();
+        opts.setDeployment(node.resourceName());
+        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
+
+        ProgressManager.getInstance().run(new Task.Modal(project, "Loading pord forward list", false) {
+            private List<String> portForwardStatusList;
+
+            @Override
+            public void onSuccess() {
+                super.onSuccess();
+                createList(portForwardStatusList);
+                currentPortForwards = portForwardStatusList;
+            }
+
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                try {
+                    NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                            node.devSpace().getContext().getApplicationName(),
+                            opts,
+                            NhctlDescribeService.class);
+                    portForwardStatusList = nhctlDescribeService.getPortForwardStatusList();
+                } catch (IOException | InterruptedException e) {
+                    LOG.error("error occurred while loading port forward list", e);
+                }
+            }
+        });
+    }
+
+    private void setupStartPanel() {
+        startTextField = new JBTextField();
+        startTextField.getEmptyText().appendText("single: 1234:1234, multiple: 1234:1234,5678:5678");
+        startTextField.setMinimumSize(new Dimension(400, -1));
+        startTextField.addCaretListener(e -> startButton.setEnabled(StringUtils.isNotEmpty(startTextField.getText())));
+        GridConstraints textFieldConstraints = new GridConstraints();
+        textFieldConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_WANT_GROW | GridConstraints.SIZEPOLICY_CAN_GROW);
+        textFieldConstraints.setVSizePolicy(GridConstraints.SIZEPOLICY_CAN_SHRINK);
+        textFieldConstraints.setFill(GridConstraints.FILL_HORIZONTAL);
+        textFieldConstraints.setColumn(0);
+
+        startButton = new StartButton();
+        startButton.setEnabled(false);
+        startButton.addActionListener(event -> {
+            Set<String> toBeStartedPortForwards = Arrays.stream(startTextField.getText().split(",")).map(String::trim).collect(Collectors.toSet());
+            for (String currentPortForward : currentPortForwards) {
+                toBeStartedPortForwards.remove(currentPortForward.substring(0, currentPortForward.indexOf("(")));
+            }
+            if (toBeStartedPortForwards.size() <= 0) {
+                return;
+            }
+
+            ProgressManager.getInstance().run(new Task.Modal(project, "Starting port forward " + startTextField.getText(), false) {
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+
+                    NhctlPortForwardStartOptions opts = new NhctlPortForwardStartOptions();
+                    opts.setDevPorts(Lists.newArrayList(toBeStartedPortForwards.iterator()));
+                    opts.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
+                    opts.setDeployment(node.resourceName());
+                    opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
+
+                    try {
+                        nhctlCommand.startPortForward(node.devSpace().getContext().getApplicationName(), opts);
+                    } catch (IOException | InterruptedException e) {
+                        LOG.error("error occurred while starting port forward", e);
+                    } finally {
+                        updatePortForwardList();
+                        startTextField.setText("");
+                        startButton.setEnabled(false);
+                    }
+                }
+            });
+        });
+        GridConstraints buttonConstraints = new GridConstraints();
+        buttonConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW);
+        buttonConstraints.setVSizePolicy(GridConstraints.SIZEPOLICY_FIXED);
+        buttonConstraints.setFill(GridConstraints.FILL_NONE);
+        buttonConstraints.setColumn(1);
+
+        GridLayoutManager startPanelLayoutManager = new GridLayoutManager(1, 2);
+        startPanelLayoutManager.setSameSizeHorizontally(false);
+        startPanelLayoutManager.setSameSizeVertically(false);
+        startPanelLayoutManager.setHGap(-1);
+        startPanelLayoutManager.setVGap(-1);
+
+        JPanel startPanel = new JPanel();
+        startPanel.setLayout(startPanelLayoutManager);
+        startPanel.add(startTextField, textFieldConstraints);
+        startPanel.add(startButton, buttonConstraints);
+        startPanel.setBorder(new CompoundBorder(new JBEmptyBorder(0), new JBEmptyBorder(0, 0, 10, 15)));
+
+        GridConstraints stopPanelConstraints = new GridConstraints();
+        stopPanelConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_FIXED);
+        stopPanelConstraints.setVSizePolicy(GridConstraints.SIZEPOLICY_FIXED);
+        stopPanelConstraints.setFill(GridConstraints.FILL_BOTH);
+        dialogPanel.add(startPanel, BorderLayout.NORTH);
+    }
+
+    private void setupStopPanel() {
+        listPanel = new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true));
+
+        scrollPane = new JBScrollPane(listPanel);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPane.setPreferredSize(new Dimension(-1, 400));
+
+        GridConstraints scrollPaneConstraints = new GridConstraints();
+        scrollPaneConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_CAN_GROW | GridConstraints.SIZEPOLICY_WANT_GROW);
+        scrollPaneConstraints.setVSizePolicy(GridConstraints.SIZEPOLICY_FIXED);
+        scrollPaneConstraints.setFill(GridConstraints.FILL_HORIZONTAL);
+        dialogPanel.add(scrollPane);
+    }
+
+    private void createList(List<String> portForwards) {
+        List<JPanel> items = Lists.newArrayList();
+
+        for (String portForward : portForwards) {
+            items.add(createItem(portForward));
+        }
+
+        listPanel.removeAll();
+        for (JPanel item : items) {
+            listPanel.add(item);
+        }
+        listPanel.repaint();
+        listPanel.revalidate();
+    }
+
+    private JPanel createItem(String portForward) {
+        JLabel label = new JLabel(portForward);
+        label.setBorder(new CompoundBorder(new JBEmptyBorder(0), new JBEmptyBorder(0, 8, 0, 8)));
+        GridConstraints labelConstraints = new GridConstraints();
+        labelConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_WANT_GROW | GridConstraints.SIZEPOLICY_CAN_GROW);
+        labelConstraints.setVSizePolicy(GridConstraints.SIZEPOLICY_FIXED);
+        labelConstraints.setFill(GridConstraints.FILL_HORIZONTAL);
+        labelConstraints.setColumn(0);
+
+        JButton button = new StopButton();
+        button.addActionListener(event -> {
+            if (!MessageDialogBuilder.yesNo("Port forward", "Stop port foward " + portForward).guessWindowAndAsk()) {
+                return;
+            }
+
+            ProgressManager.getInstance().run(new Task.Modal(project, "Stopping port forward " + portForward, false) {
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+
+                    NhctlPortForwardEndOptions opts = new NhctlPortForwardEndOptions();
+                    opts.setPort(portForward.substring(0, portForward.indexOf("(")));
+                    opts.setDeployment(node.resourceName());
+                    opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
+
+                    try {
+                        nhctlCommand.endPortForward(node.devSpace().getContext().getApplicationName(), opts);
+                    } catch (IOException | InterruptedException e) {
+                        LOG.error("error occurred while stopping port forward", e);
+                    } finally {
+                        updatePortForwardList();
+                    }
+                }
+            });
+        });
+        GridConstraints buttonConstraints = new GridConstraints();
+        buttonConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW);
+        buttonConstraints.setVSizePolicy(GridConstraints.SIZEPOLICY_FIXED);
+        buttonConstraints.setFill(GridConstraints.FILL_NONE);
+        buttonConstraints.setColumn(1);
+
+        GridLayoutManager itemLayoutManager = new GridLayoutManager(1, 2);
+        itemLayoutManager.setSameSizeHorizontally(false);
+        itemLayoutManager.setSameSizeVertically(false);
+        itemLayoutManager.setHGap(-1);
+        itemLayoutManager.setVGap(-1);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(itemLayoutManager);
+        panel.add(label, labelConstraints);
+        panel.add(button, buttonConstraints);
+
+        return panel;
+    }
+
+    private class StartButton extends ColorButton {
+        private final Color BlueColor = new JBColor(0x669ED5, 0x5E91C3);
+        private final Color BackgroundColor = new JBColor(() -> JBColor.isBright() ? UIUtil.getListBackground() : new Color(0x313335));
+        private final Color ForegroundColor = BlueColor;
+        private final Color BorderColor = BlueColor;
+        private final Color FocusedBackground = new Color(0xBEDBFD);
+
+        public StartButton() {
+            setTextColor(ForegroundColor);
+            setFocusedTextColor(ForegroundColor);
+            setBgColor(BackgroundColor);
+            setFocusedBgColor(FocusedBackground);
+            setBorderColor(BorderColor);
+            setFocusedBorderColor(BorderColor);
+
+            setText("Start");
+            setWidth72(this);
+        }
+    }
+
+    private class StopButton extends ColorButton {
+        private final Color RedColor = new JBColor(0xC06362, 0xAC5D52);
+        private final Color BackgroundColor = new JBColor(() -> JBColor.isBright() ? UIUtil.getListBackground() : new Color(0x313335));
+        private final Color ForegroundColor = RedColor;
+        private final Color BorderColor = RedColor;
+        private final Color FocusedBackground = new Color(0xF1BAC5);
+
+        public StopButton() {
+            setTextColor(ForegroundColor);
+            setFocusedTextColor(ForegroundColor);
+            setBgColor(BackgroundColor);
+            setFocusedBgColor(FocusedBackground);
+            setBorderColor(BorderColor);
+            setFocusedBorderColor(BorderColor);
+
+            setText("Stop");
+            setWidth72(this);
+        }
+    }
+}

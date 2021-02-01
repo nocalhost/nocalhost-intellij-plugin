@@ -1,25 +1,24 @@
 package dev.nocalhost.plugin.intellij.ui.tree.listerner.workload;
 
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.project.Project;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.ui.PortForwardConfigurationDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class PortForward implements ActionListener {
-
     private final ResourceNode node;
+    private final Project project;
 
-    public PortForward(ResourceNode node) {
+    public PortForward(ResourceNode node, Project project) {
         this.node = node;
+        this.project = project;
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
+    public void actionPerformed(ActionEvent event) {
+        new PortForwardConfigurationDialog(node, project).show();
     }
 }

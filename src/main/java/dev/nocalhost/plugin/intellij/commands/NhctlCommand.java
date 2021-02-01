@@ -24,6 +24,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
@@ -218,8 +219,31 @@ public class NhctlCommand {
         args.add("--way");
         args.add(opts.getWay().getVal());
 
+        String result = execute(args, opts);
+        if (StringUtils.contains(result, "run background success")) {
+            return;
+        } else {
+            throw new RuntimeException(result);
+        }
+    }
 
-        execute(args, opts);
+    public void endPortForward(String name, NhctlPortForwardEndOptions opts) throws IOException, InterruptedException {
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "port-forward", "end", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        if (StringUtils.isNotEmpty(opts.getPort())) {
+            args.add("--port");
+            args.add(opts.getPort());
+        }
+
+        String result = execute(args, opts);
+        if (StringUtils.contains(result, "port-forward has been stop")) {
+            return;
+        } else {
+            throw new RuntimeException(result);
+        }
     }
 
     public String describe(String name, NhctlDescribeOptions opts) throws IOException, InterruptedException {

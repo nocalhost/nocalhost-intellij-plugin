@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import java.util.List;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,4 +13,5 @@ public class NhctlDescribeService {
     private boolean developing;
     private boolean portForwarded;
     private boolean syncing;
+    private List<String> portForwardStatusList;
 }

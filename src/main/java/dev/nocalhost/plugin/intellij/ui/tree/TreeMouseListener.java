@@ -25,6 +25,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.ClearPersistentD
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Config;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.EndDevelop;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Logs;
+import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.PortForward;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Reset;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.StartDevelop;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Terminal;
@@ -144,6 +145,7 @@ public class TreeMouseListener extends MouseAdapter {
                         clearPersistentDataItem.addActionListener(new ClearPersistentData(resourceNode));
                         configItem.addActionListener(new Config(resourceNode, project));
                         logsItem.addActionListener(new Logs(resourceNode, Deployment, project));
+                        portForwardItem.addActionListener(new PortForward(resourceNode, project));
                         resetItem.addActionListener(new Reset(resourceNode, project));
                         terminalItem.addActionListener(new Terminal(resourceNode, Deployment, project));
 
