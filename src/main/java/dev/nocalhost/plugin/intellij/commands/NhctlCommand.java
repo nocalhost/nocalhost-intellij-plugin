@@ -251,8 +251,6 @@ public class NhctlCommand {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
-        addGlobalOptions(args, opts);
-
         return execute(args, opts);
     }
 
@@ -266,7 +264,7 @@ public class NhctlCommand {
     }
 
     public void saveConfig(String name, NhctlConfigOptions opts, String content) throws IOException, InterruptedException {
-        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "config", "get", name);
+        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "config", "edit", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
