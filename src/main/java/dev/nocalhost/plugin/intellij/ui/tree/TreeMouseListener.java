@@ -14,6 +14,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.tree.TreePath;
 
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSvcProfile;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Install;
@@ -128,15 +129,17 @@ public class TreeMouseListener extends MouseAdapter {
                 switch (type) {
                     case Deployment:
                         JBMenuItem devItem;
-                        if (!resourceNode.getNhctlSvcProfile().isDeveloping()) {
-                            devItem = new JBMenuItem("Start Develop");
-                            devItem.addActionListener(new StartDevelop(resourceNode, project));
-                        } else {
-                            devItem = new JBMenuItem("End Develop");
-                            devItem.addActionListener(new EndDevelop(resourceNode, project));
+                        final NhctlSvcProfile nhctlSvcProfile = resourceNode.getNhctlSvcProfile();
+                        if (nhctlSvcProfile != null) {
+                            if (!nhctlSvcProfile.isDeveloping()) {
+                                devItem = new JBMenuItem("Start Develop");
+                                devItem.addActionListener(new StartDevelop(resourceNode, project));
+                            } else {
+                                devItem = new JBMenuItem("End Develop");
+                                devItem.addActionListener(new EndDevelop(resourceNode, project));
+                            }
+                            menu.add(devItem);
                         }
-
-                        menu.add(devItem);
 
                         clearPersistentDataItem.addActionListener(new ClearPersistentData(resourceNode));
                         configItem.addActionListener(new Config(resourceNode, project));

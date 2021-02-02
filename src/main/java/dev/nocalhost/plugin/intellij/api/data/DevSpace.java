@@ -39,5 +39,7 @@ public class DevSpace {
         private String applicationName;
         @SerializedName("application_url")
         private String applicationUrl;
+        @SerializedName("application_config_path")
+        private String applicationConfigPath;
     }
 }

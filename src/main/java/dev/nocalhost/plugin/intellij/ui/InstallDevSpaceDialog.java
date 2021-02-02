@@ -141,6 +141,11 @@ public class InstallDevSpaceDialog extends DialogWrapper {
                     opts.setHelmValues(chosenFiles.get(0).toString());
                 }
             }
+            if (StringUtils.equals(nhctlInstallType, "rawManifest")) {
+                if (StringUtils.isNotEmpty(context.getApplicationConfigPath())) {
+                    opts.setConfig(context.getApplicationConfigPath());
+                }
+            }
 
             opts.setType(nhctlInstallType);
             opts.setResourcesPath(Arrays.asList(context.getResourceDir()));

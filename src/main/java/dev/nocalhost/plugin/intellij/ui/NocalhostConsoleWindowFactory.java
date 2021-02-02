@@ -2,9 +2,6 @@ package dev.nocalhost.plugin.intellij.ui;
 
 import com.google.common.collect.Lists;
 
-import com.intellij.execution.filters.TextConsoleBuilderFactory;
-import com.intellij.execution.ui.ConsoleView;
-import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbAware;
@@ -25,7 +22,6 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
-import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleLogNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.Action;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleWindow;
@@ -58,26 +54,16 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
                 NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC,
                 this::newTerminal
         );
-        application.getMessageBus().connect().subscribe(
-                NocalhostConsoleLogNotifier.NOCALHOST_CONSOLE_LOG_NOTIFIER_TOPIC,
-                this::updateLog
-        );
-    }
-
-    private void updateLog(String s) {
-        ConsoleView consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
-        consoleView.print(s, ConsoleViewContentType.LOG_DEBUG_OUTPUT);
-        Content content = ContentFactory.SERVICE.getInstance().createContent(consoleView.getComponent(), "LOGS", false);
-        contentManager.addContent(content);
-        contentManager.setSelectedContent(content);
     }
 
     private void newTerminal(DevSpace devSpace, String deploymentName) {
         NocalhostConsoleWindow nocalhostConsoleWindow = new NocalhostTerminalWindow(project, toolWindow, devSpace, deploymentName);
         addContent(nocalhostConsoleWindow);
+        toolWindow.show();
     }
 
     private void updateTab(ResourceNode node, KubeResourceType type, Action action) {
+        toolWindow.show();
         NocalhostConsoleWindow nocalhostConsoleWindow;
         switch (action) {
             case LOGS:

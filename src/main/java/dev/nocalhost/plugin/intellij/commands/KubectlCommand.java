@@ -104,6 +104,7 @@ public class KubectlCommand {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
         List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "logs", podName);
+        args.add("--tail=200");
         args.add("--container");
         args.add(containerName);
         args.add("--kubeconfig");
