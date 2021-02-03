@@ -5,6 +5,10 @@ import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
 
+import com.intellij.openapi.components.ServiceManager;
+
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
@@ -15,17 +19,18 @@ import java.util.stream.Collectors;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class KubectlCommand {
-    private static final String KUBECTL_COMMAND = "/usr/local/bin/kubectl";
+    private static final String KUBECTL_COMMAND = "kubectl";
 
     private final Gson gson = new Gson();
 
     public KubeResourceList getResourceList(String kind, Map<String, String> labels, DevSpace devSpace) throws IOException, InterruptedException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
-        List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "get", kind);
+        List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind);
         args.add("-n");
         args.add(devSpace.getNamespace());
         args.add("-o");
@@ -56,7 +61,7 @@ public class KubectlCommand {
     public KubeResource getResource(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
-        List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "get", kind, name);
+        List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind, name);
         args.add("-n");
         args.add(devSpace.getNamespace());
         args.add("-o");
@@ -79,7 +84,7 @@ public class KubectlCommand {
     public String exec(String podName, String containerName, String command, DevSpace devSpace) throws IOException, InterruptedException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
-        List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "exec", podName);
+        List<String> args = Lists.newArrayList(getKubectlCmd(), "exec", podName);
         args.add("--container");
         args.add(containerName);
         args.add("--kubeconfig");
@@ -103,7 +108,7 @@ public class KubectlCommand {
     public String logs(String podName, String containerName, DevSpace devSpace) throws IOException, InterruptedException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
-        List<String> args = Lists.newArrayList(KUBECTL_COMMAND, "logs", podName);
+        List<String> args = Lists.newArrayList(getKubectlCmd(), "logs", podName);
         args.add("--tail=200");
         args.add("--container");
         args.add(containerName);
@@ -121,5 +126,14 @@ public class KubectlCommand {
         String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
         System.out.println(output);
         return output;
+    }
+
+    protected String getKubectlCmd() {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        String kubectlCmd = KUBECTL_COMMAND;
+        if (StringUtils.isNoneBlank(nocalhostSettings.getKubectlBinary())) {
+            kubectlCmd = nocalhostSettings.getKubectlBinary();
+        }
+        return kubectlCmd;
     }
 }

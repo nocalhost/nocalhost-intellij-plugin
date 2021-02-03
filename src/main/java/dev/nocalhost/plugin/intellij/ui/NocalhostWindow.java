@@ -38,7 +38,7 @@ public class NocalhostWindow {
     private final Project project;
     private final ToolWindow toolWindow;
 
-    private JPanel panel;
+    private SimpleToolWindowPanel panel;
     private NocalhostTree tree;
     private JBScrollPane scrollPane;
     private final JButton loginButton;
@@ -85,7 +85,8 @@ public class NocalhostWindow {
         if (StringUtils.isNotBlank(jwt)) {
             toolWindow.setTitleActions(Lists.newArrayList(
                     ActionManager.getInstance().getAction("Nocalhost.RefreshAction"),
-                    ActionManager.getInstance().getAction("Nocalhost.LogoutAction")
+                    ActionManager.getInstance().getAction("Nocalhost.LogoutAction"),
+                    ActionManager.getInstance().getAction("Nocalhost.SettingAction")
             ));
             tree.clear();
             tree.updateDevSpaces();

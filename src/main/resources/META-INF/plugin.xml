@@ -52,17 +52,19 @@
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostOutputWindowFactory" />
 
         <notificationGroup id="Nocalhost.Notification" displayType="BALLOON"/>
+
+        <applicationConfigurable parentId="tools" instance="dev.nocalhost.plugin.intellij.ui.NocalhostConfigurable"
+                                 id="dev.nocalhost.plugin.intellij.ui.NocalhostConfigurable"
+                                 displayName="Nocalhost" />
     </extensions>
 
     <actions>
-        <!-- Add your actions here -->
-        <group id="Nocalhost.DevSpace.Controller" text="DevSpace" popup="true">
-            <separator/>
-        </group>
 
         <action id="Nocalhost.RefreshAction" text="Refresh"
-                class="dev.nocalhost.plugin.intellij.ui.action.RefreshAction"/>
+                class="dev.nocalhost.plugin.intellij.ui.action.RefreshAction" />
         <action id="Nocalhost.LogoutAction" text="Logout"
-                class="dev.nocalhost.plugin.intellij.ui.action.LogoutAction"/>
+                class="dev.nocalhost.plugin.intellij.ui.action.LogoutAction" />
+        <action id="Nocalhost.SettingAction"  text="Setting"
+                class="dev.nocalhost.plugin.intellij.ui.action.SettingAction" />
     </actions>
 </idea-plugin>

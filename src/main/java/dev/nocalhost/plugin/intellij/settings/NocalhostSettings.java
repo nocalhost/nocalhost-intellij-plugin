@@ -31,6 +31,8 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
     private String jwt;
     private UserInfo userInfo;
     private Map<String, DevModeService> devModeProjectBasePath2Service = Maps.newConcurrentMap();
+    private String nhctlBinary;
+    private String kubectlBinary;
 
     @Override
     public @Nullable NocalhostSettings getState() {
