@@ -17,5 +17,8 @@ public interface NocalhostIcons {
         Icon Running = IconLoader.getIcon("/icons/status-running.svg", NocalhostIcons.class);
         Icon Unknown = IconLoader.getIcon("/icons/status-unknown.svg", NocalhostIcons.class);
         Icon Loading = IconLoader.getIcon("/icons/loading.svg", NocalhostIcons.class);
+        Icon Dev = IconLoader.getIcon("/icons/dev.svg", NocalhostIcons.class);
+        Icon DevPortForwarding = IconLoader.getIcon("/icons/dev-port-forwarding.svg", NocalhostIcons.class);
+        Icon NormalPortForwarding = IconLoader.getIcon("/icons/normal-port-forwarding.svg", NocalhostIcons.class);
     }
 }

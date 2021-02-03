@@ -15,6 +15,7 @@ import java.util.List;
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSvcProfile;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
@@ -68,26 +69,60 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             append(node.getKubeResource().getMetadata().getName());
 
             if (StringUtils.equalsIgnoreCase(node.getKubeResource().getKind(), "Deployment")) {
-                Icon icon = NocalhostIcons.Status.Unknown;
-                boolean available = false;
-                boolean progressing = false;
-                List<KubeResource.Status.Condition> conditions = node.getKubeResource().getStatus()
-                        .getConditions();
-                for (KubeResource.Status.Condition condition : conditions) {
-                    if (StringUtils.equals(condition.getType(), "Available")
-                            && StringUtils.equals(condition.getStatus(), "True")) {
-                        icon = NocalhostIcons.Status.Running;
-                        available = true;
-                    } else if (StringUtils.equals(condition.getType(), "Progressing")
-                            && StringUtils.equals(condition.getStatus(), "True")) {
-                        progressing = true;
-                    }
-                }
-                if (progressing && !available) {
-                    icon = NocalhostIcons.Status.Loading;
-                }
+                Icon icon = getDeploymentIcon(node);
                 setIcon(icon);
             }
         }
+    }
+
+    protected Icon getDeploymentIcon(ResourceNode node) {
+        final NhctlSvcProfile nhctlSvcProfile = node.getNhctlSvcProfile();
+
+
+        DeploymentStatus status = getDeploymentStatus(node);
+        switch (status) {
+            case DEVELOPING:
+                if (nhctlSvcProfile != null && nhctlSvcProfile.isPortForwarded()) {
+                    return NocalhostIcons.Status.DevPortForwarding;
+                }
+                return NocalhostIcons.Status.Dev;
+            case RUNNING:
+                if (nhctlSvcProfile != null && nhctlSvcProfile.isPortForwarded()) {
+                    return NocalhostIcons.Status.NormalPortForwarding;
+                }
+                return NocalhostIcons.Status.Running;
+            case STARTING:
+                return NocalhostIcons.Status.Loading;
+            case UNKNOWN:
+                return NocalhostIcons.Status.Unknown;
+            default:
+                throw new IllegalStateException("Unexpected value: " + status);
+        }
+    }
+
+    protected DeploymentStatus getDeploymentStatus(ResourceNode node) {
+        DeploymentStatus status = DeploymentStatus.UNKNOWN;
+        final NhctlSvcProfile nhctlSvcProfile = node.getNhctlSvcProfile();
+        if (nhctlSvcProfile != null && nhctlSvcProfile.isDeveloping()) {
+            return DeploymentStatus.DEVELOPING;
+        }
+        boolean available = false;
+        boolean progressing = false;
+        List<KubeResource.Status.Condition> conditions = node.getKubeResource().getStatus()
+                                                             .getConditions();
+        for (KubeResource.Status.Condition condition : conditions) {
+            if (StringUtils.equals(condition.getType(), "Available")
+                    && StringUtils.equals(condition.getStatus(), "True")) {
+                status = DeploymentStatus.RUNNING;
+                available = true;
+            } else if (StringUtils.equals(condition.getType(), "Progressing")
+                    && StringUtils.equals(condition.getStatus(), "True")) {
+                progressing = true;
+            }
+        }
+        if (progressing && !available) {
+            status = DeploymentStatus.STARTING;
+        }
+        return status;
     }
 }
