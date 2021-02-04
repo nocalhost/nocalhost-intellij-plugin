@@ -81,6 +81,31 @@ public class KubectlCommand {
         return gson.fromJson(new InputStreamReader(process.getInputStream(), Charsets.UTF_8), KubeResource.class);
     }
 
+    public String getResourceYaml(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException {
+        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
+
+        List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind, name);
+        args.add("-n");
+        args.add(devSpace.getNamespace());
+        args.add("-o");
+        args.add("yaml");
+        args.add("--kubeconfig");
+        args.add(kubeconfigPath.toString());
+
+        String cmd = String.join(" ", args.toArray(new String[]{}));
+        System.out.println("Execute command: " + cmd);
+
+        Process process = new ProcessBuilder(args).start();
+        String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
+
+        if (process.waitFor() != 0) {
+            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
+                    process.getErrorStream(), Charsets.UTF_8)));
+        }
+
+        return output;
+    }
+
     public String exec(String podName, String containerName, String command, DevSpace devSpace) throws IOException, InterruptedException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
