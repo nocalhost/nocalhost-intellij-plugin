@@ -1,8 +1,11 @@
-package dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace;
+package dev.nocalhost.plugin.intellij.ui.action.devspace;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
@@ -15,8 +18,6 @@ import com.intellij.openapi.ui.MessageDialogBuilder;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
@@ -27,19 +28,20 @@ import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
-public class Reset implements ActionListener {
-    private static final Logger LOG = Logger.getInstance(Reset.class);
+public class ResetAppAction extends AnAction {
+    private static final Logger LOG = Logger.getInstance(ResetAppAction.class);
 
     private final Project project;
     private final DevSpaceNode node;
 
-    public Reset(Project project, DevSpaceNode node) {
+    public ResetAppAction(Project project, DevSpaceNode node) {
+        super("Reset", "", AllIcons.General.Reset);
         this.project = project;
         this.node = node;
     }
 
     @Override
-    public void actionPerformed(ActionEvent event) {
+    public void actionPerformed(@NotNull AnActionEvent event) {
         final DevSpace devSpace = node.getDevSpace();
 
         final String appName = devSpace.getContext().getApplicationName();

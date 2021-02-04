@@ -1,11 +1,14 @@
 package dev.nocalhost.plugin.intellij.ui.tree;
 
 
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionPopupMenu;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.JBMenuItem;
 import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -23,18 +26,20 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSvcProfile;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Install;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.LoadResource;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Uninstall;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.ViewKubeConfig;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.ClearPersistentData;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Config;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.EndDevelop;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Logs;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.PortForward;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Reset;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.StartDevelop;
-import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Terminal;
+import dev.nocalhost.plugin.intellij.ui.action.devspace.ClearAppPersisentDataAction;
+import dev.nocalhost.plugin.intellij.ui.action.devspace.InstallAppAction;
+import dev.nocalhost.plugin.intellij.ui.action.devspace.LoadResourceAction;
+import dev.nocalhost.plugin.intellij.ui.action.devspace.ResetAppAction;
+import dev.nocalhost.plugin.intellij.ui.action.devspace.UninstallAppAction;
+import dev.nocalhost.plugin.intellij.ui.action.devspace.ViewKubeConfigAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.EndDevelopAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.LogsAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.PortForwardAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.ResetAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.StartDevelopAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.TerminalAction;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
@@ -53,18 +58,10 @@ public class TreeMouseListener extends MouseAdapter {
         this.project = project;
     }
 
-    private TreePath getPath(MouseEvent e) {
-        TreePath treePath = tree.getClosestPathForLocation(e.getX(), e.getY());
-        if (treePath == null) {
-            treePath = tree.getPathForLocation(e.getX(), e.getY());
-        }
-        return treePath;
-    }
-
     @Override
     public void mouseClicked(MouseEvent event) {
         if (event.getClickCount() == 2 && event.getButton() == MouseEvent.BUTTON1) {
-            TreePath treePath = getPath(event);
+            TreePath treePath = tree.getClosestPathForLocation(event.getX(), event.getY());
             if (treePath == null) {
                 return;
             }
@@ -95,9 +92,9 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     @Override
-    public void mouseReleased(MouseEvent mouseEvent) {
-        if (mouseEvent.getButton() == MouseEvent.BUTTON3) {
-            TreePath treePath = getPath(mouseEvent);
+    public void mouseReleased(MouseEvent event) {
+        if (event.getButton() == MouseEvent.BUTTON3) {
+            TreePath treePath = tree.getClosestPathForLocation(event.getX(), event.getY());
             if (treePath == null) {
                 return;
             }
@@ -106,40 +103,28 @@ public class TreeMouseListener extends MouseAdapter {
             if (object instanceof DevSpaceNode) {
                 DevSpaceNode devSpaceNode = (DevSpaceNode) object;
 
-                JBPopupMenu menu = new JBPopupMenu();
+                DefaultActionGroup actionGroup = new DefaultActionGroup();
+
                 if (devSpaceNode.getDevSpace().getInstallStatus() == 1) {
-                    JBMenuItem item = new JBMenuItem("Uninstall App");
-                    item.addActionListener(new Uninstall(project, devSpaceNode));
-                    menu.add(item);
+                    actionGroup.add(new UninstallAppAction(project, devSpaceNode));
 
-                    menu.addSeparator();
-                    JBMenuItem clearPersistentDataMenuItem = new JBMenuItem("Clear persistent data");
-                    clearPersistentDataMenuItem.addActionListener(new dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.ClearPersistentData(devSpaceNode));
-                    menu.add(clearPersistentDataMenuItem);
-                    JBMenuItem viewKubeConfigMenuItem = new JBMenuItem("View KubeConfig");
-                    viewKubeConfigMenuItem.addActionListener(new ViewKubeConfig(devSpaceNode, project));
-                    menu.add(viewKubeConfigMenuItem);
+                    actionGroup.add(new Separator());
+                    actionGroup.add(new ClearAppPersisentDataAction(project, devSpaceNode));
+                    actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
 
-                    menu.addSeparator();
-                    JBMenuItem loadResourceMenuItem = new JBMenuItem("Load resource");
-                    loadResourceMenuItem.addActionListener(new LoadResource(devSpaceNode, project));
-                    menu.add(loadResourceMenuItem);
+                    actionGroup.add(new Separator());
+                    actionGroup.add(new LoadResourceAction(project, devSpaceNode));
 
-                    menu.addSeparator();
-                    JBMenuItem resetMenuItem = new JBMenuItem("reset");
-                    resetMenuItem.addActionListener(new dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Reset(project, devSpaceNode));
-                    menu.add(resetMenuItem);
+                    actionGroup.add(new Separator());
+                    actionGroup.add(new ResetAppAction(project, devSpaceNode));
                 } else if (devSpaceNode.getDevSpace().getInstallStatus() == 0) {
-                    JBMenuItem item = new JBMenuItem("Install App");
-                    item.addActionListener(new Install(project, devSpaceNode));
-                    menu.add(item);
-                    menu.addSeparator();
-                    JBMenuItem resetItem = new JBMenuItem("reset");
-                    resetItem.addActionListener(new dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Reset(project, devSpaceNode));
-                    menu.add(resetItem);
+                    actionGroup.add(new InstallAppAction(project, devSpaceNode));
+                    actionGroup.add(new Separator());
+                    actionGroup.add(new ResetAppAction(project, devSpaceNode));
                 }
 
-                JBPopupMenu.showByEvent(mouseEvent, menu);
+                ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Devspace.Actions", actionGroup);
+                JBPopupMenu.showByEvent(event, menu.getComponent());
                 return;
             }
 
@@ -150,70 +135,50 @@ public class TreeMouseListener extends MouseAdapter {
                     return;
                 }
 
-                JBPopupMenu menu = new JBPopupMenu();
-                JBMenuItem clearPersistentDataItem = new JBMenuItem("Clear persistent data");
-                JBMenuItem configItem = new JBMenuItem("Config");
-                JBMenuItem logsItem = new JBMenuItem("Logs");
-                JBMenuItem portForwardItem = new JBMenuItem("Port Forward");
-                JBMenuItem resetItem = new JBMenuItem("Reset");
-                JBMenuItem terminalItem = new JBMenuItem("Terminal");
+                DefaultActionGroup actionGroup = new DefaultActionGroup();
 
                 String kind = resourceNode.getKubeResource().getKind().toLowerCase();
                 KubeResourceType type = EnumUtils.getEnumIgnoreCase(KubeResourceType.class, kind);
                 switch (type) {
                     case Deployment:
-                        JBMenuItem devItem;
                         final NhctlSvcProfile nhctlSvcProfile = resourceNode.getNhctlSvcProfile();
                         if (nhctlSvcProfile != null) {
                             if (!nhctlSvcProfile.isDeveloping()) {
-                                devItem = new JBMenuItem("Start Develop");
-                                devItem.addActionListener(new StartDevelop(resourceNode, project));
+                                actionGroup.add(new StartDevelopAction(project, resourceNode));
                             } else {
-                                devItem = new JBMenuItem("End Develop");
-                                devItem.addActionListener(new EndDevelop(resourceNode, project));
+                                actionGroup.add(new EndDevelopAction(project, resourceNode));
                             }
-                            menu.add(devItem);
                         }
-
-                        clearPersistentDataItem.addActionListener(new ClearPersistentData(resourceNode));
-                        configItem.addActionListener(new Config(resourceNode, project));
-                        logsItem.addActionListener(new Logs(resourceNode, Deployment, project));
-                        portForwardItem.addActionListener(new PortForward(resourceNode, project));
-                        resetItem.addActionListener(new Reset(resourceNode, project));
-                        terminalItem.addActionListener(new Terminal(resourceNode, Deployment, project));
-
-                        menu.add(configItem);
-                        menu.addSeparator();
-                        menu.add(clearPersistentDataItem);
-                        menu.addSeparator();
-                        menu.add(logsItem);
-                        menu.add(portForwardItem);
-                        menu.add(resetItem);
-                        menu.add(terminalItem);
-                        JBPopupMenu.showByEvent(mouseEvent, menu);
+                        actionGroup.add(new ConfigAction(project, resourceNode));
+                        actionGroup.add(new Separator());
+                        actionGroup.add(new ClearPersistentDataAction(project, resourceNode));
+                        actionGroup.add(new Separator());
+                        actionGroup.add(new LogsAction(project, resourceNode, Deployment));
+                        actionGroup.add(new PortForwardAction(project, resourceNode));
+                        actionGroup.add(new ResetAction(project, resourceNode));
+                        actionGroup.add(new TerminalAction(project, resourceNode, Deployment));
                         break;
                     case Daemonset:
                         break;
                     case Statefulset:
                         break;
                     case Job:
-                        menu.add(portForwardItem);
-                        JBPopupMenu.showByEvent(mouseEvent, menu);
+                        actionGroup.add(new PortForwardAction(project, resourceNode));
                         break;
                     case CronJobs:
                         break;
                     case Pod:
-                        logsItem.addActionListener(new Logs(resourceNode, Pod, project));
-                        terminalItem.addActionListener(new Terminal(resourceNode, Deployment, project));
-
-                        menu.add(logsItem);
-                        menu.add(portForwardItem);
-                        menu.add(terminalItem);
-                        JBPopupMenu.showByEvent(mouseEvent, menu);
+                        actionGroup.add(new LogsAction(project, resourceNode, Pod));
+                        actionGroup.add(new PortForwardAction(project, resourceNode));
+                        actionGroup.add(new TerminalAction(project, resourceNode, Pod));
                         break;
                     default:
-                        throw new IllegalStateException("Unexpected value: " + kind);
+                        return;
                 }
+
+                ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
+                JBPopupMenu.showByEvent(event, menu.getComponent());
+                return;
             }
         }
     }

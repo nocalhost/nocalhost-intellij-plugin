@@ -1,11 +1,14 @@
-package dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace;
+package dev.nocalhost.plugin.intellij.ui.action.devspace;
 
+import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
@@ -13,19 +16,20 @@ import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 
-public class Install implements ActionListener {
-    private static final Logger LOG = Logger.getInstance(Install.class);
+public class InstallAppAction extends AnAction {
+    private static final Logger LOG = Logger.getInstance(InstallAppAction.class);
 
     private final Project project;
     private final DevSpaceNode node;
 
-    public Install(Project project, DevSpaceNode node) {
+    public InstallAppAction(Project project, DevSpaceNode node) {
+        super("Install App", "", AllIcons.Actions.Install);
         this.project = project;
         this.node = node;
     }
 
     @Override
-    public void actionPerformed(ActionEvent event) {
+    public void actionPerformed(@NotNull AnActionEvent event) {
         final DevSpace devSpace = node.getDevSpace();
 
         try {

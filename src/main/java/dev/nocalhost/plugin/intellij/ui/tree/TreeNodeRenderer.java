@@ -85,7 +85,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                 if (nhctlSvcProfile != null && nhctlSvcProfile.isPortForwarded()) {
                     return NocalhostIcons.Status.DevPortForwarding;
                 }
-                return NocalhostIcons.Status.Dev;
+                return NocalhostIcons.Status.DevStart;
             case RUNNING:
                 if (nhctlSvcProfile != null && nhctlSvcProfile.isPortForwarded()) {
                     return NocalhostIcons.Status.NormalPortForwarding;

@@ -1,8 +1,10 @@
-package dev.nocalhost.plugin.intellij.ui.tree.listerner.workload;
+package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -14,8 +16,6 @@ import com.intellij.openapi.ui.Messages;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
@@ -26,20 +26,22 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import icons.NocalhostIcons;
 
-public class EndDevelop implements ActionListener {
-    private static final Logger LOG = Logger.getInstance(EndDevelop.class);
+public class EndDevelopAction extends AnAction {
+    private static final Logger LOG = Logger.getInstance(EndDevelopAction.class);
 
-    private final ResourceNode node;
     private final Project project;
+    private final ResourceNode node;
 
-    public EndDevelop(ResourceNode node, Project project) {
-        this.node = node;
+    public EndDevelopAction(Project project, ResourceNode node) {
+        super("End Develop", "", NocalhostIcons.Status.DevEnd);
         this.project = project;
+        this.node = node;
     }
 
     @Override
-    public void actionPerformed(ActionEvent event) {
+    public void actionPerformed(@NotNull AnActionEvent event) {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
         NhctlDescribeOptions opts = new NhctlDescribeOptions();

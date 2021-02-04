@@ -1,6 +1,8 @@
-package dev.nocalhost.plugin.intellij.ui.tree.listerner.workload;
+package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.ide.impl.OpenProjectTask;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooser;
@@ -17,8 +19,6 @@ import com.intellij.openapi.ui.Messages;
 import org.apache.commons.compress.utils.Lists;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -35,20 +35,22 @@ import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import icons.NocalhostIcons;
 
-public class StartDevelop implements ActionListener {
-    private static final Logger LOG = Logger.getInstance(StartDevelop.class);
+public class StartDevelopAction extends AnAction {
+    private static final Logger LOG = Logger.getInstance(StartDevelopAction.class);
 
-    private final ResourceNode node;
     private final Project project;
+    private final ResourceNode node;
 
-    public StartDevelop(ResourceNode node, Project project) {
-        this.node = node;
+    public StartDevelopAction(Project project, ResourceNode node) {
+        super("Start Develop", "", NocalhostIcons.Status.DevStart);
         this.project = project;
+        this.node = node;
     }
 
     @Override
-    public void actionPerformed(ActionEvent event) {
+    public void actionPerformed(@NotNull AnActionEvent event) {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();

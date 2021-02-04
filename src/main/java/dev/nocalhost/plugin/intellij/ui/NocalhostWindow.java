@@ -4,6 +4,7 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
@@ -109,6 +110,7 @@ public class NocalhostWindow {
 
             DefaultActionGroup actionGroup = new DefaultActionGroup();
             actionGroup.add(new RefreshAction());
+            actionGroup.add(new Separator());
             actionGroup.add(new SettingAction());
             actionGroup.add(moreActionGroup);
 

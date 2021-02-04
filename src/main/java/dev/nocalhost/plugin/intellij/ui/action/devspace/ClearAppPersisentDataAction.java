@@ -1,10 +1,13 @@
-package dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace;
+package dev.nocalhost.plugin.intellij.ui.action.devspace;
 
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -15,17 +18,20 @@ import dev.nocalhost.plugin.intellij.ui.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
-public class ClearPersistentData implements ActionListener {
-    private static final Logger LOG = Logger.getInstance(ClearPersistentData.class);
+public class ClearAppPersisentDataAction extends AnAction {
+    private static final Logger LOG = Logger.getInstance(ClearAppPersisentDataAction.class);
 
-    private DevSpaceNode node;
+    private final Project project;
+    private final DevSpaceNode node;
 
-    public ClearPersistentData(DevSpaceNode node) {
+    public ClearAppPersisentDataAction(Project project, DevSpaceNode node) {
+        super("Clear Persistent Data");
+        this.project = project;
         this.node = node;
     }
 
     @Override
-    public void actionPerformed(ActionEvent event) {
+    public void actionPerformed(@NotNull AnActionEvent event) {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
         NhctlListPVCOptions opts = new NhctlListPVCOptions();

@@ -1,8 +1,11 @@
-package dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace;
+package dev.nocalhost.plugin.intellij.ui.action.devspace;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
@@ -16,8 +19,6 @@ import com.intellij.openapi.ui.Messages;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
@@ -29,19 +30,20 @@ import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
-public class Uninstall implements ActionListener {
-    private static final Logger LOG = Logger.getInstance(Uninstall.class);
+public class UninstallAppAction extends AnAction {
+    private static final Logger LOG = Logger.getInstance(UninstallAppAction.class);
 
     private final Project project;
     private final DevSpaceNode node;
 
-    public Uninstall(Project project, DevSpaceNode node) {
+    public UninstallAppAction(Project project, DevSpaceNode node) {
+        super("Uninstall App", "", AllIcons.Actions.Uninstall);
         this.project = project;
         this.node = node;
     }
 
     @Override
-    public void actionPerformed(ActionEvent event) {
+    public void actionPerformed(@NotNull AnActionEvent event) {
         final DevSpace devSpace = node.getDevSpace();
 
         try {
