@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui;
 
+import com.google.common.collect.Lists;
+
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -47,7 +49,7 @@ public class NocalhostWindow {
     private SimpleToolWindowPanel panel;
     private NocalhostTree tree;
     private JBScrollPane scrollPane;
-    private final JButton loginButton;
+    private JPanel loginPanel;
 
     public NocalhostWindow(Project project, ToolWindow toolWindow) {
         this.project = project;
@@ -70,16 +72,17 @@ public class NocalhostWindow {
 
         devStart();
 
+
         panel = new SimpleToolWindowPanel(true, false);
-        loginButton = new JButton("Login");
+        panel.setLayout(new CardLayout());
+        loginPanel = new LoginPanel().getPanel();
+
         tree = new NocalhostTree(project);
         scrollPane = new JBScrollPane(tree);
-        panel.add(scrollPane);
-        panel.add(loginButton, BorderLayout.SOUTH);
 
-        loginButton.addActionListener(e -> {
-            new LoginDialog().showAndGet();
-        });
+        panel.add(scrollPane);
+        panel.add(loginPanel);
+
 
         toggleContent();
     }
@@ -91,11 +94,11 @@ public class NocalhostWindow {
         if (StringUtils.isNotBlank(jwt)) {
             tree.clear();
             tree.updateDevSpaces();
-            loginButton.setVisible(false);
+            loginPanel.setVisible(false);
             scrollPane.setVisible(true);
         } else {
+            loginPanel.setVisible(true);
             scrollPane.setVisible(false);
-            loginButton.setVisible(true);
         }
         setToolbar();
     }
