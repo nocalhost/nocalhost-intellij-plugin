@@ -1,8 +1,9 @@
 package dev.nocalhost.plugin.intellij.ui;
 
-import com.google.common.collect.Lists;
-
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
@@ -32,6 +33,9 @@ import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputActivateNotifier;
+import dev.nocalhost.plugin.intellij.ui.action.LogoutAction;
+import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
+import dev.nocalhost.plugin.intellij.ui.action.SettingAction;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 
 public class NocalhostWindow {
@@ -85,19 +89,37 @@ public class NocalhostWindow {
 
         String jwt = nocalhostSettings.getJwt();
         if (StringUtils.isNotBlank(jwt)) {
-            toolWindow.setTitleActions(Lists.newArrayList(
-                    ActionManager.getInstance().getAction("Nocalhost.RefreshAction"),
-                    ActionManager.getInstance().getAction("Nocalhost.LogoutAction"),
-                    ActionManager.getInstance().getAction("Nocalhost.SettingAction")
-            ));
             tree.clear();
             tree.updateDevSpaces();
             loginButton.setVisible(false);
             scrollPane.setVisible(true);
         } else {
-            toolWindow.setTitleActions(Lists.newArrayList());
             scrollPane.setVisible(false);
             loginButton.setVisible(true);
+        }
+        setToolbar();
+    }
+
+    private void setToolbar() {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        String jwt = nocalhostSettings.getJwt();
+        if (StringUtils.isNotBlank(jwt)) {
+            DefaultActionGroup moreActionGroup = new DefaultActionGroup();
+            moreActionGroup.getTemplatePresentation().setText("More");
+            moreActionGroup.getTemplatePresentation().setDescription("More");
+            moreActionGroup.getTemplatePresentation().setIcon(AllIcons.Actions.More);
+            moreActionGroup.setPopup(true);
+            moreActionGroup.add(new LogoutAction());
+
+            DefaultActionGroup actionGroup = new DefaultActionGroup();
+            actionGroup.add(new RefreshAction());
+            actionGroup.add(new SettingAction());
+            actionGroup.add(moreActionGroup);
+
+            ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("Nocalhost.Toolbar", actionGroup, true);
+            panel.setToolbar(actionToolbar.getComponent());
+        } else {
+            panel.setToolbar(null);
         }
     }
 
