@@ -16,7 +16,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
 public class LogoutAction extends AnAction implements DumbAware {
 
     public LogoutAction() {
-        super("Sign out", "Sign out nocalhost server", AllIcons.Actions.Exit);
+        super("Log out", "Log out nocalhost server", AllIcons.Actions.Exit);
     }
 
     @Override

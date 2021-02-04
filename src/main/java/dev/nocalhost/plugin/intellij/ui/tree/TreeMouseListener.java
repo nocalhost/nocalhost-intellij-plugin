@@ -1,15 +1,21 @@
 package dev.nocalhost.plugin.intellij.ui.tree;
 
 
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.JBMenuItem;
 import com.intellij.openapi.ui.JBPopupMenu;
+import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.treeStructure.Tree;
 
 import org.apache.commons.lang3.EnumUtils;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 
 import javax.swing.tree.TreePath;
 
@@ -31,11 +37,14 @@ import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.StartDevelop;
 import dev.nocalhost.plugin.intellij.ui.tree.listerner.workload.Terminal;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
 
 import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Deployment;
 import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Pod;
 
 public class TreeMouseListener extends MouseAdapter {
+    private static final Logger LOG = Logger.getInstance(TreeMouseListener.class);
+
     private final Project project;
     private final Tree tree;
 
@@ -53,19 +62,34 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     @Override
-    public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1) {
-            TreePath treePath = getPath(e);
+    public void mouseClicked(MouseEvent event) {
+        if (event.getClickCount() == 2 && event.getButton() == MouseEvent.BUTTON1) {
+            TreePath treePath = getPath(event);
             if (treePath == null) {
                 return;
             }
             Object object = treePath.getLastPathComponent();
+
             if (object instanceof DevSpaceNode) {
                 DevSpaceNode devSpaceNode = (DevSpaceNode) object;
                 if (devSpaceNode.getDevSpace().getInstallStatus() == 1) {
                     return;
                 }
                 new InstallDevSpaceDialog(project, devSpaceNode.getDevSpace()).showAndGet();
+                return;
+            }
+
+            if (object instanceof ResourceNode) {
+                ResourceNode resourceNode = (ResourceNode) object;
+                try {
+                    Pair<String, String> pair = KubectlHelper.getResourceYaml(resourceNode);
+                    String filename = "loadResource/" + pair.getFirst().toLowerCase() + "/" + resourceNode.resourceName() + ".yaml";
+                    VirtualFile virtualFile = new ReadOnlyVirtualFile(filename, filename, pair.getSecond());
+                    FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile, 0), true);
+                } catch (IOException | InterruptedException e) {
+                    LOG.error("error occurred while loading kubernetes resource yaml", e);
+                }
+                return;
             }
         }
     }
