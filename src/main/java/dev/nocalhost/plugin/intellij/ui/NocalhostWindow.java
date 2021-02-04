@@ -70,7 +70,7 @@ public class NocalhostWindow {
 
         devStart();
 
-        panel = new SimpleToolWindowPanel(true, true);
+        panel = new SimpleToolWindowPanel(true, false);
         loginButton = new JButton("Login");
         tree = new NocalhostTree(project);
         scrollPane = new JBScrollPane(tree);
