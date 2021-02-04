@@ -44,17 +44,8 @@ public class KubectlCommand {
                     .collect(Collectors.joining(","))
             );
         }
-        String cmd = String.join(" ", args.toArray(new String[]{}));
-        System.out.println("Execute command: " + cmd);
 
-        Process process = new ProcessBuilder(args).start();
-        String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
-
-        if (process.waitFor() != 0) {
-            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
-                    process.getErrorStream(), Charsets.UTF_8)));
-        }
-
+        String output = executeCmd(args);
         return gson.fromJson(output, KubeResourceList.class);
     }
 
@@ -69,16 +60,7 @@ public class KubectlCommand {
         args.add("--kubeconfig");
         args.add(kubeconfigPath.toString());
 
-        String cmd = String.join(" ", args.toArray(new String[]{}));
-        System.out.println("Execute command: " + cmd);
-
-        Process process = Runtime.getRuntime().exec(cmd);
-        if (process.waitFor() != 0) {
-            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
-                    process.getErrorStream(), Charsets.UTF_8)));
-        }
-
-        return gson.fromJson(new InputStreamReader(process.getInputStream(), Charsets.UTF_8), KubeResource.class);
+        return gson.fromJson(executeCmd(args), KubeResource.class);
     }
 
     public String exec(String podName, String containerName, String command, DevSpace devSpace) throws IOException, InterruptedException {
@@ -92,17 +74,7 @@ public class KubectlCommand {
         args.add("--");
         args.add(command);
 
-        String cmd = String.join(" ", args.toArray(new String[]{}));
-        System.out.println("Execute command: " + cmd);
-
-        Process process = Runtime.getRuntime().exec(cmd);
-        if (process.waitFor() != 0) {
-            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
-                    process.getErrorStream(), Charsets.UTF_8)));
-        }
-
-        String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
-        return output;
+        return executeCmd(args);
     }
 
     public String logs(String podName, String containerName, DevSpace devSpace) throws IOException, InterruptedException {
@@ -114,17 +86,27 @@ public class KubectlCommand {
         args.add(containerName);
         args.add("--kubeconfig");
         args.add(kubeconfigPath.toString());
+
+        String output = executeCmd(args);
+        System.out.println(output);
+
+        return output;
+    }
+
+    private String executeCmd(List<String> args) throws IOException, InterruptedException {
+
+
+//        Process process = Runtime.getRuntime().exec(cmd);
         String cmd = String.join(" ", args.toArray(new String[]{}));
+        Process process = new ProcessBuilder(args).start();
         System.out.println("Execute command: " + cmd);
 
-        Process process = Runtime.getRuntime().exec(cmd);
+        String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
+
         if (process.waitFor() != 0) {
             throw new RuntimeException(CharStreams.toString(new InputStreamReader(
                     process.getErrorStream(), Charsets.UTF_8)));
         }
-
-        String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
-        System.out.println(output);
         return output;
     }
 
