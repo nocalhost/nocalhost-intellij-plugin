@@ -124,10 +124,19 @@ public class TreeMouseListener extends MouseAdapter {
                     JBMenuItem loadResourceMenuItem = new JBMenuItem("Load resource");
                     loadResourceMenuItem.addActionListener(new LoadResource(devSpaceNode, project));
                     menu.add(loadResourceMenuItem);
+
+                    menu.addSeparator();
+                    JBMenuItem resetMenuItem = new JBMenuItem("reset");
+                    resetMenuItem.addActionListener(new dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Reset(project, devSpaceNode));
+                    menu.add(resetMenuItem);
                 } else if (devSpaceNode.getDevSpace().getInstallStatus() == 0) {
                     JBMenuItem item = new JBMenuItem("Install App");
                     item.addActionListener(new Install(project, devSpaceNode));
                     menu.add(item);
+                    menu.addSeparator();
+                    JBMenuItem resetItem = new JBMenuItem("reset");
+                    resetItem.addActionListener(new dev.nocalhost.plugin.intellij.ui.tree.listerner.devspace.Reset(project, devSpaceNode));
+                    menu.add(resetItem);
                 }
 
                 JBPopupMenu.showByEvent(mouseEvent, menu);

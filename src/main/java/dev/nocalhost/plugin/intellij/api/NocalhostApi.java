@@ -136,4 +136,25 @@ public class NocalhostApi {
             }
         }
     }
+
+    public void recreate(DevSpace devSpace) throws IOException {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+
+        String url = NocalhostApiUrl.recreateDevSpace(nocalhostSettings.getBaseUrl(), devSpace.getDevSpaceId());
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("authorization", "Bearer " + nocalhostSettings.getJwt())
+                .post(RequestBody.create("".getBytes()))
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new NocalhostApiException(String.format("Failed to reset application , connect server API %s, respond HTTP %d", url, response.code()));
+            }
+            NocalhostApiResponse<Object> resp = gson.fromJson(response.body().charStream(),
+                    TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType());
+            if (resp.getCode() != 0) {
+                throw new NocalhostApiException(String.format("Failed to reset application, %s", resp.getMessage()));
+            }
+        }
+    }
 }
