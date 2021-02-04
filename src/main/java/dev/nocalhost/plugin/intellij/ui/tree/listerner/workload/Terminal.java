@@ -1,7 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui.tree.listerner.workload;
 
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 
 import java.awt.event.ActionEvent;
@@ -25,9 +23,8 @@ public class Terminal implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        final Application application = ApplicationManager.getApplication();
-        NocalhostConsoleExecuteNotifier publisher = application.getMessageBus()
-                .syncPublisher(NocalhostConsoleExecuteNotifier.NOCALHOST_CONSOLE_EXECUTE_NOTIFIER_TOPIC);
-        publisher.action(node, type, Action.TERMINAL);
+        project.getMessageBus()
+                .syncPublisher(NocalhostConsoleExecuteNotifier.NOCALHOST_CONSOLE_EXECUTE_NOTIFIER_TOPIC)
+                .action(node, type, Action.TERMINAL);
     }
 }

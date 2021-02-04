@@ -27,11 +27,11 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
         addGlobalOptions(args, opts);
 
         project.getMessageBus()
-                .syncPublisher(NocalhostOutputActivateNotifier.NOCALHOST_OUTPUT_ACTIVATE_NOTIFIER)
+                .syncPublisher(NocalhostOutputActivateNotifier.NOCALHOST_OUTPUT_ACTIVATE_NOTIFIER_TOPIC)
                 .action();
 
         NocalhostOutputAppendNotifier publisher = project.getMessageBus()
-                .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER);
+                .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC);
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
         publisher.action("[cmd] " + cmd + System.lineSeparator());

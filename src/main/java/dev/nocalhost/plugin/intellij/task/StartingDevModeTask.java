@@ -78,8 +78,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         super.onSuccess();
         // start dev space terminal
         ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
-            ApplicationManager.getApplication()
-                    .getMessageBus()
+            project.getMessageBus()
                     .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC)
                     .action(devSpace, devModeService.getName());
         });

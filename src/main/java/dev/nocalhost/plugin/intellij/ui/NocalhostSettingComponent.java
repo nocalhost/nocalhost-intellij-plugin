@@ -27,10 +27,10 @@ public class NocalhostSettingComponent {
                 new FileChooserDescriptor(false, true, false, false, false, false),
                 TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
         settingPanel = FormBuilder.createFormBuilder()
-                                  .addLabeledComponent(new JBLabel("nhctl: "), nhctlBinary, 1, false)
-                                  .addLabeledComponent(new JBLabel("kubectl: "), kubectlBinary, 1, false)
-                                  .addComponentFillVertically(new JPanel(), 0)
-                                  .getPanel();
+                .addLabeledComponent(new JBLabel("nhctl: "), nhctlBinary, 1, false)
+                .addLabeledComponent(new JBLabel("kubectl: "), kubectlBinary, 1, false)
+                .addComponentFillVertically(new JPanel(), 0)
+                .getPanel();
     }
 
     public JPanel getPanel() {

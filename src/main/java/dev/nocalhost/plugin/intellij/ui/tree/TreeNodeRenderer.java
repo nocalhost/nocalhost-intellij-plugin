@@ -109,7 +109,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         boolean available = false;
         boolean progressing = false;
         List<KubeResource.Status.Condition> conditions = node.getKubeResource().getStatus()
-                                                             .getConditions();
+                .getConditions();
         for (KubeResource.Status.Condition condition : conditions) {
             if (StringUtils.equals(condition.getType(), "Available")
                     && StringUtils.equals(condition.getStatus(), "True")) {

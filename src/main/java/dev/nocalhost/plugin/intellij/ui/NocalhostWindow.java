@@ -14,6 +14,8 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.serviceContainer.AlreadyDisposedException;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.content.Content;
+import com.intellij.ui.content.ContentManager;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -58,7 +60,7 @@ public class NocalhostWindow {
         );
 
         project.getMessageBus().connect().subscribe(
-                NocalhostOutputActivateNotifier.NOCALHOST_OUTPUT_ACTIVATE_NOTIFIER,
+                NocalhostOutputActivateNotifier.NOCALHOST_OUTPUT_ACTIVATE_NOTIFIER_TOPIC,
                 this::activateOutput
         );
 
@@ -127,7 +129,12 @@ public class NocalhostWindow {
     private void activateOutput() {
         ApplicationManager.getApplication().invokeAndWait(() -> {
             try {
-                ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Output").activate(() -> {
+                ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
+                    ContentManager contentManager = ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").getContentManager();
+                    Content content = contentManager.getContent(0);
+                    if (content != null) {
+                        contentManager.setSelectedContent(content);
+                    }
                 });
             } catch (AlreadyDisposedException e) {
                 // Ignore

@@ -111,7 +111,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
         panel = new SimpleToolWindowPanel(true);
 
-        textArea = new JBTextArea(logs, 24, 50);
+        textArea = new JBTextArea(logs);
         textArea.setEditable(false);
         textArea.setLineWrap(true);
         scrollPane = new JBScrollPane(textArea);

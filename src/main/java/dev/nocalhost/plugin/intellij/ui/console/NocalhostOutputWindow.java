@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.ui;
+package dev.nocalhost.plugin.intellij.ui.console;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionManager;
@@ -53,7 +53,7 @@ public class NocalhostOutputWindow {
         panel.setToolbar(actionToolbar.getComponent());
 
         project.getMessageBus().connect().subscribe(
-                NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER,
+                NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC,
                 this::appendOutput
         );
     }
@@ -64,8 +64,8 @@ public class NocalhostOutputWindow {
             int currentPos = textArea.getCaretPosition();
             textArea.append(text);
             if (scrollToEnd.get()) {
-                JScrollBar vertical = scrollPane.getVerticalScrollBar();
-                vertical.setValue(vertical.getMaximum());
+                int endPos = textArea.getDocument().getLength();
+                textArea.select(endPos, endPos);
             } else {
                 textArea.select(currentPos, currentPos);
             }
