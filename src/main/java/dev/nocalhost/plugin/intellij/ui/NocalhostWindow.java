@@ -1,7 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui;
 
-import com.google.common.collect.Lists;
-
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -22,7 +20,6 @@ import com.intellij.ui.content.ContentManager;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.awt.*;
 import java.io.IOException;
 
 import javax.swing.*;
@@ -74,33 +71,29 @@ public class NocalhostWindow {
 
 
         panel = new SimpleToolWindowPanel(true, false);
-        panel.setLayout(new CardLayout());
-        loginPanel = new LoginPanel().getPanel();
-
-        tree = new NocalhostTree(project);
-        scrollPane = new JBScrollPane(tree);
-
-        panel.add(scrollPane);
-        panel.add(loginPanel);
-
 
         toggleContent();
     }
 
     private void toggleContent() {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-
         String jwt = nocalhostSettings.getJwt();
+
+        panel.removeAll();
+
         if (StringUtils.isNotBlank(jwt)) {
+            tree = new NocalhostTree(project);
             tree.clear();
             tree.updateDevSpaces();
-            loginPanel.setVisible(false);
-            scrollPane.setVisible(true);
+            scrollPane = new JBScrollPane(tree);
+            panel.add(scrollPane);
         } else {
-            loginPanel.setVisible(true);
-            scrollPane.setVisible(false);
+            panel.add(new LoginPanel().getPanel());
         }
         setToolbar();
+
+        panel.revalidate();
+        panel.repaint();
     }
 
     private void setToolbar() {
@@ -122,7 +115,9 @@ public class NocalhostWindow {
             ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("Nocalhost.Toolbar", actionGroup, true);
             panel.setToolbar(actionToolbar.getComponent());
         } else {
-            panel.setToolbar(null);
+            if (panel.getToolbar() != null) {
+                panel.setToolbar(null);
+            }
         }
     }
 
