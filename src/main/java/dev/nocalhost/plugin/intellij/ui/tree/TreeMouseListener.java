@@ -69,7 +69,7 @@ public class TreeMouseListener extends MouseAdapter {
 
             if (object instanceof DevSpaceNode) {
                 DevSpaceNode devSpaceNode = (DevSpaceNode) object;
-                if (devSpaceNode.getDevSpace().getInstallStatus() == 1) {
+                if (devSpaceNode.isInstalled()) {
                     return;
                 }
                 new InstallDevSpaceDialog(project, devSpaceNode.getDevSpace()).showAndGet();
@@ -105,7 +105,7 @@ public class TreeMouseListener extends MouseAdapter {
 
                 DefaultActionGroup actionGroup = new DefaultActionGroup();
 
-                if (devSpaceNode.getDevSpace().getInstallStatus() == 1) {
+                if (devSpaceNode.isInstalled()) {
                     actionGroup.add(new UninstallAppAction(project, devSpaceNode));
 
                     actionGroup.add(new Separator());
@@ -117,7 +117,7 @@ public class TreeMouseListener extends MouseAdapter {
 
                     actionGroup.add(new Separator());
                     actionGroup.add(new ResetAppAction(project, devSpaceNode));
-                } else if (devSpaceNode.getDevSpace().getInstallStatus() == 0) {
+                } else {
                     actionGroup.add(new InstallAppAction(project, devSpaceNode));
                     actionGroup.add(new Separator());
                     actionGroup.add(new ResetAppAction(project, devSpaceNode));

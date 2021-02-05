@@ -40,6 +40,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginInfo;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSvcProfile;
+import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
@@ -184,7 +185,7 @@ public class NocalhostTree extends Tree {
                 DevSpaceNode oldDevSpaceNode = (DevSpaceNode) model.getChild(root, i);
                 if (devSpace.getId() == oldDevSpaceNode.getDevSpace().getId()
                         && devSpace.getDevSpaceId() == oldDevSpaceNode.getDevSpace().getDevSpaceId()
-                        && devSpace.getInstallStatus() == oldDevSpaceNode.getDevSpace().getInstallStatus()) {
+                        && NhctlHelper.isApplicationInstalled(devSpace) == oldDevSpaceNode.isInstalled()) {
                     DevSpaceNode newDevSpaceNode = cloneSelfAndChildren(oldDevSpaceNode);
                     newDevSpaceNode.setDevSpace(devSpace);
                     devSpaceNodes.add(newDevSpaceNode);
@@ -219,10 +220,11 @@ public class NocalhostTree extends Tree {
         }
     }
 
-    private DevSpaceNode createDevSpaceNode(DevSpace devSpace) {
+    private DevSpaceNode createDevSpaceNode(DevSpace devSpace) throws IOException, InterruptedException {
         DevSpaceNode devSpaceNode = new DevSpaceNode(devSpace);
 
-        if (devSpace.getInstallStatus() == 1) {
+        if (NhctlHelper.isApplicationInstalled(devSpaceNode.getDevSpace())) {
+            devSpaceNode.setInstalled(true);
             List<Pair<String, List<String>>> pairs = Lists.newArrayList(
                     Pair.create("Workloads", Lists.newArrayList(
                             "Deployments",
@@ -258,6 +260,8 @@ public class NocalhostTree extends Tree {
                 }
                 devSpaceNode.add(resourceGroupNode);
             }
+            ResourceGroupNode resourceGroupNode = (ResourceGroupNode) devSpaceNode.getChildAt(0);
+            resourceGroupNode.setExpanded(true);
         }
 
         return devSpaceNode;

@@ -47,7 +47,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (value instanceof DevSpaceNode) {
             DevSpaceNode node = (DevSpaceNode) value;
             append(node.getDevSpace().getSpaceName());
-            if (node.getDevSpace().getInstallStatus() == 1) {
+            if (node.isInstalled()) {
                 setIcon(NocalhostIcons.App.Connected);
             } else {
                 setIcon(NocalhostIcons.App.Inactive);
