@@ -13,6 +13,7 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
+import com.intellij.util.ui.JBEmptyBorder;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +45,7 @@ public class NocalhostOutputWindow {
         textArea.setLineWrap(true);
         scrollPane = new JBScrollPane(textArea);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPane.setBorder(new JBEmptyBorder(0));
         panel.add(scrollPane);
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
