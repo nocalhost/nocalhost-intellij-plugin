@@ -89,7 +89,7 @@ public class NocalhostWindow {
             scrollPane = new JBScrollPane(tree);
             panel.add(scrollPane);
         } else {
-            panel.add(new LoginPanel().getPanel());
+            panel.add(new NocalhostWindowLoginPanel().getPanel());
         }
         setToolbar();
 
@@ -106,12 +106,12 @@ public class NocalhostWindow {
             moreActionGroup.getTemplatePresentation().setDescription("More");
             moreActionGroup.getTemplatePresentation().setIcon(AllIcons.Actions.More);
             moreActionGroup.setPopup(true);
+            moreActionGroup.add(new SettingAction());
             moreActionGroup.add(new LogoutAction());
 
             DefaultActionGroup actionGroup = new DefaultActionGroup();
             actionGroup.add(new RefreshAction());
             actionGroup.add(new Separator());
-            actionGroup.add(new SettingAction());
             actionGroup.add(moreActionGroup);
 
             ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("Nocalhost.Toolbar", actionGroup, true);

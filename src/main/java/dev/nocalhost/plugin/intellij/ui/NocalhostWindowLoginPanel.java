@@ -2,7 +2,7 @@ package dev.nocalhost.plugin.intellij.ui;
 
 import javax.swing.*;
 
-public class LoginPanel {
+public class NocalhostWindowLoginPanel {
 
     private JTextPane loginText;
     private JButton loginButton;
@@ -11,7 +11,7 @@ public class LoginPanel {
     private JPanel mainPanel;
 
 
-    public LoginPanel() {
+    public NocalhostWindowLoginPanel() {
         loginButton.addActionListener(e -> new LoginDialog().showAndGet());
     }
 

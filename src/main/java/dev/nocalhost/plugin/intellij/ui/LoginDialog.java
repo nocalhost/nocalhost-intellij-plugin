@@ -5,7 +5,6 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.DocumentAdapter;
-import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPasswordField;
 import com.intellij.ui.components.JBTextField;
 
@@ -13,7 +12,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 
@@ -24,37 +22,16 @@ import javax.swing.event.DocumentListener;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 
-
 public class LoginDialog extends DialogWrapper {
+    private JPanel loginPanel;
+    private JBTextField hostTextField;
+    private JBTextField emailTextField;
+    private JBPasswordField passwordField;
 
-    private final JPanel loginPanel;
-    private final JBLabel hostLabel;
-    private final JBTextField hostTextField;
-    private final JBLabel emailLabel;
-    private final JBTextField emailTextField;
-    private final JBLabel passwordLabel;
-    private final JBPasswordField passwordField;
-
-    protected LoginDialog() {
+    public LoginDialog() {
         super(true);
 
         setTitle("Login Nocalhost Server");
-        loginPanel = new JPanel(new GridLayout(3, 1));
-
-        hostLabel = new JBLabel("Host: ");
-        hostTextField = new JBTextField();
-        emailLabel = new JBLabel("Email: ");
-        emailTextField = new JBTextField();
-        passwordLabel = new JBLabel("Password: ");
-        passwordField = new JBPasswordField();
-
-        loginPanel.add(hostLabel);
-        loginPanel.add(hostTextField);
-        loginPanel.add(emailLabel);
-        loginPanel.add(emailTextField);
-        loginPanel.add(passwordLabel);
-        loginPanel.add(passwordField);
-
 
         hostTextField.getEmptyText().appendText("Input your api server url");
         emailTextField.getEmptyText().appendText("Input your email");
@@ -86,7 +63,6 @@ public class LoginDialog extends DialogWrapper {
         setOKButtonText("Login");
         init();
     }
-
 
     @Override
     protected @Nullable ValidationInfo doValidate() {
@@ -141,18 +117,6 @@ public class LoginDialog extends DialogWrapper {
 
     public JComponent getPanel() {
         return loginPanel;
-    }
-
-    public void setHost(final String host) {
-        hostTextField.setText(host);
-    }
-
-    public void setEmail(final String login) {
-        emailTextField.setText(login);
-    }
-
-    public void setPassword(final String password) {
-        passwordField.setText(password);
     }
 
     public String getHost() {
