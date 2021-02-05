@@ -19,15 +19,12 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
-import com.intellij.util.ui.JBEmptyBorder;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.awt.*;
 import java.io.IOException;
 
 import javax.swing.*;
-import javax.swing.border.LineBorder;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
@@ -51,7 +48,6 @@ public class NocalhostWindow {
     private SimpleToolWindowPanel panel;
     private NocalhostTree tree;
     private JBScrollPane scrollPane;
-    private JPanel loginPanel;
 
     public NocalhostWindow(Project project, ToolWindow toolWindow) {
         this.project = project;
