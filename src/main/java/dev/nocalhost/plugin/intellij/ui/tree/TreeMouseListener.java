@@ -102,89 +102,93 @@ public class TreeMouseListener extends MouseAdapter {
 
             if (object instanceof DevSpaceNode) {
                 DevSpaceNode devSpaceNode = (DevSpaceNode) object;
-
-                DefaultActionGroup actionGroup = new DefaultActionGroup();
-
-                if (devSpaceNode.isInstalled()) {
-                    actionGroup.add(new UninstallAppAction(project, devSpaceNode));
-
-                    actionGroup.add(new Separator());
-                    actionGroup.add(new ClearAppPersisentDataAction(project, devSpaceNode));
-                    actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
-
-                    actionGroup.add(new Separator());
-                    actionGroup.add(new LoadResourceAction(project, devSpaceNode));
-
-                    actionGroup.add(new Separator());
-                    actionGroup.add(new ResetAppAction(project, devSpaceNode));
-                } else {
-                    actionGroup.add(new InstallAppAction(project, devSpaceNode));
-
-                    actionGroup.add(new Separator());
-                    actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
-
-                    actionGroup.add(new Separator());
-                    actionGroup.add(new ResetAppAction(project, devSpaceNode));
-
-                }
-
-                ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Devspace.Actions", actionGroup);
-                JBPopupMenu.showByEvent(event, menu.getComponent());
+                renderDevSpaceAction(event, devSpaceNode);
                 return;
             }
 
             if (object instanceof ResourceNode) {
                 ResourceNode resourceNode = (ResourceNode) object;
-
-                if (!KubectlHelper.isKubeResourceAvailable(resourceNode.getKubeResource())) {
-                    return;
-                }
-
-                DefaultActionGroup actionGroup = new DefaultActionGroup();
-
-                String kind = resourceNode.getKubeResource().getKind().toLowerCase();
-                KubeResourceType type = EnumUtils.getEnumIgnoreCase(KubeResourceType.class, kind);
-                switch (type) {
-                    case Deployment:
-                        final NhctlSvcProfile nhctlSvcProfile = resourceNode.getNhctlSvcProfile();
-                        if (nhctlSvcProfile != null) {
-                            if (!nhctlSvcProfile.isDeveloping()) {
-                                actionGroup.add(new StartDevelopAction(project, resourceNode));
-                            } else {
-                                actionGroup.add(new EndDevelopAction(project, resourceNode));
-                            }
-                        }
-                        actionGroup.add(new ConfigAction(project, resourceNode));
-                        actionGroup.add(new Separator());
-                        actionGroup.add(new ClearPersistentDataAction(project, resourceNode));
-                        actionGroup.add(new Separator());
-                        actionGroup.add(new LogsAction(project, resourceNode, Deployment));
-                        actionGroup.add(new PortForwardAction(project, resourceNode));
-                        actionGroup.add(new ResetAction(project, resourceNode));
-                        actionGroup.add(new TerminalAction(project, resourceNode, Deployment));
-                        break;
-                    case Daemonset:
-                        break;
-                    case Statefulset:
-                        break;
-                    case Job:
-                        actionGroup.add(new PortForwardAction(project, resourceNode));
-                        break;
-                    case CronJobs:
-                        break;
-                    case Pod:
-                        actionGroup.add(new LogsAction(project, resourceNode, Pod));
-                        actionGroup.add(new PortForwardAction(project, resourceNode));
-                        actionGroup.add(new TerminalAction(project, resourceNode, Pod));
-                        break;
-                    default:
-                        return;
-                }
-
-                ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
-                JBPopupMenu.showByEvent(event, menu.getComponent());
+                renderWorkloadAction(event, resourceNode);
                 return;
             }
         }
+    }
+
+    private void renderDevSpaceAction(MouseEvent event, DevSpaceNode devSpaceNode) {
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+        if (devSpaceNode.isInstalled()) {
+            actionGroup.add(new UninstallAppAction(project, devSpaceNode));
+
+            actionGroup.add(new Separator());
+            actionGroup.add(new ClearAppPersisentDataAction(project, devSpaceNode));
+            actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
+
+            actionGroup.add(new Separator());
+            actionGroup.add(new LoadResourceAction(project, devSpaceNode));
+
+            actionGroup.add(new Separator());
+            actionGroup.add(new ResetAppAction(project, devSpaceNode));
+        } else {
+            actionGroup.add(new InstallAppAction(project, devSpaceNode));
+
+            actionGroup.add(new Separator());
+            actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
+
+            actionGroup.add(new Separator());
+            actionGroup.add(new ResetAppAction(project, devSpaceNode));
+        }
+
+        ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Devspace.Actions", actionGroup);
+        JBPopupMenu.showByEvent(event, menu.getComponent());
+    }
+
+    private void renderWorkloadAction(MouseEvent event, ResourceNode resourceNode) {
+        if (!KubectlHelper.isKubeResourceAvailable(resourceNode.getKubeResource())) {
+            return;
+        }
+
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+
+        String kind = resourceNode.getKubeResource().getKind().toLowerCase();
+        KubeResourceType type = EnumUtils.getEnumIgnoreCase(KubeResourceType.class, kind);
+        switch (type) {
+            case Deployment:
+                final NhctlSvcProfile nhctlSvcProfile = resourceNode.getNhctlSvcProfile();
+                if (nhctlSvcProfile != null) {
+                    if (!nhctlSvcProfile.isDeveloping()) {
+                        actionGroup.add(new StartDevelopAction(project, resourceNode));
+                    } else {
+                        actionGroup.add(new EndDevelopAction(project, resourceNode));
+                    }
+                }
+                actionGroup.add(new ConfigAction(project, resourceNode));
+                actionGroup.add(new Separator());
+                actionGroup.add(new ClearPersistentDataAction(project, resourceNode));
+                actionGroup.add(new Separator());
+                actionGroup.add(new LogsAction(project, resourceNode, Deployment));
+                actionGroup.add(new PortForwardAction(project, resourceNode));
+                actionGroup.add(new ResetAction(project, resourceNode));
+                actionGroup.add(new TerminalAction(project, resourceNode, Deployment));
+                break;
+            case Daemonset:
+                break;
+            case Statefulset:
+                break;
+            case Job:
+                actionGroup.add(new PortForwardAction(project, resourceNode));
+                break;
+            case CronJobs:
+                break;
+            case Pod:
+                actionGroup.add(new LogsAction(project, resourceNode, Pod));
+                actionGroup.add(new PortForwardAction(project, resourceNode));
+                actionGroup.add(new TerminalAction(project, resourceNode, Pod));
+                break;
+            default:
+                return;
+        }
+
+        ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
+        JBPopupMenu.showByEvent(event, menu.getComponent());
     }
 }
