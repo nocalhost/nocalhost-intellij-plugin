@@ -9,13 +9,9 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.jetbrains.annotations.Nullable;
-
-import java.awt.*;
 
 import javax.swing.*;
 
@@ -25,7 +21,7 @@ public class NocalhostOutputWindow {
     private final Project project;
     private final ToolWindow toolWindow;
 
-    private NocalhostOutputWindowPanel panel;
+    private LogPanel panel;
 
 
     private ConsoleView consoleView;
@@ -36,7 +32,7 @@ public class NocalhostOutputWindow {
 
         consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
 
-        panel = new NocalhostOutputWindowPanel(false);
+        panel = new LogPanel(false);
         panel.add(consoleView.getComponent());
 
         AnAction[] consoleActions = consoleView.createConsoleActions();
@@ -61,36 +57,5 @@ public class NocalhostOutputWindow {
 
     public JComponent getPanel() {
         return panel;
-    }
-
-    private static class NocalhostOutputWindowPanel extends SimpleToolWindowPanel {
-
-        public NocalhostOutputWindowPanel(boolean vertical) {
-            super(vertical);
-        }
-
-        @Override
-        public void setToolbar(@Nullable JComponent c) {
-            Component myToolbar = super.getToolbar();
-            if (c == null) {
-                remove(myToolbar);
-            }
-            myToolbar = c;
-            super.setToolbar(c);
-            if (myToolbar instanceof ActionToolbar) {
-                ((ActionToolbar) myToolbar).setOrientation(myVertical ? SwingConstants.HORIZONTAL : SwingConstants.VERTICAL);
-            }
-
-            if (c != null) {
-                if (myVertical) {
-                    add(c, BorderLayout.NORTH);
-                } else {
-                    add(c, BorderLayout.EAST);
-                }
-            }
-
-            revalidate();
-            repaint();
-        }
     }
 }

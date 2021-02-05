@@ -1,14 +1,21 @@
 package dev.nocalhost.plugin.intellij.ui.console;
 
+import com.intellij.execution.ExecutionException;
 import com.intellij.execution.filters.TextConsoleBuilderFactory;
+import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -35,6 +42,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
     private String title;
     private ContainerSelectorDialog containerSelectorDialog;
     private ConsoleView consoleView;
+    private LogPanel panel;
 
 
     public NocalhostLogWindow(Project project, ToolWindow toolWindow, KubeResourceType type, ResourceNode node) {
@@ -49,8 +57,6 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
         String containerName = "";
         String podName = "";
         toolWindow.show();
-
-        String logs = null;
 
         switch (type) {
             case Deployment:
@@ -98,17 +104,31 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                 throw new IllegalStateException("Unexpected value: " + type);
         }
 
-        try {
-            logs = kubectlCommand.logs(podName, containerName, devSpace);
-        } catch (IOException | InterruptedException e) {
-            LOG.error("error occurred while getting workload log", e);
-            return;
-        }
         title = String.format("%s/%s.log", podName, containerName);
 
 
         consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
-        consoleView.print(logs, ConsoleViewContentType.NORMAL_OUTPUT);
+
+        panel = new LogPanel(false);
+        panel.add(consoleView.getComponent());
+        AnAction[] consoleActions = consoleView.createConsoleActions();
+        AnAction[] consoleViewActions = ArrayUtils.subarray(consoleActions, 2, consoleActions.length);
+        DefaultActionGroup actionGroup = new DefaultActionGroup(consoleViewActions);
+
+        ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("Nocalhost.Log.Window.Toolbar", actionGroup, false);
+        panel.setToolbar(actionToolbar.getComponent());
+
+        ProcessHandler logsProcessHandler;
+        try {
+            logsProcessHandler = kubectlCommand.getLogsProcessHandler(podName, containerName, devSpace);
+            logsProcessHandler.startNotify();
+            consoleView.attachToProcess(logsProcessHandler);
+            consoleView.print(
+                    "",
+                    ConsoleViewContentType.LOG_INFO_OUTPUT);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 
     public ConsoleView getConsoleView() {
@@ -122,6 +142,6 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
     @Override
     public JComponent getPanel() {
-        return consoleView.getComponent();
+        return panel;
     }
 }

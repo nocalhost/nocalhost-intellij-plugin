@@ -5,6 +5,10 @@ import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
 
+import com.intellij.execution.ExecutionException;
+import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.execution.process.ProcessHandler;
+import com.intellij.execution.process.ProcessHandlerFactory;
 import com.intellij.openapi.components.ServiceManager;
 
 import org.apache.commons.lang3.StringUtils;
@@ -116,6 +120,21 @@ public class KubectlCommand {
         System.out.println(output);
 
         return output;
+    }
+
+    public ProcessHandler getLogsProcessHandler(String podName, String containerName, DevSpace devSpace) throws ExecutionException {
+        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
+
+        List<String> args = Lists.newArrayList(getKubectlCmd(), "logs", podName);
+        args.add("--follow=false");
+        args.add("--tail=200");
+        args.add("--container");
+        args.add(containerName);
+        args.add("--kubeconfig");
+        args.add(kubeconfigPath.toString());
+
+        GeneralCommandLine generalCommandLine = new GeneralCommandLine(args);
+        return ProcessHandlerFactory.getInstance().createProcessHandler(generalCommandLine);
     }
 
     private String executeCmd(List<String> args) throws IOException, InterruptedException {
