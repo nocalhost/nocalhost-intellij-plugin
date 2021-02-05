@@ -119,8 +119,13 @@ public class TreeMouseListener extends MouseAdapter {
                     actionGroup.add(new ResetAppAction(project, devSpaceNode));
                 } else {
                     actionGroup.add(new InstallAppAction(project, devSpaceNode));
+
+                    actionGroup.add(new Separator());
+                    actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
+
                     actionGroup.add(new Separator());
                     actionGroup.add(new ResetAppAction(project, devSpaceNode));
+
                 }
 
                 ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Devspace.Actions", actionGroup);
