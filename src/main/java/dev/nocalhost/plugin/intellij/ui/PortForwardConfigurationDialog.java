@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.openapi.util.Pair;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextField;
@@ -19,7 +20,7 @@ import com.intellij.util.ui.JBEmptyBorder;
 import com.intellij.util.ui.UIUtil;
 
 import org.apache.commons.compress.utils.Lists;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +35,7 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
@@ -130,27 +132,38 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         startButton = new StartButton();
         startButton.setEnabled(false);
         startButton.addActionListener(event -> {
-            Set<String> toBeStartedPortForwards = Arrays.stream(startTextField.getText().split(",")).map(String::trim).collect(Collectors.toSet());
-            for (String currentPortForward : currentPortForwards) {
-                toBeStartedPortForwards.remove(currentPortForward.substring(0, currentPortForward.indexOf("(")));
-            }
-            if (toBeStartedPortForwards.size() <= 0) {
-                return;
-            }
+            Set<String> portForwardsToBeStarted = Arrays.stream(startTextField.getText().split(",")).map(String::trim).collect(Collectors.toSet());
 
             ProgressManager.getInstance().run(new Task.Modal(project, "Starting port forward " + startTextField.getText(), false) {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
                     final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-                    NhctlPortForwardStartOptions opts = new NhctlPortForwardStartOptions();
-                    opts.setDevPorts(Lists.newArrayList(toBeStartedPortForwards.iterator()));
-                    opts.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
-                    opts.setDeployment(node.resourceName());
-                    opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
-
                     try {
-                        nhctlCommand.startPortForward(node.devSpace().getContext().getApplicationName(), opts);
+                        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
+                        nhctlDescribeOptions.setDeployment(node.resourceName());
+                        nhctlDescribeOptions.setKubeconfig(
+                                KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
+                        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                                node.devSpace().getContext().getApplicationName(),
+                                nhctlDescribeOptions,
+                                NhctlDescribeService.class);
+                        List<String> existedPortForwards = nhctlDescribeService
+                                .getPortForwardStatusList()
+                                .stream()
+                                .map(e -> e.substring(0, e.indexOf("(")))
+                                .collect(Collectors.toList());
+
+                        portForwardsToBeStarted.removeAll(existedPortForwards);
+                        if (portForwardsToBeStarted.size() > 0) {
+                            final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
+                            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions();
+                            nhctlPortForwardStartOptions.setDevPorts(Lists.newArrayList(portForwardsToBeStarted.iterator()));
+                            nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
+                            nhctlPortForwardStartOptions.setDeployment(node.resourceName());
+                            nhctlPortForwardStartOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
+                            outputCapturedNhctlCommand.startPortForward(node.devSpace().getContext().getApplicationName(), nhctlPortForwardStartOptions);
+                        }
                     } catch (IOException | InterruptedException e) {
                         LOG.error("error occurred while starting port forward", e);
                     } finally {
@@ -226,14 +239,53 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
         JButton button = new StopButton();
         button.addActionListener(event -> {
-            if (!MessageDialogBuilder.yesNo("Port forward", "Stop port foward " + portForward).guessWindowAndAsk()) {
+            if (!MessageDialogBuilder.yesNo("Port forward", "Stop port foward " + portForward + "?").guessWindowAndAsk()) {
                 return;
+            }
+
+            try {
+                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                NhctlDescribeOptions opts = new NhctlDescribeOptions();
+                opts.setDeployment(node.resourceName());
+                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                        node.devSpace().getContext().getApplicationName(),
+                        opts,
+                        NhctlDescribeService.class);
+
+                List<Pair<String, Integer>> portForwardPidPairs = nhctlDescribeService
+                        .getPortForwardPidList()
+                        .stream()
+                        .map(e -> Pair.create(e.substring(0, e.indexOf("-")), Integer.parseInt(e.substring(e.indexOf("-") + 1))))
+                        .collect(Collectors.toList());
+                int port = portForwardPidPairs
+                        .stream()
+                        .filter(e -> StringUtils.equals(portForward.substring(0, portForward.indexOf("(")), e.getFirst()))
+                        .findFirst()
+                        .get()
+                        .getSecond();
+                List<String> portForwardsToBeStopped = portForwardPidPairs
+                        .stream()
+                        .filter(e -> e.getSecond().equals(port))
+                        .map(e -> e.getFirst())
+                        .collect(Collectors.toList());
+                if (portForwardsToBeStopped.size() > 1) {
+                    String portForwardsToBeStoppedStr = String.join(",", portForwardsToBeStopped.toArray(new String[0]));
+                    if (!MessageDialogBuilder.yesNo("Port forward", "The associated port (" + portForwardsToBeStoppedStr + ") will also be terminated. Are you sure terminate?").guessWindowAndAsk()) {
+                        return;
+                    }
+                }
+            } catch (IOException | InterruptedException e) {
+                LOG.error("error occurred while checking port forward before stopping", e);
+                return;
+            } finally {
+                updatePortForwardList();
             }
 
             ProgressManager.getInstance().run(new Task.Modal(project, "Stopping port forward " + portForward, false) {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
-                    final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                    final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
                     NhctlPortForwardEndOptions opts = new NhctlPortForwardEndOptions();
                     opts.setPort(portForward.substring(0, portForward.indexOf("(")));
@@ -241,7 +293,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
                     try {
-                        nhctlCommand.endPortForward(node.devSpace().getContext().getApplicationName(), opts);
+                        outputCapturedNhctlCommand.endPortForward(node.devSpace().getContext().getApplicationName(), opts);
                     } catch (IOException | InterruptedException e) {
                         LOG.error("error occurred while stopping port forward", e);
                     } finally {

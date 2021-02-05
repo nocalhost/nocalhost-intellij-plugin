@@ -222,12 +222,7 @@ public class NhctlCommand {
         args.add("--way");
         args.add(opts.getWay().getVal());
 
-        String result = execute(args, opts);
-        if (StringUtils.contains(result, "run background success")) {
-            return;
-        } else {
-            throw new RuntimeException(result);
-        }
+        execute(args, opts);
     }
 
     public void endPortForward(String name, NhctlPortForwardEndOptions opts) throws IOException, InterruptedException {
@@ -241,12 +236,7 @@ public class NhctlCommand {
             args.add(opts.getPort());
         }
 
-        String result = execute(args, opts);
-        if (StringUtils.contains(result, "port-forward has been stop")) {
-            return;
-        } else {
-            throw new RuntimeException(result);
-        }
+        execute(args, opts);
     }
 
     public String describe(String name, NhctlDescribeOptions opts) throws IOException, InterruptedException {

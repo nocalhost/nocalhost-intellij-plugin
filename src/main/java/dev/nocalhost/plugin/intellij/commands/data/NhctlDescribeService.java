@@ -14,4 +14,5 @@ public class NhctlDescribeService {
     private boolean portForwarded;
     private boolean syncing;
     private List<String> portForwardStatusList;
+    private List<String> portForwardPidList;
 }
