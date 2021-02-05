@@ -1,12 +1,12 @@
 package dev.nocalhost.plugin.intellij.ui.console;
 
+import com.intellij.execution.filters.TextConsoleBuilderFactory;
+import com.intellij.execution.ui.ConsoleView;
+import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.ui.components.JBScrollPane;
-import com.intellij.ui.components.JBTextArea;
 
 import org.apache.commons.collections.CollectionUtils;
 
@@ -32,11 +32,9 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
     private final ToolWindow toolWindow;
     private final ResourceNode node;
 
-    private JPanel panel;
-    private JBScrollPane scrollPane;
-    private JBTextArea textArea;
     private String title;
     private ContainerSelectorDialog containerSelectorDialog;
+    private ConsoleView consoleView;
 
 
     public NocalhostLogWindow(Project project, ToolWindow toolWindow, KubeResourceType type, ResourceNode node) {
@@ -109,14 +107,12 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
         title = String.format("%s/%s.log", podName, containerName);
 
 
-        panel = new SimpleToolWindowPanel(true);
+        consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+        consoleView.print(logs, ConsoleViewContentType.NORMAL_OUTPUT);
+    }
 
-        textArea = new JBTextArea(logs);
-        textArea.setEditable(false);
-        textArea.setLineWrap(true);
-        scrollPane = new JBScrollPane(textArea);
-        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        panel.add(scrollPane);
+    public ConsoleView getConsoleView() {
+        return consoleView;
     }
 
     @Override
@@ -126,6 +122,6 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
     @Override
     public JComponent getPanel() {
-        return panel;
+        return consoleView.getComponent();
     }
 }

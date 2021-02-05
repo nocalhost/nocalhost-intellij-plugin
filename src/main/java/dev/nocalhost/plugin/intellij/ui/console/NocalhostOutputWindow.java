@@ -1,5 +1,9 @@
 package dev.nocalhost.plugin.intellij.ui.console;
 
+import com.intellij.execution.filters.TextConsoleBuilderFactory;
+import com.intellij.execution.impl.ConsoleViewImpl;
+import com.intellij.execution.ui.ConsoleView;
+import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -11,9 +15,6 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.ui.components.JBScrollPane;
-import com.intellij.ui.components.JBTextArea;
-import com.intellij.util.ui.JBEmptyBorder;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,8 +31,9 @@ public class NocalhostOutputWindow {
     private final ToolWindow toolWindow;
 
     private NocalhostOutputWindowPanel panel;
-    private JBTextArea textArea;
-    private JBScrollPane scrollPane;
+
+
+    private ConsoleView consoleView;
 
     private AtomicBoolean scrollToEnd = new AtomicBoolean(true);
 
@@ -39,14 +41,10 @@ public class NocalhostOutputWindow {
         this.project = project;
         this.toolWindow = toolWindow;
 
+        consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+
         panel = new NocalhostOutputWindowPanel(false);
-        textArea = new JBTextArea();
-        textArea.setEditable(false);
-        textArea.setLineWrap(true);
-        scrollPane = new JBScrollPane(textArea);
-        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        scrollPane.setBorder(new JBEmptyBorder(0));
-        panel.add(scrollPane);
+        panel.add(consoleView.getComponent());
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
         actionGroup.add(new ClearAction());
@@ -63,18 +61,11 @@ public class NocalhostOutputWindow {
 
     private void appendOutput(String text) {
         ApplicationManager.getApplication().invokeAndWait(() -> {
-            int currentPos = textArea.getCaretPosition();
-            textArea.append(text);
-            if (scrollToEnd.get()) {
-                int endPos = textArea.getDocument().getLength();
-                textArea.select(endPos, endPos);
-            } else {
-                textArea.select(currentPos, currentPos);
-            }
+            consoleView.print(text, ConsoleViewContentType.LOG_INFO_OUTPUT);
         });
     }
 
-    public JPanel getPanel() {
+    public JComponent getPanel() {
         return panel;
     }
 
@@ -90,7 +81,7 @@ public class NocalhostOutputWindow {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            textArea.setText("");
+            consoleView.clear();
         }
     }
 
@@ -108,13 +99,12 @@ public class NocalhostOutputWindow {
         public void setSelected(@NotNull AnActionEvent e, boolean state) {
             scrollToEnd.set(state);
             if (state) {
-                JScrollBar vertical = scrollPane.getVerticalScrollBar();
-                vertical.setValue(vertical.getMaximum());
+                ((ConsoleViewImpl) consoleView).scrollToEnd();
             }
         }
     }
 
-    private class NocalhostOutputWindowPanel extends SimpleToolWindowPanel {
+    private static class NocalhostOutputWindowPanel extends SimpleToolWindowPanel {
 
         public NocalhostOutputWindowPanel(boolean vertical) {
             super(vertical);
