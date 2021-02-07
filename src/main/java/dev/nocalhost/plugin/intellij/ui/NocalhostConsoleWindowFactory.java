@@ -17,8 +17,10 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.Action;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleWindow;
+import dev.nocalhost.plugin.intellij.ui.console.NocalhostErrorWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostLogWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostOutputWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostTerminalWindow;
@@ -44,6 +46,18 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
                 NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC,
                 this::newTerminal
         );
+        project.getMessageBus().connect().subscribe(
+                NocalhostExceptionPrintNotifier.NOCALHOST_CONSOLE_EXECUTE_NOTIFIER_TOPIC,
+                this::errorPrint
+        );
+    }
+
+    private void errorPrint(String title, String contentMsg, String eMessage) {
+        NocalhostErrorWindow nocalhostErrorWindow = new NocalhostErrorWindow(project, toolWindow, title, contentMsg, eMessage);
+        ContentManager contentManager = toolWindow.getContentManager();
+        Content content = ContentFactory.SERVICE.getInstance().createContent(nocalhostErrorWindow.getPanel(), nocalhostErrorWindow.getTitle(), false);
+        contentManager.addContent(content);
+        contentManager.setSelectedContent(content);
     }
 
     private void createOutputWindow() {

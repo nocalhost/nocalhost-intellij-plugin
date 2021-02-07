@@ -1,9 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
@@ -17,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -47,8 +45,8 @@ public class ResetAction extends AnAction {
 
                 try {
                     nhctlCommand.reset(node.devSpace().getContext().getApplicationName(), opts);
-                    Notifications.Bus.notify(new Notification("Nocalhost.Notification", node.resourceName() + " reset complete", "", NotificationType.INFORMATION), project);
 
+                    NocalhostNotifier.getInstance(project).notifySuccess(node.resourceName() + " reset complete", "");
                 } catch (IOException | InterruptedException e) {
                     LOG.error("error occurred while resetting workload", e);
                 }

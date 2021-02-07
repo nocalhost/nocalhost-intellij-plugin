@@ -1,9 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.action.devspace;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.Application;
@@ -21,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
@@ -80,7 +78,8 @@ public class UninstallAppAction extends AnAction {
                             .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
                     publisher.action();
 
-                    Notifications.Bus.notify(new Notification("Nocalhost.Notification", "Application " + appName + " uninstalled", "", NotificationType.INFORMATION));
+                    NocalhostNotifier.getInstance(project).notifySuccess("Application " + appName + " uninstalled", "");
+
                 } catch (InterruptedException | IOException e) {
                     LOG.error("error occurred while uninstalling application", e);
                 }

@@ -1,8 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
@@ -32,6 +29,7 @@ import java.util.List;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
@@ -183,11 +181,7 @@ public class InstallDevSpaceDialog extends DialogWrapper {
                                 .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
                         publisher.action();
 
-                        Notifications.Bus.notify(new Notification(
-                                "Nocalhost.Notification",
-                                "Application " + context.getApplicationName() + " installed",
-                                "",
-                                NotificationType.INFORMATION));
+                        NocalhostNotifier.getInstance(project).notifySuccess("Application " + context.getApplicationName() + " installed", "");
                     } catch (IOException | InterruptedException e) {
                         LOG.error("error occurred while installing application", e);
                     }

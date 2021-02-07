@@ -1,8 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
@@ -18,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
@@ -77,7 +75,8 @@ public class EndDevelopAction extends AnAction {
                             .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
                             .action();
 
-                    Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode ended", "", NotificationType.INFORMATION), project);
+
+                    NocalhostNotifier.getInstance(project).notifySuccess("DevMode ended", "");
                 } catch (IOException | InterruptedException e) {
                     LOG.error("error occurred while ending develop", e);
                 }

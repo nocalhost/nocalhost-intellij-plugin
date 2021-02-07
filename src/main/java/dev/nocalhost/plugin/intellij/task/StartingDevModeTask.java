@@ -2,9 +2,6 @@ package dev.nocalhost.plugin.intellij.task;
 
 import com.google.common.collect.Lists;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -18,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
@@ -86,8 +84,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         ApplicationManager.getApplication().getMessageBus()
                 .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
                 .action();
-
-        Notifications.Bus.notify(new Notification("Nocalhost.Notification", "DevMode started", "", NotificationType.INFORMATION), project);
+        NocalhostNotifier.getInstance(project).notifySuccess("DevMode started", "");
     }
 
     @Override

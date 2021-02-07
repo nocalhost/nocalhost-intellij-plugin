@@ -2,9 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.vfs;
 
 import com.google.gson.Gson;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
@@ -29,6 +26,7 @@ import java.io.OutputStream;
 import java.util.Base64;
 import java.util.Date;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -107,8 +105,8 @@ public class ConfigFile extends VirtualFile {
                 nhctlConfigOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
                 try {
                     nhctlCommand.saveConfig(node.devSpace().getContext().getApplicationName(), nhctlConfigOptions, Base64.getEncoder().encodeToString(json.getBytes()));
-                    Notifications.Bus.notify(new Notification("Nocalhost.Notification", name + " saved", "", NotificationType.INFORMATION), project);
 
+                    NocalhostNotifier.getInstance(project).notifySuccess(name + " saved", "");
                 } catch (IOException | InterruptedException e) {
                     LOG.error("save config file error, ", e);
                 }

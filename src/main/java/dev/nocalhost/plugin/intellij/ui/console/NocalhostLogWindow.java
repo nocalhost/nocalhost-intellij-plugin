@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
@@ -127,7 +128,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                     "",
                     ConsoleViewContentType.LOG_INFO_OUTPUT);
         } catch (ExecutionException e) {
-            e.printStackTrace();
+            NocalhostNotifier.getInstance(project).notifyError("Nocalhost get log error", "", e.getMessage());
         }
     }
 
