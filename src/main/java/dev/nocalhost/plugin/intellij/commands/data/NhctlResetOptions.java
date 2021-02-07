@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.commands;
+package dev.nocalhost.plugin.intellij.commands.data;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import lombok.Getter;

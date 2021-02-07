@@ -28,6 +28,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
