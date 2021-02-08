@@ -21,10 +21,10 @@ public class NocalhostSettingComponent {
         nhctlBinary = new TextFieldWithBrowseButton(new JBTextField());
         kubectlBinary = new TextFieldWithBrowseButton(new JBTextField());
         nhctlBinary.addBrowseFolderListener("", "Select nhctl binary", null,
-                new FileChooserDescriptor(false, true, false, false, false, false),
+                new FileChooserDescriptor(true, false, false, false, false, false),
                 TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
         kubectlBinary.addBrowseFolderListener("", "Select kubectl binary", null,
-                new FileChooserDescriptor(false, true, false, false, false, false),
+                new FileChooserDescriptor(true, false, false, false, false, false),
                 TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
         settingPanel = FormBuilder.createFormBuilder()
                 .addLabeledComponent(new JBLabel("nhctl: "), nhctlBinary, 1, false)
