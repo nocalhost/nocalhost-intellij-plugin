@@ -11,6 +11,7 @@ import java.util.Map;
 
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 
@@ -26,7 +27,7 @@ public final class KubectlHelper {
         return false;
     }
 
-    public static Pair<String, String> getResourceYaml(ResourceNode resourceNode) throws IOException, InterruptedException {
+    public static Pair<String, String> getResourceYaml(ResourceNode resourceNode) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
 
         String resourceYaml = kubectlCommand.getResourceYaml(

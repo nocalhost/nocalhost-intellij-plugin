@@ -14,6 +14,7 @@ import java.util.List;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -41,7 +42,7 @@ public class ClearPersistentDataAction extends AnAction {
         try {
             List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
             new ClearPersistentDataDialog(project, node.devSpace(), nhctlPVCItems, false).showAndGet();
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while listing pvc", e);
         }
     }

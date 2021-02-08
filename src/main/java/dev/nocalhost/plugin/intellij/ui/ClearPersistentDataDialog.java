@@ -23,6 +23,7 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class ClearPersistentDataDialog extends DialogWrapper {
@@ -120,7 +121,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                     opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                     try {
                         nhctlCommand.cleanPVC(opts);
-                    } catch (IOException | InterruptedException e) {
+                    } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                         LOG.error("error occurred while clearing persistent data", e);
                         NocalhostNotifier.getInstance(project).notifyError("Nocalhost clear persistent data error", "Error occurred while clearing persistent data", e.getMessage());
                     }

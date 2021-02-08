@@ -41,6 +41,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginInfo;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSvcProfile;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
@@ -117,7 +118,7 @@ public class NocalhostTree extends Tree {
                                 try {
                                     loadKubeResources(resourceTypeNode);
                                     resourceTypeNode.setLoaded(true);
-                                } catch (IOException | InterruptedException e) {
+                                } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                                     LOG.error("error occurred while loading kube resources", e);
                                     NocalhostNotifier.getInstance(project).notifyError("Nocalhost fetch data error", "Error occurred while fetching data", e.getMessage());
                                 }
@@ -170,7 +171,7 @@ public class NocalhostTree extends Tree {
                 try {
                     List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
                     updateDevSpaces(devSpaces);
-                } catch (IOException | InterruptedException e) {
+                } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error(e);
                     NocalhostNotifier.getInstance(project).notifyError("Nocalhost fetch data error", "Error occurred while fetching data", e.getMessage());
                 } finally {
@@ -180,7 +181,7 @@ public class NocalhostTree extends Tree {
         });
     }
 
-    private void updateDevSpaces(List<DevSpace> devSpaces) throws IOException, InterruptedException {
+    private void updateDevSpaces(List<DevSpace> devSpaces) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<DevSpaceNode> devSpaceNodes = Lists.newArrayList();
         for (DevSpace devSpace : devSpaces) {
             boolean added = false;
@@ -312,7 +313,7 @@ public class NocalhostTree extends Tree {
         }
     }
 
-    private void loadResourceNodes(DevSpaceNode devSpaceNode) throws IOException, InterruptedException {
+    private void loadResourceNodes(DevSpaceNode devSpaceNode) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         for (int i = 0; i < model.getChildCount(devSpaceNode); i++) {
             ResourceGroupNode resourceGroupNode = (ResourceGroupNode) model.getChild(devSpaceNode, i);
             for (int j = 0; j < model.getChildCount(resourceGroupNode); j++) {
@@ -325,7 +326,7 @@ public class NocalhostTree extends Tree {
         }
     }
 
-    private void loadKubeResources(ResourceTypeNode resourceTypeNode) throws IOException, InterruptedException {
+    private void loadKubeResources(ResourceTypeNode resourceTypeNode) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
         final DevSpace devSpace = ((DevSpaceNode) resourceTypeNode.getParent().getParent()).getDevSpace();
         String resourceName = resourceTypeNode.getName().toLowerCase().replaceAll(" ", "");

@@ -29,6 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
@@ -73,7 +74,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
                     break;
                 }
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while describing application", e);
             NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
         }
@@ -140,7 +141,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             nhctlPortForwardOptions.setDevPorts(devContainer.getDev().getPortForward());
             nhctlPortForwardOptions.setKubeconfig(kubeconfigPath);
             outputCapturedNhctlCommand.startPortForward(appName, nhctlPortForwardOptions);
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while starting dev mode", e);
             NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
         }

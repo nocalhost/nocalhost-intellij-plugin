@@ -31,6 +31,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.ContainerSelectorDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -129,7 +130,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
             title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), node.devSpace().getContext().getApplicationName(), node.resourceName());
 
             toTerminal(cmd);
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while initializing terminal", e);
             NocalhostNotifier.getInstance(project).notifyError("Nocalhost terminal error", "Error occurred while initializing terminal", e.getMessage());
         }

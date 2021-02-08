@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -29,7 +30,7 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 public class KubectlCommand {
     private static final String KUBECTL_COMMAND = "kubectl";
 
-    public KubeResourceList getResourceList(String kind, Map<String, String> labels, DevSpace devSpace) throws IOException, InterruptedException {
+    public KubeResourceList getResourceList(String kind, Map<String, String> labels, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
         List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind);
@@ -51,7 +52,7 @@ public class KubectlCommand {
         return DataUtils.GSON.fromJson(output, KubeResourceList.class);
     }
 
-    public KubeResource getResource(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException {
+    public KubeResource getResource(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
         List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind, name);
@@ -65,7 +66,7 @@ public class KubectlCommand {
         return DataUtils.GSON.fromJson(executeCmd(args), KubeResource.class);
     }
 
-    public String getResourceYaml(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException {
+    public String getResourceYaml(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
         List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind, name);
@@ -81,16 +82,15 @@ public class KubectlCommand {
 
         Process process = new ProcessBuilder(args).start();
         String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
-
-        if (process.waitFor() != 0) {
-            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
-                    process.getErrorStream(), Charsets.UTF_8)));
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new NocalhostExecuteCmdException(cmd, exitCode, CharStreams.toString(new InputStreamReader(process.getErrorStream(), Charsets.UTF_8)));
         }
 
         return output;
     }
 
-    public String exec(String podName, String containerName, String command, DevSpace devSpace) throws IOException, InterruptedException {
+    public String exec(String podName, String containerName, String command, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
         List<String> args = Lists.newArrayList(getKubectlCmd(), "exec", podName);
@@ -104,7 +104,7 @@ public class KubectlCommand {
         return executeCmd(args);
     }
 
-    public String logs(String podName, String containerName, DevSpace devSpace) throws IOException, InterruptedException {
+    public String logs(String podName, String containerName, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
         List<String> args = Lists.newArrayList(getKubectlCmd(), "logs", podName);
@@ -135,7 +135,7 @@ public class KubectlCommand {
         return ProcessHandlerFactory.getInstance().createProcessHandler(generalCommandLine);
     }
 
-    private String executeCmd(List<String> args) throws IOException, InterruptedException {
+    private String executeCmd(List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
 
 
 //        Process process = Runtime.getRuntime().exec(cmd);
@@ -145,9 +145,9 @@ public class KubectlCommand {
 
         String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
 
-        if (process.waitFor() != 0) {
-            throw new RuntimeException(CharStreams.toString(new InputStreamReader(
-                    process.getErrorStream(), Charsets.UTF_8)));
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new NocalhostExecuteCmdException(cmd, exitCode, CharStreams.toString(new InputStreamReader(process.getErrorStream(), Charsets.UTF_8)));
         }
         return output;
     }

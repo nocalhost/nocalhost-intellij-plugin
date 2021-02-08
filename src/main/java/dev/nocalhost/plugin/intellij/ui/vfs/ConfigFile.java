@@ -27,6 +27,7 @@ import java.util.Date;
 import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -106,7 +107,7 @@ public class ConfigFile extends VirtualFile {
                     nhctlCommand.saveConfig(node.devSpace().getContext().getApplicationName(), nhctlConfigOptions, Base64.getEncoder().encodeToString(json.getBytes()));
 
                     NocalhostNotifier.getInstance(project).notifySuccess(name + " saved", "");
-                } catch (IOException | InterruptedException e) {
+                } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while saving config file", e);
                     NocalhostNotifier.getInstance(project).notifyError("Nocalhost save config error", "Error occurred while saving config file", e.getMessage());
                 }

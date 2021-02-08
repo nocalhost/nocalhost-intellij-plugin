@@ -21,6 +21,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -55,7 +56,7 @@ public class EndDevelopAction extends AnAction {
                 Messages.showMessageDialog("Dev mode has been ended.", "End develop", null);
                 return;
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while checking if service was in development", e);
             return;
         }
@@ -77,7 +78,7 @@ public class EndDevelopAction extends AnAction {
 
 
                     NocalhostNotifier.getInstance(project).notifySuccess("DevMode ended", "");
-                } catch (IOException | InterruptedException e) {
+                } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while ending develop", e);
                 }
             }

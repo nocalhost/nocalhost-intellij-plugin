@@ -10,6 +10,7 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeApplication;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public final class NhctlHelper {
@@ -37,10 +38,9 @@ public final class NhctlHelper {
         try {
             NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(applicationName, opts, NhctlDescribeApplication.class);
             return nhctlDescribeApplication.isInstalled();
-        } catch (RuntimeException e) {
-            if (StringUtils.contains(e.getMessage(), "Application \"" + applicationName + "\" not found")) {
-                return false;
-            }
+        } catch (NocalhostExecuteCmdException e) {
+            return false;
+        } catch (InterruptedException | IOException e) {
             throw e;
         }
     }

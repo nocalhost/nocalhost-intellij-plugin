@@ -23,6 +23,7 @@ import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
@@ -80,7 +81,7 @@ public class UninstallAppAction extends AnAction {
 
                     NocalhostNotifier.getInstance(project).notifySuccess("Application " + appName + " uninstalled", "");
 
-                } catch (InterruptedException | IOException e) {
+                } catch (InterruptedException | IOException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while uninstalling application", e);
                 }
             }

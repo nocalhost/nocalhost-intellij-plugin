@@ -25,6 +25,7 @@ import javax.swing.tree.TreePath;
 import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSvcProfile;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.ClearAppPersisentDataAction;
@@ -84,7 +85,7 @@ public class TreeMouseListener extends MouseAdapter {
                     String filename = "loadResource/" + pair.getFirst().toLowerCase() + "/" + resourceNode.resourceName() + ".yaml";
                     VirtualFile virtualFile = new ReadOnlyVirtualFile(filename, filename, pair.getSecond());
                     FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile, 0), true);
-                } catch (IOException | InterruptedException e) {
+                } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while loading kubernetes resource yaml", e);
                     NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while loading kubernetes resource yaml", e.getMessage());
 

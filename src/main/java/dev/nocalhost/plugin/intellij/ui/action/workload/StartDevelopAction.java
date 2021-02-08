@@ -32,6 +32,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
@@ -83,7 +84,7 @@ public class StartDevelopAction extends AnAction {
                 Messages.showMessageDialog("Dev mode has been started.", "Start develop", null);
                 return;
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while checking if service was in development", e);
             return;
         }
@@ -152,7 +153,7 @@ public class StartDevelopAction extends AnAction {
                                     gitDir.toString(),
                                     devModeService
                             );
-                        } catch (IOException | InterruptedException e) {
+                        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                             LOG.error("error occurred while cloning git repository", e);
                         }
                     }

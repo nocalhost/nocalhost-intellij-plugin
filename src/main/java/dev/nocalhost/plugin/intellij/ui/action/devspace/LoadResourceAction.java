@@ -16,6 +16,7 @@ import java.io.IOException;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -44,7 +45,7 @@ public class LoadResourceAction extends AnAction {
             String filename = devSpace.getContext().getApplicationName() + ".yaml";
             VirtualFile virtualFile = new ReadOnlyVirtualFile(filename, filename, resource);
             FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile, 0), true);
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while describing application", e);
         }
     }

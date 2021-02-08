@@ -17,6 +17,7 @@ import java.io.IOException;
 import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
@@ -47,7 +48,7 @@ public class ResetAction extends AnAction {
                     nhctlCommand.reset(node.devSpace().getContext().getApplicationName(), opts);
 
                     NocalhostNotifier.getInstance(project).notifySuccess(node.resourceName() + " reset complete", "");
-                } catch (IOException | InterruptedException e) {
+                } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while resetting workload", e);
                 }
             }

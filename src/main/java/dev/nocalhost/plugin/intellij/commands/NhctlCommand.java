@@ -31,6 +31,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 
 
@@ -44,7 +45,7 @@ public class NhctlCommand {
         this.yaml = new Yaml(representer);
     }
 
-    public void install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException {
+    public void install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "install", name);
         if (StringUtils.isNotEmpty(opts.getConfig())) {
             args.add("--config");
@@ -118,7 +119,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void uninstall(String name, NhctlUninstallOptions opts) throws InterruptedException, IOException {
+    public void uninstall(String name, NhctlUninstallOptions opts) throws InterruptedException, IOException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "uninstall", name);
         if (opts.isForce()) {
             args.add("--force");
@@ -127,7 +128,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public String devStart(String name, NhctlDevStartOptions opts) throws IOException, InterruptedException {
+    public String devStart(String name, NhctlDevStartOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "start", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -167,7 +168,7 @@ public class NhctlCommand {
         return execute(args, opts);
     }
 
-    public void devEnd(String name, NhctlDevEndOptions opts) throws IOException, InterruptedException {
+    public void devEnd(String name, NhctlDevEndOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "end", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -177,7 +178,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void sync(String name, NhctlSyncOptions opts) throws IOException, InterruptedException {
+    public void sync(String name, NhctlSyncOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "sync", name);
         if (opts.isDaemon()) {
             args.add("--daemon");
@@ -205,7 +206,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void startPortForward(String name, NhctlPortForwardStartOptions opts) throws IOException, InterruptedException {
+    public void startPortForward(String name, NhctlPortForwardStartOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "port-forward", "start", name);
         if (opts.isDaemon()) {
             args.add("--daemon");
@@ -230,7 +231,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void endPortForward(String name, NhctlPortForwardEndOptions opts) throws IOException, InterruptedException {
+    public void endPortForward(String name, NhctlPortForwardEndOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(NHCTL_COMMAND, "port-forward", "end", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -244,7 +245,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public String describe(String name, NhctlDescribeOptions opts) throws IOException, InterruptedException {
+    public String describe(String name, NhctlDescribeOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "describe", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -253,12 +254,12 @@ public class NhctlCommand {
         return execute(args, opts);
     }
 
-    public <T> T describe(String name, NhctlDescribeOptions opts, Class<T> type) throws IOException, InterruptedException {
+    public <T> T describe(String name, NhctlDescribeOptions opts, Class<T> type) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         String result = describe(name, opts);
         return yaml.loadAs(result, type);
     }
 
-    public void reset(String name, NhctlResetOptions opts) throws IOException, InterruptedException {
+    public void reset(String name, NhctlResetOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "reset", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -267,7 +268,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public String getConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException {
+    public String getConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "config", "get", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -276,7 +277,7 @@ public class NhctlCommand {
         return execute(args, opts);
     }
 
-    public void getTemplateConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException {
+    public void getTemplateConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "config", "template", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -285,7 +286,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void saveConfig(String name, NhctlConfigOptions opts, String content) throws IOException, InterruptedException {
+    public void saveConfig(String name, NhctlConfigOptions opts, String content) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "config", "edit", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -296,7 +297,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public <T> T getPluginInfo(String name, NhctlPluginOptions opts, Class<T> type) throws IOException, InterruptedException {
+    public <T> T getPluginInfo(String name, NhctlPluginOptions opts, Class<T> type) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "plugin", "get", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -306,7 +307,7 @@ public class NhctlCommand {
         return yaml.loadAs(result, type);
     }
 
-    public List<NhctlPVCItem> listPVC(NhctlListPVCOptions opts) throws IOException, InterruptedException {
+    public List<NhctlPVCItem> listPVC(NhctlListPVCOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "pvc", "list");
         if (StringUtils.isNotEmpty(opts.getApp())) {
             args.add("--app");
@@ -336,7 +337,7 @@ public class NhctlCommand {
         return nhctlPVCItems;
     }
 
-    public void cleanPVC(NhctlCleanPVCOptions opts) throws IOException, InterruptedException {
+    public void cleanPVC(NhctlCleanPVCOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "pvc", "clean");
         if (StringUtils.isNotEmpty(opts.getApp())) {
             args.add("--app");
@@ -353,7 +354,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException {
+    protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         addGlobalOptions(args, opts);
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
@@ -362,8 +363,9 @@ public class NhctlCommand {
         Process process = new ProcessBuilder(args).redirectErrorStream(true).start();
         String output = CharStreams.toString(new InputStreamReader(
                 process.getInputStream(), Charsets.UTF_8));
-        if (process.waitFor() != 0) {
-            throw new RuntimeException(output);
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new NocalhostExecuteCmdException(cmd, exitCode, output);
         }
 
         return output;

@@ -35,6 +35,7 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
@@ -184,7 +185,7 @@ public class InstallDevSpaceDialog extends DialogWrapper {
                         publisher.action();
 
                         NocalhostNotifier.getInstance(project).notifySuccess("Application " + context.getApplicationName() + " installed", "");
-                    } catch (IOException | InterruptedException e) {
+                    } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                         LOG.error("error occurred while installing application", e);
                         NocalhostNotifier.getInstance(project).notifyError("Nocalhost install devSpace error", "Error occurred while installing application", e.getMessage());
                     }

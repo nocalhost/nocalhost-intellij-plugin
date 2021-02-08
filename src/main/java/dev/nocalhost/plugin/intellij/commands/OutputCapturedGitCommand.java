@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputActivateNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 
@@ -23,7 +24,7 @@ public final class OutputCapturedGitCommand extends GitCommand {
     }
 
     @Override
-    protected String execute(List<String> args, String directory) throws IOException, InterruptedException {
+    protected String execute(List<String> args, String directory) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         project.getMessageBus()
                 .syncPublisher(NocalhostOutputActivateNotifier.NOCALHOST_OUTPUT_ACTIVATE_NOTIFIER_TOPIC)
                 .action();
@@ -53,8 +54,9 @@ public final class OutputCapturedGitCommand extends GitCommand {
             previousLine = line;
         }
 
-        if (process.waitFor() != 0) {
-            throw new RuntimeException(sb.toString());
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new NocalhostExecuteCmdException(cmd, exitCode, sb.toString());
         }
 
         return sb.toString();

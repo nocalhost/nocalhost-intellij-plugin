@@ -29,6 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.ContainerSelectorDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -65,7 +66,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                 KubeResourceList pods = null;
                 try {
                     pods = kubectlCommand.getResourceList("pods", Map.of("app", workloadName), devSpace);
-                } catch (IOException | InterruptedException e) {
+                } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while getting workload pods", e);
                     NocalhostNotifier.getInstance(project).notifyError("Nocalhost log error", String.format("error occurred while getting workload pods workloadName:[%s] devSpace:[%s]", workloadName, devSpace), e.getMessage());
                     return;

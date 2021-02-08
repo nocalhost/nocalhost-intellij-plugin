@@ -16,6 +16,7 @@ import java.io.IOException;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ConfigFile;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -46,7 +47,7 @@ public class ConfigAction extends AnAction {
             OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
             FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
             fileEditorManager.openTextEditor(openFileDescriptor, true);
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while getting application config", e);
         }
     }
