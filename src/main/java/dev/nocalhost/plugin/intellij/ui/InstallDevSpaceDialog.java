@@ -37,6 +37,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
+import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class InstallDevSpaceDialog extends DialogWrapper {
@@ -153,6 +154,7 @@ public class InstallDevSpaceDialog extends DialogWrapper {
             if (StringUtils.equals(nhctlInstallType, "helmRepo")) {
                 opts.setHelmRepoUrl(context.getApplicationUrl());
                 opts.setHelmChartName(context.getApplicationName());
+                opts.setOuterConfig(HelmNocalhostConfigUtil.helmNocalhostConfigPath(devSpace).toString());
             } else {
                 opts.setGitUrl(context.getApplicationUrl());
             }

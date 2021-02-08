@@ -65,7 +65,7 @@ public class NocalhostNotifier {
             @Override
             protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(NocalhostExceptionPrintNotifier.NOCALHOST_CONSOLE_EXECUTE_NOTIFIER_TOPIC)
-                                  .action(title, message, eMessage);
+                        .action(title, message, eMessage);
             }
         });
     }

@@ -41,5 +41,7 @@ public class DevSpace {
         private String applicationUrl;
         @SerializedName("application_config_path")
         private String applicationConfigPath;
+        @SerializedName("nocalhost_config")
+        private String nocalhostConfig;
     }
 }
