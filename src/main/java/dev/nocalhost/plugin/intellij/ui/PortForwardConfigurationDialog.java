@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
@@ -113,6 +114,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     portForwardStatusList = nhctlDescribeService.getPortForwardStatusList();
                 } catch (IOException | InterruptedException e) {
                     LOG.error("error occurred while loading port forward list", e);
+                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while loading port forward list", e.getMessage());
                 }
             }
         });
@@ -166,6 +168,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                         }
                     } catch (IOException | InterruptedException e) {
                         LOG.error("error occurred while starting port forward", e);
+                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while starting port forward", e.getMessage());
                     } finally {
                         updatePortForwardList();
                         startTextField.setText("");
@@ -277,6 +280,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                 }
             } catch (IOException | InterruptedException e) {
                 LOG.error("error occurred while checking port forward before stopping", e);
+                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while checking port forward before stopping", e.getMessage());
                 return;
             } finally {
                 updatePortForwardList();
@@ -296,6 +300,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                         outputCapturedNhctlCommand.endPortForward(node.devSpace().getContext().getApplicationName(), opts);
                     } catch (IOException | InterruptedException e) {
                         LOG.error("error occurred while stopping port forward", e);
+                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while stopping port forward", e.getMessage());
                     } finally {
                         updatePortForwardList();
                     }

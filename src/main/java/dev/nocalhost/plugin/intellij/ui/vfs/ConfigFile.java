@@ -1,7 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui.vfs;
 
-import com.google.gson.Gson;
-
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
@@ -30,6 +28,7 @@ import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.AllArgsConstructor;
 
@@ -94,8 +93,8 @@ public class ConfigFile extends VirtualFile {
     }
 
     protected void saveContent(String newContent) {
-        Object yml = new Yaml().load(newContent);
-        String json = new Gson().toJson(yml);
+        Object yml = DataUtils.YAML.load(newContent);
+        String json = DataUtils.GSON.toJson(yml);
         ProgressManager.getInstance().run(new Task.Backgroundable(null, "Saving " + name, false) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
@@ -108,7 +107,8 @@ public class ConfigFile extends VirtualFile {
 
                     NocalhostNotifier.getInstance(project).notifySuccess(name + " saved", "");
                 } catch (IOException | InterruptedException e) {
-                    LOG.error("save config file error, ", e);
+                    LOG.error("error occurred while saving config file", e);
+                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost save config error", "Error occurred while saving config file", e.getMessage());
                 }
             }
         });

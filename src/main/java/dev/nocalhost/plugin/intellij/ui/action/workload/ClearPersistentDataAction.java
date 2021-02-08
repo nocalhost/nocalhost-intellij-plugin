@@ -40,7 +40,7 @@ public class ClearPersistentDataAction extends AnAction {
         opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
         try {
             List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
-            new ClearPersistentDataDialog(node.devSpace(), nhctlPVCItems, false).showAndGet();
+            new ClearPersistentDataDialog(project, node.devSpace(), nhctlPVCItems, false).showAndGet();
         } catch (IOException | InterruptedException e) {
             LOG.error("error occurred while listing pvc", e);
         }

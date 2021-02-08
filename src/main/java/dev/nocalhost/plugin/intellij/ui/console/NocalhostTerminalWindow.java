@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
@@ -130,6 +131,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
             toTerminal(cmd);
         } catch (IOException | InterruptedException e) {
             LOG.error("error occurred while initializing terminal", e);
+            NocalhostNotifier.getInstance(project).notifyError("Nocalhost terminal error", "Error occurred while initializing terminal", e.getMessage());
         }
     }
 
@@ -146,6 +148,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
             panel = terminal;
         } catch (ExecutionException | IOException e) {
             LOG.error("error occurred while starting terminal", e);
+            NocalhostNotifier.getInstance(project).notifyError("Nocalhost terminal error", "Error occurred while initializing terminal", e.getMessage());
         }
     }
 

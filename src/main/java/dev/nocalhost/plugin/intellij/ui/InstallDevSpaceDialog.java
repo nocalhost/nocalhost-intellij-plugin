@@ -184,6 +184,7 @@ public class InstallDevSpaceDialog extends DialogWrapper {
                         NocalhostNotifier.getInstance(project).notifySuccess("Application " + context.getApplicationName() + " installed", "");
                     } catch (IOException | InterruptedException e) {
                         LOG.error("error occurred while installing application", e);
+                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost install devSpace error", "Error occurred while installing application", e.getMessage());
                     }
                 }
             });

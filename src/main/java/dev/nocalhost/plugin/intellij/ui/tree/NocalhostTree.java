@@ -31,6 +31,7 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
@@ -118,6 +119,7 @@ public class NocalhostTree extends Tree {
                                     resourceTypeNode.setLoaded(true);
                                 } catch (IOException | InterruptedException e) {
                                     LOG.error("error occurred while loading kube resources", e);
+                                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost fetch data error", "Error occurred while fetching data", e.getMessage());
                                 }
                             }
                         }
@@ -170,6 +172,7 @@ public class NocalhostTree extends Tree {
                     updateDevSpaces(devSpaces);
                 } catch (IOException | InterruptedException e) {
                     LOG.error(e);
+                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost fetch data error", "Error occurred while fetching data", e.getMessage());
                 } finally {
                     updatingDecSpaces.set(false);
                 }

@@ -4,7 +4,6 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.util.Pair;
 
 import org.apache.commons.lang3.StringUtils;
-import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.util.List;
@@ -13,6 +12,7 @@ import java.util.Map;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 
 public final class KubectlHelper {
     public static boolean isKubeResourceAvailable(KubeResource kubeResource) {
@@ -34,8 +34,7 @@ public final class KubectlHelper {
                 resourceNode.getKubeResource().getMetadata().getName(),
                 resourceNode.devSpace());
 
-        Yaml yaml = new Yaml();
-        Map m = yaml.load(resourceYaml);
+        Map m = DataUtils.YAML.load(resourceYaml);
         return Pair.create((String) m.get("kind"), resourceYaml);
     }
 

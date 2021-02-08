@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.commands;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
-import com.google.gson.Gson;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
@@ -24,12 +23,11 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class KubectlCommand {
     private static final String KUBECTL_COMMAND = "kubectl";
-
-    private final Gson gson = new Gson();
 
     public KubeResourceList getResourceList(String kind, Map<String, String> labels, DevSpace devSpace) throws IOException, InterruptedException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
@@ -50,7 +48,7 @@ public class KubectlCommand {
         }
 
         String output = executeCmd(args);
-        return gson.fromJson(output, KubeResourceList.class);
+        return DataUtils.GSON.fromJson(output, KubeResourceList.class);
     }
 
     public KubeResource getResource(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException {
@@ -64,7 +62,7 @@ public class KubectlCommand {
         args.add("--kubeconfig");
         args.add(kubeconfigPath.toString());
 
-        return gson.fromJson(executeCmd(args), KubeResource.class);
+        return DataUtils.GSON.fromJson(executeCmd(args), KubeResource.class);
     }
 
     public String getResourceYaml(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException {

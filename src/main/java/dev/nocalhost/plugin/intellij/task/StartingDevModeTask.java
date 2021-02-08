@@ -75,6 +75,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             }
         } catch (IOException | InterruptedException e) {
             LOG.error("error occurred while describing application", e);
+            NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
         }
     }
 
@@ -141,6 +142,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             outputCapturedNhctlCommand.startPortForward(appName, nhctlPortForwardOptions);
         } catch (IOException | InterruptedException e) {
             LOG.error("error occurred while starting dev mode", e);
+            NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
         }
     }
 }

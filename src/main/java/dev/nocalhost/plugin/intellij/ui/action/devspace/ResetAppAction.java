@@ -58,8 +58,7 @@ public class ResetAppAction extends AnAction {
                 try {
                     try {
                         outputCapturedNhctlCommand.uninstall(appName, opts);
-                    } catch (Exception e) {
-//                        LOG.error("error occurred while uninstall application", e);
+                    } catch (Exception ignored) {
                     }
 
                     final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);

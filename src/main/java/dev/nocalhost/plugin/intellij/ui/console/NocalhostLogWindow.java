@@ -67,6 +67,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                     pods = kubectlCommand.getResourceList("pods", Map.of("app", workloadName), devSpace);
                 } catch (IOException | InterruptedException e) {
                     LOG.error("error occurred while getting workload pods", e);
+                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost log error", String.format("error occurred while getting workload pods workloadName:[%s] devSpace:[%s]", workloadName, devSpace), e.getMessage());
                     return;
                 }
                 if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
@@ -128,7 +129,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                     "",
                     ConsoleViewContentType.LOG_INFO_OUTPUT);
         } catch (ExecutionException e) {
-            NocalhostNotifier.getInstance(project).notifyError("Nocalhost get log error", "", e.getMessage());
+            NocalhostNotifier.getInstance(project).notifyError("Nocalhost log error", String.format("failed to log podName:[%s] containerName:[%s] devSpace:[%s]", podName, containerName, devSpace), e.getMessage());
         }
     }
 

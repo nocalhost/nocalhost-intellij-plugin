@@ -5,6 +5,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +18,7 @@ import java.util.stream.IntStream;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
@@ -26,6 +28,7 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 public class ClearPersistentDataDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(ClearPersistentDataDialog.class);
     private final DevSpace devSpace;
+    private final Project project;
 
     private JPanel contentPane;
     private JButton selectAllButton;
@@ -34,12 +37,13 @@ public class ClearPersistentDataDialog extends DialogWrapper {
 
     private boolean showSvcNames;
 
-    public ClearPersistentDataDialog(DevSpace devSpace, List<NhctlPVCItem> nhctlPVCItems, boolean showSvcNames) {
+    public ClearPersistentDataDialog(Project project, DevSpace devSpace, List<NhctlPVCItem> nhctlPVCItems, boolean showSvcNames) {
         super(true);
         init();
         setTitle("Clear Persistent Data");
 
         this.devSpace = devSpace;
+        this.project = project;
         this.showSvcNames = showSvcNames;
 
         this.setOKActionEnabled(false);
@@ -118,6 +122,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                         nhctlCommand.cleanPVC(opts);
                     } catch (IOException | InterruptedException e) {
                         LOG.error("error occurred while clearing persistent data", e);
+                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost clear persistent data error", "Error occurred while clearing persistent data", e.getMessage());
                     }
                 }
             }

@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
@@ -143,6 +144,7 @@ public class NocalhostWindow {
                 }
             } catch (IOException e) {
                 LOG.error("error occurred while starting develop", e);
+                NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
             } finally {
                 nocalhostSettings.getDevModeProjectBasePath2Service().remove(project.getBasePath());
             }
@@ -163,6 +165,7 @@ public class NocalhostWindow {
                 // Ignore
             } catch (Exception e) {
                 LOG.error("error occurred while activate output window", e);
+                NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
             }
         });
     }
