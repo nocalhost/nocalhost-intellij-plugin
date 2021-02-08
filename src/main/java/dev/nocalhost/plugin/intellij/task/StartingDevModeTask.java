@@ -28,6 +28,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
+import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
@@ -42,10 +43,11 @@ public class StartingDevModeTask extends Task.Backgroundable {
     private final DevSpace devSpace;
     private final DevModeService devModeService;
 
-    NhctlDescribeService nhctlDescribeService;
-    NhctlCommand nhctlCommand;
-    String kubeconfigPath;
-    String appName;
+    private NhctlDescribeService nhctlDescribeService;
+    private NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final String kubeconfigPath;
+    private final String appName;
+    private ServiceContainer devContainer;
 
 
     public StartingDevModeTask(Project project, DevSpace devSpace, DevModeService devModeService) {
@@ -54,18 +56,23 @@ public class StartingDevModeTask extends Task.Backgroundable {
         this.devSpace = devSpace;
         this.devModeService = devModeService;
 
-        nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
         appName = devSpace.getContext().getApplicationName();
 
         final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
-        nhctlDescribeOptions.setDeployment(devModeService.getName());
+        nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
         nhctlDescribeOptions.setKubeconfig(kubeconfigPath);
         try {
             nhctlDescribeService = nhctlCommand.describe(
                     devSpace.getContext().getApplicationName(),
                     nhctlDescribeOptions,
                     NhctlDescribeService.class);
+            for (ServiceContainer container : nhctlDescribeService.getRawConfig().getContainers()) {
+                if (StringUtils.equals(container.getName(), devModeService.getContainerName())) {
+                    devContainer = container;
+                    break;
+                }
+            }
         } catch (IOException | InterruptedException e) {
             LOG.error("error occurred while describing application", e);
         }
@@ -78,7 +85,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
             project.getMessageBus()
                     .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC)
-                    .action(devSpace, devModeService.getName());
+                    .action(devSpace, devModeService.getServiceName());
         });
 
         ApplicationManager.getApplication().getMessageBus()
@@ -99,9 +106,10 @@ public class StartingDevModeTask extends Task.Backgroundable {
             // nhctl dev start ...
             indicator.setText("Starting DevMode: dev start");
             NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions();
-            nhctlDevStartOptions.setDeployment(devModeService.getName());
+            nhctlDevStartOptions.setDeployment(devModeService.getServiceName());
             nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
             nhctlDevStartOptions.setKubeconfig(kubeconfigPath);
+            nhctlDevStartOptions.setContainer(devContainer.getName());
             final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
             outputCapturedNhctlCommand.devStart(appName, nhctlDevStartOptions);
 
@@ -111,7 +119,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             String containerName;
             do {
                 Thread.sleep(1000);
-                deployment = kubectlCommand.getResource("deployment", devModeService.getName(), devSpace);
+                deployment = kubectlCommand.getResource("deployment", devModeService.getServiceName(), devSpace);
                 KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getSpec().getSelector().getMatchLabels(), devSpace);
                 containerName = pods.getItems().get(0).getSpec().getContainers().get(0).getName();
             } while (!KubectlHelper.isKubeResourceAvailable(deployment) || !StringUtils.equals(containerName, NOCALHOST_DEV_CONTAINER_NAME));
@@ -119,16 +127,16 @@ public class StartingDevModeTask extends Task.Backgroundable {
             // nhctl sync ...
             indicator.setText("Starting DevMode: sync file");
             NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions();
-            nhctlSyncOptions.setDeployment(devModeService.getName());
+            nhctlSyncOptions.setDeployment(devModeService.getServiceName());
             nhctlSyncOptions.setKubeconfig(kubeconfigPath);
             outputCapturedNhctlCommand.sync(appName, nhctlSyncOptions);
 
             // nhctl port-forward ...
             indicator.setText("Starting DevMode: port forward");
             NhctlPortForwardStartOptions nhctlPortForwardOptions = new NhctlPortForwardStartOptions();
-            nhctlPortForwardOptions.setDeployment(devModeService.getName());
+            nhctlPortForwardOptions.setDeployment(devModeService.getServiceName());
             nhctlPortForwardOptions.setWay(NhctlPortForwardStartOptions.Way.DEV_PORTS);
-            nhctlPortForwardOptions.setDevPorts(nhctlDescribeService.getRawConfig().getDevPorts());
+            nhctlPortForwardOptions.setDevPorts(devContainer.getDev().getPortForward());
             nhctlPortForwardOptions.setKubeconfig(kubeconfigPath);
             outputCapturedNhctlCommand.startPortForward(appName, nhctlPortForwardOptions);
         } catch (IOException | InterruptedException e) {

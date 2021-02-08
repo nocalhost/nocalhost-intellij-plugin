@@ -7,8 +7,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NhctlRawConfig {
-    private String name;
-    private String serviceType;
-    private List<ServiceContainer> containers;
+public class ServiceContainerDev {
+    private String gitUrl;
+    private String shell;
+    private List<String> portForward;
 }

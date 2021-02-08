@@ -31,8 +31,10 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
+import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import icons.NocalhostIcons;
@@ -49,12 +51,24 @@ public class StartDevelopAction extends AnAction {
         this.node = node;
     }
 
+    private ServiceContainer selectContainer(List<ServiceContainer> containers) {
+        if (containers.size() > 1) {
+            StartDevelopContainerChooseDialog dialog = new StartDevelopContainerChooseDialog(containers);
+            if (dialog.showAndGet()) {
+                return dialog.getSelectedContainer();
+            } else {
+                return null;
+            }
+        } else {
+            return containers.get(0);
+        }
+    }
+
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
-        DevModeService devModeService = new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName());
 
         NhctlDescribeOptions opts = new NhctlDescribeOptions();
         opts.setDeployment(node.resourceName());
@@ -75,8 +89,19 @@ public class StartDevelopAction extends AnAction {
         }
 
         String path = project.getBasePath();
+
+        ServiceContainer container = selectContainer(nhctlDescribeService.getRawConfig().getContainers());
+        if (container == null) {
+            return;
+        }
+
+        final String containerName = container.getName();
+        final String gitUrl = container.getDev().getGitUrl();
+
+        DevModeService devModeService = new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName(), containerName);
+
         final GitCommand gitCommand = ServiceManager.getService(GitCommand.class);
-        final String gitUrl = nhctlDescribeService.getRawConfig().getGitUrl();
+
         try {
             String ps = gitCommand.remote(path);
             final Optional<String> optionalPath = Arrays.stream(ps.split("\n")).map(p -> p.split("\t")[1].split(" ")[0]).filter(p -> p.equals(gitUrl)).findFirst();

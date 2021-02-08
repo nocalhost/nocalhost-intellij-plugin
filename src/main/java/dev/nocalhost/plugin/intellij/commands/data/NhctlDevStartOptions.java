@@ -15,4 +15,5 @@ public class NhctlDevStartOptions extends NhctlGlobalOptions {
     private String storageClass;
     private String syncthingVersion;
     private String workDir;
+    private String container;
 }

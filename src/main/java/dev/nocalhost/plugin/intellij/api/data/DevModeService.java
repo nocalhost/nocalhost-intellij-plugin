@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 public class DevModeService {
     private int applicationId;
     private int devSpaceId;
-    private String name;
-
+    private String serviceName;
+    private String containerName;
 }

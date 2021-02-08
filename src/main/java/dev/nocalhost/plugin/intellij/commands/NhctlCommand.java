@@ -159,6 +159,10 @@ public class NhctlCommand {
             args.add("--work-dir");
             args.add(opts.getWorkDir());
         }
+        if (StringUtils.isNotEmpty(opts.getContainer())) {
+            args.add("--container");
+            args.add(opts.getContainer());
+        }
 
         return execute(args, opts);
     }

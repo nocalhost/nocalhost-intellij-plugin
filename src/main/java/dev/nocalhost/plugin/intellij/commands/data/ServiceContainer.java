@@ -5,6 +5,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NhctlResetOptions extends NhctlGlobalOptions {
-    private String deployment;
+public class ServiceContainer {
+    private String name;
+    private ServiceContainerDev dev;
+
 }
