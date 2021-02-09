@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
+import com.google.common.collect.Lists;
+
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -16,7 +18,7 @@ import com.intellij.openapi.project.ex.ProjectManagerEx;
 import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 
-import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -24,11 +26,15 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.commands.GitCommand;
+import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
@@ -52,7 +58,7 @@ public class StartDevelopAction extends AnAction {
         this.node = node;
     }
 
-    private ServiceContainer selectContainer(List<ServiceContainer> containers) {
+    private String selectContainer(List<String> containers) {
         if (containers.size() > 1) {
             StartDevelopContainerChooseDialog dialog = new StartDevelopContainerChooseDialog(containers);
             if (dialog.showAndGet()) {
@@ -65,17 +71,24 @@ public class StartDevelopAction extends AnAction {
         }
     }
 
+    private String findGitUrl(List<ServiceContainer> containers, String containerName) {
+        for (ServiceContainer container : containers) {
+            if (StringUtils.equals(container.getName(), containerName)) {
+                return container.getDev().getGitUrl();
+            }
+        }
+        return null;
+    }
+
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
-
-        NhctlDescribeOptions opts = new NhctlDescribeOptions();
-        opts.setDeployment(node.resourceName());
-        opts.setKubeconfig(kubeconfigPath);
         NhctlDescribeService nhctlDescribeService;
+        String startDevelopContainerName = "";
         try {
+            final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+            NhctlDescribeOptions opts = new NhctlDescribeOptions();
+            opts.setDeployment(node.resourceName());
+            opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
             nhctlDescribeService = nhctlCommand.describe(
                     node.devSpace().getContext().getApplicationName(),
                     opts,
@@ -84,22 +97,35 @@ public class StartDevelopAction extends AnAction {
                 Messages.showMessageDialog("Dev mode has been started.", "Start develop", null);
                 return;
             }
+
+            final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+            KubeResource deployment = kubectlCommand.getResource("deployment", node.resourceName(), node.devSpace());
+            KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getSpec().getSelector().getMatchLabels(), node.devSpace());
+            if (pods.getItems().get(0).getSpec().getContainers().size() > 1) {
+                startDevelopContainerName = selectContainer(pods
+                        .getItems()
+                        .get(0)
+                        .getSpec()
+                        .getContainers()
+                        .stream()
+                        .map(KubeResource.Spec.Container::getName)
+                        .collect(Collectors.toList()));
+                if (!StringUtils.isNotEmpty(startDevelopContainerName)) {
+                    return;
+                }
+            }
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while checking if service was in development", e);
             return;
         }
 
-        String path = project.getBasePath();
+        final String containerName = startDevelopContainerName;
 
-        ServiceContainer container = selectContainer(nhctlDescribeService.getRawConfig().getContainers());
-        if (container == null) {
-            return;
-        }
-
-        final String containerName = container.getName();
-        final String gitUrl = container.getDev().getGitUrl();
+        final String gitUrl = findGitUrl(nhctlDescribeService.getRawConfig().getContainers(), containerName);
 
         DevModeService devModeService = new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName(), containerName);
+
+        final String path = project.getBasePath();
 
         final GitCommand gitCommand = ServiceManager.getService(GitCommand.class);
 
@@ -117,8 +143,16 @@ public class StartDevelopAction extends AnAction {
                 .yesText("Clone from Git Repo")
                 .noText("Open local directly")
                 .guessWindowAndAsk();
+
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+
         switch (exitCode) {
             case Messages.YES: {
+                if (!StringUtils.isNotEmpty(gitUrl)) {
+                    Messages.showMessageDialog("Git url not found", "Clone repo", null);
+                    return;
+                }
+
                 final List<Path> chosenFiles = Lists.newArrayList();
 
                 final FileChooserDescriptor gitSourceDirChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor();

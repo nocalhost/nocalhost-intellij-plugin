@@ -1,39 +1,41 @@
 package dev.nocalhost.plugin.intellij.ui;
 
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBList;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
 import java.util.List;
 
 import javax.swing.*;
-
-import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
+import javax.swing.border.LineBorder;
 
 public class StartDevelopContainerChooseDialog extends DialogWrapper {
     private JPanel dialogPanel;
-    private JBList<ServiceContainer> containerList;
+    private JScrollPane scrollPane;
+    private JBList<String> containerList;
 
-    private ServiceContainer selectedContainer;
+    private String selectedContainerName;
 
-    public StartDevelopContainerChooseDialog(List<ServiceContainer> containers) {
+    public StartDevelopContainerChooseDialog(List<String> containers) {
         super(true);
 
         setTitle("Select Container");
 
-        init();
+        scrollPane.setBorder(new LineBorder(new JBColor(0xD5D5D5, 0x323232), 1));
 
         containerList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        containerList.setCellRenderer(new ContainerItemRenderer());
-        containerList.setListData(containers.toArray(new ServiceContainer[0]));
+        containerList.setListData(containers.toArray(new String[0]));
+        containerList.setSelectedIndex(0);
+
+        init();
     }
 
     @Override
     protected void doOKAction() {
         if (containerList.getSelectedValuesList().size() > 0) {
-            selectedContainer = containerList.getSelectedValuesList().get(0);
+            selectedContainerName = containerList.getSelectedValuesList().get(0);
         }
         super.doOKAction();
     }
@@ -43,20 +45,7 @@ public class StartDevelopContainerChooseDialog extends DialogWrapper {
         return dialogPanel;
     }
 
-    public ServiceContainer getSelectedContainer() {
-        return selectedContainer;
-    }
-
-    private class ContainerItemRenderer implements ListCellRenderer<ServiceContainer> {
-
-        @Override
-        public Component getListCellRendererComponent(
-                JList<? extends ServiceContainer> list,
-                ServiceContainer value,
-                int index,
-                boolean isSelected,
-                boolean cellHasFocus) {
-            return new JLabel(value.getName());
-        }
+    public String getSelectedContainer() {
+        return selectedContainerName;
     }
 }
