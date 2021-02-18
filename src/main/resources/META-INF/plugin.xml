@@ -6,19 +6,37 @@
     <description>
         <![CDATA[
         <html>
-            <p>Nocalhost is Cloud Native Development Environment. </p>
-            <p>This is a Intellij plugin for nocalhost to help connect IDE and Kubernetes smoothly.</p>
+            <p>
+                Nocalhost Intellij Plugin
+            </p>
+
+            <p>
+                Nocalhost is Cloud Native Development Environment.
+            </p>
+
+            <p>
+                Features:
+                <ul>
+                    <li>Login to nocalhost API Server and list the DevSpaces</li>
+                    <li>Install and Uninstall DevSpaces</li>
+                    <li>Start DevMode to develop services</li>
+                </ul>
+            </p>
+
+            <p>
+            Refer to <a href="https://nocalhost.dev/">nocalhost.dev</a> for more Nocalhost information.
+            </p>
         </html>
         ]]>
     </description>
 
-    <change-notes>
-        <![CDATA[
-        <html>
-            <p>initialize repo</p>
-        </html>
-        ]]>
-    </change-notes>
+<!--    <change-notes>-->
+<!--        <![CDATA[-->
+<!--        <html>-->
+<!--            <p>initialize repo</p>-->
+<!--        </html>-->
+<!--        ]]>-->
+<!--    </change-notes>-->
 
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->

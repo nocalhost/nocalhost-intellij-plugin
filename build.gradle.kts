@@ -51,7 +51,7 @@ tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml
     changeNotes(
         """
       First Upload. <br />
-      Support nocalhost v0.2.x
+      Support nocalhost v0.2.x. <br />
       """
     )
 }
