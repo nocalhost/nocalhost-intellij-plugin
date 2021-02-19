@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Map;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -37,7 +38,10 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
         String cmd = String.join(" ", args.toArray(new String[]{}));
         publisher.action("[cmd] " + cmd + System.lineSeparator());
 
-        Process process = new ProcessBuilder(args).redirectErrorStream(true).start();
+        ProcessBuilder processBuilder = new ProcessBuilder(args).redirectErrorStream(true);
+        Map<String, String> envs = processBuilder.environment();
+        envs.put("DISABLE_SPINNER", "true");
+        Process process = processBuilder.start();
 
         StringBuilder sb = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(
