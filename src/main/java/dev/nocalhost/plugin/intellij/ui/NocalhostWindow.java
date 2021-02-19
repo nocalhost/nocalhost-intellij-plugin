@@ -85,7 +85,6 @@ public class NocalhostWindow {
 
         if (StringUtils.isNotBlank(jwt)) {
             tree = new NocalhostTree(project);
-            tree.clear();
             tree.updateDevSpaces();
             scrollPane = new JBScrollPane(tree);
             scrollPane.setBorder(new TopLineBorder(new JBColor(0xD5D5D5, 0x323232), 1));
@@ -95,8 +94,8 @@ public class NocalhostWindow {
         }
         setToolbar();
 
-        panel.revalidate();
         panel.repaint();
+        panel.revalidate();
     }
 
     private void setToolbar() {

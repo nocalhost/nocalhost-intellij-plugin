@@ -67,6 +67,9 @@ public class NocalhostTree extends Tree {
         root = (DefaultMutableTreeNode) model.getRoot();
 
         init();
+
+        model.insertNodeInto(new LoadingNode(), root, 0);
+        model.reload();
     }
 
     private void init() {
@@ -150,16 +153,6 @@ public class NocalhostTree extends Tree {
         });
     }
 
-    public void clear() {
-        for (int i = model.getChildCount(root) - 1; i >= 0; i--) {
-            model.removeNodeFromParent((MutableTreeNode) model.getChild(root, i));
-        }
-
-        model.insertNodeInto(new LoadingNode(), root, 0);
-
-        model.reload();
-    }
-
     public void updateDevSpaces() {
         if (!updatingDecSpaces.compareAndSet(false, true)) {
             return;
@@ -182,38 +175,64 @@ public class NocalhostTree extends Tree {
     }
 
     private void updateDevSpaces(List<DevSpace> devSpaces) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        List<DevSpaceNode> devSpaceNodes = Lists.newArrayList();
-        for (DevSpace devSpace : devSpaces) {
-            boolean added = false;
-            for (int i = 1; i < model.getChildCount(root); i++) {
-                DevSpaceNode oldDevSpaceNode = (DevSpaceNode) model.getChild(root, i);
-                if (devSpace.getId() == oldDevSpaceNode.getDevSpace().getId()
-                        && devSpace.getDevSpaceId() == oldDevSpaceNode.getDevSpace().getDevSpaceId()
-                        && NhctlHelper.isApplicationInstalled(devSpace) == oldDevSpaceNode.isInstalled()) {
-                    DevSpaceNode newDevSpaceNode = cloneSelfAndChildren(oldDevSpaceNode);
-                    newDevSpaceNode.setDevSpace(devSpace);
-                    devSpaceNodes.add(newDevSpaceNode);
-                    added = true;
+        boolean needReload = false;
+
+        if (model.getChild(root, 0) instanceof LoadingNode) {
+            model.removeNodeFromParent((MutableTreeNode) model.getChild(root, 0));
+            final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+            model.insertNodeInto(new AccountNode(nocalhostSettings.getUserInfo()), root, 0);
+            needReload = true;
+        }
+
+        // remove non-existed nodes
+        for (int i = model.getChildCount(root) - 1; i >= 1; i--) {
+            DevSpaceNode devSpaceNode = (DevSpaceNode) model.getChild(root, i);
+            boolean toBeRemoved = true;
+            for (DevSpace devSpace : devSpaces) {
+                if (devSpaceNode.getDevSpace().getId() == devSpace.getId()
+                        && devSpaceNode.getDevSpace().getDevSpaceId() == devSpace.getDevSpaceId()) {
+                    toBeRemoved = false;
                     break;
                 }
             }
-            if (!added) {
-                devSpaceNodes.add(createDevSpaceNode(devSpace));
+            if (toBeRemoved) {
+                model.removeNodeFromParent(devSpaceNode);
+                needReload = true;
             }
         }
 
-        for (int i = model.getChildCount(root) - 1; i >= 0; i--) {
-            model.removeNodeFromParent((MutableTreeNode) model.getChild(root, i));
+        // add or modify existed nodes
+        for (int i = 0; i < devSpaces.size(); i++) {
+            DevSpace devSpace = devSpaces.get(i);
+
+            if (model.getChildCount(root) <= i + 1) {
+                model.insertNodeInto(createDevSpaceNode(devSpace), root, model.getChildCount(root));
+                needReload = true;
+                continue;
+            }
+
+            DevSpaceNode devSpaceNode = (DevSpaceNode) model.getChild(root, i + 1);
+
+            if (devSpaceNode.getDevSpace().getId() != devSpace.getId()
+                    || devSpaceNode.getDevSpace().getDevSpaceId() != devSpace.getDevSpaceId()) {
+                model.insertNodeInto(createDevSpaceNode(devSpace), root, i + 1);
+                continue;
+            }
+
+            if (devSpaceNode.getDevSpace().getId() == devSpace.getId()
+                    || devSpaceNode.getDevSpace().getDevSpaceId() == devSpace.getDevSpaceId()) {
+                if (NhctlHelper.isApplicationInstalled(devSpace) == devSpaceNode.isInstalled()) {
+                    devSpaceNode.setDevSpace(devSpace);
+                } else {
+                    model.removeNodeFromParent(devSpaceNode);
+                    model.insertNodeInto(createDevSpaceNode(devSpace), root, i + 1);
+                }
+            }
         }
 
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        model.insertNodeInto(new AccountNode(nocalhostSettings.getUserInfo()), root, 0);
-
-        for (DevSpaceNode devSpaceNode : devSpaceNodes) {
-            model.insertNodeInto(devSpaceNode, root, model.getChildCount(root));
+        if (needReload) {
+            model.reload();
         }
-
-        model.reload();
 
         for (int i = 1; i < model.getChildCount(root); i++) {
             makeExpandedVisible((DevSpaceNode) model.getChild(root, i));
@@ -349,11 +368,53 @@ public class NocalhostTree extends Tree {
             }
         }
 
-        for (int k = model.getChildCount(resourceTypeNode) - 1; k >= 0; k--) {
-            model.removeNodeFromParent((MutableTreeNode) model.getChild(resourceTypeNode, k));
+        boolean needReload = false;
+
+        if (resourceTypeNode.isLoaded()) {
+            for (int k = model.getChildCount(resourceTypeNode) - 1; k >= 0; k--) {
+                ResourceNode resourceNode = (ResourceNode) model.getChild(resourceTypeNode, k);
+                boolean toBeRemoved = true;
+
+                for (ResourceNode rn : resourceNodes) {
+                    if (StringUtils.equals(rn.resourceName(), resourceNode.resourceName())) {
+                        toBeRemoved = false;
+                        break;
+                    }
+                }
+
+                if (toBeRemoved) {
+                    model.removeNodeFromParent(resourceNode);
+                    needReload = true;
+                }
+            }
+        } else {
+            for (int i = model.getChildCount(resourceTypeNode) - 1; i >= 0; i--) {
+                model.removeNodeFromParent((MutableTreeNode) model.getChild(resourceTypeNode, i));
+                needReload = true;
+            }
         }
-        for (ResourceNode resourceNode : resourceNodes) {
-            model.insertNodeInto(resourceNode, resourceTypeNode, model.getChildCount(resourceTypeNode));
+
+        for (int i = 0; i < resourceNodes.size(); i++) {
+            ResourceNode resourceNode = resourceNodes.get(i);
+
+            if (model.getChildCount(resourceTypeNode) <= i) {
+                model.insertNodeInto(resourceNode, resourceTypeNode, model.getChildCount(resourceTypeNode));
+                needReload = true;
+                continue;
+            }
+
+            ResourceNode rn = (ResourceNode) model.getChild(resourceTypeNode, i);
+
+            if (StringUtils.equals(resourceNode.resourceName(), rn.resourceName())) {
+                rn.setKubeResource(resourceNode.getKubeResource());
+                rn.setNhctlDescribeService(resourceNode.getNhctlDescribeService());
+                model.reload(rn);
+            }
         }
+
+        if (needReload) {
+            model.reload(resourceTypeNode);
+        }
+
     }
 }
