@@ -42,7 +42,6 @@ intellij {
     version = "2020.3"
     val plugins = mutableListOf(
         git4idea,
-        "com.jetbrains.sh",
         terminal
     )
     setPlugins(*plugins.toTypedArray())

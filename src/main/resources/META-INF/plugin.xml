@@ -42,7 +42,6 @@
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
     <depends>Git4Idea</depends>
-    <depends>com.jetbrains.sh</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -58,7 +57,6 @@
         <applicationService
                 serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostSettings"/>
 
-        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand" />
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand" />
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.NocalhostNotifier"/>
 

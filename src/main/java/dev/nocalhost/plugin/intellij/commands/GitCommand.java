@@ -1,47 +1,60 @@
 package dev.nocalhost.plugin.intellij.commands;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
-import com.google.common.io.CharStreams;
+import com.intellij.execution.process.ProcessOutputTypes;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Key;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Path;
-import java.util.List;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostGitException;
+import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
+import git4idea.commands.Git;
+import git4idea.commands.GitCommandResult;
+import git4idea.commands.GitLineHandler;
+import git4idea.commands.GitLineHandlerListener;
+import git4idea.commands.GitStandardProgressAnalyzer;
 
 public class GitCommand {
-    private static final String GIT_COMMAND = "git";
+    public void clone(Path parentDir, String url, String clonedDirectoryName, Project project) throws NocalhostGitException {
+        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+        indicator.setIndeterminate(false);
+        GitLineHandlerListener progressListener = GitStandardProgressAnalyzer.createListener(indicator);
 
-    public void clone(Path parentDir, String url, String clonedDirectoryName) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        List<String> args = Lists.newArrayList(GIT_COMMAND, "clone");
-        args.add("--progress");
-        args.add(url);
-        args.add(clonedDirectoryName);
+        NocalhostOutputAppendNotifier publisher = project.getMessageBus()
+                                                         .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC);
 
-        execute(args, parentDir.toString());
-    }
+        final CloneOutputResultListener cloneOutputResultListener = new CloneOutputResultListener(publisher);
 
-    public String remote(String path) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        List<String> args = Lists.newArrayList(GIT_COMMAND, "remote", "-v");
-        return execute(args, path);
-    }
-
-    protected String execute(List<String> args, String directory) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        String cmd = String.join(" ", args.toArray(new String[]{}));
-        System.out.println("Execute command: " + cmd);
-
-        Process process = new ProcessBuilder(args)
-                .redirectErrorStream(true)
-                .directory(new File(directory))
-                .start();
-        String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
-        int exitCode = process.waitFor();
-        if (process.waitFor() != 0) {
-            throw new NocalhostExecuteCmdException(cmd, exitCode, output);
+        GitCommandResult gitCommandResult = Git.getInstance().clone(project, parentDir.toFile(), url, clonedDirectoryName, progressListener, cloneOutputResultListener);
+        int exitCode = gitCommandResult.getExitCode();
+        if (exitCode != 0) {
+            throw new NocalhostGitException(exitCode, gitCommandResult.getErrorOutputAsJoinedString());
         }
-        return output;
+    }
+
+    public String getRemote(String path, Project project) {
+        GitLineHandler h = new GitLineHandler(project, new File(path), git4idea.commands.GitCommand.REMOTE);
+        h.addParameters("-v");
+        GitCommandResult gitCommandResult = Git.getInstance().runCommand(h);
+        return gitCommandResult.getOutputAsJoinedString();
+    }
+
+    private static class CloneOutputResultListener implements GitLineHandlerListener {
+
+        NocalhostOutputAppendNotifier publisher;
+
+        public CloneOutputResultListener(NocalhostOutputAppendNotifier publisher) {
+            this.publisher = publisher;
+        }
+
+        @Override
+        public void onLineAvailable(String line, Key outputType) {
+            if (outputType == ProcessOutputTypes.STDOUT) {
+                publisher.action(line + System.lineSeparator());
+            }
+        }
     }
 }

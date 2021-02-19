@@ -28,17 +28,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.commands.GitCommand;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostGitException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
@@ -130,7 +131,7 @@ public class StartDevelopAction extends AnAction {
         final GitCommand gitCommand = ServiceManager.getService(GitCommand.class);
 
         try {
-            String ps = gitCommand.remote(path);
+            String ps = gitCommand.getRemote(path, project);
             final Optional<String> optionalPath = Arrays.stream(ps.split("\n")).map(p -> p.split("\t")[1].split(" ")[0]).filter(p -> p.equals(gitUrl)).findFirst();
             if (optionalPath.isPresent()) {
                 ProgressManager.getInstance().run(new StartingDevModeTask(project, node.devSpace(), devModeService));
@@ -178,8 +179,7 @@ public class StartDevelopAction extends AnAction {
                     @Override
                     public void run(@NotNull ProgressIndicator indicator) {
                         try {
-                            final OutputCapturedGitCommand outputCapturedGitCommand = project.getService(OutputCapturedGitCommand.class);
-                            outputCapturedGitCommand.clone(parentDir, gitUrl, node.resourceName());
+                            gitCommand.clone(parentDir, gitUrl, node.resourceName(), project);
 
                             gitDir = parentDir.resolve(node.resourceName());
 
@@ -187,8 +187,9 @@ public class StartDevelopAction extends AnAction {
                                     gitDir.toString(),
                                     devModeService
                             );
-                        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
+                        } catch (NocalhostGitException e) {
                             LOG.error("error occurred while cloning git repository", e);
+                            NocalhostNotifier.getInstance(project).notifyError("Nocalhost clone repository error", "Error occurred while clone repository", e.getMessage());
                         }
                     }
                 });

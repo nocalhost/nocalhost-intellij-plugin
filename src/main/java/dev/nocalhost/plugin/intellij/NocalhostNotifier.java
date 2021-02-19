@@ -60,7 +60,7 @@ public class NocalhostNotifier {
     public Notification notifyError(@NlsContexts.NotificationTitle @NotNull String title,
                                     @NlsContexts.NotificationContent @NotNull String message,
                                     @NotNull String eMessage) {
-        String content = String.format("<html>%s<a href=\"nocalhost.show\">Show More</a></html>", message);
+        String content = String.format("<html>%s <a href=\"nocalhost.show\">Show More</a></html>", message);
         return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, content, NotificationType.ERROR, new NotificationListener.Adapter() {
             @Override
             protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
