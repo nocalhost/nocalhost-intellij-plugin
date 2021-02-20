@@ -212,12 +212,12 @@ public class NhctlCommand {
             args.add("--daemon");
         }
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
-            args.add("--deployment");
+            args.add("-d");
             args.add(opts.getDeployment());
         }
         if (opts.getDevPorts() != null) {
             for (String port : opts.getDevPorts()) {
-                args.add("--dev-port");
+                args.add("-p");
                 args.add(port);
             }
         }
