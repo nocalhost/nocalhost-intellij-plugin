@@ -15,7 +15,7 @@ import java.util.List;
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlSvcProfile;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
@@ -76,18 +76,17 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     }
 
     protected Icon getDeploymentIcon(ResourceNode node) {
-        final NhctlSvcProfile nhctlSvcProfile = node.getNhctlSvcProfile();
-
+        final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
 
         DeploymentStatus status = getDeploymentStatus(node);
         switch (status) {
             case DEVELOPING:
-                if (nhctlSvcProfile != null && nhctlSvcProfile.isPortForwarded()) {
+                if (nhctlDescribeService != null && nhctlDescribeService.isPortForwarded()) {
                     return NocalhostIcons.Status.DevPortForwarding;
                 }
                 return NocalhostIcons.Status.DevStart;
             case RUNNING:
-                if (nhctlSvcProfile != null && nhctlSvcProfile.isPortForwarded()) {
+                if (nhctlDescribeService != null && nhctlDescribeService.isPortForwarded()) {
                     return NocalhostIcons.Status.NormalPortForwarding;
                 }
                 return NocalhostIcons.Status.Running;
@@ -102,8 +101,8 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
 
     protected DeploymentStatus getDeploymentStatus(ResourceNode node) {
         DeploymentStatus status = DeploymentStatus.UNKNOWN;
-        final NhctlSvcProfile nhctlSvcProfile = node.getNhctlSvcProfile();
-        if (nhctlSvcProfile != null && nhctlSvcProfile.isDeveloping()) {
+        final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
+        if (nhctlDescribeService != null && nhctlDescribeService.isDeveloping()) {
             return DeploymentStatus.DEVELOPING;
         }
         boolean available = false;

@@ -297,6 +297,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
+    @Deprecated
     public <T> T getPluginInfo(String name, NhctlPluginOptions opts, Class<T> type) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "plugin", "get", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {

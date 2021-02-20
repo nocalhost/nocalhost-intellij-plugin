@@ -19,6 +19,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBEmptyBorder;
 import com.intellij.util.ui.UIUtil;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,8 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,8 +38,11 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 
 import dev.nocalhost.plugin.intellij.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
@@ -57,6 +63,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     private JBTextField startTextField;
     private JButton startButton;
+
+    private ContainerSelectorDialog containerSelectorDialog;
 
     private List<String> currentPortForwards;
 
@@ -137,7 +145,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         startButton.addActionListener(event -> {
             Set<String> portForwardsToBeStarted = Arrays.stream(startTextField.getText().split(",")).map(String::trim).collect(Collectors.toSet());
 
-            ProgressManager.getInstance().run(new Task.Modal(project, "Starting port forward " + startTextField.getText(), false) {
+            ProgressManager.getInstance().run(new Task.Modal(project, "Starting port forward " + startTextField.getText(), true) {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
                     final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
@@ -165,6 +173,30 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                             nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
                             nhctlPortForwardStartOptions.setDeployment(node.resourceName());
                             nhctlPortForwardStartOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
+
+                            final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+                            KubeResourceList pods = kubectlCommand.getResourceList("pods", Map.of("app", node.resourceName()), node.devSpace());
+                            if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
+                                KubeResource kubeResource;
+                                String[] containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).toArray(String[]::new);
+                                if (containers.length > 1) {
+                                    containerSelectorDialog = new ContainerSelectorDialog(containers);
+                                    containerSelectorDialog.showAndGet();
+                                    String currentPod = containerSelectorDialog.getCurrent();
+
+                                    Optional<KubeResource> optionalKubeResource = pods.getItems().stream().filter(r -> r.getMetadata().getName().equals(currentPod)).findFirst();
+                                    if (optionalKubeResource.isPresent()) {
+                                        kubeResource = optionalKubeResource.get();
+                                    } else {
+                                        return;
+                                    }
+                                } else {
+                                    kubeResource = pods.getItems().get(0);
+                                }
+                                nhctlPortForwardStartOptions.setPod(kubeResource.getMetadata().getName());
+                            }
+
+
                             outputCapturedNhctlCommand.startPortForward(node.devSpace().getContext().getApplicationName(), nhctlPortForwardStartOptions);
                         }
                     } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {

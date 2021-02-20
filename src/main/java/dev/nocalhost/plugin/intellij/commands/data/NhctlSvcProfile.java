@@ -5,6 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@Deprecated
 public class NhctlSvcProfile {
     private String name;
     private String serviceType;

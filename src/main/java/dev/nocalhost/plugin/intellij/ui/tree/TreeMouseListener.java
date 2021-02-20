@@ -24,7 +24,7 @@ import javax.swing.tree.TreePath;
 
 import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlSvcProfile;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
@@ -157,9 +157,10 @@ public class TreeMouseListener extends MouseAdapter {
         KubeResourceType type = EnumUtils.getEnumIgnoreCase(KubeResourceType.class, kind);
         switch (type) {
             case Deployment:
-                final NhctlSvcProfile nhctlSvcProfile = resourceNode.getNhctlSvcProfile();
-                if (nhctlSvcProfile != null) {
-                    if (!nhctlSvcProfile.isDeveloping()) {
+                final NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
+
+                if (nhctlDescribeService != null) {
+                    if (!nhctlDescribeService.isDeveloping()) {
                         actionGroup.add(new StartDevelopAction(project, resourceNode));
                     } else {
                         actionGroup.add(new EndDevelopAction(project, resourceNode));

@@ -5,14 +5,16 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Deprecated
-public class NhctlPluginInfo {
+public class NhctlDescribeAllService {
     private String name;
     private String releasename;
     private String namespace;
     private String kubeconfig;
     private String dependencyConfigMapName;
     private String appType;
-
-    private NhctlSvcProfile[] svcProfile;
+    private NhctlDescribeService[] svcProfile;
+    private boolean installed;
+    private String[] syncDirs;
+    private String[] resourcePath;
+    private String[] ignoredPath;
 }
