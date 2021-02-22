@@ -12,6 +12,7 @@ public class NocalhostWindowLoginPanel {
 
 
     public NocalhostWindowLoginPanel() {
+        loginText.setEditable(false);
         loginButton.addActionListener(e -> new LoginDialog().showAndGet());
     }
 

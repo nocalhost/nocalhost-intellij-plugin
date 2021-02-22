@@ -2,6 +2,8 @@ package dev.nocalhost.plugin.intellij.commands;
 
 import com.google.common.base.Charsets;
 
+import com.intellij.execution.ExecutionException;
+import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.project.Project;
 
 import org.apache.commons.lang3.StringUtils;
@@ -10,7 +12,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
-import java.util.Map;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -38,10 +39,13 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
         String cmd = String.join(" ", args.toArray(new String[]{}));
         publisher.action("[cmd] " + cmd + System.lineSeparator());
 
-        ProcessBuilder processBuilder = new ProcessBuilder(args).redirectErrorStream(true);
-        Map<String, String> envs = processBuilder.environment();
-        envs.put("DISABLE_SPINNER", "true");
-        Process process = processBuilder.start();
+        GeneralCommandLine commandLine = getCommandline(args);
+        Process process;
+        try {
+            process = commandLine.createProcess();
+        } catch (ExecutionException e) {
+            throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
+        }
 
         StringBuilder sb = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(

@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -131,16 +132,23 @@ public class KubectlCommand {
         args.add("--kubeconfig");
         args.add(kubeconfigPath.toString());
 
-        GeneralCommandLine generalCommandLine = new GeneralCommandLine(args);
-        return ProcessHandlerFactory.getInstance().createProcessHandler(generalCommandLine);
+        final Map<String, String> environment = new HashMap<>(System.getenv());
+        GeneralCommandLine commandLine = new GeneralCommandLine(args).withEnvironment(environment);
+
+        return ProcessHandlerFactory.getInstance().createProcessHandler(commandLine);
     }
 
     private String executeCmd(List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
 
-
-//        Process process = Runtime.getRuntime().exec(cmd);
         String cmd = String.join(" ", args.toArray(new String[]{}));
-        Process process = new ProcessBuilder(args).start();
+        final Map<String, String> environment = new HashMap<>(System.getenv());
+        GeneralCommandLine commandLine = new GeneralCommandLine(args).withEnvironment(environment);
+        Process process;
+        try {
+            process = commandLine.createProcess();
+        } catch (ExecutionException e) {
+            throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
+        }
         System.out.println("Execute command: " + cmd);
 
         String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));

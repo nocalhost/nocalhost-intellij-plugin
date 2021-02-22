@@ -4,7 +4,10 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
+import com.intellij.execution.ExecutionException;
+import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.util.SystemInfo;
 
 import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.Yaml;
@@ -12,6 +15,7 @@ import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -361,7 +365,14 @@ public class NhctlCommand {
         String cmd = String.join(" ", args.toArray(new String[]{}));
         System.out.println("Execute command: " + cmd);
 
-        Process process = new ProcessBuilder(args).redirectErrorStream(true).start();
+        GeneralCommandLine commandLine = getCommandline(args);
+        Process process;
+        try {
+            process = commandLine.createProcess();
+        } catch (ExecutionException e) {
+            throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
+        }
+
         String output = CharStreams.toString(new InputStreamReader(
                 process.getInputStream(), Charsets.UTF_8));
         int exitCode = process.waitFor();
@@ -389,5 +400,20 @@ public class NhctlCommand {
             nhctlCmd = nocalhostSettings.getNhctlBinary();
         }
         return nhctlCmd;
+    }
+
+    protected GeneralCommandLine getCommandline(List<String> args) {
+        final Map<String, String> environment = new HashMap<>(System.getenv());
+        environment.put("DISABLE_SPINNER", "true");
+        if (SystemInfo.isMac) {
+            String path = environment.get("PATH");
+            path = "/usr/local/bin:" + path;
+            String nhctlCmd = getNhctlCmd();
+            if (StringUtils.contains(nhctlCmd, "/")) {
+                path = nhctlCmd.substring(0, nhctlCmd.lastIndexOf("/")) + ":" + path;
+            }
+            environment.put("PATH", path);
+        }
+        return new GeneralCommandLine(args).withEnvironment(environment).withRedirectErrorStream(true);
     }
 }
