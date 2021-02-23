@@ -74,6 +74,9 @@
         <applicationConfigurable parentId="tools" instance="dev.nocalhost.plugin.intellij.ui.NocalhostConfigurable"
                                  id="dev.nocalhost.plugin.intellij.ui.NocalhostConfigurable"
                                  displayName="Nocalhost" />
+
+        <postStartupActivity
+                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostStartupActivity"/>
     </extensions>
 
     <actions>

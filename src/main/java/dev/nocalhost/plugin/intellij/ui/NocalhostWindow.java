@@ -9,32 +9,19 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.serviceContainer.AlreadyDisposedException;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
-import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManager;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
-
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.api.NocalhostApi;
-import dev.nocalhost.plugin.intellij.api.data.DevModeService;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
-import dev.nocalhost.plugin.intellij.topic.NocalhostOutputActivateNotifier;
 import dev.nocalhost.plugin.intellij.ui.action.LogoutAction;
 import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
 import dev.nocalhost.plugin.intellij.ui.action.SettingAction;
@@ -63,14 +50,6 @@ public class NocalhostWindow {
                 DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC,
                 NocalhostWindow.this::updateTree
         );
-
-        project.getMessageBus().connect().subscribe(
-                NocalhostOutputActivateNotifier.NOCALHOST_OUTPUT_ACTIVATE_NOTIFIER_TOPIC,
-                this::activateOutput
-        );
-
-        devStart();
-
 
         panel = new SimpleToolWindowPanel(true, false);
 
@@ -128,46 +107,6 @@ public class NocalhostWindow {
         tree.updateDevSpaces();
     }
 
-    private void devStart() {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        DevModeService devModeService = nocalhostSettings.getDevModeProjectBasePath2Service().get(project.getBasePath());
-        if (nocalhostSettings.getUserInfo() != null && devModeService != null) {
-            final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-            try {
-                for (DevSpace devSpace : nocalhostApi.listDevSpace()) {
-                    if (devSpace.getId() == devModeService.getApplicationId()
-                            && devSpace.getDevSpaceId() == devModeService.getDevSpaceId()) {
-                        ProgressManager.getInstance().run(new StartingDevModeTask(project, devSpace, devModeService));
-                        break;
-                    }
-                }
-            } catch (IOException e) {
-                LOG.error("error occurred while starting develop", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
-            } finally {
-                nocalhostSettings.getDevModeProjectBasePath2Service().remove(project.getBasePath());
-            }
-        }
-    }
-
-    private void activateOutput() {
-        ApplicationManager.getApplication().invokeAndWait(() -> {
-            try {
-                ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
-                    ContentManager contentManager = ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").getContentManager();
-                    Content content = contentManager.getContent(0);
-                    if (content != null) {
-                        contentManager.setSelectedContent(content);
-                    }
-                });
-            } catch (AlreadyDisposedException e) {
-                // Ignore
-            } catch (Exception e) {
-                LOG.error("error occurred while activate output window", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
-            }
-        });
-    }
 
     public JPanel getPanel() {
         return panel;
