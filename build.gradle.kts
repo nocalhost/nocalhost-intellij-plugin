@@ -38,7 +38,7 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = "2020.3"
+    version = project.property("ideaVersion") as String
     val plugins = mutableListOf(
         git4idea,
         terminal
