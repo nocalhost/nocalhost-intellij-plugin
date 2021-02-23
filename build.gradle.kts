@@ -11,7 +11,6 @@ java {
 }
 
 group = "dev.nocalhost"
-version = "0.0.1-SNAPSHOT"
 
 val git4idea = "git4idea"
 val terminal = "terminal"
@@ -39,18 +38,25 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = "2020.3"
+    version = project.property("ideaVersion") as String
     val plugins = mutableListOf(
         git4idea,
         terminal
     )
     setPlugins(*plugins.toTypedArray())
+    pluginName = "nocalhost-intellij-plugin"
+    updateSinceUntilBuild = false
 }
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes(
         """
-      First Upload. <br />
+      Fix: On MacOS nhctl not found <br />
       Support nocalhost v0.2.x. <br />
+      First Upload. <br />
       """
     )
+}
+
+tasks.getByName<org.jetbrains.intellij.tasks.BuildSearchableOptionsTask>("buildSearchableOptions") {
+    this.enabled = false
 }
