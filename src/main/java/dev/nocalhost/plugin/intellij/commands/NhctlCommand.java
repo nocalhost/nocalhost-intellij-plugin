@@ -8,6 +8,7 @@ import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.util.SystemInfo;
+import com.intellij.util.EnvironmentUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.Yaml;
@@ -403,16 +404,15 @@ public class NhctlCommand {
     }
 
     protected GeneralCommandLine getCommandline(List<String> args) {
-        final Map<String, String> environment = new HashMap<>(System.getenv());
+        final Map<String, String> environment = new HashMap<>(EnvironmentUtil.getEnvironmentMap());
         environment.put("DISABLE_SPINNER", "true");
-        if (SystemInfo.isMac) {
+        if (SystemInfo.isMac || SystemInfo.isLinux) {
             String path = environment.get("PATH");
-            path = "/usr/local/bin:" + path;
             String nhctlCmd = getNhctlCmd();
             if (StringUtils.contains(nhctlCmd, "/")) {
                 path = nhctlCmd.substring(0, nhctlCmd.lastIndexOf("/")) + ":" + path;
+                environment.put("PATH", path);
             }
-            environment.put("PATH", path);
         }
         return new GeneralCommandLine(args).withEnvironment(environment).withRedirectErrorStream(true);
     }

@@ -9,6 +9,8 @@ import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessHandlerFactory;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.util.SystemInfo;
+import com.intellij.util.EnvironmentUtil;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -132,8 +134,7 @@ public class KubectlCommand {
         args.add("--kubeconfig");
         args.add(kubeconfigPath.toString());
 
-        final Map<String, String> environment = new HashMap<>(System.getenv());
-        GeneralCommandLine commandLine = new GeneralCommandLine(args).withEnvironment(environment);
+        GeneralCommandLine commandLine = getCommandline(args);
 
         return ProcessHandlerFactory.getInstance().createProcessHandler(commandLine);
     }
@@ -141,8 +142,7 @@ public class KubectlCommand {
     private String executeCmd(List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
-        final Map<String, String> environment = new HashMap<>(System.getenv());
-        GeneralCommandLine commandLine = new GeneralCommandLine(args).withEnvironment(environment);
+        GeneralCommandLine commandLine = getCommandline(args);
         Process process;
         try {
             process = commandLine.createProcess();
@@ -167,5 +167,19 @@ public class KubectlCommand {
             kubectlCmd = nocalhostSettings.getKubectlBinary();
         }
         return kubectlCmd;
+    }
+
+    protected GeneralCommandLine getCommandline(List<String> args) {
+        final Map<String, String> environment = new HashMap<>(EnvironmentUtil.getEnvironmentMap());
+        environment.put("DISABLE_SPINNER", "true");
+        if (SystemInfo.isMac || SystemInfo.isLinux) {
+            String path = environment.get("PATH");
+            String kubectlCmd = getKubectlCmd();
+            if (StringUtils.contains(kubectlCmd, "/")) {
+                path = kubectlCmd.substring(0, kubectlCmd.lastIndexOf("/")) + ":" + path;
+                environment.put("PATH", path);
+            }
+        }
+        return new GeneralCommandLine(args).withEnvironment(environment).withRedirectErrorStream(true);
     }
 }
