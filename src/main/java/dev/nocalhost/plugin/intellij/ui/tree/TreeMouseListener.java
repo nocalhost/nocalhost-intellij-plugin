@@ -147,10 +147,6 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     private void renderWorkloadAction(MouseEvent event, ResourceNode resourceNode) {
-        if (!KubectlHelper.isKubeResourceAvailable(resourceNode.getKubeResource())) {
-            return;
-        }
-
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         String kind = resourceNode.getKubeResource().getKind().toLowerCase();
