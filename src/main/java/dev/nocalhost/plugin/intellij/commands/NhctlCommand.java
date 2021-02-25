@@ -35,6 +35,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
@@ -357,6 +358,16 @@ public class NhctlCommand {
             args.add("--name");
             args.add(opts.getName());
         }
+        execute(args, opts);
+    }
+
+    public String syncStatus(String name, NhctlSyncStatusOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "sync-status", name, "--deployment", opts.getDeployment());
+        return execute(args, opts);
+    }
+
+    public void syncStatusOverride(String name, NhctlSyncStatusOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "sync-status", name, "--deployment", opts.getDeployment(), "--override");
         execute(args, opts);
     }
 

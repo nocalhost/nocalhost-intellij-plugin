@@ -80,6 +80,9 @@
 
         <postStartupActivity
                 implementation="dev.nocalhost.plugin.intellij.startup.NocalhostStartupActivity"/>
+        <statusBarWidgetFactory
+                implementation="dev.nocalhost.plugin.intellij.ui.SyncStatusWidgetFactory"
+                order="first"/>
     </extensions>
 
     <actions>

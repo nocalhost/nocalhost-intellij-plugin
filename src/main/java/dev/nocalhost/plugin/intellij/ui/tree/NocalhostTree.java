@@ -36,6 +36,7 @@ import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.AliveDeployment;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeAllService;
@@ -43,6 +44,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
+import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
@@ -370,7 +372,13 @@ public class NocalhostTree extends Tree {
 
             final Optional<NhctlDescribeService> nhctlDescribeService = Arrays.stream(nhctlDescribeServices).filter(svc -> svc.getRawConfig().getName().equals(kubeResource.getMetadata().getName())).findFirst();
             if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "Deployment") && nhctlDescribeService.isPresent()) {
-                resourceNodes.add(new ResourceNode(kubeResource, nhctlDescribeService.get()));
+                NhctlDescribeService nhctlDescribe = nhctlDescribeService.get();
+                if (nhctlDescribe.isDeveloping()) {
+                    UserDataKeyHelper.addAliveDeployments(project, new AliveDeployment(devSpace, nhctlDescribe.getRawConfig().getName(), project.getProjectFilePath()));
+                } else {
+                    UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, nhctlDescribe.getRawConfig().getName(), project.getProjectFilePath()));
+                }
+                resourceNodes.add(new ResourceNode(kubeResource, nhctlDescribe));
             } else {
                 resourceNodes.add(new ResourceNode(kubeResource));
             }

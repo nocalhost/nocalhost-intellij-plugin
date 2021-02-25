@@ -23,6 +23,7 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.AliveDeployment;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
@@ -33,6 +34,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
+import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -144,6 +146,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 nhctlPortForwardOptions.setKubeconfig(kubeconfigPath);
                 outputCapturedNhctlCommand.startPortForward(appName, nhctlPortForwardOptions);
             }
+            UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, devModeService.getServiceName(), project.getProjectFilePath()));
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while starting dev mode", e);
             NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
