@@ -50,6 +50,7 @@ intellij {
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes(
         """
+      Fix: Port forwarding error occurs when deploying more pods.
       Fix: On MacOS nhctl not found <br />
       Support nocalhost v0.2.x. <br />
       First Upload. <br />
