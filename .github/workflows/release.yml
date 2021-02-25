@@ -1,0 +1,56 @@
+name: release
+
+on:
+  push:
+    tags:
+    - "v*"
+
+jobs:
+  release-plugin:
+    name: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v1.4.3
+      with:
+        java-version: 11
+
+    - name: Get tag
+      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+    - name: Build
+      run: |
+        ./gradlew buildPlugin
+
+    - name: Rename package
+      run: |
+        PLUGIN_ZIP=$(ls build/distributions | grep nocalhost-intellij-plugin-)
+        cp build/distributions/${PLUGIN_ZIP} build/distributions/nocalhost-intellij-plugin.zip
+
+    - name: Create plugin Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/distributions/nocalhost-intellij-plugin.zip
+        asset_name: nocalhost-intellij-plugin.zip
+        asset_content_type: application/octet-stream
+
+    - name: Push to Coding Artifacts
+      run: |
+        curl -T build/distributions/nocalhost-intellij-plugin.zip -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${{ env.RELEASE_VERSION }}"

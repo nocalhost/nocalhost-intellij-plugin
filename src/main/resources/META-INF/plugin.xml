@@ -1,0 +1,94 @@
+<idea-plugin>
+    <id>dev.nocalhost.nocalhost-intellij-plugin</id>
+    <name>Nocalhost</name>
+    <vendor url="https://nocalhost.dev/">Nocalhost</vendor>
+
+    <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
+    <idea-version since-build="203" />
+
+    <description>
+        <![CDATA[
+        <html>
+            <p>
+                Nocalhost Intellij Plugin
+            </p>
+
+            <p>
+                Nocalhost is Cloud Native Development Environment.
+            </p>
+
+            <p>
+                Features:
+                <ul>
+                    <li>Login to nocalhost API Server and list the DevSpaces</li>
+                    <li>Install and Uninstall DevSpaces</li>
+                    <li>Start DevMode to develop services</li>
+                </ul>
+            </p>
+
+            <p>
+            Refer to <a href="https://nocalhost.dev/">nocalhost.dev</a> for more Nocalhost information.
+            </p>
+        </html>
+        ]]>
+    </description>
+
+<!--    <change-notes>-->
+<!--        <![CDATA[-->
+<!--        <html>-->
+<!--            <p>initialize repo</p>-->
+<!--        </html>-->
+<!--        ]]>-->
+<!--    </change-notes>-->
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>Git4Idea</depends>
+    <depends>org.jetbrains.plugins.terminal</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+
+        <applicationService
+                serviceImplementation="dev.nocalhost.plugin.intellij.commands.GitCommand"/>
+        <applicationService
+                serviceImplementation="dev.nocalhost.plugin.intellij.commands.NhctlCommand"/>
+        <applicationService
+                serviceImplementation="dev.nocalhost.plugin.intellij.commands.KubectlCommand"/>
+        <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.api.NocalhostApi"/>
+        <applicationService
+                serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostSettings"/>
+
+        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand" />
+        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.NocalhostNotifier"/>
+
+
+        <toolWindow id="Nocalhost" anchor="right" icon="NocalhostIcons.Logo"
+                    factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostWindowFactory"/>
+        <toolWindow id="Nocalhost Console" anchor="bottom" icon="NocalhostIcons.Logo"
+                    factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostConsoleWindowFactory"
+                    canCloseContents="true"/>
+
+        <notificationGroup id="Nocalhost.Notification" displayType="BALLOON" toolWindowId="Nocalhost"/>
+        <notificationGroup id="Nocalhost.Notification.Error" displayType="STICKY_BALLOON" toolWindowId="Nocalhost"/>
+
+
+        <applicationConfigurable parentId="tools" instance="dev.nocalhost.plugin.intellij.ui.NocalhostConfigurable"
+                                 id="dev.nocalhost.plugin.intellij.ui.NocalhostConfigurable"
+                                 displayName="Nocalhost" />
+
+        <postStartupActivity
+                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostStartupActivity"/>
+    </extensions>
+
+    <actions>
+
+        <action id="Nocalhost.RefreshAction" text="Refresh"
+                class="dev.nocalhost.plugin.intellij.ui.action.RefreshAction" />
+        <action id="Nocalhost.LogoutAction" text="Logout"
+                class="dev.nocalhost.plugin.intellij.ui.action.LogoutAction" />
+        <action id="Nocalhost.SettingAction"  text="Setting"
+                class="dev.nocalhost.plugin.intellij.ui.action.SettingAction" />
+    </actions>
+</idea-plugin>
