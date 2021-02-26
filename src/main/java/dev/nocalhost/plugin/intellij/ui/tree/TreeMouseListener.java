@@ -28,6 +28,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
+import dev.nocalhost.plugin.intellij.ui.action.devspace.ApplyAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.ClearAppPersisentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.InstallAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.LoadResourceAction;
@@ -124,6 +125,7 @@ public class TreeMouseListener extends MouseAdapter {
             actionGroup.add(new UninstallAppAction(project, devSpaceNode));
 
             actionGroup.add(new Separator());
+            actionGroup.add(new ApplyAction(project, devSpaceNode));
             actionGroup.add(new ClearAppPersisentDataAction(project, devSpaceNode));
             actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
 

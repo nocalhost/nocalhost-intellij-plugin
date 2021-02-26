@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import java.util.List;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,4 +12,5 @@ public class NhctlDescribeApplication {
     private String releasename;
     private String actualName;
     private boolean installed;
+    private List<NhctlDescribeService> svcProfile;
 }

@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -139,6 +140,22 @@ public class KubectlCommand {
         System.out.println("Execute command: " + cmd);
 
         return ProcessHandlerFactory.getInstance().createProcessHandler(commandLine);
+    }
+
+    public void apply(Path path, DevSpace devSpace) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
+
+        List<String> args = Lists.newArrayList(getKubectlCmd(), "apply");
+        if (Files.isDirectory(path)) {
+            args.add("--kustomize");
+        } else {
+            args.add("--filename");
+        }
+        args.add(path.toString());
+        args.add("--kubeconfig");
+        args.add(kubeconfigPath.toString());
+
+        executeCmd(args);
     }
 
     private String executeCmd(List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
