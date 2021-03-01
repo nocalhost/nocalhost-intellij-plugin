@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.event.HyperlinkEvent;
 
 import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
+import dev.nocalhost.plugin.intellij.ui.LoginDialog;
 import icons.NocalhostIcons;
 
 public class NocalhostNotifier {
@@ -61,6 +62,15 @@ public class NocalhostNotifier {
     public Notification notifyError(@NlsContexts.NotificationTitle @NotNull String title,
                                     @NlsContexts.NotificationContent @NotNull String message,
                                     @NotNull String eMessage) {
+        if (StringUtils.contains(eMessage, "Token is invalid or login expired")) {
+            String content = "<html>Token is invalid or login expired. <a href=\"nocalhost.login\">Login</a></html>";
+            return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, content, NotificationType.ERROR, new NotificationListener.Adapter() {
+                @Override
+                protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
+                    new LoginDialog().showAndGet();
+                }
+            });
+        }
         String content = String.format("<html>%s <a href=\"nocalhost.show\">Show More</a></html>", message);
         return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, content, NotificationType.ERROR, new NotificationListener.Adapter() {
             @Override

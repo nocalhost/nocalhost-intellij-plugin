@@ -34,7 +34,7 @@ public class NocalhostApi {
 
     private final OkHttpClient client = new OkHttpClient.Builder().build();
 
-    public void login(String host, String email, String password) throws IOException {
+    public void login(String host, String email, String password) throws IOException, NocalhostApiException {
         LoginRequest loginRequest = new LoginRequest(email, password);
         RequestBody requestBody = RequestBody.create(DataUtils.GSON.toJson(loginRequest), MEDIA_TYPE);
         String url = NocalhostApiUrl.login(host);
@@ -42,12 +42,12 @@ public class NocalhostApi {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new NocalhostApiException(String.format("Failed to login, connect server API %s, respond HTTP %d", url, response.code()));
+                throw new NocalhostApiException(url, "login", response.code(), "");
             }
             NocalhostApiResponse<LoginResponse> resp = DataUtils.GSON.fromJson(response.body().charStream(),
                     TypeToken.getParameterized(NocalhostApiResponse.class, LoginResponse.class).getType());
             if (resp.getCode() != 0) {
-                throw new NocalhostApiException(String.format("Failed to login nocalhost server: %s", resp.getMessage()));
+                throw new NocalhostApiException(url, "login", response.code(), resp.getMessage());
             }
 
             final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
@@ -63,7 +63,7 @@ public class NocalhostApi {
         }
     }
 
-    private void refreshUserInfo() throws IOException {
+    private void refreshUserInfo() throws IOException, NocalhostApiException {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
         String url = NocalhostApiUrl.me(nocalhostSettings.getBaseUrl());
@@ -74,19 +74,19 @@ public class NocalhostApi {
                 .build();
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new NocalhostApiException(String.format("Failed to get user info, connect server API %s, respond HTTP %d", url, response.code()));
+                throw new NocalhostApiException(url, "get user info", response.code(), "");
             }
             NocalhostApiResponse<UserInfo> resp = DataUtils.GSON.fromJson(response.body().charStream(),
                     TypeToken.getParameterized(NocalhostApiResponse.class, UserInfo.class).getType());
             if (resp.getCode() != 0) {
-                throw new NocalhostApiException(String.format("Failed to get user info : %s", resp.getMessage()));
+                throw new NocalhostApiException(url, "get user info", response.code(), resp.getMessage());
             }
 
             nocalhostSettings.setUserInfo(resp.getData());
         }
     }
 
-    public List<DevSpace> listDevSpace() throws IOException {
+    public List<DevSpace> listDevSpace() throws IOException, NocalhostApiException {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
         String url = NocalhostApiUrl.devSpaces(nocalhostSettings.getBaseUrl());
@@ -99,7 +99,7 @@ public class NocalhostApi {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new NocalhostApiException(String.format("Failed to get devSpaces, connect server API %s, respond HTTP %d", url, response.code()));
+                throw new NocalhostApiException(url, "get devSpaces", response.code(), "");
             }
             String body = response.body().string();
             NocalhostApiResponse<List<DevSpace>> resp = DataUtils.GSON.fromJson(body,
@@ -108,14 +108,14 @@ public class NocalhostApi {
                             TypeToken.getParameterized(List.class, DevSpace.class).getType()
                     ).getType());
             if (resp.getCode() != 0) {
-                throw new NocalhostApiException(String.format("Failed to get devSpaces, %s", resp.getMessage()));
+                throw new NocalhostApiException(url, "get devSpaces", response.code(), resp.getMessage());
             }
             List<DevSpace> devSpaces = resp.getData();
             return devSpaces.stream().peek(devSpace -> devSpace.setContext(DataUtils.GSON.fromJson(devSpace.getContextStr(), DevSpace.Context.class))).collect(Collectors.toList());
         }
     }
 
-    public void syncInstallStatus(DevSpace devSpace, int status) throws IOException {
+    public void syncInstallStatus(DevSpace devSpace, int status) throws IOException, NocalhostApiException {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
         String url = NocalhostApiUrl.updateAppStatus(nocalhostSettings.getBaseUrl(), devSpace.getId(), devSpace.getDevSpaceId());
@@ -126,17 +126,18 @@ public class NocalhostApi {
                 .build();
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new NocalhostApiException(String.format("Failed to sync install status, connect server API %s, respond HTTP %d", url, response.code()));
+                throw new NocalhostApiException(url, "sync install status", response.code(), "");
             }
             NocalhostApiResponse<Object> resp = DataUtils.GSON.fromJson(response.body().charStream(),
                     TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType());
             if (resp.getCode() != 0) {
-                throw new NocalhostApiException(String.format("Failed to sync install status, %s", resp.getMessage()));
+                throw new NocalhostApiException(url, "sync install status", response.code(), resp.getMessage());
+
             }
         }
     }
 
-    public void recreate(DevSpace devSpace) throws IOException {
+    public void recreate(DevSpace devSpace) throws IOException, NocalhostApiException {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
         String url = NocalhostApiUrl.recreateDevSpace(nocalhostSettings.getBaseUrl(), devSpace.getDevSpaceId());
@@ -147,12 +148,12 @@ public class NocalhostApi {
                 .build();
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new NocalhostApiException(String.format("Failed to reset application , connect server API %s, respond HTTP %d", url, response.code()));
+                throw new NocalhostApiException(url, "reset application", response.code(), "");
             }
             NocalhostApiResponse<Object> resp = DataUtils.GSON.fromJson(response.body().charStream(),
                     TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType());
             if (resp.getCode() != 0) {
-                throw new NocalhostApiException(String.format("Failed to reset application, %s", resp.getMessage()));
+                throw new NocalhostApiException(url, "reset application", response.code(), resp.getMessage());
             }
         }
     }

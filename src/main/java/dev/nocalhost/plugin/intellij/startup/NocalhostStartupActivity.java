@@ -6,6 +6,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 
+import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ public final class NocalhostStartupActivity implements StartupActivity {
                         break;
                     }
                 }
-            } catch (IOException e) {
+            } catch (IOException | NocalhostApiException e) {
                 LOG.error("error occurred while starting develop", e);
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
             } finally {

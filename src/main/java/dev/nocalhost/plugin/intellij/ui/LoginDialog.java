@@ -102,7 +102,6 @@ public class LoginDialog extends DialogWrapper {
             nocalhostApi.login(getHost(), getEmail(), getPassword());
             super.doOKAction();
         } catch (Exception e) {
-            // FIXME: replace with balloon notification for showing errors asynchronously
             setErrorText(e.getMessage());
         }
     }

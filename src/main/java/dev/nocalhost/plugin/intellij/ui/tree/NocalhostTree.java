@@ -42,6 +42,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeAllService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
@@ -170,7 +171,7 @@ public class NocalhostTree extends Tree {
                 try {
                     List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
                     updateDevSpaces(devSpaces);
-                } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
+                } catch (IOException | InterruptedException | NocalhostExecuteCmdException | NocalhostApiException e) {
                     LOG.error(e);
                     if (StringUtils.contains(e.getMessage(), "No such file or directory")) {
                         NocalhostNotifier.getInstance(project).notifyNhctlNotFound();
