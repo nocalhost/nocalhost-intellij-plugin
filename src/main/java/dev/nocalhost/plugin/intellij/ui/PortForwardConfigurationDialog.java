@@ -18,38 +18,29 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBEmptyBorder;
 import com.intellij.util.ui.UIUtil;
-
+import dev.nocalhost.plugin.intellij.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.*;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import java.awt.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import javax.swing.*;
-import javax.swing.border.CompoundBorder;
-
-import dev.nocalhost.plugin.intellij.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class PortForwardConfigurationDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(PortForwardConfigurationDialog.class);
@@ -63,8 +54,6 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     private JBTextField startTextField;
     private JButton startButton;
-
-    private ContainerSelectorDialog containerSelectorDialog;
 
     private List<String> currentPortForwards;
 
@@ -146,7 +135,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             Set<String> portForwardsToBeStarted = Arrays.stream(startTextField.getText().split(",")).map(String::trim).collect(Collectors.toSet());
 
             final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-            KubeResource kubeResource = null;
+            String container = null;
             KubeResourceList pods = null;
             try {
                 pods = kubectlCommand.getResourceList("pods", Map.of("app", node.resourceName()), node.devSpace());
@@ -154,28 +143,14 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "List Resource error while starting port forward", e.getMessage());
             }
             if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
-                String[] containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).toArray(String[]::new);
-                if (containers.length > 1) {
-                    containerSelectorDialog = new ContainerSelectorDialog(containers);
-                    containerSelectorDialog.showAndGet();
-                    String currentPod = containerSelectorDialog.getCurrent();
-
-                    Optional<KubeResource> optionalKubeResource = pods.getItems().stream().filter(r -> r.getMetadata().getName().equals(currentPod)).findFirst();
-                    if (optionalKubeResource.isPresent()) {
-                        kubeResource = optionalKubeResource.get();
-                    } else {
-                        return;
-                    }
-                } else {
-                    kubeResource = pods.getItems().get(0);
-                }
+                List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
+                container = selectContainer(containers);
             }
-            if (kubeResource == null) {
+            if (StringUtils.isBlank(container)) {
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Resource not found while starting port forward");
                 return;
             }
-
-            final KubeResource finalKubeResource = kubeResource;
+            String finalContainer = container;
             ProgressManager.getInstance().run(new Task.Modal(project, "Starting port forward " + startTextField.getText(), true) {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
@@ -205,7 +180,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                             nhctlPortForwardStartOptions.setDeployment(node.resourceName());
                             nhctlPortForwardStartOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
-                            nhctlPortForwardStartOptions.setPod(finalKubeResource.getMetadata().getName());
+                            nhctlPortForwardStartOptions.setPod(finalContainer);
 
 
                             outputCapturedNhctlCommand.startPortForward(node.devSpace().getContext().getApplicationName(), nhctlPortForwardStartOptions);
@@ -371,7 +346,20 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         return panel;
     }
 
-    private class StartButton extends ColorButton {
+    private String selectContainer(List<String> containers) {
+        if (containers.size() > 1) {
+            StartDevelopContainerChooseDialog dialog = new StartDevelopContainerChooseDialog(containers);
+            if (dialog.showAndGet()) {
+                return dialog.getSelectedContainer();
+            } else {
+                return null;
+            }
+        } else {
+            return containers.get(0);
+        }
+    }
+
+    private static class StartButton extends ColorButton {
         private final Color BlueColor = new JBColor(0x669ED5, 0x5E91C3);
         private final Color BackgroundColor = new JBColor(() -> JBColor.isBright() ? UIUtil.getListBackground() : new Color(0x313335));
         private final Color ForegroundColor = BlueColor;
@@ -391,7 +379,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         }
     }
 
-    private class StopButton extends ColorButton {
+    private static class StopButton extends ColorButton {
         private final Color RedColor = new JBColor(0xC06362, 0xAC5D52);
         private final Color BackgroundColor = new JBColor(() -> JBColor.isBright() ? UIUtil.getListBackground() : new Color(0x313335));
         private final Color ForegroundColor = RedColor;

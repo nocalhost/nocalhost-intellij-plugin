@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.console;
 
 import com.google.common.collect.Lists;
-
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -11,19 +10,6 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.jediterm.pty.PtyProcessTtyConnector;
 import com.jediterm.terminal.TtyConnector;
 import com.pty4j.PtyProcess;
-
-import org.jetbrains.plugins.terminal.JBTerminalSystemSettingsProvider;
-import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner;
-import org.jetbrains.plugins.terminal.ShellTerminalWidget;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-
-import javax.swing.*;
-
 import dev.nocalhost.plugin.intellij.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
@@ -32,9 +18,20 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.ui.ContainerSelectorDialog;
+import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.plugins.terminal.JBTerminalSystemSettingsProvider;
+import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner;
+import org.jetbrains.plugins.terminal.ShellTerminalWidget;
+
+import javax.swing.*;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
     private static final Logger LOG = Logger.getInstance(NocalhostTerminalWindow.class);
@@ -47,8 +44,6 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
     private JComponent panel;
 
     private String title;
-
-    private ContainerSelectorDialog containerSelectorDialog;
 
     public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, DevSpace devSpace, String deploymentName) {
         this.project = project;
@@ -97,23 +92,11 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                 final KubeResource deployment = kubectlCommand.getResource("deployment", node.resourceName(), node.devSpace());
                 final KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getMetadata().getLabels(), node.devSpace());
 
-                KubeResource kubeResource;
-                String[] containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).toArray(String[]::new);
-                if (containers.length > 1) {
-                    containerSelectorDialog = new ContainerSelectorDialog(containers);
-                    containerSelectorDialog.showAndGet();
-                    String podName = containerSelectorDialog.getCurrent();
-
-                    Optional<KubeResource> optionalKubeResource = pods.getItems().stream().filter(r -> r.getMetadata().getName().equals(podName)).findFirst();
-                    if (optionalKubeResource.isPresent()) {
-                        kubeResource = optionalKubeResource.get();
-                    } else {
-                        return;
-                    }
-                } else {
-                    kubeResource = pods.getItems().get(0);
+                List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
+                final String podName = selectContainer(containers);
+                if (StringUtils.isBlank(podName)) {
+                    return;
                 }
-                final String podName = kubeResource.getMetadata().getName();
                 final String containerName = node.resourceName();
 
                 args = Lists.newArrayList(
@@ -133,6 +116,19 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while initializing terminal", e);
             NocalhostNotifier.getInstance(project).notifyError("Nocalhost terminal error", "Error occurred while initializing terminal", e.getMessage());
+        }
+    }
+
+    private String selectContainer(List<String> containers) {
+        if (containers.size() > 1) {
+            StartDevelopContainerChooseDialog dialog = new StartDevelopContainerChooseDialog(containers);
+            if (dialog.showAndGet()) {
+                return dialog.getSelectedContainer();
+            } else {
+                return null;
+            }
+        } else {
+            return containers.get(0);
         }
     }
 
