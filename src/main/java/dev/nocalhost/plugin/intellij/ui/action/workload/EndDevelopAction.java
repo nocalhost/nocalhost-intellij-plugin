@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-import dev.nocalhost.plugin.intellij.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.AliveDeployment;

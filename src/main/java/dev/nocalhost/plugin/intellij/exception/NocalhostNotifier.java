@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij;
+package dev.nocalhost.plugin.intellij.exception;
 
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationDisplayType;

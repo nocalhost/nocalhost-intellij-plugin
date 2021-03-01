@@ -61,7 +61,7 @@
                 serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostSettings"/>
 
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand" />
-        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.NocalhostNotifier"/>
+        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.exception.NocalhostNotifier"/>
 
 
         <toolWindow id="Nocalhost" anchor="right" icon="NocalhostIcons.Logo"
