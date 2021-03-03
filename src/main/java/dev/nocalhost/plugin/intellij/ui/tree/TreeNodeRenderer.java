@@ -7,6 +7,7 @@ import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.EmptyIcon;
 import com.intellij.util.ui.UIUtil;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -81,12 +82,12 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         DeploymentStatus status = getDeploymentStatus(node);
         switch (status) {
             case DEVELOPING:
-                if (nhctlDescribeService != null && nhctlDescribeService.isPortForwarded()) {
+                if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlDescribeService.getDevPortForwardList())) {
                     return NocalhostIcons.Status.DevPortForwarding;
                 }
                 return NocalhostIcons.Status.DevStart;
             case RUNNING:
-                if (nhctlDescribeService != null && nhctlDescribeService.isPortForwarded()) {
+                if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlDescribeService.getDevPortForwardList())) {
                     return NocalhostIcons.Status.NormalPortForwarding;
                 }
                 return NocalhostIcons.Status.Running;

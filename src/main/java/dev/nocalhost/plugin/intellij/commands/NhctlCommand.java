@@ -244,7 +244,7 @@ public class NhctlCommand {
     }
 
     public void endPortForward(String name, NhctlPortForwardEndOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        List<String> args = Lists.newArrayList(NHCTL_COMMAND, "port-forward", "end", name);
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "port-forward", "end", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());

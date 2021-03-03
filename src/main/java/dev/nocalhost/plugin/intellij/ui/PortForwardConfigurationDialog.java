@@ -55,8 +55,6 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
     private JBTextField startTextField;
     private JButton startButton;
 
-    private List<String> currentPortForwards;
-
     public PortForwardConfigurationDialog(ResourceNode node, Project project) {
         super(true);
         setTitle("Port forward configuration for service " + node.resourceName());
@@ -93,13 +91,13 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
         ProgressManager.getInstance().run(new Task.Modal(project, "Loading Port Forward List", false) {
-            private List<String> portForwardStatusList;
+            private List<NhctlPortForward> devPortForwardList;
+
 
             @Override
             public void onSuccess() {
                 super.onSuccess();
-                createList(portForwardStatusList);
-                currentPortForwards = portForwardStatusList;
+                createList(devPortForwardList);
             }
 
             @Override
@@ -109,7 +107,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                             node.devSpace().getContext().getApplicationName(),
                             opts,
                             NhctlDescribeService.class);
-                    portForwardStatusList = nhctlDescribeService.getPortForwardStatusList();
+                    devPortForwardList = nhctlDescribeService.getDevPortForwardList();
                 } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while loading port forward list", e);
                     NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while loading port forward list", e.getMessage());
@@ -166,9 +164,9 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                                 nhctlDescribeOptions,
                                 NhctlDescribeService.class);
                         List<String> existedPortForwards = nhctlDescribeService
-                                .getPortForwardStatusList()
+                                .getDevPortForwardList()
                                 .stream()
-                                .map(e -> e.substring(0, e.indexOf("(")))
+                                .map(NhctlPortForward::portForwardStr)
                                 .collect(Collectors.toList());
 
                         portForwardsToBeStarted.removeAll(existedPortForwards);
@@ -235,10 +233,10 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         dialogPanel.add(scrollPane);
     }
 
-    private void createList(List<String> portForwards) {
+    private void createList(List<NhctlPortForward> portForwards) {
         List<JPanel> items = Lists.newArrayList();
 
-        for (String portForward : portForwards) {
+        for (NhctlPortForward portForward : portForwards) {
             items.add(createItem(portForward));
         }
 
@@ -250,8 +248,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         listPanel.revalidate();
     }
 
-    private JPanel createItem(String portForward) {
-        JLabel label = new JLabel(portForward);
+    private JPanel createItem(NhctlPortForward portForward) {
+        JLabel label = new JLabel(portForward.portForward());
         label.setBorder(new CompoundBorder(new JBEmptyBorder(0), new JBEmptyBorder(0, 8, 0, 8)));
         GridConstraints labelConstraints = new GridConstraints();
         labelConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_WANT_GROW | GridConstraints.SIZEPOLICY_CAN_GROW);
@@ -261,7 +259,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
         JButton button = new StopButton();
         button.addActionListener(event -> {
-            if (!MessageDialogBuilder.yesNo("Port forward", "Stop port forward " + portForward + "?").guessWindowAndAsk()) {
+            if (!MessageDialogBuilder.yesNo("Port forward", "Stop port forward " + portForward.portForwardStr() + "?").guessWindowAndAsk()) {
                 return;
             }
 
@@ -276,13 +274,13 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                         NhctlDescribeService.class);
 
                 List<Pair<String, Integer>> portForwardPidPairs = nhctlDescribeService
-                        .getPortForwardPidList()
+                        .getDevPortForwardList()
                         .stream()
-                        .map(e -> Pair.create(e.substring(0, e.indexOf("-")), Integer.parseInt(e.substring(e.indexOf("-") + 1))))
+                        .map(e -> Pair.create(e.portForwardStr(), e.getPid()))
                         .collect(Collectors.toList());
                 int port = portForwardPidPairs
                         .stream()
-                        .filter(e -> StringUtils.equals(portForward.substring(0, portForward.indexOf("(")), e.getFirst()))
+                        .filter(e -> StringUtils.equals(portForward.portForwardStr(), e.getFirst()))
                         .findFirst()
                         .get()
                         .getSecond();
@@ -311,7 +309,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
                     NhctlPortForwardEndOptions opts = new NhctlPortForwardEndOptions();
-                    opts.setPort(portForward.substring(0, portForward.indexOf("(")));
+                    opts.setPort(portForward.portForwardStr());
                     opts.setDeployment(node.resourceName());
                     opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
