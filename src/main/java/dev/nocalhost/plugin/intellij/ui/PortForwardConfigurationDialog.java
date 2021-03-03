@@ -92,7 +92,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         opts.setDeployment(node.resourceName());
         opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
-        ProgressManager.getInstance().run(new Task.Modal(project, "Loading pord forward list", false) {
+        ProgressManager.getInstance().run(new Task.Modal(project, "Loading Port Forward List", false) {
             private List<String> portForwardStatusList;
 
             @Override
@@ -261,7 +261,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
         JButton button = new StopButton();
         button.addActionListener(event -> {
-            if (!MessageDialogBuilder.yesNo("Port forward", "Stop port foward " + portForward + "?").guessWindowAndAsk()) {
+            if (!MessageDialogBuilder.yesNo("Port forward", "Stop port forward " + portForward + "?").guessWindowAndAsk()) {
                 return;
             }
 
