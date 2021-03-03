@@ -24,4 +24,5 @@ public class NhctlInstallOptions extends NhctlGlobalOptions {
     private Map<String, String> values;
     private String type;
     private boolean wait;
+    private String localPath;
 }

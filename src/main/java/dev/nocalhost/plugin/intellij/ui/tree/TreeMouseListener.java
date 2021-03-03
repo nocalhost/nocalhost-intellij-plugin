@@ -27,7 +27,6 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
-import dev.nocalhost.plugin.intellij.ui.InstallDevSpaceDialog;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.ApplyAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.ClearAppPersisentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.InstallAppAction;
@@ -69,15 +68,6 @@ public class TreeMouseListener extends MouseAdapter {
                 return;
             }
             Object object = treePath.getLastPathComponent();
-
-            if (object instanceof DevSpaceNode) {
-                DevSpaceNode devSpaceNode = (DevSpaceNode) object;
-                if (devSpaceNode.isInstalled()) {
-                    return;
-                }
-                new InstallDevSpaceDialog(project, devSpaceNode.getDevSpace()).showAndGet();
-                return;
-            }
 
             if (object instanceof ResourceNode) {
                 ResourceNode resourceNode = (ResourceNode) object;

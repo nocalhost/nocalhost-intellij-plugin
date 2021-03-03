@@ -121,6 +121,10 @@ public class NhctlCommand {
         if (opts.isWait()) {
             args.add("--wait");
         }
+        if (StringUtils.isNotEmpty(opts.getLocalPath())) {
+            args.add("--local-path");
+            args.add(opts.getLocalPath());
+        }
 
         execute(args, opts);
     }

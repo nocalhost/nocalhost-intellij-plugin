@@ -16,14 +16,16 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 public final class NhctlHelper {
     public static String generateInstallType(DevSpace.Context context) {
         String source = context.getSource();
-        String installType = context.getInstallType();
+        String originInstallType = context.getInstallType();
         if (StringUtils.equals(source, "git")
-                && StringUtils.equals(installType, "rawManifest")) {
+                && StringUtils.equals(originInstallType, "rawManifest")) {
             return "rawManifest";
         } else if (StringUtils.equals(source, "git")
-                && StringUtils.equals(installType, "helm_chart")) {
+                && StringUtils.equals(originInstallType, "helm_chart")) {
             return "helmGit";
-        } else {
+        } else if (StringUtils.equals(source, "local")) {
+            return originInstallType;
+        }else {
             return "helmRepo";
         }
     }
