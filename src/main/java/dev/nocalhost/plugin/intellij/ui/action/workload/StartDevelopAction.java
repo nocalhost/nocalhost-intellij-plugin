@@ -1,15 +1,10 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
-import com.google.common.collect.Lists;
-
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.fileChooser.FileChooser;
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -28,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.commands.GitCommand;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
@@ -40,10 +34,12 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostGitException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import icons.NocalhostIcons;
 
@@ -154,19 +150,11 @@ public class StartDevelopAction extends AnAction {
                     return;
                 }
 
-                final List<Path> chosenFiles = Lists.newArrayList();
-
-                final FileChooserDescriptor gitSourceDirChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-                gitSourceDirChooser.setShowFileSystemRoots(true);
-                FileChooser.chooseFiles(gitSourceDirChooser, null, null, paths -> {
-                    paths.forEach((p) -> chosenFiles.add(p.toNioPath()));
-                });
-
-                if (chosenFiles.size() <= 0) {
+                final Path parentDir = FileChooseUtil.chooseSingleDirectory(project);
+                if (parentDir == null) {
                     return;
                 }
 
-                Path parentDir = chosenFiles.get(0);
                 ProgressManager.getInstance().run(new Task.Backgroundable(null, "Cloning " + gitUrl, false) {
                     private Path gitDir;
 
@@ -197,21 +185,11 @@ public class StartDevelopAction extends AnAction {
 
             break;
             case Messages.NO: {
-                final List<Path> chosenFiles = Lists.newArrayList();
-
-                final FileChooserDescriptor sourceDirChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-                sourceDirChooser.setShowFileSystemRoots(true);
-                FileChooser.chooseFiles(sourceDirChooser, null, null, paths -> {
-                    paths.forEach((p) -> chosenFiles.add(p.toNioPath()));
-
-
-                });
-
-                if (chosenFiles.size() <= 0) {
+                final Path basePath = FileChooseUtil.chooseSingleDirectory(project);
+                if (basePath == null) {
                     return;
                 }
 
-                Path basePath = chosenFiles.get(0);
                 nocalhostSettings.getDevModeProjectBasePath2Service().put(
                         basePath.toString(),
                         devModeService

@@ -5,7 +5,6 @@ import com.google.common.io.CharStreams;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.SystemInfo;
@@ -29,6 +28,8 @@ import java.util.Map;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
+
 public class NocalhostSettingComponent {
     private final JPanel settingPanel;
     private final JBTextField nhctlField;
@@ -50,10 +51,10 @@ public class NocalhostSettingComponent {
         kubeField.getEmptyText().appendText("kubectl");
         kubectlBinary = new TextFieldWithBrowseButton(kubeField);
         nhctlBinary.addBrowseFolderListener("", "Select nhctl binary", null,
-                new FileChooserDescriptor(true, false, false, false, false, false),
+                FileChooseUtil.singleFileChooserDescriptor(),
                 TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
         kubectlBinary.addBrowseFolderListener("", "Select kubectl binary", null,
-                new FileChooserDescriptor(true, false, false, false, false, false),
+                FileChooseUtil.singleFileChooserDescriptor(),
                 TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
         nhctlTestButton = new JButton("Test");
         nhctlTestButton.addActionListener(new TestNhctlListener());

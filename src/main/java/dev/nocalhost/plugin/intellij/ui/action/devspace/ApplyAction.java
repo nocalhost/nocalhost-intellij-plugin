@@ -4,8 +4,6 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.fileChooser.FileChooser;
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -26,6 +24,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class ApplyAction extends AnAction {
@@ -60,12 +59,7 @@ public class ApplyAction extends AnAction {
             return;
         }
 
-        final List<Path> chosenPaths = Lists.newArrayList();
-        final FileChooserDescriptor pathChooser = new FileChooserDescriptor(true, true, false, false, false, true);
-        pathChooser.setShowFileSystemRoots(true);
-        FileChooser.chooseFiles(pathChooser, project, null, paths -> {
-            paths.forEach((p) -> chosenPaths.add(p.toNioPath()));
-        });
+        final List<Path> chosenPaths = FileChooseUtil.chooseFilesAndDirectories(project);
         if (chosenPaths.size() <= 0) {
             return;
         }

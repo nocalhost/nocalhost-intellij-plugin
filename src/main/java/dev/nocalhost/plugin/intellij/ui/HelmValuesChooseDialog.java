@@ -1,9 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui;
 
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.components.JBTextArea;
@@ -16,6 +14,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
+
+import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 
 public class HelmValuesChooseDialog extends DialogWrapper {
     private JPanel dialogPanel;
@@ -48,11 +48,7 @@ public class HelmValuesChooseDialog extends DialogWrapper {
         specifyValuesYamlTextField.setEnabled(false);
         specifyValuesTextArea.setEnabled(false);
 
-        FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, false, false, false, false, false)
-                .withTitle("Select the value file path")
-                .withFileFilter(f -> !f.isDirectory());
-        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
-        specifyValuesYamlTextField.addBrowseFolderListener(new TextBrowseFolderListener(fileChooserDescriptor, project));
+        specifyValuesYamlTextField.addBrowseFolderListener("Select the value file path", "", project, FileChooseUtil.singleFileChooserDescriptor());
 
         specifyValuesTextArea.getEmptyText().appendText("eg: key1=val1,key2=val2");
     }
