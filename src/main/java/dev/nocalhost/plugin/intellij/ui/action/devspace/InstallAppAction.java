@@ -11,7 +11,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 
 import org.apache.commons.compress.utils.Lists;
@@ -88,11 +87,8 @@ public class InstallAppAction extends AnAction {
             String message = StringUtils.equals(installType, "rawManifestLocal")
                     ? "Please choose application manifest root directory"
                     : "Please choose unpacked application helm chart root directory";
-            if (!MessageDialogBuilder.yesNo("Install local application", message).guessWindowAndAsk()) {
-                return;
-            }
 
-            Path localPath = FileChooseUtil.chooseSingleDirectory(project, "Please select your local application");
+            Path localPath = FileChooseUtil.chooseSingleDirectory(project, message);
             if (localPath == null) {
                 return;
             }
@@ -104,9 +100,6 @@ public class InstallAppAction extends AnAction {
             } else if (configs.size() == 1) {
                 configPath = configs.get(0);
             } else if (configs.size() > 1) {
-                if (!MessageDialogBuilder.yesNo("Install local application", "Please select your configuration file").guessWindowAndAsk()) {
-                    return;
-                }
                 configPath = FileChooseUtil.chooseSingleFile(project, "Please select your configuration file", localPath.resolve(".nocalhost"), CONFIG_FILE_EXTENSIONS);
             }
             if (configPath == null) {

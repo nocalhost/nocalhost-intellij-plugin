@@ -1,29 +1,28 @@
 package dev.nocalhost.plugin.intellij.ui;
 
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.TextBrowseFolderListener;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.components.JBTextArea;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
-
 public class HelmValuesChooseDialog extends DialogWrapper {
     private JPanel dialogPanel;
     private JRadioButton useDefaultValuesRadioButton;
     private JRadioButton specifyValuesYamlRadioButton;
     private JRadioButton specifyValuesRadioButton;
-    private JTextField specifyValuesYamlTextField;
-    private JButton specifyValuesYamlButton;
+    private TextFieldWithBrowseButton specifyValuesYamlTextField;
     private JBTextArea specifyValuesTextArea;
 
     private boolean specifyValuesYamlSelected;
@@ -46,16 +45,14 @@ public class HelmValuesChooseDialog extends DialogWrapper {
         specifyValuesRadioButton.addChangeListener(e -> updateComponentEnabled());
 
         useDefaultValuesRadioButton.setSelected(true);
-        specifyValuesYamlButton.setEnabled(false);
+        specifyValuesYamlTextField.setEnabled(false);
         specifyValuesTextArea.setEnabled(false);
 
-        specifyValuesYamlButton.addActionListener(e -> {
-            Path valuesYamlPath = FileChooseUtil.chooseSingleFile(project, "Select the value file path");
-            if (valuesYamlPath == null) {
-                return;
-            }
-            specifyValuesYamlTextField.setText(valuesYamlPath.toString());
-        });
+        FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, false, false, false, false, false)
+                .withTitle("Select the value file path")
+                .withFileFilter(f -> !f.isDirectory());
+        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
+        specifyValuesYamlTextField.addBrowseFolderListener(new TextBrowseFolderListener(fileChooserDescriptor, project));
 
         specifyValuesTextArea.getEmptyText().appendText("eg: key1=val1,key2=val2");
     }
@@ -102,7 +99,7 @@ public class HelmValuesChooseDialog extends DialogWrapper {
     }
 
     private void updateComponentEnabled() {
-        specifyValuesYamlButton.setEnabled(specifyValuesYamlRadioButton.isSelected());
+        specifyValuesYamlTextField.setEnabled(specifyValuesYamlRadioButton.isSelected());
 
         specifyValuesTextArea.setEnabled(specifyValuesRadioButton.isSelected());
         if (specifyValuesRadioButton.isSelected()) {
