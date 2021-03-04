@@ -1,6 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
@@ -11,12 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
-import lombok.Setter;
-
-public class InstallDevSpaceOptionDialog extends DialogWrapper {
-    private static final Logger LOG = Logger.getInstance(InstallDevSpaceOptionDialog.class);
-
+public class AppInstallOrUpgradeOptionDialog extends DialogWrapper {
     private JPanel dialogPanel;
     private JLabel messageLabel;
     private JRadioButton defaultRadioButton;
@@ -28,16 +22,16 @@ public class InstallDevSpaceOptionDialog extends DialogWrapper {
 
     private final String specifyOneValidationMessage;
 
-    public InstallDevSpaceOptionDialog(
+    public AppInstallOrUpgradeOptionDialog(
             Project project,
-            DevSpace devSpace,
+            String title,
             String messageLabelText,
             String defaultRadioButtonText,
             String specifyOneTextFieldPlaceHolder,
             String specifyOneValidationMessage) {
-        super(true);
+        super(project);
         init();
-        setTitle("Install DevSpace: " + devSpace.getSpaceName());
+        setTitle(title);
 
         this.specifyOneValidationMessage = specifyOneValidationMessage;
 
@@ -81,7 +75,7 @@ public class InstallDevSpaceOptionDialog extends DialogWrapper {
         super.doOKAction();
     }
 
-    public InstallDevSpaceOption getInstallDevSpaceOption() {
-        return new InstallDevSpaceOption(specifyOneSelected, specifyText);
+    public AppInstallOrUpgradeOption getAppInstallOrUpgradeOption() {
+        return new AppInstallOrUpgradeOption(specifyOneSelected, specifyText);
     }
 }

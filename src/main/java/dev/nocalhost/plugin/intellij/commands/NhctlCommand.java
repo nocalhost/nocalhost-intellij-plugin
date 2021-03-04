@@ -37,8 +37,10 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.utils.CommandUtil;
 
 
 public class NhctlCommand {
@@ -372,6 +374,20 @@ public class NhctlCommand {
 
     public void syncStatusOverride(String name, NhctlSyncStatusOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "sync-status", name, "--deployment", opts.getDeployment(), "--override");
+        execute(args, opts);
+    }
+
+    public void upgrade(String name, NhctlUpgradeOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "upgrade", name);
+        CommandUtil.addArg(args, "--config", opts.getConfig());
+        CommandUtil.addArg(args, "--git-ref", opts.getGitRef());
+        CommandUtil.addArg(args, "--git-url", opts.getGitUrl());
+        CommandUtil.addArg(args, "--helm-chart-name", opts.getHelmChartName());
+        CommandUtil.addArg(args, "--helm-repo-name", opts.getHelmRepoName());
+        CommandUtil.addArg(args, "--helm-repo-url", opts.getHelmRepoUrl());
+        CommandUtil.addArg(args, "--helm-repo-version", opts.getHelmRepoVersion());
+        CommandUtil.addArg(args, "--local-path", opts.getLocalPath());
+        CommandUtil.addArg(args, "--resource-path", opts.getResourcesPath());
         execute(args, opts);
     }
 

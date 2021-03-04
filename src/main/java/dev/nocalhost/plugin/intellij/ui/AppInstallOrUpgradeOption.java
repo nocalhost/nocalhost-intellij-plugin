@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class InstallDevSpaceOption {
+public class AppInstallOrUpgradeOption {
     private boolean specifyOneSelected;
     private String specifyText;
 }

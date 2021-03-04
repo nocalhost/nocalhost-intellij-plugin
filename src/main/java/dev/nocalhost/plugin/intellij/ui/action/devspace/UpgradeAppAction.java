@@ -1,11 +1,9 @@
 package dev.nocalhost.plugin.intellij.ui.action.devspace;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -25,32 +23,28 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
-import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseDialog;
-import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
-import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
-public class InstallAppAction extends AnAction {
-    private static final Logger LOG = Logger.getInstance(InstallAppAction.class);
+public class UpgradeAppAction extends AnAction {
+    private static final Logger LOG = Logger.getInstance(UpgradeAppAction.class);
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
     private final Project project;
     private final DevSpaceNode node;
 
-    public InstallAppAction(Project project, DevSpaceNode node) {
-        super("Install App", "", AllIcons.Actions.Install);
+    public UpgradeAppAction(Project project, DevSpaceNode node) {
+        super("Upgrade App");
         this.project = project;
         this.node = node;
     }
@@ -60,27 +54,25 @@ public class InstallAppAction extends AnAction {
         final DevSpace devSpace = node.getDevSpace();
 
         try {
-            if (NhctlHelper.isApplicationInstalled(devSpace)) {
-                Messages.showMessageDialog("Application has been installed.", "Install application", null);
+            if (!NhctlHelper.isApplicationInstalled(devSpace)) {
+                Messages.showMessageDialog("Application has not been installed.", "Upgrade application", null);
                 return;
             }
-            installApp();
+            upgradeApp();
         } catch (IOException | InterruptedException e) {
-            LOG.error("error occurred while checking if application was installed", e);
+            LOG.error("error occurred while upgrading application", e);
             return;
         }
     }
 
-    private void installApp() throws IOException {
+    private void upgradeApp() throws IOException {
         final DevSpace devSpace = node.getDevSpace();
         final DevSpace.Context context = devSpace.getContext();
         final String installType = NhctlHelper.generateInstallType(devSpace.getContext());
 
-        final NhctlInstallOptions opts = new NhctlInstallOptions();
-        opts.setType(installType);
+        final NhctlUpgradeOptions opts = new NhctlUpgradeOptions();
         opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
         opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
-        opts.setNamespace(devSpace.getNamespace());
 
         if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {
             String message = StringUtils.equals(installType, "rawManifestLocal")
@@ -96,7 +88,7 @@ public class InstallAppAction extends AnAction {
             Path nocalhostConfigPath = localPath.resolve(".nocalhost");
             List<Path> configs = getAllConfig(nocalhostConfigPath);
             if (configs.size() == 0) {
-                configPath = localPath;
+                Messages.showErrorDialog("Not found config.yaml", "");
             } else if (configs.size() == 1) {
                 configPath = configs.get(0);
             } else if (configs.size() > 1) {
@@ -107,46 +99,30 @@ public class InstallAppAction extends AnAction {
             }
 
             opts.setLocalPath(localPath.toString());
-            opts.setOuterConfig(configPath.toString());
+            opts.setConfig(configPath.toString());
 
         } else {
-            AppInstallOrUpgradeOption installOption = askAndGetInstallOption(installType, devSpace);
-            if (installOption == null) {
+            AppInstallOrUpgradeOption upgradeOption = askAndGetUpgradeOption(installType, devSpace);
+            if (upgradeOption == null) {
                 return;
             }
 
             if (StringUtils.equals(installType, "helmRepo")) {
                 opts.setHelmRepoUrl(context.getApplicationUrl());
                 opts.setHelmChartName(context.getApplicationName());
-                opts.setOuterConfig(HelmNocalhostConfigUtil.helmNocalhostConfigPath(devSpace).toString());
-                if (installOption.isSpecifyOneSelected()) {
-                    opts.setHelmRepoVersion(installOption.getSpecifyText());
+                if (upgradeOption.isSpecifyOneSelected()) {
+                    opts.setHelmRepoVersion(upgradeOption.getSpecifyText());
                 }
             } else {
                 opts.setGitUrl(context.getApplicationUrl());
                 opts.setConfig(context.getApplicationConfigPath());
-                if (installOption.isSpecifyOneSelected()) {
-                    opts.setGitRef(installOption.getSpecifyText());
+                if (upgradeOption.isSpecifyOneSelected()) {
+                    opts.setGitRef(upgradeOption.getSpecifyText());
                 }
             }
         }
 
-        if (Set.of("helmGit", "helmRepo", "helmLocal").contains(installType)) {
-            HelmValuesChooseDialog helmValuesChooseDialog = new HelmValuesChooseDialog(project);
-            if (helmValuesChooseDialog.showAndGet()) {
-                HelmValuesChooseState helmValuesChooseState = helmValuesChooseDialog.getHelmValuesChooseState();
-                if (helmValuesChooseState.isSpecifyValuesYamlSelected()) {
-                    opts.setHelmValues(helmValuesChooseState.getValuesYamlPath());
-                }
-                if (helmValuesChooseState.isSpecifyValues() && Set.of("helmGit", "helmRepo").contains(installType)) {
-                    opts.setValues(helmValuesChooseState.getValues());
-                }
-            } else {
-                return;
-            }
-        }
-
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Installing application: " + context.getApplicationName(), false) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Upgrading application: " + context.getApplicationName(), false) {
             @Override
             public void onSuccess() {
                 final Application application = ApplicationManager.getApplication();
@@ -154,43 +130,40 @@ public class InstallAppAction extends AnAction {
                         .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
                 publisher.action();
 
-                NocalhostNotifier.getInstance(project).notifySuccess("Application " + context.getApplicationName() + " installed", "");
+                NocalhostNotifier.getInstance(project).notifySuccess("Application " + context.getApplicationName() + " upgraded", "");
             }
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while installing application", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost install devSpace error", "Error occurred while installing application", e.getMessage());
+                LOG.error("error occurred while upgrading application", e);
+                NocalhostNotifier.getInstance(project).notifyError("Nocalhost upgrade application error", "Error occurred while upgrading application", e.getMessage());
             }
 
             @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-                outputCapturedNhctlCommand.install(context.getApplicationName(), opts);
-
-                final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-                nocalhostApi.syncInstallStatus(devSpace, 1);
+                outputCapturedNhctlCommand.upgrade(context.getApplicationName(), opts);
             }
         });
     }
 
-    private AppInstallOrUpgradeOption askAndGetInstallOption(String installType, DevSpace devSpace) {
-        final String title = "Install DevSpace: " + devSpace.getSpaceName();
+    private AppInstallOrUpgradeOption askAndGetUpgradeOption(String installType, DevSpace devSpace) {
+        final String title = "Upgrade DevSpace: " + devSpace.getSpaceName();
         AppInstallOrUpgradeOptionDialog dialog;
         if (StringUtils.equals(installType, "helmRepo")) {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,
-                    "Which version to install?",
-                    "Default Version",
+                    "Which version to upgrade?",
+                    "Latest Version",
                     "Input the version of chart",
                     "Chart version cannot be empty");
         } else {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,
-                    "Which branch to install(Manifests in Git Repo)?",
+                    "Which branch to upgrade(Manifests in Git Repo)?",
                     "Default Branch",
                     "Input the branch of repository",
                     "Git ref cannot be empty");

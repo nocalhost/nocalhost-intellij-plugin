@@ -35,6 +35,7 @@ import dev.nocalhost.plugin.intellij.ui.action.devspace.InstallAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.LoadResourceAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.ResetAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.UninstallAppAction;
+import dev.nocalhost.plugin.intellij.ui.action.devspace.UpgradeAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.ViewKubeConfigAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
@@ -136,21 +137,20 @@ public class TreeMouseListener extends MouseAdapter {
             actionGroup.add(new Separator());
             actionGroup.add(new ApplyAction(project, devSpaceNode));
             actionGroup.add(new ClearAppPersisentDataAction(project, devSpaceNode));
+            actionGroup.add(new ResetAppAction(project, devSpaceNode));
             actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
 
             actionGroup.add(new Separator());
-            actionGroup.add(new LoadResourceAction(project, devSpaceNode));
+            actionGroup.add(new UpgradeAppAction(project, devSpaceNode));
 
             actionGroup.add(new Separator());
-            actionGroup.add(new ResetAppAction(project, devSpaceNode));
+            actionGroup.add(new LoadResourceAction(project, devSpaceNode));
         } else {
             actionGroup.add(new InstallAppAction(project, devSpaceNode));
 
             actionGroup.add(new Separator());
-            actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
-
-            actionGroup.add(new Separator());
             actionGroup.add(new ResetAppAction(project, devSpaceNode));
+            actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
         }
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Devspace.Actions", actionGroup);
