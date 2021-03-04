@@ -64,8 +64,15 @@ public class ApplyAction extends AnAction {
             return;
         }
 
-        final List<String> errorMessages = Lists.newArrayList();
         ProgressManager.getInstance().run(new Task.Modal(project, "Applying Kubernetes Configuration", false) {
+            private final List<String> errorMessages = Lists.newArrayList();
+
+            @Override
+            public void onFinished() {
+                if (errorMessages.size() > 0) {
+                    Messages.showErrorDialog(String.join(", ", errorMessages), "Errors while applying kubernetes configuration");
+                }
+            }
 
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
@@ -90,9 +97,5 @@ public class ApplyAction extends AnAction {
                 }
             }
         });
-
-        if (errorMessages.size() > 0) {
-            Messages.showErrorDialog(String.join(", ", errorMessages), "Errors while applying kubernetes configuration");
-        }
     }
 }
