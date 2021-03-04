@@ -5,28 +5,30 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPopupMenu;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Separator;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.JBPopupMenu;
-import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.treeStructure.Tree;
 
 import org.apache.commons.lang3.EnumUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 
 import javax.swing.tree.TreePath;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.ApplyAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.ClearAppPersisentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.InstallAppAction;
@@ -45,6 +47,7 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.TerminalAction;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
+import lombok.SneakyThrows;
 
 import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Deployment;
 import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Pod;
@@ -71,16 +74,32 @@ public class TreeMouseListener extends MouseAdapter {
 
             if (object instanceof ResourceNode) {
                 ResourceNode resourceNode = (ResourceNode) object;
-                try {
-                    Pair<String, String> pair = KubectlHelper.getResourceYaml(resourceNode);
-                    String filename = "loadResource/" + pair.getFirst().toLowerCase() + "/" + resourceNode.resourceName() + ".yaml";
-                    VirtualFile virtualFile = new ReadOnlyVirtualFile(filename, filename, pair.getSecond());
-                    FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile, 0), true);
-                } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                    LOG.error("error occurred while loading kubernetes resource yaml", e);
-                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while loading kubernetes resource yaml", e.getMessage());
 
-                }
+                ProgressManager.getInstance().run(new Task.Backgroundable(project, "Loading kubernetes resource") {
+                    private VirtualFile virtualFile;
+
+                    @Override
+                    public void onSuccess() {
+                        FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile, 0), true);
+                    }
+
+                    @Override
+                    public void onThrowable(@NotNull Throwable e) {
+                        LOG.error("error occurred while loading kubernetes resource yaml", e);
+                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while loading kubernetes resource yaml", e.getMessage());
+                    }
+
+                    @SneakyThrows
+                    @Override
+                    public void run(@NotNull ProgressIndicator indicator) {
+                        final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+                        String content = kubectlCommand.getResourceYaml(
+                                resourceNode.getKubeResource().getKind(),
+                                resourceNode.getKubeResource().getMetadata().getName(),
+                                resourceNode.devSpace());
+                        virtualFile = new ReadOnlyVirtualFile(resourceNode.resourceName() + ".yaml", "", content);
+                    }
+                });
                 return;
             }
         }
