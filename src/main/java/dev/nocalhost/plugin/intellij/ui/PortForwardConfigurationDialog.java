@@ -138,7 +138,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             String container = null;
             KubeResourceList pods = null;
             try {
-                pods = kubectlCommand.getResourceList("pods", Map.of("app", node.resourceName()), node.devSpace());
+                pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), node.devSpace());
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "List Resource error while starting port forward", e.getMessage());
             }

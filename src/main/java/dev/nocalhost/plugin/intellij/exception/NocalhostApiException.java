@@ -18,4 +18,12 @@ public class NocalhostApiException extends Exception {
     public String getMessage() {
         return String.format("Failed to access API [%s] to %s, Response Code: [%d]\n%s", api, action, code, msg);
     }
+
+    public int getCode() {
+        return code;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
 }

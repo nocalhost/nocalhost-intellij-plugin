@@ -58,7 +58,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
 
         kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-        final String workloadName = node.getKubeResource().getMetadata().getName();
+        final String workloadName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");
         devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
         stop = false;
         pause = false;
@@ -69,7 +69,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                 containerName = workloadName;
                 KubeResourceList pods = null;
                 try {
-                    pods = kubectlCommand.getResourceList("pods", Map.of("app", workloadName), devSpace);
+                    pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), devSpace);
                 } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while getting workload pods", e);
                     NocalhostNotifier.getInstance(project).notifyError("Nocalhost log error", String.format("error occurred while getting workload pods workloadName:[%s] devSpace:[%s]", workloadName, devSpace), e.getMessage());

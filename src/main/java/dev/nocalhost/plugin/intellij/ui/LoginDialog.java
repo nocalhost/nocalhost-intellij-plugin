@@ -20,6 +20,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
+import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 
 public class LoginDialog extends DialogWrapper {
@@ -102,7 +103,11 @@ public class LoginDialog extends DialogWrapper {
             nocalhostApi.login(getHost(), getEmail(), getPassword());
             super.doOKAction();
         } catch (Exception e) {
-            setErrorText(e.getMessage());
+            if (e instanceof NocalhostApiException && ((NocalhostApiException) e).getCode() == 200) {
+                setErrorText(((NocalhostApiException) e).getMsg());
+            } else {
+                setErrorText(e.getMessage());
+            }
         }
     }
 
