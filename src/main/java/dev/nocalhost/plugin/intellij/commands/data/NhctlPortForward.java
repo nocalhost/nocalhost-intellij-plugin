@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import org.apache.commons.lang.StringUtils;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +17,11 @@ public class NhctlPortForward {
     private Integer pid;
 
     public String portForward() {
-        return String.format("%s:%s(%s)", localport, remoteport, way);
+        if (StringUtils.isNotEmpty(way)) {
+            return String.format("%s:%s(%s)", localport, remoteport, way);
+        } else {
+            return portForwardStr();
+        }
     }
 
     public String portForwardStr() {

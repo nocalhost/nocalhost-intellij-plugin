@@ -17,11 +17,12 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.List;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 
 public final class OutputCapturedNhctlCommand extends NhctlCommand {
@@ -34,7 +35,7 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
     }
 
     @Override
-    protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    protected String execute(List<String> args, NhctlGlobalOptions opts, String sudoPassword) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         addGlobalOptions(args, opts);
 
         activateOutputWindow();
@@ -45,10 +46,23 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
         String cmd = String.join(" ", args.toArray(new String[]{}));
         publisher.action("[cmd] " + cmd + System.lineSeparator());
 
+        if (sudoPassword != null) {
+            args.add(0, "sudo");
+            args.add(1, "--stdin");
+        }
+
         GeneralCommandLine commandLine = getCommandline(args);
         Process process;
         try {
             process = commandLine.createProcess();
+            if (sudoPassword != null) {
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    PrintWriter pw = new PrintWriter(process.getOutputStream());
+                    pw.println(sudoPassword);
+                    pw.flush();
+                    pw.close();
+                });
+            }
         } catch (ExecutionException e) {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }

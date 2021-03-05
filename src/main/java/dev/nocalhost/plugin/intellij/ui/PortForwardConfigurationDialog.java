@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
-import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextField;
@@ -29,7 +29,9 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
@@ -47,7 +49,9 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.ExecutableUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import lombok.SneakyThrows;
 
 public class PortForwardConfigurationDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(PortForwardConfigurationDialog.class);
@@ -142,6 +146,15 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         startButton.addActionListener(event -> {
             Set<String> portForwardsToBeStarted = Arrays.stream(startTextField.getText().split(",")).map(String::trim).collect(Collectors.toSet());
 
+            AtomicReference<String> sudoPassword = new AtomicReference<>(null);
+            if (SystemInfo.isLinux && hasPrivilegedPorts(List.copyOf(portForwardsToBeStarted))) {
+                SudoPasswordDialog sudoPasswordDialog = new SudoPasswordDialog(project, ExecutableUtil.lookup("nhctl"));
+                if (!sudoPasswordDialog.showAndGet()) {
+                    return;
+                }
+                sudoPassword.set(sudoPasswordDialog.getPassword());
+            }
+
             final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
             String container = null;
             KubeResourceList pods = null;
@@ -197,7 +210,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                             nhctlPortForwardStartOptions.setPod(finalContainer);
 
 
-                            outputCapturedNhctlCommand.startPortForward(node.devSpace().getContext().getApplicationName(), nhctlPortForwardStartOptions);
+                            outputCapturedNhctlCommand.startPortForward(node.devSpace().getContext().getApplicationName(), nhctlPortForwardStartOptions, sudoPassword.get());
                         }
                     } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                         LOG.error("error occurred while starting port forward", e);
@@ -279,6 +292,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                 return;
             }
 
+            AtomicReference<String> sudoPassword = new AtomicReference<>(null);
             try {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
                 NhctlDescribeOptions opts = new NhctlDescribeOptions();
@@ -292,27 +306,28 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                         opts,
                         NhctlDescribeService.class);
 
-                List<Pair<String, Integer>> portForwardPidPairs = nhctlDescribeService
+                Optional<NhctlPortForward> currentPortForward = nhctlDescribeService
                         .getDevPortForwardList()
                         .stream()
-                        .map(e -> Pair.create(e.portForwardStr(), e.getPid()))
-                        .collect(Collectors.toList());
-                int port = portForwardPidPairs
+                        .filter(e -> StringUtils.equals(portForward.getLocalport(), e.getLocalport())
+                                && StringUtils.equals(portForward.getRemoteport(), e.getRemoteport()))
+                        .findFirst();
+                if (!currentPortForward.isPresent()) {
+                    return;
+                }
+
+                List<String> portsHostedBySameProcess = nhctlDescribeService
+                        .getDevPortForwardList()
                         .stream()
-                        .filter(e -> StringUtils.equals(portForward.portForwardStr(), e.getFirst()))
-                        .findFirst()
-                        .get()
-                        .getSecond();
-                List<String> portForwardsToBeStopped = portForwardPidPairs
-                        .stream()
-                        .filter(e -> e.getSecond().equals(port))
-                        .map(e -> e.getFirst())
+                        .filter(e -> e.getPid().equals(currentPortForward.get().getPid()))
+                        .map(NhctlPortForward::portForwardStr)
                         .collect(Collectors.toList());
-                if (portForwardsToBeStopped.size() > 1) {
-                    String portForwardsToBeStoppedStr = String.join(",", portForwardsToBeStopped.toArray(new String[0]));
-                    if (!MessageDialogBuilder.yesNo("Port forward", "The associated port (" + portForwardsToBeStoppedStr + ") will also be terminated. Are you sure terminate?").guessWindowAndAsk()) {
+                if (SystemInfo.isLinux && hasPrivilegedPorts(portsHostedBySameProcess)) {
+                    SudoPasswordDialog sudoPasswordDialog = new SudoPasswordDialog(project, ExecutableUtil.lookup("nhctl"));
+                    if (!sudoPasswordDialog.showAndGet()) {
                         return;
                     }
+                    sudoPassword.set(sudoPasswordDialog.getPassword());
                 }
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                 LOG.error("error occurred while checking port forward before stopping", e);
@@ -323,6 +338,18 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             }
 
             ProgressManager.getInstance().run(new Task.Modal(project, "Stopping port forward " + portForward, false) {
+                @Override
+                public void onThrowable(@NotNull Throwable e) {
+                    LOG.error("error occurred while stopping port forward", e);
+                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while stopping port forward", e.getMessage());
+                }
+
+                @Override
+                public void onFinished() {
+                    updatePortForwardList();
+                }
+
+                @SneakyThrows
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
                     final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
@@ -335,14 +362,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     }
                     opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
-                    try {
-                        outputCapturedNhctlCommand.endPortForward(node.devSpace().getContext().getApplicationName(), opts);
-                    } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                        LOG.error("error occurred while stopping port forward", e);
-                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while stopping port forward", e.getMessage());
-                    } finally {
-                        updatePortForwardList();
-                    }
+                    outputCapturedNhctlCommand.endPortForward(node.devSpace().getContext().getApplicationName(), opts, sudoPassword.get());
                 }
             });
         });
@@ -416,6 +436,28 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
             setText("Stop");
             setWidth72(this);
+        }
+    }
+
+    private static boolean hasPrivilegedPorts(List<String> ports) {
+        for (String port : ports) {
+            if (isPrivilegedPort(port)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isPrivilegedPort(String port) {
+        String[] splits = port.split(":", 2);
+        String localPort = splits[0].trim();
+        if (!StringUtils.isNotEmpty(localPort)) {
+            return false;
+        }
+        try {
+            return Integer.parseInt(localPort) < 1024;
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 }

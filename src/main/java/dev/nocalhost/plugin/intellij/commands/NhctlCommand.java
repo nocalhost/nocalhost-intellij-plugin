@@ -6,6 +6,7 @@ import com.google.common.io.CharStreams;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.EnvironmentUtil;
@@ -16,6 +17,7 @@ import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +42,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.utils.CommandUtil;
 
 
 public class NhctlCommand {
@@ -224,6 +225,10 @@ public class NhctlCommand {
     }
 
     public void startPortForward(String name, NhctlPortForwardStartOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+        startPortForward(name, opts, null);
+    }
+
+    public void startPortForward(String name, NhctlPortForwardStartOptions opts, String sudoPassword) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "port-forward", "start", name);
         if (opts.isDaemon()) {
             args.add("--daemon");
@@ -249,10 +254,10 @@ public class NhctlCommand {
         args.add("--way");
         args.add(opts.getWay().getVal());
 
-        execute(args, opts);
+        execute(args, opts, sudoPassword);
     }
 
-    public void endPortForward(String name, NhctlPortForwardEndOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    public void endPortForward(String name, NhctlPortForwardEndOptions opts, String sudoPassword) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "port-forward", "end", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
@@ -267,7 +272,7 @@ public class NhctlCommand {
             args.add(opts.getType());
         }
 
-        execute(args, opts);
+        execute(args, opts, sudoPassword);
     }
 
     public String describe(String name, NhctlDescribeOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
@@ -396,32 +401,79 @@ public class NhctlCommand {
 
     public void upgrade(String name, NhctlUpgradeOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "upgrade", name);
-        CommandUtil.addArg(args, "--config", opts.getConfig());
-        CommandUtil.addArg(args, "--git-ref", opts.getGitRef());
-        CommandUtil.addArg(args, "--git-url", opts.getGitUrl());
-        CommandUtil.addArg(args, "--helm-chart-name", opts.getHelmChartName());
-        CommandUtil.addArg(args, "--helm-repo-name", opts.getHelmRepoName());
-        CommandUtil.addArg(args, "--helm-repo-url", opts.getHelmRepoUrl());
-        CommandUtil.addArg(args, "--helm-repo-version", opts.getHelmRepoVersion());
-        CommandUtil.addArg(args, "--local-path", opts.getLocalPath());
-        CommandUtil.addArg(args, "--resource-path", opts.getResourcesPath());
+        if (StringUtils.isNotEmpty(opts.getConfig())) {
+            args.add("--config");
+            args.add(opts.getConfig());
+        }
+        if (StringUtils.isNotEmpty(opts.getGitRef())) {
+            args.add("--git-ref");
+            args.add(opts.getGitRef());
+        }
+        if (StringUtils.isNotEmpty(opts.getGitUrl())) {
+            args.add("--git-url");
+            args.add(opts.getGitUrl());
+        }
+        if (StringUtils.isNotEmpty(opts.getHelmChartName())) {
+            args.add("--helm-chart-name");
+            args.add(opts.getHelmChartName());
+        }
+        if (StringUtils.isNotEmpty(opts.getHelmRepoName())) {
+            args.add("--helm-repo-name");
+            args.add(opts.getHelmRepoName());
+        }
+        if (StringUtils.isNotEmpty(opts.getHelmRepoUrl())) {
+            args.add("--helm-repo-url");
+            args.add(opts.getHelmRepoUrl());
+        }
+        if (StringUtils.isNotEmpty(opts.getHelmRepoVersion())) {
+            args.add("--helm-repo-version");
+            args.add(opts.getHelmRepoVersion());
+        }
+        if (StringUtils.isNotEmpty(opts.getLocalPath())) {
+            args.add("--local-path");
+            args.add(opts.getLocalPath());
+        }
+        if (opts.getResourcesPath() != null) {
+            opts.getResourcesPath().forEach(e -> {
+                args.add("--resource-path");
+                args.add(e);
+            });
+        }
         execute(args, opts);
     }
 
     public String version() throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "version");
-        return execute(args);
+        return execute(args, null);
     }
 
-    protected String execute(List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+        return execute(args, opts, null);
+    }
+
+    protected String execute(List<String> args, NhctlGlobalOptions opts, String sudoPassword) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+        addGlobalOptions(args, opts);
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
         System.out.println("Execute command: " + cmd);
+
+        if (sudoPassword != null) {
+            args.add(0, "sudo");
+            args.add(1, "--stdin");
+        }
 
         GeneralCommandLine commandLine = getCommandline(args);
         Process process;
         try {
             process = commandLine.createProcess();
+            if (sudoPassword != null) {
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    PrintWriter pw = new PrintWriter(process.getOutputStream());
+                    pw.println(sudoPassword);
+                    pw.flush();
+                    pw.close();
+                });
+            }
         } catch (ExecutionException e) {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
@@ -436,12 +488,10 @@ public class NhctlCommand {
         return output;
     }
 
-    protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        addGlobalOptions(args, opts);
-        return execute(args);
-    }
-
     protected void addGlobalOptions(List<String> args, NhctlGlobalOptions opts) {
+        if (opts == null) {
+            return;
+        }
         if (opts.isDebug()) {
             args.add("--debug");
         }
