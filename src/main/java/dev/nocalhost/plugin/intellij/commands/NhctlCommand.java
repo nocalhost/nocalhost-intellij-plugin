@@ -202,6 +202,11 @@ public class NhctlCommand {
         if (opts.isDoubleSideSync()) {
             args.add("--double");
         }
+
+        if (StringUtils.isNotEmpty(opts.getContainer())) {
+            args.add("--container");
+            args.add(opts.getContainer());
+        }
         if (opts.getIgnoredPatterns() != null) {
             for (String pattern : opts.getIgnoredPatterns()) {
                 args.add("--ignored-pattern");

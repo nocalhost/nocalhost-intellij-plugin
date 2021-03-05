@@ -11,6 +11,7 @@ public class NhctlSyncOptions extends NhctlGlobalOptions {
     private boolean daemon;
     private String deployment;
     private boolean doubleSideSync;
+    private String container;
     private List<String> ignoredPatterns;
     private List<String> syncedPatterns;
 }

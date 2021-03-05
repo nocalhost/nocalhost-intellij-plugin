@@ -133,6 +133,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             indicator.setText("Starting DevMode: sync file");
             NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions();
             nhctlSyncOptions.setDeployment(devModeService.getServiceName());
+            nhctlSyncOptions.setContainer(devModeService.getContainerName());
             nhctlSyncOptions.setKubeconfig(kubeconfigPath);
             outputCapturedNhctlCommand.sync(appName, nhctlSyncOptions);
 
