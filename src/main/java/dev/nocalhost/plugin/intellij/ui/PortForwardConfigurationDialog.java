@@ -18,29 +18,36 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBEmptyBorder;
 import com.intellij.util.ui.UIUtil;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.*;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.*;
-import javax.swing.border.CompoundBorder;
 import java.awt.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+
+import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class PortForwardConfigurationDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(PortForwardConfigurationDialog.class);
@@ -88,6 +95,9 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
         NhctlDescribeOptions opts = new NhctlDescribeOptions();
         opts.setDeployment(node.resourceName());
+        if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
+            opts.setType("statefulset");
+        }
         opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
         ProgressManager.getInstance().run(new Task.Modal(project, "Loading Port Forward List", false) {
@@ -157,6 +167,9 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     try {
                         NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
                         nhctlDescribeOptions.setDeployment(node.resourceName());
+                        if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
+                            nhctlDescribeOptions.setType("statefulset");
+                        }
                         nhctlDescribeOptions.setKubeconfig(
                                 KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
                         NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
@@ -176,6 +189,9 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                             nhctlPortForwardStartOptions.setDevPorts(Lists.newArrayList(portForwardsToBeStarted.iterator()));
                             nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
                             nhctlPortForwardStartOptions.setDeployment(node.resourceName());
+                            if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
+                                nhctlPortForwardStartOptions.setType("statefulset");
+                            }
                             nhctlPortForwardStartOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
                             nhctlPortForwardStartOptions.setPod(finalContainer);
@@ -267,6 +283,9 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
                 NhctlDescribeOptions opts = new NhctlDescribeOptions();
                 opts.setDeployment(node.resourceName());
+                if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
+                    opts.setType("statefulset");
+                }
                 opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.devSpace().getContext().getApplicationName(),
@@ -311,6 +330,9 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     NhctlPortForwardEndOptions opts = new NhctlPortForwardEndOptions();
                     opts.setPort(portForward.portForwardStr());
                     opts.setDeployment(node.resourceName());
+                    if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
+                        opts.setType("statefulset");
+                    }
                     opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
                     try {

@@ -13,6 +13,7 @@ public class NhctlPortForwardStartOptions extends NhctlGlobalOptions {
     private Way way;
     private List<String> devPorts;
     private String pod;
+    private String type;
 
     public enum Way {
         MANUAL("manual"),

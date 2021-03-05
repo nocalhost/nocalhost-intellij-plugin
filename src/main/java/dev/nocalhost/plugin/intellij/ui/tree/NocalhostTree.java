@@ -380,6 +380,9 @@ public class NocalhostTree extends Tree {
                     UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, nhctlDescribe.getRawConfig().getName(), project.getProjectFilePath()));
                 }
                 resourceNodes.add(new ResourceNode(kubeResource, nhctlDescribe));
+            } else if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "StatefulSet")) {
+                KubeResource statefulsetKubeResource = kubectlCommand.getResource("StatefulSet/mariadb", "", devSpace);
+                resourceNodes.add(new ResourceNode(statefulsetKubeResource));
             } else {
                 resourceNodes.add(new ResourceNode(kubeResource));
             }

@@ -237,6 +237,10 @@ public class NhctlCommand {
             args.add("--pod");
             args.add(opts.getPod());
         }
+        if (StringUtils.isNotEmpty(opts.getType())) {
+            args.add("--type");
+            args.add(opts.getType());
+        }
         args.add("--way");
         args.add(opts.getWay().getVal());
 
@@ -253,6 +257,10 @@ public class NhctlCommand {
             args.add("--port");
             args.add(opts.getPort());
         }
+        if (StringUtils.isNotEmpty(opts.getType())) {
+            args.add("--type");
+            args.add(opts.getType());
+        }
 
         execute(args, opts);
     }
@@ -262,6 +270,10 @@ public class NhctlCommand {
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
+        }
+        if (StringUtils.isNotEmpty(opts.getType())) {
+            args.add("--type");
+            args.add(opts.getType());
         }
         return execute(args, opts);
     }

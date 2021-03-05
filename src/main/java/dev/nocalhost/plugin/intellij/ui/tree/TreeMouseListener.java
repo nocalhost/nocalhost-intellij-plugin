@@ -185,6 +185,7 @@ public class TreeMouseListener extends MouseAdapter {
             case Daemonset:
                 break;
             case Statefulset:
+                actionGroup.add(new PortForwardAction(project, resourceNode));
                 break;
             case Job:
                 actionGroup.add(new PortForwardAction(project, resourceNode));

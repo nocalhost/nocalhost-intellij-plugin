@@ -59,7 +59,10 @@ public class KubectlCommand {
     public KubeResource getResource(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
 
-        List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind, name);
+        List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind);
+        if (StringUtils.isNotBlank(name)) {
+            args.add(name);
+        }
         args.add("-n");
         args.add(devSpace.getNamespace());
         args.add("-o");

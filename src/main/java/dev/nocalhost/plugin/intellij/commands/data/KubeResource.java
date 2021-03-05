@@ -44,6 +44,9 @@ public class KubeResource {
     @Setter
     public static class Status {
         private List<Condition> conditions;
+        // statefulset
+        private int readyReplicas;
+        private int replicas;
 
         public List<Condition> getConditions() {
             return conditions;

@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 
 import com.intellij.execution.ExecutionException;
@@ -121,9 +122,7 @@ public class NocalhostSettingComponent {
                     environment.put("PATH", path);
                 }
             }
-            GeneralCommandLine commandLine = new GeneralCommandLine().withEnvironment(environment);
-            commandLine.setExePath(nhctl);
-            commandLine.addParameter("version");
+            GeneralCommandLine commandLine = new GeneralCommandLine(Lists.newArrayList(nhctl, "version")).withEnvironment(environment);
             commandLine.setCharset(CharsetToolkit.getDefaultSystemCharset());
 
             try {
@@ -151,9 +150,7 @@ public class NocalhostSettingComponent {
                     environment.put("PATH", path);
                 }
             }
-            GeneralCommandLine commandLine = new GeneralCommandLine().withEnvironment(environment);
-            commandLine.setExePath(kubectl);
-            commandLine.addParameter("version");
+            GeneralCommandLine commandLine = new GeneralCommandLine(Lists.newArrayList(kubectl, "version")).withEnvironment(environment);
             commandLine.setCharset(CharsetToolkit.getDefaultSystemCharset());
             try {
                 Process process = commandLine.createProcess();

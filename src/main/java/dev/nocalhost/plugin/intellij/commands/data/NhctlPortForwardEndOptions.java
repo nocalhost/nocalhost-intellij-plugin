@@ -8,4 +8,5 @@ import lombok.Setter;
 public class NhctlPortForwardEndOptions extends NhctlGlobalOptions {
     private String deployment;
     private String port;
+    private String type;
 }
