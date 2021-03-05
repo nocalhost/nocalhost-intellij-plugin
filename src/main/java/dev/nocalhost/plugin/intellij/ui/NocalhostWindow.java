@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui;
 
+import com.github.zafarkhaja.semver.Version;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -17,8 +18,19 @@ import com.intellij.ui.components.JBScrollPane;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
@@ -41,6 +53,8 @@ public class NocalhostWindow {
         this.project = project;
         this.toolWindow = toolWindow;
 
+        checkNocalhostVersion();
+
         final Application application = ApplicationManager.getApplication();
         application.getMessageBus().connect().subscribe(
                 NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC,
@@ -54,6 +68,36 @@ public class NocalhostWindow {
         panel = new SimpleToolWindowPanel(true, false);
 
         toggleContent();
+    }
+
+    private void checkNocalhostVersion() {
+        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        try {
+            String versionInfo = nhctlCommand.version();
+            String version = "";
+            final String[] infos = StringUtils.split(versionInfo, "\n");
+            final Optional<String> versionLine = Arrays.stream(infos).filter(s -> s.trim().startsWith("Version")).findFirst();
+            if (versionLine.isPresent()) {
+                final String[] versionLines = versionLine.get().split("v");
+                version = versionLines[1];
+            }
+            if (StringUtils.isBlank(version)) {
+                return;
+            }
+
+            InputStream in = NocalhostWindow.class.getClassLoader().getResourceAsStream("config.properties");
+            Properties properties = new Properties();
+            properties.load(in);
+            String nhctlVersion = properties.getProperty("nhctlVersion");
+
+            Version v = Version.valueOf(version);
+
+            if (!v.satisfies(nhctlVersion)) {
+                NocalhostNotifier.getInstance(project).notifyVersionTips(nhctlVersion, version);
+            }
+        } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
+            NocalhostNotifier.getInstance(project).notifyError("Get nhctl version error", e.getMessage());
+        }
     }
 
     private void toggleContent() {

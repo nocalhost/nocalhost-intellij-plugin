@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.exception;
 
+import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
@@ -96,6 +97,16 @@ public class NocalhostNotifier {
             protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
                 ShowSettingsUtil showSettingsUtil = ServiceManager.getService(ShowSettingsUtil.class);
                 showSettingsUtil.showSettingsDialog(project, "Nocalhost");
+            }
+        });
+    }
+
+    public void notifyVersionTips(String requiredVersion, String currentVersion) {
+        String content = String.format("<html>Nocalhost required nhctl(%s), current version is v%s, please upgrade your nhctl to the specify version. <a href=\"nocalhost.setting\">Get nhctl</a></html>", requiredVersion, currentVersion);
+        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new NotificationListener.Adapter() {
+            @Override
+            protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
+                BrowserUtil.browse("https://nocalhost.dev/installation/");
             }
         });
     }

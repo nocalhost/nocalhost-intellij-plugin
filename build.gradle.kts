@@ -29,6 +29,7 @@ dependencies {
     implementation("com.google.guava:guava:27.1-jre")
     implementation("org.yaml:snakeyaml:1.27")
 
+    implementation("com.github.zafarkhaja:java-semver:0.9.0")
 
     annotationProcessor("org.projectlombok:lombok:1.18.16")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.16")

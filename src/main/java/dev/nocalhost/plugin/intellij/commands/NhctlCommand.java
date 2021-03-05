@@ -391,8 +391,12 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        addGlobalOptions(args, opts);
+    public String version() throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "version");
+        return execute(args);
+    }
+
+    protected String execute(List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
         System.out.println("Execute command: " + cmd);
@@ -413,6 +417,11 @@ public class NhctlCommand {
         }
 
         return output;
+    }
+
+    protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+        addGlobalOptions(args, opts);
+        return execute(args);
     }
 
     protected void addGlobalOptions(List<String> args, NhctlGlobalOptions opts) {
