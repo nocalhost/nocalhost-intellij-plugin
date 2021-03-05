@@ -83,6 +83,8 @@
         <statusBarWidgetFactory
                 implementation="dev.nocalhost.plugin.intellij.ui.SyncStatusWidgetFactory"
                 order="first"/>
+        <errorHandler
+                implementation="dev.nocalhost.plugin.intellij.exception.report.NocalhostErrorReportSubmitter"/>
     </extensions>
 
     <actions>

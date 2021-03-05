@@ -30,6 +30,9 @@ dependencies {
     implementation("org.yaml:snakeyaml:1.27")
 
     implementation("com.github.zafarkhaja:java-semver:0.9.0")
+    implementation("io.sentry:sentry:1.7.23") {
+        exclude("org.slf4j")
+    }
 
     annotationProcessor("org.projectlombok:lombok:1.18.16")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.16")

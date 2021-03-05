@@ -23,6 +23,7 @@ jobs:
 
     - name: Build
       run: |
+        echo "\nsentryDsn=${secret.INTELLIJ_PLUGIN_SENTRY_DSN}" >> src/main/resources/config.properties
         ./gradlew buildPlugin
 
     - name: Rename package

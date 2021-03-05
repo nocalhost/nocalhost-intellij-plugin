@@ -21,7 +21,9 @@ jobs:
         java-version: 11
 
     - name: Build
-      run: ./gradlew buildPlugin
+      run: |
+        echo "\nsentryDsn=${secret.INTELLIJ_PLUGIN_SENTRY_DSN}" >> src/main/resources/config.properties
+        ./gradlew buildPlugin
 
     - name: Push to Coding Artifacts
       if: ${{ github.ref == 'refs/heads/main'}}
