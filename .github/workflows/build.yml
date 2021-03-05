@@ -22,7 +22,7 @@ jobs:
 
     - name: Build
       run: |
-        echo "\nsentryDsn=${{secrets.INTELLIJ_PLUGIN_SENTRY_DSN}}" >> src/main/resources/config.properties
+        sed -i "s/sentryDsn=/sentryDsn=${{secrets.INTELLIJ_PLUGIN_SENTRY_DSN}}/g" src/main/resources/config.properties
         ./gradlew buildPlugin
 
     - name: Push to Coding Artifacts
