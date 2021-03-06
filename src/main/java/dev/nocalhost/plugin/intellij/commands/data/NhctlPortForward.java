@@ -18,7 +18,7 @@ public class NhctlPortForward {
 
     public String portForward() {
         if (StringUtils.isNotEmpty(way)) {
-            return String.format("%s:%s(%s)", localport, remoteport, way);
+            return String.format("%s:%s(%s)", localport, remoteport, status.toUpperCase());
         } else {
             return portForwardStr();
         }
