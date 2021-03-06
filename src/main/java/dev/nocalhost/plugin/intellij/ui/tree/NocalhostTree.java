@@ -381,7 +381,8 @@ public class NocalhostTree extends Tree {
                 }
                 resourceNodes.add(new ResourceNode(kubeResource, nhctlDescribe));
             } else if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "StatefulSet")) {
-                KubeResource statefulsetKubeResource = kubectlCommand.getResource("StatefulSet/mariadb", "", devSpace);
+                String metadataName = kubeResource.getMetadata().getName();
+                KubeResource statefulsetKubeResource = kubectlCommand.getResource("StatefulSet/" + metadataName, "", devSpace);
                 resourceNodes.add(new ResourceNode(statefulsetKubeResource));
             } else {
                 resourceNodes.add(new ResourceNode(kubeResource));
