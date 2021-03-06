@@ -3,13 +3,8 @@ package dev.nocalhost.plugin.intellij.ui.action.devspace;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
@@ -25,13 +20,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
-import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
-import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
+import dev.nocalhost.plugin.intellij.task.InstallAppTask;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseDialog;
@@ -40,7 +32,6 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import lombok.SneakyThrows;
 
 public class InstallAppAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(InstallAppAction.class);
@@ -146,33 +137,7 @@ public class InstallAppAction extends AnAction {
             }
         }
 
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Installing application: " + context.getApplicationName(), false) {
-            @Override
-            public void onSuccess() {
-                final Application application = ApplicationManager.getApplication();
-                DevSpaceListUpdatedNotifier publisher = application.getMessageBus()
-                        .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
-                publisher.action();
-
-                NocalhostNotifier.getInstance(project).notifySuccess("Application " + context.getApplicationName() + " installed", "");
-            }
-
-            @Override
-            public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while installing application", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost install devSpace error", "Error occurred while installing application", e.getMessage());
-            }
-
-            @SneakyThrows
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-                outputCapturedNhctlCommand.install(context.getApplicationName(), opts);
-
-                final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-                nocalhostApi.syncInstallStatus(devSpace, 1);
-            }
-        });
+        ProgressManager.getInstance().run(new InstallAppTask(project, devSpace, opts));
     }
 
     private AppInstallOrUpgradeOption askAndGetInstallOption(String installType, DevSpace devSpace) {

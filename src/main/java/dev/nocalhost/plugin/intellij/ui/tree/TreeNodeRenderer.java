@@ -83,6 +83,9 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
 
     protected Icon getStatefulSetIcon(ResourceNode node) {
         if (node.getKubeResource().getStatus().getReadyReplicas() == node.getKubeResource().getStatus().getReplicas()) {
+            if (node.getNhctlDescribeService() != null && CollectionUtils.isNotEmpty(node.getNhctlDescribeService().getDevPortForwardList())) {
+                return NocalhostIcons.Status.NormalPortForwarding;
+            }
             return NocalhostIcons.Status.Running;
         } else {
             return NocalhostIcons.Status.Loading;

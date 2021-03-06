@@ -168,7 +168,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                 container = selectContainer(containers);
             }
             if (StringUtils.isBlank(container)) {
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Resource not found while starting port forward");
+//                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Resource not found while starting port forward");
                 return;
             }
             String finalContainer = container;

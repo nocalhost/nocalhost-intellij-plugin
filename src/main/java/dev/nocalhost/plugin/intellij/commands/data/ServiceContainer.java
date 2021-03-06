@@ -8,5 +8,6 @@ import lombok.Setter;
 public class ServiceContainer {
     private String name;
     private ServiceContainerDev dev;
+    private ServiceContainerInstall install;
 
 }
