@@ -111,7 +111,7 @@ public class NhctlCommand {
                     .map((e) -> e.getKey() + "=" + e.getValue())
                     .collect(Collectors.toList())
                     .stream()
-                    .reduce(",", String::concat);
+                    .reduce(",", String::join);
             if (StringUtils.isNotEmpty(values)) {
                 args.add("--set");
                 args.add(values);
