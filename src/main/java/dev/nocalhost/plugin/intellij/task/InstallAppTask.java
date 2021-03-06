@@ -12,20 +12,23 @@ import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
+import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeApplication;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -48,7 +51,6 @@ public class InstallAppTask extends Task.Backgroundable {
     }
 
 
-
     @Override
     public void onSuccess() {
         portForward();
@@ -60,33 +62,56 @@ public class InstallAppTask extends Task.Backgroundable {
         NocalhostNotifier.getInstance(project).notifySuccess("Application " + devSpace.getContext().getApplicationName() + " installed", "");
     }
 
+    @SneakyThrows
     private void portForward() {
-        try {
-            String kubeConfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
-            final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
-            nhctlDescribeOptions.setKubeconfig(kubeConfigPath);
-            NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(devSpace.getContext().getApplicationName(), nhctlDescribeOptions, NhctlDescribeApplication.class);
-            final List<NhctlDescribeService> svcProfile = nhctlDescribeApplication.getSvcProfile();
-            for (NhctlDescribeService nhctlDescribeService : svcProfile) {
-                for (ServiceContainer container : nhctlDescribeService.getRawConfig().getContainers()) {
-                    final List<String> portForward = container.getInstall().getPortForward();
-                    if (CollectionUtils.isNotEmpty(portForward)) {
-                        NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions();
-                        nhctlPortForwardStartOptions.setDeployment(nhctlDescribeService.getRawConfig().getName());
-                        nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.DEV_PORTS);
-                        nhctlPortForwardStartOptions.setKubeconfig(kubeConfigPath);
-                        nhctlPortForwardStartOptions.setDevPorts(portForward);
+        String kubeConfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
+        final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+        final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
+        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
+        nhctlDescribeOptions.setKubeconfig(kubeConfigPath);
+        NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(devSpace.getContext().getApplicationName(), nhctlDescribeOptions, NhctlDescribeApplication.class);
 
-                        if (nhctlDescribeService.getRawConfig().getServiceType().equalsIgnoreCase("statefulset")) {
-                            nhctlPortForwardStartOptions.setType("statefulset");
+        KubeResourceList deploymentList = kubectlCommand.getResourceList("deployments", null, devSpace);
+        KubeResourceList statefulsetList = kubectlCommand.getResourceList("statefulsets", null, devSpace);
+
+        final List<NhctlDescribeService> svcProfile = nhctlDescribeApplication.getSvcProfile();
+        for (NhctlDescribeService nhctlDescribeService : svcProfile) {
+            for (ServiceContainer container : nhctlDescribeService.getRawConfig().getContainers()) {
+                final List<String> portForward = container.getInstall().getPortForward();
+                if (CollectionUtils.isNotEmpty(portForward)) {
+                    NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions();
+                    nhctlPortForwardStartOptions.setDeployment(nhctlDescribeService.getRawConfig().getName());
+                    nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.DEV_PORTS);
+                    nhctlPortForwardStartOptions.setKubeconfig(kubeConfigPath);
+                    nhctlPortForwardStartOptions.setDevPorts(portForward);
+
+                    if (nhctlDescribeService.getRawConfig().getServiceType().equalsIgnoreCase("deployment")) {
+                        final Optional<KubeResource> first = deploymentList.getItems().stream().filter(resource -> nhctlDescribeService.getRawConfig().getName().equals(resource.getMetadata().getName())).findFirst();
+                        if (first.isPresent()) {
+                            final KubeResource kubeResource = first.get();
+                            KubeResourceList pods = kubectlCommand.getResourceList("pods", kubeResource.getSpec().getSelector().getMatchLabels(), devSpace);
+                            if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
+                                List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
+                                nhctlPortForwardStartOptions.setPod(containers.get(0));
+                            }
                         }
-                        outputCapturedNhctlCommand.startPortForward(devSpace.getContext().getApplicationName(), nhctlPortForwardStartOptions);
                     }
+
+                    if (nhctlDescribeService.getRawConfig().getServiceType().equalsIgnoreCase("statefulset")) {
+                        nhctlPortForwardStartOptions.setType("statefulset");
+                        final Optional<KubeResource> first = statefulsetList.getItems().stream().filter(resource -> nhctlDescribeService.getRawConfig().getName().equals(resource.getMetadata().getName())).findFirst();
+                        if (first.isPresent()) {
+                            final KubeResource kubeResource = first.get();
+                            KubeResourceList pods = kubectlCommand.getResourceList("pods", kubeResource.getSpec().getSelector().getMatchLabels(), devSpace);
+                            if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
+                                List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
+                                nhctlPortForwardStartOptions.setPod(containers.get(0));
+                            }
+                        }
+                    }
+                    outputCapturedNhctlCommand.startPortForward(devSpace.getContext().getApplicationName(), nhctlPortForwardStartOptions);
                 }
             }
-        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-            e.printStackTrace();
         }
     }
 
