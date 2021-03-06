@@ -72,7 +72,6 @@ public class InstallAppTask extends Task.Backgroundable {
                 for (ServiceContainer container : nhctlDescribeService.getRawConfig().getContainers()) {
                     final List<String> portForward = container.getInstall().getPortForward();
                     if (CollectionUtils.isNotEmpty(portForward)) {
-                        System.out.println(portForward);
                         NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions();
                         nhctlPortForwardStartOptions.setDeployment(nhctlDescribeService.getRawConfig().getName());
                         nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.DEV_PORTS);
