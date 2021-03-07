@@ -6,7 +6,6 @@ import com.google.common.io.CharStreams;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.EnvironmentUtil;
@@ -17,7 +16,6 @@ import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +40,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 
 
 public class NhctlCommand {
@@ -458,8 +457,7 @@ public class NhctlCommand {
         System.out.println("Execute command: " + cmd);
 
         if (sudoPassword != null) {
-            args.add(0, "sudo");
-            args.add(1, "--stdin");
+            args = SudoUtil.toSudoCommand(args);
         }
 
         GeneralCommandLine commandLine = getCommandline(args);
@@ -467,12 +465,7 @@ public class NhctlCommand {
         try {
             process = commandLine.createProcess();
             if (sudoPassword != null) {
-                ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                    PrintWriter pw = new PrintWriter(process.getOutputStream());
-                    pw.println(sudoPassword);
-                    pw.flush();
-                    pw.close();
-                });
+                SudoUtil.inputPassword(process, sudoPassword);
             }
         } catch (ExecutionException e) {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());

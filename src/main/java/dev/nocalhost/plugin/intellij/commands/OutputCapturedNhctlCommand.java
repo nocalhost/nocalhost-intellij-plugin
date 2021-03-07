@@ -17,13 +17,13 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.List;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
+import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 
 public final class OutputCapturedNhctlCommand extends NhctlCommand {
     private static final Logger LOG = Logger.getInstance(OutputCapturedNhctlCommand.class);
@@ -47,8 +47,7 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
         publisher.action("[cmd] " + cmd + System.lineSeparator());
 
         if (sudoPassword != null) {
-            args.add(0, "sudo");
-            args.add(1, "--stdin");
+            args = SudoUtil.toSudoCommand(args);
         }
 
         GeneralCommandLine commandLine = getCommandline(args);
@@ -56,12 +55,7 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
         try {
             process = commandLine.createProcess();
             if (sudoPassword != null) {
-                ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                    PrintWriter pw = new PrintWriter(process.getOutputStream());
-                    pw.println(sudoPassword);
-                    pw.flush();
-                    pw.close();
-                });
+                SudoUtil.inputPassword(process, sudoPassword);
             }
         } catch (ExecutionException e) {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
