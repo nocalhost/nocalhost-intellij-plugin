@@ -29,6 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
+import dev.nocalhost.plugin.intellij.commands.data.ServiceContainerInstall;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -77,7 +78,11 @@ public class InstallAppTask extends Task.Backgroundable {
         final List<NhctlDescribeService> svcProfile = nhctlDescribeApplication.getSvcProfile();
         for (NhctlDescribeService nhctlDescribeService : svcProfile) {
             for (ServiceContainer container : nhctlDescribeService.getRawConfig().getContainers()) {
-                final List<String> portForward = container.getInstall().getPortForward();
+                final ServiceContainerInstall install = container.getInstall();
+                if (install == null) {
+                    continue;
+                }
+                final List<String> portForward = install.getPortForward();
                 if (CollectionUtils.isNotEmpty(portForward)) {
                     NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions();
                     nhctlPortForwardStartOptions.setDeployment(nhctlDescribeService.getRawConfig().getName());
