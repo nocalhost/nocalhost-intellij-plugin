@@ -2,6 +2,7 @@ package dev.nocalhost.plugin.intellij.ui.tree;
 
 import com.google.common.collect.Lists;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -73,7 +74,21 @@ public class NocalhostTree extends Tree {
 
         model.insertNodeInto(new LoadingNode(), root, 0);
         model.reload();
+
+        autoRefresh();
     }
+
+    private void autoRefresh() {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            while (true) {
+                this.updateDevSpaces();
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ignored) {}
+            }
+        });
+    }
+
 
     private void init() {
         this.expandPath(new TreePath(root.getPath()));
