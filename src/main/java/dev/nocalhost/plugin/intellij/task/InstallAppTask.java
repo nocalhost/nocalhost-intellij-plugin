@@ -12,6 +12,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainerInstall;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -63,17 +65,29 @@ public class InstallAppTask extends Task.Backgroundable {
         NocalhostNotifier.getInstance(project).notifySuccess("Application " + devSpace.getContext().getApplicationName() + " installed", "");
     }
 
-    @SneakyThrows
     private void portForward() {
         String kubeConfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
         final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
         final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
         NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
         nhctlDescribeOptions.setKubeconfig(kubeConfigPath);
-        NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(devSpace.getContext().getApplicationName(), nhctlDescribeOptions, NhctlDescribeApplication.class);
+        NhctlDescribeApplication nhctlDescribeApplication = null;
+        try {
+            nhctlDescribeApplication = nhctlCommand.describe(devSpace.getContext().getApplicationName(), nhctlDescribeOptions, NhctlDescribeApplication.class);
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
+            NocalhostNotifier.getInstance(project).notifyError("Nocalhost describe devSpaces error", "Error occurred while describe devSpaces", e.getMessage());
+            return;
+        }
 
-        KubeResourceList deploymentList = kubectlCommand.getResourceList("deployments", null, devSpace);
-        KubeResourceList statefulsetList = kubectlCommand.getResourceList("statefulsets", null, devSpace);
+        KubeResourceList deploymentList = null;
+        KubeResourceList statefulsetList = null;
+        try {
+            deploymentList = kubectlCommand.getResourceList("deployments", null, devSpace);
+            statefulsetList = kubectlCommand.getResourceList("statefulsets", null, devSpace);
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
+            NocalhostNotifier.getInstance(project).notifyError("Nocalhost get resources error", "Error occurred while get resources", e.getMessage());
+            return;
+        }
 
         final List<NhctlDescribeService> svcProfile = nhctlDescribeApplication.getSvcProfile();
         for (NhctlDescribeService nhctlDescribeService : svcProfile) {
@@ -94,7 +108,13 @@ public class InstallAppTask extends Task.Backgroundable {
                         final Optional<KubeResource> first = deploymentList.getItems().stream().filter(resource -> nhctlDescribeService.getRawConfig().getName().equals(resource.getMetadata().getName())).findFirst();
                         if (first.isPresent()) {
                             final KubeResource kubeResource = first.get();
-                            KubeResourceList pods = kubectlCommand.getResourceList("pods", kubeResource.getSpec().getSelector().getMatchLabels(), devSpace);
+                            KubeResourceList pods = null;
+                            try {
+                                pods = kubectlCommand.getResourceList("pods", kubeResource.getSpec().getSelector().getMatchLabels(), devSpace);
+                            } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
+                                NocalhostNotifier.getInstance(project).notifyError("Nocalhost get resources error", "Error occurred while get resources", e.getMessage());
+                                continue;
+                            }
                             if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
                                 List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
                                 nhctlPortForwardStartOptions.setPod(containers.get(0));
@@ -107,14 +127,24 @@ public class InstallAppTask extends Task.Backgroundable {
                         final Optional<KubeResource> first = statefulsetList.getItems().stream().filter(resource -> nhctlDescribeService.getRawConfig().getName().equals(resource.getMetadata().getName())).findFirst();
                         if (first.isPresent()) {
                             final KubeResource kubeResource = first.get();
-                            KubeResourceList pods = kubectlCommand.getResourceList("pods", kubeResource.getSpec().getSelector().getMatchLabels(), devSpace);
+                            KubeResourceList pods = null;
+                            try {
+                                pods = kubectlCommand.getResourceList("pods", kubeResource.getSpec().getSelector().getMatchLabels(), devSpace);
+                            } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
+                                NocalhostNotifier.getInstance(project).notifyError("Nocalhost get resources error", "Error occurred while get resources", e.getMessage());
+                                continue;
+                            }
                             if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
                                 List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
                                 nhctlPortForwardStartOptions.setPod(containers.get(0));
                             }
                         }
                     }
-                    outputCapturedNhctlCommand.startPortForward(devSpace.getContext().getApplicationName(), nhctlPortForwardStartOptions);
+                    try {
+                        outputCapturedNhctlCommand.startPortForward(devSpace.getContext().getApplicationName(), nhctlPortForwardStartOptions);
+                    } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
+                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while port forward", e.getMessage());
+                    }
                 }
             }
         }
