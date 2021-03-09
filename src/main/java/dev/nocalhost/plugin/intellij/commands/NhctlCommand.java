@@ -313,6 +313,9 @@ public class NhctlCommand {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
+        if (opts.isAppConfig()) {
+            args.add("--app-config");
+        }
         return execute(args, opts);
     }
 
@@ -325,14 +328,19 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void saveConfig(String name, NhctlConfigOptions opts, String content) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    public void editConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "config", "edit", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
-        args.add("--content");
-        args.add(content);
+        if (StringUtils.isNotEmpty(opts.getContent())) {
+            args.add("--content");
+            args.add(opts.getContent());
+        }
+        if (opts.isAppConfig()) {
+            args.add("--app-config");
+        }
         execute(args, opts);
     }
 

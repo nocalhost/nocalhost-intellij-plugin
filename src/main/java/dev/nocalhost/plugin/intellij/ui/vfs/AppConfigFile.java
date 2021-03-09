@@ -26,21 +26,20 @@ import java.util.Date;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 
 @AllArgsConstructor
-public class ConfigFile extends VirtualFile {
-    private static final Logger LOG = Logger.getInstance(ConfigFile.class);
+public class AppConfigFile extends VirtualFile {
+    private static final Logger LOG = Logger.getInstance(AppConfigFile.class);
 
     private String name;
-    private String path;
     private String content;
     private Project project;
-    private ResourceNode node;
+    private DevSpaceNode node;
 
     @Override
     public @NotNull @NlsSafe String getName() {
@@ -49,13 +48,13 @@ public class ConfigFile extends VirtualFile {
 
     @Override
     public @NotNull VirtualFileSystem getFileSystem() {
-        return new ConfigFileSystem();
+        return AppConfigFileSystem.INSTANCE;
     }
 
     @Override
     public @NonNls
     @NotNull String getPath() {
-        return path;
+        return name;
     }
 
     @Override
@@ -112,10 +111,10 @@ public class ConfigFile extends VirtualFile {
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions();
-                nhctlConfigOptions.setDeployment(node.resourceName());
-                nhctlConfigOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
+                nhctlConfigOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
                 nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
-                nhctlCommand.editConfig(node.devSpace().getContext().getApplicationName(), nhctlConfigOptions);
+                nhctlConfigOptions.setAppConfig(true);
+                nhctlCommand.editConfig(node.getDevSpace().getContext().getApplicationName(), nhctlConfigOptions);
             }
         });
     }

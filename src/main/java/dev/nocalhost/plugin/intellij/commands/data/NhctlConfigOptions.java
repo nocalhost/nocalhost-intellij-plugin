@@ -7,4 +7,6 @@ import lombok.Setter;
 @Setter
 public class NhctlConfigOptions extends NhctlGlobalOptions {
     private String deployment;
+    private String content;
+    private boolean appConfig;
 }

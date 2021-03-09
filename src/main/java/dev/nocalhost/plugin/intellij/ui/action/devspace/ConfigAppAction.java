@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.ui.action.workload;
+package dev.nocalhost.plugin.intellij.ui.action.devspace;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -17,32 +17,33 @@ import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
-import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
-import dev.nocalhost.plugin.intellij.ui.vfs.ConfigFile;
+import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.vfs.AppConfigFile;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
-public class ConfigAction extends AnAction {
-    private static final Logger LOG = Logger.getInstance(ConfigAction.class);
+public class ConfigAppAction extends AnAction {
+    private static final Logger LOG = Logger.getInstance(ConfigAppAction.class);
 
     private final Project project;
-    private final ResourceNode node;
+    private final DevSpaceNode node;
 
-    public ConfigAction(Project project, ResourceNode node) {
+    public ConfigAppAction(Project project, DevSpaceNode node) {
         super("Config", "", AllIcons.Nodes.Editorconfig);
         this.project = project;
         this.node = node;
     }
 
+
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Loading config") {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Loading app config") {
             private String config;
 
             @Override
             public void onSuccess() {
-                String filename = node.resourceName() + ".yaml";
-                VirtualFile virtualFile = new ConfigFile(filename, filename, config, project, node);
+                String filename = node.getDevSpace().getContext().getApplicationName() + ".yaml";
+                VirtualFile virtualFile = new AppConfigFile(filename, config, project, node);
                 OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
                 FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
                 fileEditorManager.openTextEditor(openFileDescriptor, true);
@@ -59,9 +60,9 @@ public class ConfigAction extends AnAction {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions();
-                nhctlConfigOptions.setDeployment(node.resourceName());
-                nhctlConfigOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
-                config = nhctlCommand.getConfig(node.devSpace().getContext().getApplicationName(), nhctlConfigOptions);
+                nhctlConfigOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
+                nhctlConfigOptions.setAppConfig(true);
+                config = nhctlCommand.getConfig(node.getDevSpace().getContext().getApplicationName(), nhctlConfigOptions);
             }
         });
     }
