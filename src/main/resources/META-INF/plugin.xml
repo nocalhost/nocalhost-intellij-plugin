@@ -96,4 +96,9 @@
         <action id="Nocalhost.SettingAction"  text="Setting"
                 class="dev.nocalhost.plugin.intellij.ui.action.SettingAction" />
     </actions>
+
+    <applicationListeners>
+        <listener class="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener" topic="com.intellij.ide.AppLifecycleListener"
+                  activeInHeadlessMode="false" activeInTestMode="false"/>
+    </applicationListeners>
 </idea-plugin>

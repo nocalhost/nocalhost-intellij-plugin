@@ -32,7 +32,6 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
@@ -45,9 +44,11 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.topic.DevSpaceTreeAutoRefreshNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
@@ -74,21 +75,7 @@ public class NocalhostTree extends Tree {
 
         model.insertNodeInto(new LoadingNode(), root, 0);
         model.reload();
-
-        autoRefresh();
     }
-
-    private void autoRefresh() {
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            while (true) {
-                this.updateDevSpaces();
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException ignored) {}
-            }
-        });
-    }
-
 
     private void init() {
         this.expandPath(new TreePath(root.getPath()));
@@ -173,6 +160,24 @@ public class NocalhostTree extends Tree {
                 }
             }
         });
+
+        ApplicationManager.getApplication().getMessageBus().connect().subscribe(
+                DevSpaceTreeAutoRefreshNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC,
+                this::updateDevSpaceTree
+        );
+    }
+
+    private void updateDevSpaceTree(List<DevSpace> devSpaces) {
+        try {
+            updateDevSpaces(devSpaces);
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
+            LOG.error(e);
+            if (StringUtils.contains(e.getMessage(), "No such file or directory")) {
+                NocalhostNotifier.getInstance(project).notifyNhctlNotFound();
+            } else {
+                NocalhostNotifier.getInstance(project).notifyError("Nocalhost fetch data error", "Error occurred while fetching data", e.getMessage());
+            }
+        }
     }
 
     public void updateDevSpaces() {
