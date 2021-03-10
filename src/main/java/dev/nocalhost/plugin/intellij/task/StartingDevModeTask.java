@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
@@ -33,8 +32,11 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
+import dev.nocalhost.plugin.intellij.settings.NocalhostRepo;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -89,14 +91,24 @@ public class StartingDevModeTask extends Task.Backgroundable {
         // start dev space terminal
         ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
             project.getMessageBus()
-                    .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC)
-                    .action(devSpace, devModeService.getServiceName());
+                   .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC)
+                   .action(devSpace, devModeService.getServiceName());
         });
 
         ApplicationManager.getApplication().getMessageBus()
-                .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
-                .action();
+                          .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
+                          .action();
         NocalhostNotifier.getInstance(project).notifySuccess("DevMode started", "");
+
+        NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        NocalhostRepo nocalhostRepo = new NocalhostRepo(
+                nocalhostSettings.getBaseUrl(),
+                nocalhostSettings.getUserInfo().getEmail(),
+                appName,
+                devModeService.getServiceName(),
+                project.getBasePath()
+        );
+        nocalhostSettings.addRepos(nocalhostRepo);
     }
 
     @Override

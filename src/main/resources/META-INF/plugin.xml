@@ -4,7 +4,7 @@
     <vendor url="https://nocalhost.dev/">Nocalhost</vendor>
 
     <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
-    <idea-version since-build="203.0" until-build="211.0" />
+    <idea-version since-build="203.0" until-build="203.*" />
 
     <description>
         <![CDATA[

@@ -1,6 +1,8 @@
 package dev.nocalhost.plugin.intellij.settings;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.reflect.TypeToken;
 
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.RoamingType;
@@ -9,13 +11,18 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Type;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.UserInfo;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,6 +40,7 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
     private Map<String, DevModeService> devModeProjectBasePath2Service = Maps.newConcurrentMap();
     private String nhctlBinary;
     private String kubectlBinary;
+    private String nocalhostRepos;
 
     @Override
     public @Nullable NocalhostSettings getState() {
@@ -47,5 +55,26 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
     public void clearAuth() {
         jwt = null;
         userInfo = null;
+    }
+
+    public void addRepos(NocalhostRepo repos) {
+        Set<NocalhostRepo> nocalhostRepoSet;
+        if (StringUtils.isBlank(nocalhostRepos)) {
+            nocalhostRepoSet = Sets.newHashSet();
+        } else {
+            Type setType = new TypeToken<HashSet<NocalhostRepo>>() {
+            }.getType();
+            nocalhostRepoSet = DataUtils.GSON.fromJson(nocalhostRepos, setType);
+        }
+        nocalhostRepoSet.add(repos);
+        nocalhostRepos = DataUtils.GSON.toJson(nocalhostRepoSet);
+    }
+
+    public Set<NocalhostRepo> getRepos() {
+        if (StringUtils.isBlank(nocalhostRepos)) {
+            return Sets.newHashSet();
+        }
+        Type setType = new TypeToken<HashSet<NocalhostRepo>>(){}.getType();
+        return DataUtils.GSON.fromJson(nocalhostRepos, setType);
     }
 }

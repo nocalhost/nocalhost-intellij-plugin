@@ -35,6 +35,7 @@ import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostGitException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.settings.NocalhostRepo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
@@ -124,6 +125,18 @@ public class StartDevelopAction extends AnAction {
 
         final String path = project.getBasePath();
 
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        final Optional<NocalhostRepo> nocalhostRepo = nocalhostSettings.getRepos().stream()
+                                                                       .filter(repos -> repos.getHost().equals(nocalhostSettings.getBaseUrl())
+                                                                                && repos.getEmail().equals(nocalhostSettings.getUserInfo().getEmail())
+                                                                                && repos.getAppName().equals(node.devSpace().getContext().getApplicationName())
+                                                                                && repos.getDeploymentName().equals(devModeService.getServiceName())).findFirst();
+
+        if (nocalhostRepo.isPresent()) {
+            ProgressManager.getInstance().run(new StartingDevModeTask(project, node.devSpace(), devModeService));
+            return;
+        }
+
         final GitCommand gitCommand = ServiceManager.getService(GitCommand.class);
 
         try {
@@ -141,12 +154,10 @@ public class StartDevelopAction extends AnAction {
                 .noText("Open local directly")
                 .guessWindowAndAsk();
 
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-
         switch (exitCode) {
             case Messages.YES: {
                 if (!StringUtils.isNotEmpty(gitUrl)) {
-                    Messages.showMessageDialog("Git url not found", "Clone repo", null);
+                    Messages.showMessageDialog("Git url not found", "Clone Repo", null);
                     return;
                 }
 

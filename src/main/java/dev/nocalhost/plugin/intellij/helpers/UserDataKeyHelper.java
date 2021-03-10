@@ -39,7 +39,7 @@ public class UserDataKeyHelper {
         if (CollectionUtils.isEmpty(aliveDeployments)) {
             return null;
         }
-        Optional<AliveDeployment> aliveDeploymentOptional = aliveDeployments.stream().filter(d -> d.getProjectPath().equals(project.getProjectFilePath())).findAny();
+        Optional<AliveDeployment> aliveDeploymentOptional = aliveDeployments.stream().filter(d -> d.getProjectPath().equals(project.getBasePath())).findAny();
         if (aliveDeploymentOptional.isEmpty()) {
             return null;
         }

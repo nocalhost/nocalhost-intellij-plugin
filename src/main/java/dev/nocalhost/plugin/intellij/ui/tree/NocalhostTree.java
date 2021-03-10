@@ -47,6 +47,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
+import dev.nocalhost.plugin.intellij.settings.NocalhostRepo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceTreeAutoRefreshNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
@@ -389,15 +390,21 @@ public class NocalhostTree extends Tree {
         nhctlDescribeOptions.setKubeconfig(kubeconfigPath);
         NhctlDescribeAllService nhctlDescribeAllService = nhctlCommand.describe(devSpace.getContext().getApplicationName(), nhctlDescribeOptions, NhctlDescribeAllService.class);
         final NhctlDescribeService[] nhctlDescribeServices = nhctlDescribeAllService.getSvcProfile();
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
         for (KubeResource kubeResource : kubeResourceList.getItems()) {
 
             final Optional<NhctlDescribeService> nhctlDescribeService = Arrays.stream(nhctlDescribeServices).filter(svc -> svc.getRawConfig().getName().equals(kubeResource.getMetadata().getName())).findFirst();
             if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "Deployment") && nhctlDescribeService.isPresent()) {
                 NhctlDescribeService nhctlDescribe = nhctlDescribeService.get();
+                final Optional<NocalhostRepo> nocalhostRepo = nocalhostSettings.getRepos().stream()
+                                                                               .filter(repos -> repos.getHost().equals(nocalhostSettings.getBaseUrl())
+                                                                                && repos.getEmail().equals(nocalhostSettings.getUserInfo().getEmail())
+                                                                                && repos.getAppName().equals(devSpace.getContext().getApplicationName())
+                                                                                && repos.getDeploymentName().equals(nhctlDescribe.getRawConfig().getName())).findFirst();
                 if (nhctlDescribe.isDeveloping()) {
-                    UserDataKeyHelper.addAliveDeployments(project, new AliveDeployment(devSpace, nhctlDescribe.getRawConfig().getName(), project.getProjectFilePath()));
+                    nocalhostRepo.ifPresent(repos -> UserDataKeyHelper.addAliveDeployments(project, new AliveDeployment(devSpace, nhctlDescribe.getRawConfig().getName(), repos.getRepoPath())));
                 } else {
-                    UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, nhctlDescribe.getRawConfig().getName(), project.getProjectFilePath()));
+                    nocalhostRepo.ifPresent(repos -> UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, nhctlDescribe.getRawConfig().getName(), repos.getRepoPath())));
                 }
                 resourceNodes.add(new ResourceNode(kubeResource, nhctlDescribe));
             } else if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "StatefulSet")) {
