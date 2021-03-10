@@ -17,12 +17,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlResetAppOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -53,12 +53,11 @@ public class ResetAppAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
-                NhctlUninstallOptions opts = new NhctlUninstallOptions();
-                opts.setForce(true);
+                NhctlResetAppOptions opts = new NhctlResetAppOptions();
                 opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                 try {
                     try {
-                        outputCapturedNhctlCommand.uninstall(appName, opts);
+                        outputCapturedNhctlCommand.resetApp(appName, opts);
                     } catch (Exception ignored) {
                     }
 
