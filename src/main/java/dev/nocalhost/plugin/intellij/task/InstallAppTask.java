@@ -1,5 +1,8 @@
 package dev.nocalhost.plugin.intellij.task;
 
+import com.google.common.collect.Lists;
+
+import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
@@ -9,6 +12,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,11 +44,24 @@ import lombok.SneakyThrows;
 public class InstallAppTask extends Task.Backgroundable {
     private static final Logger LOG = Logger.getInstance(InstallAppTask.class);
 
+    private static final List<String> BOOKINFO_URLS = Lists.newArrayList(
+            "https://github.com/nocalhost/bookinfo.git",
+            "git@github.com:nocalhost/bookinfo.git",
+            "https://e.coding.net/codingcorp/nocalhost/bookinfo.git",
+            "git@e.coding.net:codingcorp/nocalhost/bookinfo.git"
+    );
+
+    private static final List<String> BOOKINFO_APP_NAME = Lists.newArrayList(
+            "bookinfo"
+    );
+
+
     private final Project project;
     private final DevSpace devSpace;
     private NhctlInstallOptions opts;
 
     private NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    String productPagePort;
 
     public InstallAppTask(@Nullable Project project, DevSpace devSpace, NhctlInstallOptions opts) {
         super(project, "Installing application: " + devSpace.getContext().getApplicationName(), false);
@@ -57,12 +74,19 @@ public class InstallAppTask extends Task.Backgroundable {
     @Override
     public void onSuccess() {
         portForward();
+        bookinfo();
         final Application application = ApplicationManager.getApplication();
         DevSpaceListUpdatedNotifier publisher = application.getMessageBus()
                                                            .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
         publisher.action();
 
         NocalhostNotifier.getInstance(project).notifySuccess("Application " + devSpace.getContext().getApplicationName() + " installed", "");
+    }
+
+    private void bookinfo() {
+        if (BOOKINFO_APP_NAME.contains(devSpace.getContext().getApplicationName()) && BOOKINFO_URLS.contains(devSpace.getContext().getApplicationUrl()) && StringUtils.isNotBlank(productPagePort)) {
+            BrowserUtil.browse("http://127.0.0.1:" + productPagePort + "/productpage");
+        }
     }
 
     private void portForward() {
@@ -140,6 +164,11 @@ public class InstallAppTask extends Task.Backgroundable {
                             }
                         }
                     }
+
+                    if (BOOKINFO_APP_NAME.contains(devSpace.getContext().getApplicationName()) && BOOKINFO_URLS.contains(devSpace.getContext().getApplicationUrl()) && nhctlDescribeService.getRawConfig().getName().equals("productpage")) {
+                        productPagePort = portForward.get(0).split(":")[0];
+                    }
+
                     try {
                         outputCapturedNhctlCommand.startPortForward(devSpace.getContext().getApplicationName(), nhctlPortForwardStartOptions);
                     } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
