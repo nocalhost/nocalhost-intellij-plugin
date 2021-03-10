@@ -22,20 +22,26 @@ import com.intellij.util.ui.UIUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
@@ -55,6 +61,8 @@ import lombok.SneakyThrows;
 
 public class PortForwardConfigurationDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(PortForwardConfigurationDialog.class);
+
+    private static final Pattern PORT_TEXT_REGEX = Pattern.compile("^\\d+:\\d+(,\\d+:\\d+)*$");
 
     private final ResourceNode node;
     private final Project project;
@@ -135,7 +143,26 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         startTextField = new JBTextField();
         startTextField.getEmptyText().appendText("single: 1234:1234, multiple: 1234:1234,5678:5678");
         startTextField.setMinimumSize(new Dimension(400, -1));
-        startTextField.addCaretListener(e -> startButton.setEnabled(StringUtils.isNotEmpty(startTextField.getText())));
+        startTextField.addCaretListener(e -> {
+            boolean enabled = false;
+            String text = startTextField.getText();
+            final Matcher matcher = PORT_TEXT_REGEX.matcher(text);
+            enabled = matcher.matches();
+            if (enabled) {
+                Set<String> portForwardsToBeStarted = Arrays.stream(startTextField.getText().split(",")).map(String::trim).collect(Collectors.toSet());
+                for (String next : portForwardsToBeStarted) {
+                    final String[] split = next.split(":");
+                    int split1 = NumberUtils.toInt(split[0]);
+                    int split2 = NumberUtils.toInt(split[1]);
+                    if (split1 <= 0 || split1 >= 65535 || split2 <= 0 || split2 >= 65535) {
+                        enabled = false;
+                        break;
+                    }
+                }
+            }
+
+            startButton.setEnabled(enabled);
+        });
         GridConstraints textFieldConstraints = new GridConstraints();
         textFieldConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_WANT_GROW | GridConstraints.SIZEPOLICY_CAN_GROW);
         textFieldConstraints.setVSizePolicy(GridConstraints.SIZEPOLICY_CAN_SHRINK);
