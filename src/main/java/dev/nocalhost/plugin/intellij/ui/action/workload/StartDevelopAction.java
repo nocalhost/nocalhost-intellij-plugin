@@ -70,6 +70,9 @@ public class StartDevelopAction extends AnAction {
     }
 
     private String findGitUrl(List<ServiceContainer> containers, String containerName) {
+        if (containers.size() == 1 && StringUtils.isBlank(containerName)) {
+            return containers.get(0).getDev().getGitUrl();
+        }
         for (ServiceContainer container : containers) {
             if (StringUtils.equals(container.getName(), containerName)) {
                 return container.getDev().getGitUrl();
