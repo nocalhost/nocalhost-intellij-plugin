@@ -48,6 +48,9 @@ public class HelmValuesChooseDialog extends DialogWrapper {
         specifyValuesYamlTextField.setEnabled(false);
         specifyValuesTextArea.setEnabled(false);
 
+        specifyValuesTextArea.setLineWrap(true);
+        specifyValuesTextArea.setWrapStyleWord(true);
+
         specifyValuesYamlTextField.addBrowseFolderListener("Select the value file path", "", project, FileChooseUtil.singleFileChooserDescriptor());
 
         specifyValuesTextArea.getEmptyText().appendText("eg: key1=val1,key2=val2");
