@@ -57,7 +57,7 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         userInfo = null;
     }
 
-    public void addRepos(NocalhostRepo repos) {
+    public void addRepos(NocalhostRepo nocalhostRepo) {
         Set<NocalhostRepo> nocalhostRepoSet;
         if (StringUtils.isBlank(nocalhostRepos)) {
             nocalhostRepoSet = Sets.newHashSet();
@@ -66,7 +66,7 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
             }.getType();
             nocalhostRepoSet = DataUtils.GSON.fromJson(nocalhostRepos, setType);
         }
-        nocalhostRepoSet.add(repos);
+        nocalhostRepoSet.add(nocalhostRepo);
         nocalhostRepos = DataUtils.GSON.toJson(nocalhostRepoSet);
     }
 
@@ -74,7 +74,21 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         if (StringUtils.isBlank(nocalhostRepos)) {
             return Sets.newHashSet();
         }
-        Type setType = new TypeToken<HashSet<NocalhostRepo>>(){}.getType();
+        Type setType = new TypeToken<HashSet<NocalhostRepo>>(){
+        }.getType();
         return DataUtils.GSON.fromJson(nocalhostRepos, setType);
+    }
+
+    public void removeRepos(NocalhostRepo nocalhostRepo) {
+        Set<NocalhostRepo> nocalhostRepoSet;
+        if (StringUtils.isBlank(nocalhostRepos)) {
+            nocalhostRepoSet = Sets.newHashSet();
+        } else {
+            Type setType = new TypeToken<HashSet<NocalhostRepo>>() {
+            }.getType();
+            nocalhostRepoSet = DataUtils.GSON.fromJson(nocalhostRepos, setType);
+        }
+        nocalhostRepoSet.remove(nocalhostRepo);
+        nocalhostRepos = DataUtils.GSON.toJson(nocalhostRepoSet);
     }
 }
