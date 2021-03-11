@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +21,7 @@ public class KubeResource {
     public static class Metadata {
         private String name;
         private Map<String, String> labels;
+        private String deletionTimestamp;
     }
 
     @Getter
@@ -47,6 +50,7 @@ public class KubeResource {
         // statefulset
         private int readyReplicas;
         private int replicas;
+        private String phase;
 
         public List<Condition> getConditions() {
             return conditions;
@@ -62,5 +66,10 @@ public class KubeResource {
             private String status;
             private String type;
         }
+    }
+
+    public boolean canSelector() {
+        return getStatus() != null && getMetadata() != null
+                && StringUtils.equalsIgnoreCase(getStatus().getPhase(), "running") && StringUtils.isBlank(getMetadata().getDeletionTimestamp());
     }
 }

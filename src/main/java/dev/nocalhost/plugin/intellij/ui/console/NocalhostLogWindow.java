@@ -12,6 +12,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
+
+import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
@@ -76,8 +78,15 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                     return;
                 }
                 if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
-                    List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
-                    podName = selectContainer(containers);
+                    final List<KubeResource> running = pods
+                            .getItems()
+                            .stream()
+                            .filter(KubeResource::canSelector)
+                            .collect(Collectors.toList());
+                    if (running.size() > 0) {
+                        List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
+                        podName = selectContainer(containers);
+                    }
                     if (StringUtils.isBlank(podName)) {
                         return;
                     }

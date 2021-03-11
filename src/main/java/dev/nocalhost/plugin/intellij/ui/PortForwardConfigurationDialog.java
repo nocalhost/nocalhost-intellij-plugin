@@ -46,6 +46,7 @@ import javax.swing.event.CaretListener;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
@@ -183,8 +184,15 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "List Resource error while starting port forward", e.getMessage());
             }
             if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
-                List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
-                container = selectContainer(containers);
+                final List<KubeResource> running = pods
+                        .getItems()
+                        .stream()
+                        .filter(KubeResource::canSelector)
+                        .collect(Collectors.toList());
+                if (running.size() > 0) {
+                    List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
+                    container = selectContainer(containers);
+                }
             }
             if (StringUtils.isBlank(container)) {
 //                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Resource not found while starting port forward");

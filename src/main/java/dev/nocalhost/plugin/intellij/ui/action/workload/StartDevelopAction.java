@@ -103,14 +103,20 @@ public class StartDevelopAction extends AnAction {
             KubeResource deployment = kubectlCommand.getResource("deployment", node.resourceName(), node.devSpace());
             KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getSpec().getSelector().getMatchLabels(), node.devSpace());
             if (pods.getItems().get(0).getSpec().getContainers().size() > 1) {
-                startDevelopContainerName = selectContainer(pods
+                final List<KubeResource> running = pods
                         .getItems()
-                        .get(0)
-                        .getSpec()
-                        .getContainers()
                         .stream()
-                        .map(KubeResource.Spec.Container::getName)
-                        .collect(Collectors.toList()));
+                        .filter(KubeResource::canSelector)
+                        .collect(Collectors.toList());
+                if (running.size() > 0) {
+                    startDevelopContainerName = selectContainer(running
+                            .get(0)
+                            .getSpec()
+                            .getContainers()
+                            .stream()
+                            .map(KubeResource.Spec.Container::getName)
+                            .collect(Collectors.toList()));
+                }
                 if (!StringUtils.isNotEmpty(startDevelopContainerName)) {
                     return;
                 }

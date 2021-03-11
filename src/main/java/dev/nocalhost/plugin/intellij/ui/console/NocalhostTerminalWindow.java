@@ -91,8 +91,17 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                 final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
                 final KubeResourceList pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), node.devSpace());
 
-                List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
-                final String podName = selectContainer(containers);
+                String podName = null;
+                final List<KubeResource> running = pods
+                        .getItems()
+                        .stream()
+                        .filter(KubeResource::canSelector)
+                        .collect(Collectors.toList());
+                if (running.size() > 0) {
+                    List<String> containers = running
+                            .stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
+                    podName = selectContainer(containers);
+                }
                 if (StringUtils.isBlank(podName)) {
                     return;
                 }
