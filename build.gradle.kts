@@ -54,6 +54,7 @@ intellij {
 tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
     changeNotes(
         """
+      Fix: Get unnamed container error. <br />
       Port forwarding after installing devspace. <br />
       Support port forwarding on privileged ports. <br />
       Support statefulset port forwarding. <br />
