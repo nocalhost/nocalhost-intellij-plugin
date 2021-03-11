@@ -136,7 +136,17 @@ public class StartDevelopAction extends AnAction {
                                                                                 && repos.getDeploymentName().equals(devModeService.getServiceName())).findFirst();
 
         if (nocalhostRepo.isPresent()) {
-            ProgressManager.getInstance().run(new StartingDevModeTask(project, node.devSpace(), devModeService));
+            final NocalhostRepo repo = nocalhostRepo.get();
+            if (repo.getRepoPath().equals(project.getBasePath())) {
+                ProgressManager.getInstance().run(new StartingDevModeTask(project, node.devSpace(), devModeService));
+            } else {
+                nocalhostSettings.getDevModeProjectBasePath2Service().put(
+                        repo.getRepoPath(),
+                        devModeService
+                );
+
+                ProjectManagerEx.getInstanceEx().openProject(Path.of(repo.getRepoPath()), new OpenProjectTask());
+            }
             return;
         }
 
