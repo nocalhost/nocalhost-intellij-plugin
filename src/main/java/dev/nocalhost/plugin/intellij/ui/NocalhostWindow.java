@@ -77,6 +77,9 @@ public class NocalhostWindow {
             final Optional<String> versionLine = Arrays.stream(infos).filter(s -> s.trim().startsWith("Version")).findFirst();
             if (versionLine.isPresent()) {
                 final String[] versionLines = versionLine.get().split("v");
+                if (versionLines.length != 2) {
+                    return;
+                }
                 version = versionLines[1];
             }
             if (StringUtils.isBlank(version)) {
