@@ -127,6 +127,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
             nhctlDevStartOptions.setKubeconfig(kubeconfigPath);
             nhctlDevStartOptions.setContainer(devModeService.getContainerName());
+            nhctlDevStartOptions.setStorageClass(devSpace.getStorageClass());
             final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
             outputCapturedNhctlCommand.devStart(appName, nhctlDevStartOptions);
 
