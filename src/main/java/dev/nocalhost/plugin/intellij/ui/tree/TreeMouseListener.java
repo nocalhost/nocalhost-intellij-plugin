@@ -49,7 +49,7 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.StartDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.TerminalAction;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
-import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
+import dev.nocalhost.plugin.intellij.ui.vfs.KubeConfigFile;
 import lombok.SneakyThrows;
 
 import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Deployment;
@@ -100,7 +100,7 @@ public class TreeMouseListener extends MouseAdapter {
                                 resourceNode.getKubeResource().getKind(),
                                 resourceNode.getKubeResource().getMetadata().getName(),
                                 resourceNode.devSpace());
-                        virtualFile = new ReadOnlyVirtualFile(resourceNode.resourceName() + ".yaml", "", content);
+                        virtualFile = new KubeConfigFile(resourceNode.resourceName() + ".yaml", resourceNode.resourceName() + ".yaml", resourceNode.resourceName(), content, project, resourceNode.devSpace());
                     }
                 });
                 return;

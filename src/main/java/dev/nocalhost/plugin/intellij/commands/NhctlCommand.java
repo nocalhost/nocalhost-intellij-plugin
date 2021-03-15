@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
@@ -342,6 +343,14 @@ public class NhctlCommand {
             args.add("--app-config");
         }
         execute(args, opts);
+    }
+
+    public String apply(String name, NhctlApplyOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "apply", name);
+        if (StringUtils.isNotEmpty(opts.getFile())) {
+            args.add(opts.getFile());
+        }
+        return execute(args, opts);
     }
 
     @Deprecated
