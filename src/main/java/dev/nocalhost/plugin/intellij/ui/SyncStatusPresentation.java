@@ -47,7 +47,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     private NhctlSyncStatus getNhctlSyncStatus() {
         if (project == null) {
             return null;
-        };
+        }
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         NhctlSyncStatusOptions options = new NhctlSyncStatusOptions();
 
@@ -179,6 +179,8 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             case "idle":
                 return AllIcons.Actions.Checked;
             case "end":
+                break;
+            default:
                 break;
         }
         return null;

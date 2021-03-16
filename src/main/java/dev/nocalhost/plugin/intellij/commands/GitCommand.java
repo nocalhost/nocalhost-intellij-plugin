@@ -44,7 +44,7 @@ public class GitCommand {
 
     private static class CloneOutputResultListener implements GitLineHandlerListener {
 
-        NocalhostOutputAppendNotifier publisher;
+        private NocalhostOutputAppendNotifier publisher;
 
         public CloneOutputResultListener(NocalhostOutputAppendNotifier publisher) {
             this.publisher = publisher;

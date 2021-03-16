@@ -133,7 +133,9 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void uninstall(String name, NhctlUninstallOptions opts) throws InterruptedException, IOException, NocalhostExecuteCmdException {
+    public void uninstall(
+            String name, NhctlUninstallOptions opts
+    ) throws InterruptedException, IOException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "uninstall", name);
         if (opts.isForce()) {
             args.add("--force");
@@ -142,12 +144,16 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void resetApp(String name, NhctlResetAppOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+    public void resetApp(
+            String name, NhctlResetAppOptions opts
+    ) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "reset", name);
         execute(args, opts);
     }
 
-    public String devStart(String name, NhctlDevStartOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    public String devStart(
+            String name, NhctlDevStartOptions opts
+    ) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "start", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");

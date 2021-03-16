@@ -35,13 +35,6 @@ public class NocalhostErrorWindow extends NocalhostConsoleWindow {
                 content + "\n" + eMessage,
                 ConsoleViewContentType.LOG_ERROR_OUTPUT);
 
-//        AnAction[] consoleActions = consoleView.createConsoleActions();
-//        AnAction[] consoleViewActions = ArrayUtils.subarray(consoleActions, 2, consoleActions.length);
-//        DefaultActionGroup actionGroup = new DefaultActionGroup(consoleViewActions);
-//
-//        ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("Nocalhost.Output.Window.Toolbar", actionGroup, false);
-//        panel.setToolbar(actionToolbar.getComponent());
-
         panel.add(consoleView.getComponent());
     }
 

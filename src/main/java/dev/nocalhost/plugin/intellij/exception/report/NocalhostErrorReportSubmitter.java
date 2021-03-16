@@ -23,8 +23,6 @@ import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Properties;
 
 import dev.nocalhost.plugin.intellij.Version;
@@ -32,8 +30,6 @@ import io.sentry.SentryClient;
 import io.sentry.SentryClientFactory;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
-import io.sentry.event.interfaces.ExceptionInterface;
-import io.sentry.event.interfaces.SentryException;
 
 public class NocalhostErrorReportSubmitter extends ErrorReportSubmitter {
 
@@ -70,7 +66,7 @@ public class NocalhostErrorReportSubmitter extends ErrorReportSubmitter {
                     consumer.consume(new SubmittedReportInfo(SubmittedReportInfo.SubmissionStatus.NEW_ISSUE));
                 });
             }
-        });;
+        });
         return true;
     }
 

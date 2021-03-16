@@ -105,7 +105,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                 if (StringUtils.isBlank(podName)) {
                     return;
                 }
-                final String containerName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");;
+                final String containerName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");
 
                 args = Lists.newArrayList(
                         "kubectl",

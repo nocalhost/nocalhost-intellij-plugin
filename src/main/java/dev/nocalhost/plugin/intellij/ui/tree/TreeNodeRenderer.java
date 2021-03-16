@@ -39,8 +39,8 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             return;
         }
 
-        if (value instanceof dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode) {
-            dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode node = (AccountNode) value;
+        if (value instanceof AccountNode) {
+            AccountNode node = (AccountNode) value;
             append("Hi, " + node.getUserInfo().getName());
             setIcon(AllIcons.General.User);
         }

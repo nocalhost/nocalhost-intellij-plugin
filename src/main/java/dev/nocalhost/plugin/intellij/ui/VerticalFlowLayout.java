@@ -171,6 +171,8 @@ public class VerticalFlowLayout implements LayoutManager {
             case BOTTOM:
                 y += height;
                 break;
+            default:
+                break;
         }
         for (int i = colStart; i < colEnd; i++) {
             Component m = target.getComponent(i);
@@ -194,6 +196,8 @@ public class VerticalFlowLayout implements LayoutManager {
                 break;
             case BOTTOM:
                 str = ",align=bottom";
+                break;
+            default:
                 break;
         }
         return getClass().getName() + "[hgap=" + hgap + ",vgap=" + vgap + ",hfill=" + hfill + str + "]";

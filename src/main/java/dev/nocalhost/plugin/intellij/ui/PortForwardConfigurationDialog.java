@@ -29,7 +29,6 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,8 +39,6 @@ import java.util.stream.Collectors;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
-import javax.swing.event.CaretEvent;
-import javax.swing.event.CaretListener;
 
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;

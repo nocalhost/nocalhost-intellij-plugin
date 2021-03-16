@@ -102,12 +102,14 @@ public class LoginDialog extends DialogWrapper {
         try {
             nocalhostApi.login(getHost(), getEmail(), getPassword());
             super.doOKAction();
-        } catch (Exception e) {
-            if (e instanceof NocalhostApiException && ((NocalhostApiException) e).getCode() == 200) {
-                setErrorText(((NocalhostApiException) e).getMsg());
-            } else {
-                setErrorText(e.getMessage());
+        } catch (NocalhostApiException e) {
+            if (e.getCode() == 200) {
+                setErrorText(e.getMsg());
+                return;
             }
+            setErrorText(e.getMessage());
+        } catch (Exception e) {
+            setErrorText(e.getMessage());
         }
     }
 
