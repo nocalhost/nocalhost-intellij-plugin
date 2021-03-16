@@ -3,6 +3,9 @@
 [![build](https://github.com/nocalhost/nocalhost-intellij-plugin/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/nocalhost/nocalhost-intellij-plugin/actions/workflows/build.yml)
 [![LICENSE](https://img.shields.io/github/license/nocalhost/nocalhost-intellij-plugin)](https://github.com/nocalhost/nocalhost-intellij-plugin/blob/main/LICENSE)
 
+[![JetBrains Plugins](https://img.shields.io/jetbrains/plugin/v/16058)](https://plugins.jetbrains.com/plugin/16058-nocalhost)
+[![JetBrains plugins Version](https://img.shields.io/jetbrains/plugin/d/16058)](https://plugins.jetbrains.com/plugin/16058-nocalhost/versions/)
+[![JetBrains Plugins Ratting](https://img.shields.io/jetbrains/plugin/r/rating/16058)](https://plugins.jetbrains.com/plugin/16058-nocalhost/reviews)
 
 ## Plugin for IntelliJ IDEA to support nocalhost
 
