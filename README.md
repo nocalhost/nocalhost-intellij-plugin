@@ -1,5 +1,6 @@
 # nocalhost-intellij-plugin
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bcd352ac92154785aaff8e253b064a6b)](https://app.codacy.com/gh/nocalhost/nocalhost-intellij-plugin?utm_source=github.com&utm_medium=referral&utm_content=nocalhost/nocalhost-intellij-plugin&utm_campaign=Badge_Grade_Settings)
 [![build](https://github.com/nocalhost/nocalhost-intellij-plugin/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/nocalhost/nocalhost-intellij-plugin/actions/workflows/build.yml)
 [![LICENSE](https://img.shields.io/github/license/nocalhost/nocalhost-intellij-plugin)](https://github.com/nocalhost/nocalhost-intellij-plugin/blob/main/LICENSE)
 
