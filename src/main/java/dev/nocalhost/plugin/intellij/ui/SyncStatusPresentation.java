@@ -62,7 +62,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         options.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
         String status = null;
         try {
-            status = nhctlCommand.syncStatus(devSpace.getContext().getApplicationName(), options);
+            status = nhctlCommand.syncStatus(aliveDeployment.getApplication().getContext().getApplicationName(), options);
         } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
             LOG.error("error occurred while get sync status ", e);
         }
@@ -135,7 +135,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                     options.setDeployment(deployment);
                     options.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                     try {
-                        nhctlCommand.syncStatusOverride(devSpace.getContext().getApplicationName(), options);
+                        nhctlCommand.syncStatusOverride(aliveDeployment.getApplication().getContext().getApplicationName(), options);
                     } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
                         LOG.error("error occurred while sync status override ", e);
                     }

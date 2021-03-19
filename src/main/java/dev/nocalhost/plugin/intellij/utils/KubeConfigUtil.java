@@ -16,7 +16,7 @@ public class KubeConfigUtil {
             ".nh/intellij-plugin/kubeConfigs");
 
     public static Path kubeConfigPath(DevSpace devSpace) {
-        Path path = KUBE_CONFIGS_DIR.resolve(devSpace.getId() + "_" + devSpace.getDevSpaceId() + "_config");
+        Path path = KUBE_CONFIGS_DIR.resolve(devSpace.getId() + "_" + devSpace.getNamespace() + "_config");
         try {
             if (!Files.exists(path)) {
                 Files.createDirectories(path.getParent());

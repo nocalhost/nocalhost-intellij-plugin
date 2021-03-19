@@ -2,6 +2,7 @@ package dev.nocalhost.plugin.intellij.commands.data;
 
 import java.util.Objects;
 
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,6 +13,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class AliveDeployment {
     private DevSpace devSpace;
+    private Application application;
     private String deployment;
     private String projectPath;
 
@@ -21,11 +23,14 @@ public class AliveDeployment {
         AliveDeployment that = (AliveDeployment) o;
         if (this.devSpace == null) return false;
         if (that.devSpace == null) return false;
-        return Objects.equals(devSpace.getContext().getApplicationName(), that.devSpace.getContext().getApplicationName()) && Objects.equals(deployment, that.deployment) && Objects.equals(projectPath, that.projectPath);
+        return Objects.equals(devSpace.getId(), that.devSpace.getId())
+                && Objects.equals(application.getContext().getApplicationName(), that.application.getContext().getApplicationName())
+                && Objects.equals(deployment, that.deployment)
+                && Objects.equals(projectPath, that.projectPath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(devSpace.getContext().getApplicationName(), deployment, projectPath);
+        return Objects.hash(application.getContext().getApplicationName(), deployment, projectPath);
     }
 }

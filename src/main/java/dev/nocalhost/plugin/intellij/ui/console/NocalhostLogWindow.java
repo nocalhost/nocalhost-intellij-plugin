@@ -6,33 +6,39 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.Presentation;
+import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 
-import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
-import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.swing.*;
+
+import dev.nocalhost.plugin.intellij.api.data.DevSpace;
+import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class NocalhostLogWindow extends NocalhostConsoleWindow {
     private static final Logger LOG = Logger.getInstance(NocalhostLogWindow.class);
@@ -61,7 +67,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
         kubectlCommand = ServiceManager.getService(KubectlCommand.class);
         final String workloadName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");
-        devSpace = ((DevSpaceNode) node.getParent().getParent().getParent()).getDevSpace();
+        devSpace = node.devSpace();
         stop = false;
         pause = false;
         toolWindow.show();

@@ -11,8 +11,6 @@ import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.EnvironmentUtil;
 
 import org.apache.commons.lang3.StringUtils;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,12 +27,12 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlPluginOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlResetAppOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
@@ -42,17 +40,34 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 
 
 public class NhctlCommand {
     private static final String NHCTL_COMMAND = "nhctl";
-    private final Yaml yaml;
 
-    public NhctlCommand() {
-        Representer representer = new Representer();
-        representer.getPropertyUtils().setSkipMissingProperties(true);
-        this.yaml = new Yaml(representer);
+    public List<NhctlListApplication> listApplication() throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "list", "--yaml");
+        String result = execute(args, null);
+        List<Map> mapItems = DataUtils.YAML.load(result);
+        List<NhctlListApplication> nhctlListApplications = Lists.newArrayList();
+        for (Map map : mapItems) {
+            NhctlListApplication nhctlListApplication = new NhctlListApplication();
+
+            nhctlListApplication.setNamespace((String) map.get("namespace"));
+            List<Map> appMaps = (List<Map>) map.get("application");
+            List<NhctlListApplication.Application> applications = Lists.newArrayList();
+            for (Map appMap : appMaps) {
+                NhctlListApplication.Application application = new NhctlListApplication.Application();
+                application.setName((String) appMap.get("name"));
+                application.setType((String) appMap.get("type"));
+                applications.add(application);
+            }
+            nhctlListApplication.setApplication(applications.toArray(new NhctlListApplication.Application[0]));
+            nhctlListApplications.add(nhctlListApplication);
+        }
+        return nhctlListApplications;
     }
 
     public void install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
@@ -144,10 +159,9 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void resetApp(
-            String name, NhctlResetAppOptions opts
+    public void resetDevSpace(NhctlResetDevSpaceOptions opts
     ) throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "reset", name);
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "reset");
         execute(args, opts);
     }
 
@@ -302,7 +316,7 @@ public class NhctlCommand {
 
     public <T> T describe(String name, NhctlDescribeOptions opts, Class<T> type) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         String result = describe(name, opts);
-        return yaml.loadAs(result, type);
+        return DataUtils.YAML.loadAs(result, type);
     }
 
     public void reset(String name, NhctlResetOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
@@ -359,17 +373,6 @@ public class NhctlCommand {
         return execute(args, opts);
     }
 
-    @Deprecated
-    public <T> T getPluginInfo(String name, NhctlPluginOptions opts, Class<T> type) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "plugin", "get", name);
-        if (StringUtils.isNotEmpty(opts.getDeployment())) {
-            args.add("--deployment");
-            args.add(opts.getDeployment());
-        }
-        String result = execute(args, opts);
-        return yaml.loadAs(result, type);
-    }
-
     public List<NhctlPVCItem> listPVC(NhctlListPVCOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "pvc", "list");
         if (StringUtils.isNotEmpty(opts.getApp())) {
@@ -383,7 +386,7 @@ public class NhctlCommand {
         args.add("--yaml");
         String output = execute(args, opts);
 
-        List<Map> mapItems = yaml.load(output);
+        List<Map> mapItems = DataUtils.YAML.load(output);
         List<NhctlPVCItem> nhctlPVCItems = Lists.newArrayList();
         for (Map map : mapItems) {
             NhctlPVCItem nhctlPVCItem = new NhctlPVCItem();

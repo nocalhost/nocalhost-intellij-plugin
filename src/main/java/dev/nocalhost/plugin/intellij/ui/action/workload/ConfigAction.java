@@ -61,7 +61,7 @@ public class ConfigAction extends AnAction {
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions();
                 nhctlConfigOptions.setDeployment(node.resourceName());
                 nhctlConfigOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
-                config = nhctlCommand.getConfig(node.devSpace().getContext().getApplicationName(), nhctlConfigOptions);
+                config = nhctlCommand.getConfig(node.application().getContext().getApplicationName(), nhctlConfigOptions);
             }
         });
     }

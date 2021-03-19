@@ -129,7 +129,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                        node.devSpace().getContext().getApplicationName(),
+                        node.application().getContext().getApplicationName(),
                         opts,
                         NhctlDescribeService.class);
                 devPortForwardList = nhctlDescribeService.getDevPortForwardList();
@@ -250,7 +250,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                         nhctlDescribeOptions.setKubeconfig(
                                 KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
                         NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                                node.devSpace().getContext().getApplicationName(),
+                                node.application().getContext().getApplicationName(),
                                 nhctlDescribeOptions,
                                 NhctlDescribeService.class);
                         List<String> existedPortForwards = nhctlDescribeService
@@ -273,7 +273,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
                             nhctlPortForwardStartOptions.setPod(finalContainer);
 
-                            outputCapturedNhctlCommand.startPortForward(node.devSpace().getContext().getApplicationName(), nhctlPortForwardStartOptions, sudoPassword.get());
+                            outputCapturedNhctlCommand.startPortForward(node.application().getContext().getApplicationName(), nhctlPortForwardStartOptions, sudoPassword.get());
                         }
                     }
                 });
@@ -396,7 +396,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                         }
                         opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
-                        outputCapturedNhctlCommand.endPortForward(node.devSpace().getContext().getApplicationName(), opts, sudoPassword.get());
+                        outputCapturedNhctlCommand.endPortForward(node.application().getContext().getApplicationName(), opts, sudoPassword.get());
                     }
                 });
             } while (SystemInfo.isLinux && again.get());

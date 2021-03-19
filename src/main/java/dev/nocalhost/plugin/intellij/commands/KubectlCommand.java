@@ -47,8 +47,8 @@ public class KubectlCommand {
         if (labels != null) {
             args.add("--selector");
             args.add(labels.entrySet().stream()
-                    .map((e) -> e.getKey() + "=" + e.getValue())
-                    .collect(Collectors.joining(","))
+                           .map((e) -> e.getKey() + "=" + e.getValue())
+                           .collect(Collectors.joining(","))
             );
         }
 
@@ -93,36 +93,6 @@ public class KubectlCommand {
         if (exitCode != 0) {
             throw new NocalhostExecuteCmdException(cmd, exitCode, CharStreams.toString(new InputStreamReader(process.getErrorStream(), Charsets.UTF_8)));
         }
-
-        return output;
-    }
-
-    public String exec(String podName, String containerName, String command, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
-
-        List<String> args = Lists.newArrayList(getKubectlCmd(), "exec", podName);
-        args.add("--container");
-        args.add(containerName);
-        args.add("--kubeconfig");
-        args.add(kubeconfigPath.toString());
-        args.add("--");
-        args.add(command);
-
-        return executeCmd(args);
-    }
-
-    public String logs(String podName, String containerName, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
-
-        List<String> args = Lists.newArrayList(getKubectlCmd(), "logs", podName);
-        args.add("--tail=200");
-        args.add("--container");
-        args.add(containerName);
-        args.add("--kubeconfig");
-        args.add(kubeconfigPath.toString());
-
-        String output = executeCmd(args);
-        System.out.println(output);
 
         return output;
     }

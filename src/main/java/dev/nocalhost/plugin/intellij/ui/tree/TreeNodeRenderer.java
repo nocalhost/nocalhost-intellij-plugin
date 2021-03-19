@@ -18,6 +18,8 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.DefaultResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -48,11 +50,22 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (value instanceof DevSpaceNode) {
             DevSpaceNode node = (DevSpaceNode) value;
             append(node.getDevSpace().getSpaceName());
+        }
+
+        if (value instanceof ApplicationNode) {
+            ApplicationNode node = (ApplicationNode) value;
+            append(node.getApplication().getContext().getApplicationName());
             if (node.isInstalled()) {
-                setIcon(NocalhostIcons.App.Connected);
-            } else {
-                setIcon(NocalhostIcons.App.Inactive);
+                if (node.isInstalled()) {
+                    setIcon(NocalhostIcons.App.Connected);
+                } else {
+                    setIcon(NocalhostIcons.App.Inactive);
+                }
             }
+        }
+
+        if (value instanceof DefaultResourceNode) {
+            append("Default Resources");
         }
 
         if (value instanceof ResourceGroupNode) {

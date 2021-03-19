@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.ui.action.devspace;
+package dev.nocalhost.plugin.intellij.ui.action.application;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -14,10 +14,11 @@ import com.intellij.openapi.vfs.VirtualFile;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
@@ -26,9 +27,9 @@ public class LoadResourceAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(LoadResourceAction.class);
 
     private final Project project;
-    private final DevSpaceNode node;
+    private final ApplicationNode node;
 
-    public LoadResourceAction(Project project, DevSpaceNode node) {
+    public LoadResourceAction(Project project, ApplicationNode node) {
         super("Load Resource");
         this.project = project;
         this.node = node;
@@ -37,6 +38,7 @@ public class LoadResourceAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         final DevSpace devSpace = node.getDevSpace();
+        final Application application = node.getApplication();
 
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Loading kubernetes resources") {
             private VirtualFile virtualFile;
@@ -58,8 +60,8 @@ public class LoadResourceAction extends AnAction {
 
                 NhctlDescribeOptions opts = new NhctlDescribeOptions();
                 opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
-                String resource = nhctlCommand.describe(devSpace.getContext().getApplicationName(), opts);
-                String filename = devSpace.getContext().getApplicationName() + ".yaml";
+                String resource = nhctlCommand.describe(application.getContext().getApplicationName(), opts);
+                String filename = application.getContext().getApplicationName() + ".yaml";
                 virtualFile = new ReadOnlyVirtualFile(filename, filename, resource);
             }
         });

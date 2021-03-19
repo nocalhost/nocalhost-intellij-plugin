@@ -2,17 +2,14 @@ package dev.nocalhost.plugin.intellij.api;
 
 import com.google.gson.reflect.TypeToken;
 
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 
-import org.apache.groovy.util.Maps;
-
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.api.data.LoginRequest;
 import dev.nocalhost.plugin.intellij.api.data.LoginResponse;
@@ -56,7 +53,7 @@ public class NocalhostApi {
 
             refreshUserInfo();
 
-            final Application application = ApplicationManager.getApplication();
+            final com.intellij.openapi.application.Application application = ApplicationManager.getApplication();
             NocalhostAccountChangedNotifier publisher = application.getMessageBus()
                     .syncPublisher(NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC);
             publisher.action();
@@ -86,10 +83,10 @@ public class NocalhostApi {
         }
     }
 
-    public List<DevSpace> listDevSpace() throws IOException, NocalhostApiException {
+    public List<DevSpace> listDevSpaces() throws IOException, NocalhostApiException {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
-        String url = NocalhostApiUrl.devSpaces(nocalhostSettings.getBaseUrl());
+        String url = NocalhostApiUrl.devSpacesList(nocalhostSettings.getBaseUrl(), nocalhostSettings.getUserInfo().getId());
 
         Request request = new Request.Builder()
                 .url(url)
@@ -99,7 +96,7 @@ public class NocalhostApi {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new NocalhostApiException(url, "get devSpaces", response.code(), "");
+                throw new NocalhostApiException(url, "list devSpaces", response.code(), "");
             }
             String body = response.body().string();
             NocalhostApiResponse<List<DevSpace>> resp = DataUtils.GSON.fromJson(body,
@@ -108,39 +105,46 @@ public class NocalhostApi {
                             TypeToken.getParameterized(List.class, DevSpace.class).getType()
                     ).getType());
             if (resp.getCode() != 0) {
-                throw new NocalhostApiException(url, "get devSpaces", response.code(), resp.getMessage());
+                throw new NocalhostApiException(url, "list devSpaces", response.code(), resp.getMessage());
             }
             List<DevSpace> devSpaces = resp.getData();
-            return devSpaces.stream().peek(devSpace -> devSpace.setContext(DataUtils.GSON.fromJson(devSpace.getContextStr(), DevSpace.Context.class))).collect(Collectors.toList());
+            return devSpaces.stream().peek(devSpace -> devSpace.setSpaceResourceLimit(DataUtils.GSON.fromJson(devSpace.getSpaceResourceLimitStr(), DevSpace.SpaceResourceLimit.class))).collect(Collectors.toList());
         }
     }
 
-    public void syncInstallStatus(DevSpace devSpace, int status) throws IOException, NocalhostApiException {
+    public List<Application> listApplications() throws IOException, NocalhostApiException {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
-        String url = NocalhostApiUrl.updateAppStatus(nocalhostSettings.getBaseUrl(), devSpace.getId(), devSpace.getDevSpaceId());
+        String url = NocalhostApiUrl.applicationsList(nocalhostSettings.getBaseUrl(), nocalhostSettings.getUserInfo().getId());
+
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("authorization", "Bearer " + nocalhostSettings.getJwt())
-                .put(RequestBody.create(DataUtils.GSON.toJson(Maps.of("status", status)).getBytes(StandardCharsets.UTF_8), MEDIA_TYPE))
+                .get()
                 .build();
+
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new NocalhostApiException(url, "sync install status", response.code(), "");
+                throw new NocalhostApiException(url, "list applications", response.code(), "");
             }
-            NocalhostApiResponse<Object> resp = DataUtils.GSON.fromJson(response.body().charStream(),
-                    TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType());
+            String body = response.body().string();
+            NocalhostApiResponse<List<Application>> resp = DataUtils.GSON.fromJson(body,
+                    TypeToken.getParameterized(
+                            NocalhostApiResponse.class,
+                            TypeToken.getParameterized(List.class, Application.class).getType()
+                    ).getType());
             if (resp.getCode() != 0) {
-                throw new NocalhostApiException(url, "sync install status", response.code(), resp.getMessage());
-
+                throw new NocalhostApiException(url, "list applications", response.code(), resp.getMessage());
             }
+            List<Application> applications = resp.getData();
+            return applications.stream().peek(app -> app.setContext(DataUtils.GSON.fromJson(app.getContextStr(), Application.Context.class))).collect(Collectors.toList());
         }
     }
 
     public void recreate(DevSpace devSpace) throws IOException, NocalhostApiException {
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
-        String url = NocalhostApiUrl.recreateDevSpace(nocalhostSettings.getBaseUrl(), devSpace.getDevSpaceId());
+        String url = NocalhostApiUrl.recreateDevSpace(nocalhostSettings.getBaseUrl(), devSpace.getId());
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("authorization", "Bearer " + nocalhostSettings.getJwt())

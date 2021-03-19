@@ -6,15 +6,16 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
+import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 
@@ -32,11 +33,13 @@ public final class NocalhostStartupActivity implements StartupActivity {
         if (nocalhostSettings.getUserInfo() != null && devModeService != null) {
             final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
             try {
-                for (DevSpace devSpace : nocalhostApi.listDevSpace()) {
-                    if (devSpace.getId() == devModeService.getApplicationId()
-                            && devSpace.getDevSpaceId() == devModeService.getDevSpaceId()) {
-                        ProgressManager.getInstance().run(new StartingDevModeTask(project, devSpace, devModeService));
-                        break;
+                for (DevSpace devSpace : nocalhostApi.listDevSpaces()) {
+                    for (Application app : nocalhostApi.listApplications()) {
+                        if (app.getId() == devModeService.getApplicationId()
+                                && devSpace.getId() == devModeService.getDevSpaceId()) {
+                            ProgressManager.getInstance().run(new StartingDevModeTask(project, devSpace, app, devModeService));
+                            break;
+                        }
                     }
                 }
             } catch (IOException | NocalhostApiException e) {

@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.console;
 
 import com.google.common.collect.Lists;
+
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -10,7 +11,21 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.jediterm.pty.PtyProcessTtyConnector;
 import com.jediterm.terminal.TtyConnector;
 import com.pty4j.PtyProcess;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.plugins.terminal.JBTerminalSystemSettingsProvider;
+import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner;
+import org.jetbrains.plugins.terminal.ShellTerminalWidget;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
+import javax.swing.*;
+
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
@@ -18,20 +33,10 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.plugins.terminal.JBTerminalSystemSettingsProvider;
-import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner;
-import org.jetbrains.plugins.terminal.ShellTerminalWidget;
-
-import javax.swing.*;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
     private static final Logger LOG = Logger.getInstance(NocalhostTerminalWindow.class);
@@ -45,7 +50,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
 
     private String title;
 
-    public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, DevSpace devSpace, String deploymentName) {
+    public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, DevSpace devSpace, Application application, String deploymentName) {
         this.project = project;
         this.toolWindow = toolWindow;
         this.devSpace = devSpace;
@@ -56,12 +61,12 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
         List<String> args = Lists.newArrayList(
                 "nhctl",
                 "dev",
-                "terminal", devSpace.getContext().getApplicationName(),
+                "terminal", application.getContext().getApplicationName(),
                 "--deployment", deploymentName,
                 "--kubeconfig", kubeconfigPath
         );
         final String cmd = String.join(" ", args.toArray(new String[]{}));
-        title = String.format("%s-%s-%s Terminal", devSpace.getNamespace(), devSpace.getContext().getApplicationName(), deploymentName);
+        title = String.format("%s-%s-%s Terminal", devSpace.getNamespace(), application.getContext().getApplicationName(), deploymentName);
 
         toTerminal(cmd);
     }
@@ -83,7 +88,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                 args = Lists.newArrayList(
                         "nhctl",
                         "dev",
-                        "terminal", node.devSpace().getContext().getApplicationName(),
+                        "terminal", node.application().getContext().getApplicationName(),
                         "--deployment", node.resourceName(),
                         "--kubeconfig", kubeconfigPath
                 );
@@ -118,7 +123,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
 
             }
             final String cmd = String.join(" ", args.toArray(new String[]{}));
-            title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), node.devSpace().getContext().getApplicationName(), node.resourceName());
+            title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), node.application().getContext().getApplicationName(), node.resourceName());
 
             toTerminal(cmd);
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {

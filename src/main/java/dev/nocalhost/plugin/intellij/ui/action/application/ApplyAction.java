@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.ui.action.devspace;
+package dev.nocalhost.plugin.intellij.ui.action.application;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -23,7 +23,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeApplication;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
@@ -31,9 +31,9 @@ public class ApplyAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(ApplyAction.class);
 
     private final Project project;
-    private final DevSpaceNode node;
+    private final ApplicationNode node;
 
-    public ApplyAction(Project project, DevSpaceNode node) {
+    public ApplyAction(Project project, ApplicationNode node) {
         super("Apply");
         this.project = project;
         this.node = node;
@@ -46,7 +46,7 @@ public class ApplyAction extends AnAction {
         nhctlDescribeOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
         try {
             NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(
-                    node.getDevSpace().getContext().getApplicationName(),
+                    node.getApplication().getContext().getApplicationName(),
                     nhctlDescribeOptions,
                     NhctlDescribeApplication.class
             );

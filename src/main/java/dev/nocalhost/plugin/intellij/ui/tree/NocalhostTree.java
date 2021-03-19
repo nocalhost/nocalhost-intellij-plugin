@@ -13,14 +13,17 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.ui.LoadingNode;
 import com.intellij.ui.treeStructure.Tree;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
@@ -29,10 +32,12 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
@@ -42,15 +47,17 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeAllService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostRepo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceTreeAutoRefreshNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.DefaultResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -59,6 +66,35 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class NocalhostTree extends Tree {
     private static final Logger LOG = Logger.getInstance(NocalhostTree.class);
+
+    private static final List<Pair<String, List<String>>> PAIRS = Lists.newArrayList(
+            Pair.create("Workloads", Lists.newArrayList(
+                    "Deployments",
+                    "DaemonSets",
+                    "StatefulSets",
+                    "Jobs",
+                    "CronJobs",
+                    "Pods"
+            )),
+            Pair.create("Network", Lists.newArrayList(
+                    "Services",
+                    "Endpoints",
+                    "Ingresses",
+                    "Network Policies"
+            )),
+            Pair.create("Configuration", Lists.newArrayList(
+                    "ConfigMaps",
+                    "Secrets",
+                    "Resource Quotas",
+                    "HPA",
+                    "Pod Disruption Budgets"
+            )),
+            Pair.create("Storage", Lists.newArrayList(
+                    "Persistent Volumes",
+                    "Persistent Volume Claims",
+                    "Storage Classes"
+            ))
+    );
 
     private final Project project;
     private final DefaultTreeModel model;
@@ -111,6 +147,11 @@ public class NocalhostTree extends Tree {
                     devSpaceNode.setExpanded(true);
                     return;
                 }
+                if (node instanceof ApplicationNode) {
+                    ApplicationNode applicationNode = (ApplicationNode) node;
+                    applicationNode.setExpanded(true);
+                    return;
+                }
                 if (node instanceof ResourceGroupNode) {
                     ResourceGroupNode resourceGroupNode = (ResourceGroupNode) node;
                     resourceGroupNode.setExpanded(true);
@@ -149,6 +190,11 @@ public class NocalhostTree extends Tree {
                     devSpaceNode.setExpanded(false);
                     return;
                 }
+                if (node instanceof ApplicationNode) {
+                    ApplicationNode applicationNode = (ApplicationNode) node;
+                    applicationNode.setExpanded(false);
+                    return;
+                }
                 if (node instanceof ResourceGroupNode) {
                     ResourceGroupNode resourceGroupNode = (ResourceGroupNode) node;
                     resourceGroupNode.setExpanded(false);
@@ -164,21 +210,8 @@ public class NocalhostTree extends Tree {
 
         ApplicationManager.getApplication().getMessageBus().connect().subscribe(
                 DevSpaceTreeAutoRefreshNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC,
-                this::updateDevSpaceTree
+                this::updateDevSpaces
         );
-    }
-
-    private void updateDevSpaceTree(List<DevSpace> devSpaces) {
-        try {
-            updateDevSpaces(devSpaces);
-        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-            LOG.error(e);
-            if (StringUtils.contains(e.getMessage(), "No such file or directory")) {
-                NocalhostNotifier.getInstance(project).notifyNhctlNotFound();
-            } else {
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost fetch data error", "Error occurred while fetching data", e.getMessage());
-            }
-        }
     }
 
     public void updateDevSpaces() {
@@ -189,9 +222,12 @@ public class NocalhostTree extends Tree {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
                 try {
-                    List<DevSpace> devSpaces = nocalhostApi.listDevSpace();
-                    updateDevSpaces(devSpaces);
+                    List<DevSpace> devSpaces = nocalhostApi.listDevSpaces();
+                    List<NhctlListApplication> nhctlListApplications = nhctlCommand.listApplication();
+                    List<Application> applications = nocalhostApi.listApplications();
+                    updateDevSpaces(devSpaces, applications, nhctlListApplications);
                 } catch (IOException | InterruptedException | NocalhostExecuteCmdException | NocalhostApiException e) {
                     LOG.error(e);
                     if (StringUtils.contains(e.getMessage(), "No such file or directory")) {
@@ -206,7 +242,7 @@ public class NocalhostTree extends Tree {
         });
     }
 
-    private void updateDevSpaces(List<DevSpace> devSpaces) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    private void updateDevSpaces(List<DevSpace> devSpaces, List<Application> applications, List<NhctlListApplication> nhctlListApplications) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         boolean needReload = false;
 
         if (model.getChild(root, 0) instanceof LoadingNode) {
@@ -216,50 +252,43 @@ public class NocalhostTree extends Tree {
             needReload = true;
         }
 
-        // remove non-existed nodes
         for (int i = model.getChildCount(root) - 1; i >= 1; i--) {
             DevSpaceNode devSpaceNode = (DevSpaceNode) model.getChild(root, i);
-            boolean toBeRemoved = true;
-            for (DevSpace devSpace : devSpaces) {
-                if (devSpaceNode.getDevSpace().getId() == devSpace.getId()
-                        && devSpaceNode.getDevSpace().getDevSpaceId() == devSpace.getDevSpaceId()) {
-                    toBeRemoved = false;
-                    break;
-                }
-            }
+            final Optional<DevSpace> devSpaceOptional = devSpaces.stream().filter(devSpace -> devSpace.getId() == devSpaceNode.getDevSpace().getId()).findFirst();
+            boolean toBeRemoved = devSpaceOptional.isEmpty();
+
             if (toBeRemoved) {
                 model.removeNodeFromParent(devSpaceNode);
                 needReload = true;
             }
         }
 
-        // add or modify existed nodes
         for (int i = 0; i < devSpaces.size(); i++) {
             DevSpace devSpace = devSpaces.get(i);
+            final Optional<NhctlListApplication> nhctlListApplicationOptional = nhctlListApplications.stream().filter(a -> StringUtils.equals(a.getNamespace(), devSpace.getNamespace())).findFirst();
+
 
             if (model.getChildCount(root) <= i + 1) {
-                model.insertNodeInto(createDevSpaceNode(devSpace), root, model.getChildCount(root));
+                model.insertNodeInto(createDevSpaceNode(devSpace, applications, nhctlListApplicationOptional), root, model.getChildCount(root));
                 needReload = true;
                 continue;
             }
 
             DevSpaceNode devSpaceNode = (DevSpaceNode) model.getChild(root, i + 1);
 
-            if (devSpaceNode.getDevSpace().getId() != devSpace.getId()
-                    || devSpaceNode.getDevSpace().getDevSpaceId() != devSpace.getDevSpaceId()) {
-                model.insertNodeInto(createDevSpaceNode(devSpace), root, i + 1);
+            if (devSpaceNode.getDevSpace().getId() != devSpace.getId()) {
+                model.insertNodeInto(createDevSpaceNode(devSpace, applications, nhctlListApplicationOptional), root, i + 1);
                 continue;
             }
 
-            if (devSpaceNode.getDevSpace().getId() == devSpace.getId()
-                    || devSpaceNode.getDevSpace().getDevSpaceId() == devSpace.getDevSpaceId()) {
-                if (NhctlHelper.isApplicationInstalled(devSpace) == devSpaceNode.isInstalled()) {
-                    devSpaceNode.setDevSpace(devSpace);
-                } else {
+            if (devSpaceNode.getDevSpace().getId() == devSpace.getId() && nhctlListApplicationOptional.isPresent()) {
+                final List<NhctlListApplication.Application> collect = Arrays.stream(nhctlListApplicationOptional.get().getApplication()).filter(a -> !"default.application".equals(a.getName())).collect(Collectors.toList());
+                if (collect.size() + 1 != devSpaceNode.getChildCount()) {
                     model.removeNodeFromParent(devSpaceNode);
-                    model.insertNodeInto(createDevSpaceNode(devSpace), root, i + 1);
+                    model.insertNodeInto(createDevSpaceNode(devSpace, applications, nhctlListApplicationOptional), root, i + 1);
                 }
             }
+
         }
 
         if (needReload) {
@@ -275,111 +304,30 @@ public class NocalhostTree extends Tree {
         }
     }
 
-    private DevSpaceNode createDevSpaceNode(DevSpace devSpace) throws IOException, InterruptedException {
-        DevSpaceNode devSpaceNode = new DevSpaceNode(devSpace);
-
-        if (NhctlHelper.isApplicationInstalled(devSpaceNode.getDevSpace())) {
-            devSpaceNode.setInstalled(true);
-            List<Pair<String, List<String>>> pairs = Lists.newArrayList(
-                    Pair.create("Workloads", Lists.newArrayList(
-                            "Deployments",
-                            "DaemonSets",
-                            "StatefulSets",
-                            "Jobs",
-                            "CronJobs",
-                            "Pods"
-                    )),
-                    Pair.create("Network", Lists.newArrayList(
-                            "Services",
-                            "Endpoints",
-                            "Ingresses",
-                            "Network Policies"
-                    )),
-                    Pair.create("Configuration", Lists.newArrayList(
-                            "ConfigMaps",
-                            "Secrets",
-                            "Resource Quotas",
-                            "HPA",
-                            "Pod Disruption Budgets"
-                    )),
-                    Pair.create("Storage", Lists.newArrayList(
-                            "Persistent Volumes",
-                            "Persistent Volume Claims",
-                            "Storage Classes"
-                    ))
-            );
-            for (Pair<String, List<String>> pair : pairs) {
-                ResourceGroupNode resourceGroupNode = new ResourceGroupNode(pair.first);
-                for (String name : pair.second) {
-                    resourceGroupNode.add(new ResourceTypeNode(name));
-                }
-                devSpaceNode.add(resourceGroupNode);
-            }
-            ResourceGroupNode resourceGroupNode = (ResourceGroupNode) devSpaceNode.getChildAt(0);
-            resourceGroupNode.setExpanded(true);
-        }
-
-        return devSpaceNode;
-    }
-
-    private DevSpaceNode cloneSelfAndChildren(DevSpaceNode oldDevSpaceNode) {
-        DevSpaceNode newDevSpaceNode = oldDevSpaceNode.clone();
-        for (int i = 0; i < oldDevSpaceNode.getChildCount(); i++) {
-            ResourceGroupNode oldResourceGroupNode = (ResourceGroupNode) oldDevSpaceNode.getChildAt(i);
-            ResourceGroupNode newResourceGroupNode = oldResourceGroupNode.clone();
-            for (int j = 0; j < oldResourceGroupNode.getChildCount(); j++) {
-                ResourceTypeNode oldResourceTypeNode = (ResourceTypeNode) oldResourceGroupNode.getChildAt(j);
-                ResourceTypeNode newResourceTypeNode = oldResourceTypeNode.clone();
-                for (int k = 0; k < oldResourceTypeNode.getChildCount(); k++) {
-                    ResourceNode oldResourceNode = (ResourceNode) oldResourceTypeNode.getChildAt(k);
-                    ResourceNode newResourceNode = oldResourceNode.clone();
-                    newResourceTypeNode.add(newResourceNode);
-                }
-                newResourceGroupNode.add(newResourceTypeNode);
-            }
-            newDevSpaceNode.add(newResourceGroupNode);
-        }
-        return newDevSpaceNode;
-    }
-
-    private void makeExpandedVisible(DevSpaceNode devSpaceNode) {
-        boolean devSpaceNodeExpanded = false;
-        for (int i = 0; i < devSpaceNode.getChildCount(); i++) {
-            ResourceGroupNode resourceGroupNode = (ResourceGroupNode) devSpaceNode.getChildAt(i);
-            boolean resourceGroupNodeExpanded = false;
-            for (int j = 0; j < resourceGroupNode.getChildCount(); j++) {
-                ResourceTypeNode resourceTypeNode = (ResourceTypeNode) resourceGroupNode.getChildAt(j);
-                if (resourceTypeNode.isExpanded()) {
-                    this.expandPath(new TreePath(model.getPathToRoot(resourceTypeNode)));
-                    resourceGroupNodeExpanded = true;
-                }
-            }
-            if (resourceGroupNode.isExpanded() && !resourceGroupNodeExpanded) {
-                this.expandPath(new TreePath(model.getPathToRoot(resourceGroupNode)));
-                devSpaceNodeExpanded = true;
-            }
-        }
-        if (devSpaceNode.isExpanded() && !devSpaceNodeExpanded) {
-            this.expandPath(new TreePath(model.getPathToRoot(devSpaceNode)));
-        }
-    }
-
-    private void loadResourceNodes(DevSpaceNode devSpaceNode) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    private void loadResourceNodes(DevSpaceNode devSpaceNode) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         for (int i = 0; i < model.getChildCount(devSpaceNode); i++) {
-            ResourceGroupNode resourceGroupNode = (ResourceGroupNode) model.getChild(devSpaceNode, i);
-            for (int j = 0; j < model.getChildCount(resourceGroupNode); j++) {
-                ResourceTypeNode resourceTypeNode = (ResourceTypeNode) model.getChild(resourceGroupNode, j);
-                if (!resourceTypeNode.isLoaded()) {
-                    continue;
+            final Object child = model.getChild(devSpaceNode, i);
+            for (int j = 0; j < model.getChildCount(child); j++) {
+                ResourceGroupNode resourceGroupNode = (ResourceGroupNode) model.getChild(child, j);
+                for (int k = 0; k < model.getChildCount(resourceGroupNode); k++) {
+                    ResourceTypeNode resourceTypeNode = (ResourceTypeNode) model.getChild(resourceGroupNode, k);
+                    if (!resourceTypeNode.isLoaded()) {
+                        continue;
+                    }
+                    loadKubeResources(resourceTypeNode);
                 }
-                loadKubeResources(resourceTypeNode);
             }
         }
     }
 
-    private void loadKubeResources(ResourceTypeNode resourceTypeNode) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    private void loadKubeResources(ResourceTypeNode resourceTypeNode) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-        final DevSpace devSpace = ((DevSpaceNode) resourceTypeNode.getParent().getParent()).getDevSpace();
+        final DevSpace devSpace = ((DevSpaceNode) resourceTypeNode.getParent().getParent().getParent()).getDevSpace();
+        Application application = null;
+        if (resourceTypeNode.getParent().getParent() instanceof ApplicationNode) {
+            application = ((ApplicationNode) resourceTypeNode.getParent().getParent()).getApplication();
+        }
+
         String resourceName = resourceTypeNode.getName().toLowerCase().replaceAll(" ", "");
         KubeResourceList kubeResourceList = kubectlCommand.getResourceList(resourceName, null, devSpace);
 
@@ -388,23 +336,43 @@ public class NocalhostTree extends Tree {
         List<ResourceNode> resourceNodes = Lists.newArrayList();
         final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
         nhctlDescribeOptions.setKubeconfig(kubeconfigPath);
-        NhctlDescribeAllService nhctlDescribeAllService = nhctlCommand.describe(devSpace.getContext().getApplicationName(), nhctlDescribeOptions, NhctlDescribeAllService.class);
-        final NhctlDescribeService[] nhctlDescribeServices = nhctlDescribeAllService.getSvcProfile();
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        for (KubeResource kubeResource : kubeResourceList.getItems()) {
-
-            final Optional<NhctlDescribeService> nhctlDescribeService = Arrays.stream(nhctlDescribeServices).filter(svc -> svc.getRawConfig().getName().equals(kubeResource.getMetadata().getName())).findFirst();
+        List<KubeResource> resources;
+        Application finalApplication = application;
+        NhctlDescribeAllService nhctlDescribeAllService = null;
+        NhctlDescribeService[] nhctlDescribeServices = null;
+        if (finalApplication != null) {
+            nhctlDescribeAllService = nhctlCommand.describe(finalApplication.getContext().getApplicationName(), nhctlDescribeOptions, NhctlDescribeAllService.class);
+            nhctlDescribeServices = nhctlDescribeAllService.getSvcProfile();
+            resources = kubeResourceList.getItems()
+                                        .stream()
+                                        .filter(i -> StringUtils.equals(i.getMetadata().getAnnotations().get("dev.nocalhost/application-name"), finalApplication.getContext().getApplicationName())
+                                                || StringUtils.equals(i.getMetadata().getAnnotations().get("meta.helm.sh/release-name"), finalApplication.getContext().getApplicationName()))
+                                        .collect(Collectors.toList());
+        } else {
+            resources = kubeResourceList.getItems()
+                                        .stream()
+                                        .filter(i -> StringUtils.isBlank(i.getMetadata().getAnnotations().get("dev.nocalhost/application-name"))
+                                                && StringUtils.isBlank(i.getMetadata().getAnnotations().get("meta.helm.sh/release-name")))
+                                        .collect(Collectors.toList());
+        }
+        for (KubeResource kubeResource : resources) {
+            final Optional<NhctlDescribeService> nhctlDescribeService = ArrayUtils.isEmpty(nhctlDescribeServices) ? Optional.empty() : Arrays.stream(nhctlDescribeServices).filter(svc -> svc.getRawConfig().getName().equals(kubeResource.getMetadata().getName())).findFirst();
             if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "Deployment") && nhctlDescribeService.isPresent()) {
                 NhctlDescribeService nhctlDescribe = nhctlDescribeService.get();
-                final Optional<NocalhostRepo> nocalhostRepo = nocalhostSettings.getRepos().stream()
-                                                                               .filter(repos -> repos.getHost().equals(nocalhostSettings.getBaseUrl())
-                                                                                && repos.getEmail().equals(nocalhostSettings.getUserInfo().getEmail())
-                                                                                && repos.getAppName().equals(devSpace.getContext().getApplicationName())
-                                                                                && repos.getDeploymentName().equals(nhctlDescribe.getRawConfig().getName())).findFirst();
-                if (nhctlDescribe.isDeveloping()) {
-                    nocalhostRepo.ifPresent(repos -> UserDataKeyHelper.addAliveDeployments(project, new AliveDeployment(devSpace, nhctlDescribe.getRawConfig().getName(), repos.getRepoPath())));
-                } else {
-                    nocalhostRepo.ifPresent(repos -> UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, nhctlDescribe.getRawConfig().getName(), repos.getRepoPath())));
+                if (finalApplication != null) {
+                    final Optional<NocalhostRepo> nocalhostRepo = nocalhostSettings.getRepos().stream()
+                                                                                   .filter(repo -> Objects.equals(nocalhostSettings.getBaseUrl(), repo.getHost())
+                                                                                           && Objects.equals(nocalhostSettings.getUserInfo().getEmail(), repo.getEmail())
+                                                                                           && Objects.equals(finalApplication.getContext().getApplicationName(), repo.getAppName())
+                                                                                           && Objects.equals(devSpace.getId(), repo.getDevSpaceId())
+                                                                                           && Objects.equals(nhctlDescribe.getRawConfig().getName(), repo.getDeploymentName()))
+                                                                                   .findFirst();
+                    if (nhctlDescribe.isDeveloping()) {
+                        nocalhostRepo.ifPresent(repos -> UserDataKeyHelper.addAliveDeployments(project, new AliveDeployment(devSpace, finalApplication, nhctlDescribe.getRawConfig().getName(), repos.getRepoPath())));
+                    } else {
+                        nocalhostRepo.ifPresent(repos -> UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, finalApplication, nhctlDescribe.getRawConfig().getName(), repos.getRepoPath())));
+                    }
                 }
                 resourceNodes.add(new ResourceNode(kubeResource, nhctlDescribe));
             } else if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "StatefulSet")) {
@@ -467,6 +435,74 @@ public class NocalhostTree extends Tree {
         if (needReload) {
             model.reload(resourceTypeNode);
         }
+    }
 
+    private void makeExpandedVisible(DevSpaceNode devSpaceNode) {
+        boolean devSpaceNodeExpanded = false;
+        for (int i = 0; i < devSpaceNode.getChildCount(); i++) {
+            final TreeNode child = devSpaceNode.getChildAt(i);
+            if (child instanceof ApplicationNode) {
+                ApplicationNode applicationNode = (ApplicationNode) child;
+                boolean applicationNodeExpanded = false;
+                for (int j = 0; j < applicationNode.getChildCount(); j++) {
+                    ResourceGroupNode resourceGroupNode = (ResourceGroupNode) applicationNode.getChildAt(j);
+                    boolean resourceGroupNodeExpanded = false;
+                    for (int k = 0; k < resourceGroupNode.getChildCount(); k++) {
+                        ResourceTypeNode resourceTypeNode = (ResourceTypeNode) resourceGroupNode.getChildAt(k);
+                        if (resourceTypeNode.isExpanded()) {
+                            this.expandPath(new TreePath(model.getPathToRoot(resourceTypeNode)));
+                            resourceGroupNodeExpanded = true;
+                        }
+                    }
+                    if (resourceGroupNode.isExpanded() && !resourceGroupNodeExpanded) {
+                        this.expandPath(new TreePath(model.getPathToRoot(resourceGroupNode)));
+                        applicationNodeExpanded = true;
+                    }
+                }
+                if (applicationNode.isExpanded() && !applicationNodeExpanded) {
+                    this.expandPath(new TreePath(model.getPathToRoot(applicationNode)));
+                    devSpaceNodeExpanded = true;
+                }
+            }
+        }
+        if (devSpaceNode.isExpanded() && !devSpaceNodeExpanded) {
+            this.expandPath(new TreePath(model.getPathToRoot(devSpaceNode)));
+        }
+    }
+
+    private DevSpaceNode createDevSpaceNode(DevSpace devSpace, List<Application> applications, Optional<NhctlListApplication> nhctlListApplicationOptional) {
+        DevSpaceNode devSpaceNode = new DevSpaceNode(devSpace);
+        if (nhctlListApplicationOptional.isPresent()) {
+            final NhctlListApplication.Application[] apps = nhctlListApplicationOptional.get().getApplication();
+            for (NhctlListApplication.Application app : apps) {
+                final Optional<Application> installedApp = applications.stream().filter(a -> StringUtils.equals(a.getContext().getApplicationName(), app.getName())).findFirst();
+                if (installedApp.isPresent()) {
+                    ApplicationNode applicationNode = new ApplicationNode(installedApp.get(), devSpace);
+                    applicationNode.setInstalled(true);
+                    for (Pair<String, List<String>> pair : PAIRS) {
+                        applicationNode.add(generateResourceGroup(pair));
+                    }
+                    ResourceGroupNode resourceGroupNode = (ResourceGroupNode) applicationNode.getChildAt(0);
+                    resourceGroupNode.setExpanded(true);
+                    devSpaceNode.add(applicationNode);
+                }
+            }
+        }
+        DefaultResourceNode defaultResourceNode = new DefaultResourceNode();
+        for (Pair<String, List<String>> pair : PAIRS) {
+            defaultResourceNode.add(generateResourceGroup(pair));
+        }
+        ResourceGroupNode resourceGroupNode = (ResourceGroupNode) defaultResourceNode.getChildAt(0);
+        resourceGroupNode.setExpanded(true);
+        devSpaceNode.add(defaultResourceNode);
+        return devSpaceNode;
+    }
+
+    private ResourceGroupNode generateResourceGroup(Pair<String, List<String>> pair) {
+        ResourceGroupNode resourceGroupNode = new ResourceGroupNode(pair.first);
+        for (String name : pair.second) {
+            resourceGroupNode.add(new ResourceTypeNode(name));
+        }
+        return resourceGroupNode;
     }
 }

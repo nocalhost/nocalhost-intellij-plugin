@@ -91,7 +91,7 @@ public class StartDevelopAction extends AnAction {
             opts.setDeployment(node.resourceName());
             opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
             nhctlDescribeService = nhctlCommand.describe(
-                    node.devSpace().getContext().getApplicationName(),
+                    node.application().getContext().getApplicationName(),
                     opts,
                     NhctlDescribeService.class);
             if (nhctlDescribeService.isDeveloping()) {
@@ -130,7 +130,7 @@ public class StartDevelopAction extends AnAction {
 
         final String gitUrl = findGitUrl(nhctlDescribeService.getRawConfig().getContainers(), containerName);
 
-        DevModeService devModeService = new DevModeService(node.devSpace().getId(), node.devSpace().getDevSpaceId(), node.resourceName(), containerName);
+        DevModeService devModeService = new DevModeService(node.application().getId(), node.devSpace().getId(), node.resourceName(), containerName);
 
         final String path = project.getBasePath();
 
@@ -138,13 +138,13 @@ public class StartDevelopAction extends AnAction {
         final Optional<NocalhostRepo> nocalhostRepo = nocalhostSettings.getRepos().stream()
                                                                        .filter(repos -> repos.getHost().equals(nocalhostSettings.getBaseUrl())
                                                                                 && repos.getEmail().equals(nocalhostSettings.getUserInfo().getEmail())
-                                                                                && repos.getAppName().equals(node.devSpace().getContext().getApplicationName())
+                                                                                && repos.getAppName().equals(node.application().getContext().getApplicationName())
                                                                                 && repos.getDeploymentName().equals(devModeService.getServiceName())).findFirst();
 
         if (nocalhostRepo.isPresent()) {
             final NocalhostRepo repo = nocalhostRepo.get();
             if (repo.getRepoPath().equals(project.getBasePath())) {
-                ProgressManager.getInstance().run(new StartingDevModeTask(project, node.devSpace(), devModeService));
+                ProgressManager.getInstance().run(new StartingDevModeTask(project, node.devSpace(), node.application(), devModeService));
             } else {
                 nocalhostSettings.getDevModeProjectBasePath2Service().put(
                         repo.getRepoPath(),
@@ -162,7 +162,7 @@ public class StartDevelopAction extends AnAction {
             String ps = gitCommand.getRemote(path, project);
             final Optional<String> optionalPath = Arrays.stream(ps.split("\n")).map(p -> p.split("\t")[1].split(" ")[0]).filter(p -> p.equals(gitUrl)).findFirst();
             if (optionalPath.isPresent()) {
-                ProgressManager.getInstance().run(new StartingDevModeTask(project, node.devSpace(), devModeService));
+                ProgressManager.getInstance().run(new StartingDevModeTask(project, node.devSpace(), node.application(), devModeService));
                 return;
             }
         } catch (Exception ignored) {

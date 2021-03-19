@@ -22,6 +22,7 @@ public class KubeResource {
         private String name;
         private Map<String, String> labels;
         private String deletionTimestamp;
+        private Map<String, String> annotations;
     }
 
     @Getter

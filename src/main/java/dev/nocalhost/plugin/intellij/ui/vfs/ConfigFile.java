@@ -115,7 +115,7 @@ public class ConfigFile extends VirtualFile {
                 nhctlConfigOptions.setDeployment(node.resourceName());
                 nhctlConfigOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
                 nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
-                nhctlCommand.editConfig(node.devSpace().getContext().getApplicationName(), nhctlConfigOptions);
+                nhctlCommand.editConfig(node.application().getContext().getApplicationName(), nhctlConfigOptions);
             }
         });
     }

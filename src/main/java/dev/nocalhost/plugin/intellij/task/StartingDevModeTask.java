@@ -17,12 +17,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.AliveDeployment;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
@@ -34,7 +34,6 @@ import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
-import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostRepo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
@@ -49,6 +48,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
     private final Project project;
     private final DevSpace devSpace;
     private final DevModeService devModeService;
+    private final Application application;
 
     private NhctlDescribeService nhctlDescribeService;
     private NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
@@ -56,21 +56,22 @@ public class StartingDevModeTask extends Task.Backgroundable {
     private final String appName;
     private List<String> portForward = Lists.newArrayList();
 
-    public StartingDevModeTask(Project project, DevSpace devSpace, DevModeService devModeService) {
+    public StartingDevModeTask(Project project, DevSpace devSpace, Application application, DevModeService devModeService) {
         super(project, "Starting DevMode", false);
         this.project = project;
         this.devSpace = devSpace;
         this.devModeService = devModeService;
+        this.application = application;
 
         kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
-        appName = devSpace.getContext().getApplicationName();
+        appName = application.getContext().getApplicationName();
 
         final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
         nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
         nhctlDescribeOptions.setKubeconfig(kubeconfigPath);
         try {
             nhctlDescribeService = nhctlCommand.describe(
-                    devSpace.getContext().getApplicationName(),
+                    application.getContext().getApplicationName(),
                     nhctlDescribeOptions,
                     NhctlDescribeService.class);
             for (ServiceContainer container : nhctlDescribeService.getRawConfig().getContainers()) {
@@ -92,7 +93,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
             project.getMessageBus()
                    .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC)
-                   .action(devSpace, devModeService.getServiceName());
+                   .action(devSpace, application, devModeService.getServiceName());
         });
 
         ApplicationManager.getApplication().getMessageBus()
@@ -105,6 +106,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 nocalhostSettings.getBaseUrl(),
                 nocalhostSettings.getUserInfo().getEmail(),
                 appName,
+                devSpace.getId(),
                 devModeService.getServiceName(),
                 project.getBasePath()
         );
@@ -139,7 +141,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 Thread.sleep(1000);
                 deployment = kubectlCommand.getResource("deployment", devModeService.getServiceName(), devSpace);
                 KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getSpec().getSelector().getMatchLabels(), devSpace);
-                containerNames = pods.getItems().get(0).getSpec().getContainers().stream().map(e -> e.getName()).collect(Collectors.toList());
+                containerNames = pods.getItems().get(0).getSpec().getContainers().stream().map(KubeResource.Spec.Container::getName).collect(Collectors.toList());
             } while (!KubectlHelper.isKubeResourceAvailable(deployment) || !containerNames.contains(NOCALHOST_DEV_CONTAINER_NAME));
 
             // nhctl sync ...
@@ -160,7 +162,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 nhctlPortForwardOptions.setKubeconfig(kubeconfigPath);
                 outputCapturedNhctlCommand.startPortForward(appName, nhctlPortForwardOptions);
             }
-            UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, devModeService.getServiceName(), project.getProjectFilePath()));
+//            UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, devModeService.getServiceName(), project.getProjectFilePath()));
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while starting dev mode", e);
             NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());

@@ -45,6 +45,7 @@ public class KubeConfigFile extends VirtualFile {
     private String content;
     private Project project;
     private DevSpace devSpace;
+    private String appName;
 
     @Override
     public @NotNull @NlsSafe String getName() {
@@ -126,7 +127,7 @@ public class KubeConfigFile extends VirtualFile {
                 NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions();
                 nhctlApplyOptions.setFile(tempFile.getAbsolutePath());
                 nhctlApplyOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
-                result = nhctlCommand.apply(devSpace.getContext().getApplicationName(), nhctlApplyOptions);
+                result = nhctlCommand.apply(appName, nhctlApplyOptions);
             }
         });
     }

@@ -1,14 +1,17 @@
 package dev.nocalhost.plugin.intellij.ui.action.devspace;
 
+import com.google.common.collect.Lists;
+
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
-import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,17 +20,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.api.NocalhostApi;
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
+import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.task.InstallAppTask;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
+import dev.nocalhost.plugin.intellij.ui.InstallApplicationChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
@@ -51,21 +62,52 @@ public class InstallAppAction extends AnAction {
         final DevSpace devSpace = node.getDevSpace();
 
         try {
-            if (NhctlHelper.isApplicationInstalled(devSpace)) {
-                Messages.showMessageDialog("Application has been installed.", "Install application", null);
+
+            final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+            final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+
+            List<Application> applications = nocalhostApi.listApplications();
+            List<NhctlListApplication> nhctlListApplications = nhctlCommand.listApplication();
+            final Set<String> apps = applications.stream().map(a -> a.getContext().getApplicationName()).collect(Collectors.toSet());
+            final Optional<NhctlListApplication> currentDevspacesApp = nhctlListApplications.stream().filter(d -> d.getNamespace().equals(devSpace.getNamespace())).findFirst();
+            List<String> installed = null;
+            if (currentDevspacesApp.isPresent()) {
+                 installed = Arrays.stream(currentDevspacesApp.get().getApplication()).map(NhctlListApplication.Application::getName).collect(Collectors.toList());
+            }
+            if (CollectionUtils.isNotEmpty(installed)) {
+                for (String installedApp : installed) {
+                    apps.remove(installedApp);
+                }
+            }
+            if (apps.size() == 0) {
+                Messages.showMessageDialog("All applications are installed.", "Install Application", null);
                 return;
             }
-            installApp();
-        } catch (IOException | InterruptedException e) {
+
+            InstallApplicationChooseDialog dialog = new InstallApplicationChooseDialog(Lists.newArrayList(apps));
+            if (dialog.showAndGet()) {
+                final Optional<Application> app = applications.stream()
+                                                              .filter(a -> StringUtils.equals(dialog.getSelected(), a.getContext().getApplicationName()))
+                                                              .findFirst();
+                if (app.isPresent()) {
+                    if (NhctlHelper.isApplicationInstalled(devSpace, app.get())) {
+                        Messages.showMessageDialog("Application has been installed.", "Install Application", null);
+                        return;
+                    }
+                    installApp(app.get());
+                }
+
+            }
+        } catch (IOException | NocalhostApiException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while checking if application was installed", e);
             return;
         }
     }
 
-    private void installApp() throws IOException {
+    private void installApp(Application app) throws IOException {
         final DevSpace devSpace = node.getDevSpace();
-        final DevSpace.Context context = devSpace.getContext();
-        final String installType = NhctlHelper.generateInstallType(devSpace.getContext());
+        final Application.Context context = app.getContext();
+        final String installType = NhctlHelper.generateInstallType(context);
 
         final NhctlInstallOptions opts = new NhctlInstallOptions();
         opts.setType(installType);
@@ -101,7 +143,7 @@ public class InstallAppAction extends AnAction {
             opts.setOuterConfig(configPath.toString());
 
         } else {
-            AppInstallOrUpgradeOption installOption = askAndGetInstallOption(installType, devSpace);
+            AppInstallOrUpgradeOption installOption = askAndGetInstallOption(installType, app);
             if (installOption == null) {
                 return;
             }
@@ -109,7 +151,7 @@ public class InstallAppAction extends AnAction {
             if (StringUtils.equals(installType, "helmRepo")) {
                 opts.setHelmRepoUrl(context.getApplicationUrl());
                 opts.setHelmChartName(context.getApplicationName());
-                opts.setOuterConfig(HelmNocalhostConfigUtil.helmNocalhostConfigPath(devSpace).toString());
+                opts.setOuterConfig(HelmNocalhostConfigUtil.helmNocalhostConfigPath(devSpace, app).toString());
                 if (installOption.isSpecifyOneSelected()) {
                     opts.setHelmRepoVersion(installOption.getSpecifyText());
                 }
@@ -137,11 +179,11 @@ public class InstallAppAction extends AnAction {
             }
         }
 
-        ProgressManager.getInstance().run(new InstallAppTask(project, devSpace, opts));
+        ProgressManager.getInstance().run(new InstallAppTask(project, devSpace, app, opts));
     }
 
-    private AppInstallOrUpgradeOption askAndGetInstallOption(String installType, DevSpace devSpace) {
-        final String title = "Install DevSpace: " + devSpace.getSpaceName();
+    private AppInstallOrUpgradeOption askAndGetInstallOption(String installType, Application app) {
+        final String title = "Install DevSpace: " + app.getContext().getApplicationName();
         AppInstallOrUpgradeOptionDialog dialog;
         if (StringUtils.equals(installType, "helmRepo")) {
             dialog = new AppInstallOrUpgradeOptionDialog(
