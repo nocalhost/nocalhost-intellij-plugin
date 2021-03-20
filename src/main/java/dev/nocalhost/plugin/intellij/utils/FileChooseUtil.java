@@ -68,6 +68,16 @@ public final class FileChooseUtil {
         return virtualFile.toNioPath().toAbsolutePath();
     }
 
+    public static Path chooseSingleFileOrDirectory(Project project) {
+        FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, true, false, false, false, false);
+        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
+        VirtualFile virtualFile = FileChooser.chooseFile(fileChooserDescriptor, project, null);
+        if (virtualFile == null) {
+            return null;
+        }
+        return virtualFile.toNioPath().toAbsolutePath();
+    }
+
     public static List<Path> chooseFilesAndDirectories(Project project) {
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, true, false, false, false, true);
         fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
