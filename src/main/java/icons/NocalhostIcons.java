@@ -6,6 +6,7 @@ import javax.swing.*;
 
 public interface NocalhostIcons {
     Icon Logo = IconLoader.getIcon("/icons/logo-light.svg", NocalhostIcons.class);
+    Icon LogoColorful = IconLoader.getIcon("/icons/logo-colorful.svg", NocalhostIcons.class);
 
     interface App {
         Icon Connected = IconLoader.getIcon("/icons/app-connected.svg", NocalhostIcons.class);

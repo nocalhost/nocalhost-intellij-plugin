@@ -26,6 +26,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlExecOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
@@ -296,6 +297,10 @@ public class NhctlCommand {
         execute(args, opts, sudoPassword);
     }
 
+    public void endPortForward(String name, NhctlPortForwardEndOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        endPortForward(name, opts, null);
+    }
+
     public void endPortForward(String name, NhctlPortForwardEndOptions opts, String sudoPassword) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "port-forward", "end", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
@@ -494,6 +499,21 @@ public class NhctlCommand {
         return execute(args, null);
     }
 
+    public void exec(String name, NhctlExecOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "exec", name);
+        if (opts.getCommand() != null) {
+            opts.getCommand().forEach(e -> {
+                args.add("--command");
+                args.add(e);
+            });
+        }
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        execute(args, opts);
+    }
+
     protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         return execute(args, opts, null);
     }
@@ -502,7 +522,6 @@ public class NhctlCommand {
         addGlobalOptions(args, opts);
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
-        System.out.println("Execute command: " + cmd);
 
         if (sudoPassword != null) {
             args = SudoUtil.toSudoCommand(args);

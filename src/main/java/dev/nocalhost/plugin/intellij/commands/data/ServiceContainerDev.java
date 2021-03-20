@@ -10,5 +10,7 @@ import lombok.Setter;
 public class ServiceContainerDev {
     private String gitUrl;
     private String shell;
+    private ServiceContainerDevCommand command;
+    private ServiceContainerDevDebug debug;
     private List<String> portForward;
 }

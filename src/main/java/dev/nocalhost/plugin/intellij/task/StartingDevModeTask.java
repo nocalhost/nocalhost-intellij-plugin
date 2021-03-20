@@ -34,6 +34,7 @@ import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
+import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.NocalhostRepo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
@@ -107,6 +108,9 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 project.getBasePath()
         );
         nocalhostSettings.addRepos(nocalhostRepo);
+
+        final NocalhostProjectSettings nocalhostProjectSettings = project.getService(NocalhostProjectSettings.class);
+        nocalhostProjectSettings.setDevModeService(devModeService);
     }
 
     @Override

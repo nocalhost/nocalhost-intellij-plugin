@@ -4,7 +4,7 @@
     <vendor url="https://nocalhost.dev/">Nocalhost</vendor>
 
     <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
-    <idea-version since-build="203.0" until-build="203.*" />
+    <idea-version since-build="203.5981.155" />
 
     <description>
         <![CDATA[
@@ -46,6 +46,7 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>Git4Idea</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
+    <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
@@ -62,7 +63,7 @@
 
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand" />
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.exception.NocalhostNotifier"/>
-
+        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings"/>
 
         <toolWindow id="Nocalhost" anchor="right" icon="NocalhostIcons.Logo"
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostWindowFactory"/>
@@ -85,20 +86,25 @@
                 order="first"/>
         <errorHandler
                 implementation="dev.nocalhost.plugin.intellij.exception.report.NocalhostErrorReportSubmitter"/>
+
+        <configurationType implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostConfigurationType"/>
+        <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostRunner" order="first"/>
+        <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostDebugRunner" order="first"/>
     </extensions>
 
     <actions>
 
         <action id="Nocalhost.RefreshAction" text="Refresh"
-                class="dev.nocalhost.plugin.intellij.ui.action.RefreshAction" />
+                class="dev.nocalhost.plugin.intellij.ui.action.RefreshAction"/>
         <action id="Nocalhost.LogoutAction" text="Logout"
-                class="dev.nocalhost.plugin.intellij.ui.action.LogoutAction" />
-        <action id="Nocalhost.SettingAction"  text="Setting"
-                class="dev.nocalhost.plugin.intellij.ui.action.SettingAction" />
+                class="dev.nocalhost.plugin.intellij.ui.action.LogoutAction"/>
+        <action id="Nocalhost.SettingAction" text="Setting"
+                class="dev.nocalhost.plugin.intellij.ui.action.SettingAction"/>
     </actions>
 
     <applicationListeners>
-        <listener class="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener" topic="com.intellij.ide.AppLifecycleListener"
+        <listener class="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"
+                  topic="com.intellij.ide.AppLifecycleListener"
                   activeInHeadlessMode="false" activeInTestMode="false"/>
     </applicationListeners>
 </idea-plugin>

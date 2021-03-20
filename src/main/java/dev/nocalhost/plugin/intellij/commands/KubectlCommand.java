@@ -141,7 +141,6 @@ public class KubectlCommand {
         } catch (ExecutionException e) {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
-        System.out.println("Execute command: " + cmd);
 
         String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
 

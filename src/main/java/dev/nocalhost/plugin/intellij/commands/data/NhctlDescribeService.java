@@ -14,4 +14,5 @@ public class NhctlDescribeService {
     private boolean portForwarded;
     private boolean syncing;
     private List<NhctlPortForward> devPortForwardList;
+    private List<String> localAbsoluteSyncDirFromDevStartPlugin;
 }
