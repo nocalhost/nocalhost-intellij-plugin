@@ -52,7 +52,6 @@ public class StartingDevModeTask extends Task.Backgroundable {
 
     private NhctlDescribeService nhctlDescribeService;
     private NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-    private final String kubeconfigPath;
     private final String appName;
     private List<String> portForward = Lists.newArrayList();
 
@@ -62,12 +61,10 @@ public class StartingDevModeTask extends Task.Backgroundable {
         this.devSpace = devSpace;
         this.devModeService = devModeService;
 
-        kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
         appName = devSpace.getContext().getApplicationName();
 
-        final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
+        final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(devSpace);
         nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
-        nhctlDescribeOptions.setKubeconfig(kubeconfigPath);
         try {
             nhctlDescribeService = nhctlCommand.describe(
                     devSpace.getContext().getApplicationName(),
@@ -122,10 +119,9 @@ public class StartingDevModeTask extends Task.Backgroundable {
 
             // nhctl dev start ...
             indicator.setText("Starting DevMode: dev start");
-            NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions();
+            NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions(devSpace);
             nhctlDevStartOptions.setDeployment(devModeService.getServiceName());
             nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
-            nhctlDevStartOptions.setKubeconfig(kubeconfigPath);
             nhctlDevStartOptions.setContainer(devModeService.getContainerName());
             nhctlDevStartOptions.setStorageClass(devSpace.getStorageClass());
             final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
@@ -144,20 +140,18 @@ public class StartingDevModeTask extends Task.Backgroundable {
 
             // nhctl sync ...
             indicator.setText("Starting DevMode: sync file");
-            NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions();
+            NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(devSpace);
             nhctlSyncOptions.setDeployment(devModeService.getServiceName());
             nhctlSyncOptions.setContainer(devModeService.getContainerName());
-            nhctlSyncOptions.setKubeconfig(kubeconfigPath);
             outputCapturedNhctlCommand.sync(appName, nhctlSyncOptions);
 
             // nhctl port-forward ...
             if (portForward.size() > 0) {
                 indicator.setText("Starting DevMode: port forward");
-                NhctlPortForwardStartOptions nhctlPortForwardOptions = new NhctlPortForwardStartOptions();
+                NhctlPortForwardStartOptions nhctlPortForwardOptions = new NhctlPortForwardStartOptions(devSpace);
                 nhctlPortForwardOptions.setDeployment(devModeService.getServiceName());
                 nhctlPortForwardOptions.setWay(NhctlPortForwardStartOptions.Way.DEV_PORTS);
                 nhctlPortForwardOptions.setDevPorts(portForward);
-                nhctlPortForwardOptions.setKubeconfig(kubeconfigPath);
                 outputCapturedNhctlCommand.startPortForward(appName, nhctlPortForwardOptions);
             }
             UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, devModeService.getServiceName(), project.getProjectFilePath()));

@@ -35,10 +35,9 @@ public class ClearPersistentDataAction extends AnAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-        NhctlListPVCOptions opts = new NhctlListPVCOptions();
+        NhctlListPVCOptions opts = new NhctlListPVCOptions(node.devSpace());
         opts.setApp(node.devSpace().getContext().getApplicationName());
         opts.setSvc(node.getNhctlDescribeService().getRawConfig().getName());
-        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
         try {
             List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
             new ClearPersistentDataDialog(project, node.devSpace(), nhctlPVCItems, false).showAndGet();

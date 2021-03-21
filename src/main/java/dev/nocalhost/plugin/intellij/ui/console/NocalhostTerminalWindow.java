@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.console;
 
 import com.google.common.collect.Lists;
+
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -10,7 +11,20 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.jediterm.pty.PtyProcessTtyConnector;
 import com.jediterm.terminal.TtyConnector;
 import com.pty4j.PtyProcess;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.plugins.terminal.JBTerminalSystemSettingsProvider;
+import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner;
+import org.jetbrains.plugins.terminal.ShellTerminalWidget;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
+import javax.swing.*;
+
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
@@ -18,20 +32,10 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.plugins.terminal.JBTerminalSystemSettingsProvider;
-import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner;
-import org.jetbrains.plugins.terminal.ShellTerminalWidget;
-
-import javax.swing.*;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
     private static final Logger LOG = Logger.getInstance(NocalhostTerminalWindow.class);
@@ -74,9 +78,8 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
 
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
 
-        final NhctlDescribeOptions opts = new NhctlDescribeOptions();
+        final NhctlDescribeOptions opts = new NhctlDescribeOptions(node.devSpace());
         opts.setDeployment(node.resourceName());
-        opts.setKubeconfig(kubeconfigPath);
         try {
             List<String> args;
             if (node.getNhctlDescribeService().isDeveloping()) {
@@ -85,7 +88,8 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                         "dev",
                         "terminal", node.devSpace().getContext().getApplicationName(),
                         "--deployment", node.resourceName(),
-                        "--kubeconfig", kubeconfigPath
+                        "--kubeconfig", kubeconfigPath,
+                        "--namespace", devSpace.getNamespace()
                 );
             } else {
                 final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
@@ -113,6 +117,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                         "-it", podName,
                         "-c", containerName,
                         "--kubeconfig", kubeconfigPath,
+                        "--namespace", devSpace.getNamespace(),
                         "--", "sh -c \"clear; (zsh || bash || ash || sh)\""
                 );
 

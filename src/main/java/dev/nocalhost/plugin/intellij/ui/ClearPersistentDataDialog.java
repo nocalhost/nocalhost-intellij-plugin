@@ -18,13 +18,12 @@ import java.util.stream.IntStream;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 
 public class ClearPersistentDataDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(ClearPersistentDataDialog.class);
@@ -114,11 +113,10 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                         indicator.setText(item.getMountPath());
                     }
 
-                    NhctlCleanPVCOptions opts = new NhctlCleanPVCOptions();
+                    NhctlCleanPVCOptions opts = new NhctlCleanPVCOptions(devSpace);
                     opts.setApp(item.getAppName());
                     opts.setSvc(item.getServiceName());
                     opts.setName(item.getName());
-                    opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                     try {
                         nhctlCommand.cleanPVC(opts);
                     } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {

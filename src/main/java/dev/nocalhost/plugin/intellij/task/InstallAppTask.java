@@ -90,11 +90,9 @@ public class InstallAppTask extends Task.Backgroundable {
     }
 
     private void portForward() {
-        String kubeConfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
         final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
         final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
-        nhctlDescribeOptions.setKubeconfig(kubeConfigPath);
+        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(devSpace);
         NhctlDescribeApplication nhctlDescribeApplication = null;
         try {
             nhctlDescribeApplication = nhctlCommand.describe(devSpace.getContext().getApplicationName(), nhctlDescribeOptions, NhctlDescribeApplication.class);
@@ -122,10 +120,9 @@ public class InstallAppTask extends Task.Backgroundable {
                 }
                 final List<String> portForward = install.getPortForward();
                 if (CollectionUtils.isNotEmpty(portForward)) {
-                    NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions();
+                    NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(devSpace);
                     nhctlPortForwardStartOptions.setDeployment(nhctlDescribeService.getRawConfig().getName());
                     nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.DEV_PORTS);
-                    nhctlPortForwardStartOptions.setKubeconfig(kubeConfigPath);
                     nhctlPortForwardStartOptions.setDevPorts(portForward);
 
                     if (nhctlDescribeService.getRawConfig().getServiceType().equalsIgnoreCase("deployment")) {

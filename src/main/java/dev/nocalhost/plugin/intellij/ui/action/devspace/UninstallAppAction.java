@@ -18,17 +18,16 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class UninstallAppAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(UninstallAppAction.class);
@@ -66,9 +65,8 @@ public class UninstallAppAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
-                NhctlUninstallOptions opts = new NhctlUninstallOptions();
+                NhctlUninstallOptions opts = new NhctlUninstallOptions(devSpace);
                 opts.setForce(true);
-                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                 try {
                     outputCapturedNhctlCommand.uninstall(appName, opts);
 

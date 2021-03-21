@@ -110,8 +110,7 @@ public class AppConfigFile extends VirtualFile {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions();
-                nhctlConfigOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
+                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(node.getDevSpace());
                 nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
                 nhctlConfigOptions.setAppConfig(true);
                 nhctlCommand.editConfig(node.getDevSpace().getContext().getApplicationName(), nhctlConfigOptions);

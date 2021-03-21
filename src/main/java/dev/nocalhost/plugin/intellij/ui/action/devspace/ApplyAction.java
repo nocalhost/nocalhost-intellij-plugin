@@ -18,7 +18,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ApplyAction extends AnAction {
@@ -58,9 +57,8 @@ public class ApplyAction extends AnAction {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions();
+                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(node.getDevSpace());
                 nhctlApplyOptions.setFile(chosenPath.toString());
-                nhctlApplyOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
                 result = nhctlCommand.apply(node.getDevSpace().getContext().getApplicationName(), nhctlApplyOptions);
             }
         });

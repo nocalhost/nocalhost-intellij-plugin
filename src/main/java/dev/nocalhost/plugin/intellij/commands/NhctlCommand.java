@@ -521,6 +521,10 @@ public class NhctlCommand {
             args.add("--kubeconfig");
             args.add(opts.getKubeconfig());
         }
+        if (StringUtils.isNotEmpty(opts.getNamespace())) {
+            args.add("--namespace");
+            args.add(opts.getNamespace());
+        }
     }
 
     protected String getNhctlCmd() {

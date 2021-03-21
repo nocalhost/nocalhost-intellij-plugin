@@ -32,7 +32,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValuesPresentation, StatusBarWidget.Multiframe {
 
@@ -49,7 +48,6 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             return null;
         }
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        NhctlSyncStatusOptions options = new NhctlSyncStatusOptions();
 
         List<AliveDeployment> aliveDeployments = UserDataKeyHelper.findAliveDeploymentsByProject(project);
         if (aliveDeployments == null) {
@@ -58,8 +56,8 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         AliveDeployment aliveDeployment = aliveDeployments.get(0);
         DevSpace devSpace = aliveDeployment.getDevSpace();
         String deployment = aliveDeployment.getDeployment();
+        NhctlSyncStatusOptions options = new NhctlSyncStatusOptions(devSpace);
         options.setDeployment(deployment);
-        options.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
         String status = null;
         try {
             status = nhctlCommand.syncStatus(devSpace.getContext().getApplicationName(), options);
@@ -110,7 +108,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     @Override
     public @Nullable Consumer<MouseEvent> getClickConsumer() {
         return mouseEvent -> {
-                statusBar.updateWidget("Nocalhost Sync Status");
+            statusBar.updateWidget("Nocalhost Sync Status");
         };
     }
 
@@ -118,11 +116,10 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     public @Nullable("null means the widget is unable to show the popup") ListPopup getPopupStep() {
         if (nhctlSyncStatus != null && StringUtils.isNoneBlank(nhctlSyncStatus.getOutOfSync())) {
             int exitCode = MessageDialogBuilder.yesNoCancel("Sync warning", "Override the remote changes according to the local folders?")
-                                               .guessWindowAndAsk();
+                    .guessWindowAndAsk();
             switch (exitCode) {
                 case Messages.YES: {
                     final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                    NhctlSyncStatusOptions options = new NhctlSyncStatusOptions();
 
                     List<AliveDeployment> aliveDeployments = UserDataKeyHelper.findAliveDeploymentsByProject(project);
                     if (aliveDeployments == null) {
@@ -131,9 +128,8 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                     AliveDeployment aliveDeployment = aliveDeployments.get(0);
                     DevSpace devSpace = aliveDeployment.getDevSpace();
                     String deployment = aliveDeployment.getDeployment();
-
+                    NhctlSyncStatusOptions options = new NhctlSyncStatusOptions(devSpace);
                     options.setDeployment(deployment);
-                    options.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                     try {
                         nhctlCommand.syncStatusOverride(devSpace.getContext().getApplicationName(), options);
                     } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {

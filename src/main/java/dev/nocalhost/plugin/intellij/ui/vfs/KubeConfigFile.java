@@ -123,9 +123,8 @@ public class KubeConfigFile extends VirtualFile {
                 FileOutputStream outputStream = new FileOutputStream(tempFile);
                 IOUtils.write(newContent, outputStream, StandardCharsets.UTF_8);
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions();
+                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(devSpace);
                 nhctlApplyOptions.setFile(tempFile.getAbsolutePath());
-                nhctlApplyOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                 result = nhctlCommand.apply(devSpace.getContext().getApplicationName(), nhctlApplyOptions);
             }
         });
