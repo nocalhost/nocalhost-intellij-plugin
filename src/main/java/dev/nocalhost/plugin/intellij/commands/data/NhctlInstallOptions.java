@@ -3,6 +3,7 @@ package dev.nocalhost.plugin.intellij.commands.data;
 import java.util.List;
 import java.util.Map;
 
+import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,4 +26,8 @@ public class NhctlInstallOptions extends NhctlGlobalOptions {
     private String type;
     private boolean wait;
     private String localPath;
+
+    public NhctlInstallOptions(DevSpace devSpace) {
+        super(devSpace);
+    }
 }

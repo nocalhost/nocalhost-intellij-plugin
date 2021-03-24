@@ -42,10 +42,8 @@ public class EndDevelopAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
-        NhctlDescribeOptions opts = new NhctlDescribeOptions();
+        NhctlDescribeOptions opts = new NhctlDescribeOptions(node.devSpace());
         opts.setDeployment(node.resourceName());
-        opts.setKubeconfig(kubeconfigPath);
         NhctlDescribeService nhctlDescribeService;
         try {
             nhctlDescribeService = nhctlCommand.describe(
@@ -64,9 +62,8 @@ public class EndDevelopAction extends AnAction {
         ProgressManager.getInstance().run(new Task.Backgroundable(null, "Ending DevMode", false) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                NhctlDevEndOptions opts = new NhctlDevEndOptions();
+                NhctlDevEndOptions opts = new NhctlDevEndOptions(node.devSpace());
                 opts.setDeployment(node.resourceName());
-                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
                 try {
                     final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);

@@ -25,7 +25,6 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class UninstallAppAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(UninstallAppAction.class);
@@ -64,9 +63,8 @@ public class UninstallAppAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
-                NhctlUninstallOptions opts = new NhctlUninstallOptions();
+                NhctlUninstallOptions opts = new NhctlUninstallOptions(devSpace);
                 opts.setForce(true);
-                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                 try {
                     outputCapturedNhctlCommand.uninstall(appName, opts);
 

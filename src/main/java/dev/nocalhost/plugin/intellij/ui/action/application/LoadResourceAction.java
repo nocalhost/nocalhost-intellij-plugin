@@ -20,7 +20,6 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class LoadResourceAction extends AnAction {
@@ -58,8 +57,7 @@ public class LoadResourceAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-                NhctlDescribeOptions opts = new NhctlDescribeOptions();
-                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
+                NhctlDescribeOptions opts = new NhctlDescribeOptions(devSpace);
                 String resource = nhctlCommand.describe(application.getContext().getApplicationName(), opts);
                 String filename = application.getContext().getApplicationName() + ".yaml";
                 virtualFile = new ReadOnlyVirtualFile(filename, filename, resource);

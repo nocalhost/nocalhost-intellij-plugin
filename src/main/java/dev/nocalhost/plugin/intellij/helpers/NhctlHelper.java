@@ -12,7 +12,6 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeApplication;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public final class NhctlHelper {
     public static String generateInstallType(Application.Context context) {
@@ -26,7 +25,7 @@ public final class NhctlHelper {
             return "helmGit";
         } else if (StringUtils.equals(source, "local")) {
             return originInstallType;
-        }else {
+        } else {
             return "helmRepo";
         }
     }
@@ -35,8 +34,7 @@ public final class NhctlHelper {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         final String applicationName = application.getContext().getApplicationName();
 
-        NhctlDescribeOptions opts = new NhctlDescribeOptions();
-        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
+        NhctlDescribeOptions opts = new NhctlDescribeOptions(devSpace);
 
         try {
             NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(applicationName, opts, NhctlDescribeApplication.class);

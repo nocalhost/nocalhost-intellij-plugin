@@ -40,9 +40,8 @@ public class ResetAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-                NhctlResetOptions opts = new NhctlResetOptions();
+                NhctlResetOptions opts = new NhctlResetOptions(node.devSpace());
                 opts.setDeployment(node.resourceName());
-                opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
                 try {
                     nhctlCommand.reset(node.application().getContext().getApplicationName(), opts);

@@ -19,7 +19,6 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.AppConfigFile;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ConfigAppAction extends AnAction {
@@ -59,8 +58,7 @@ public class ConfigAppAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions();
-                nhctlConfigOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
+                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(node.getDevSpace());
                 nhctlConfigOptions.setAppConfig(true);
                 config = nhctlCommand.getConfig(node.getApplication().getContext().getApplicationName(), nhctlConfigOptions);
             }

@@ -79,9 +79,8 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
 
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
 
-        final NhctlDescribeOptions opts = new NhctlDescribeOptions();
+        final NhctlDescribeOptions opts = new NhctlDescribeOptions(node.devSpace());
         opts.setDeployment(node.resourceName());
-        opts.setKubeconfig(kubeconfigPath);
         try {
             List<String> args;
             if (node.getNhctlDescribeService().isDeveloping()) {
@@ -90,7 +89,8 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                         "dev",
                         "terminal", node.application().getContext().getApplicationName(),
                         "--deployment", node.resourceName(),
-                        "--kubeconfig", kubeconfigPath
+                        "--kubeconfig", kubeconfigPath,
+                        "--namespace", devSpace.getNamespace()
                 );
             } else {
                 final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
@@ -118,6 +118,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                         "-it", podName,
                         "-c", containerName,
                         "--kubeconfig", kubeconfigPath,
+                        "--namespace", devSpace.getNamespace(),
                         "--", "sh -c \"clear; (zsh || bash || ash || sh)\""
                 );
 

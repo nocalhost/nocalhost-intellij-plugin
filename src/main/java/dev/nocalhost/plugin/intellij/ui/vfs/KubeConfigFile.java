@@ -31,7 +31,6 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 
@@ -124,9 +123,8 @@ public class KubeConfigFile extends VirtualFile {
                 FileOutputStream outputStream = new FileOutputStream(tempFile);
                 IOUtils.write(newContent, outputStream, StandardCharsets.UTF_8);
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions();
+                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(devSpace);
                 nhctlApplyOptions.setFile(tempFile.getAbsolutePath());
-                nhctlApplyOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
                 result = nhctlCommand.apply(appName, nhctlApplyOptions);
             }
         });

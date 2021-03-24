@@ -42,7 +42,6 @@ import dev.nocalhost.plugin.intellij.ui.InstallApplicationChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class InstallAppAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(InstallAppAction.class);
@@ -109,10 +108,9 @@ public class InstallAppAction extends AnAction {
         final Application.Context context = app.getContext();
         final String installType = NhctlHelper.generateInstallType(context);
 
-        final NhctlInstallOptions opts = new NhctlInstallOptions();
+        final NhctlInstallOptions opts = new NhctlInstallOptions(devSpace);
         opts.setType(installType);
         opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
-        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
         opts.setNamespace(devSpace.getNamespace());
 
         if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {

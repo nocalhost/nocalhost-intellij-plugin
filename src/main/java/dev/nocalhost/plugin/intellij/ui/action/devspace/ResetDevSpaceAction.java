@@ -25,7 +25,6 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class ResetDevSpaceAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(ResetDevSpaceAction.class);
@@ -53,9 +52,7 @@ public class ResetDevSpaceAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 try {
                     final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-                    NhctlResetDevSpaceOptions options = new NhctlResetDevSpaceOptions();
-                    options.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
-
+                    NhctlResetDevSpaceOptions options = new NhctlResetDevSpaceOptions(node.getDevSpace());
                     outputCapturedNhctlCommand.resetDevSpace(options);
 
                     final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);

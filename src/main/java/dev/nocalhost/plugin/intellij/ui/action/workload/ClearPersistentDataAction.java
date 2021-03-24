@@ -17,7 +17,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class ClearPersistentDataAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(ClearPersistentDataAction.class);
@@ -35,10 +34,9 @@ public class ClearPersistentDataAction extends AnAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-        NhctlListPVCOptions opts = new NhctlListPVCOptions();
+        NhctlListPVCOptions opts = new NhctlListPVCOptions(node.devSpace());
         opts.setApp(node.application().getContext().getApplicationName());
         opts.setSvc(node.getNhctlDescribeService().getRawConfig().getName());
-        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
         try {
             List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
             new ClearPersistentDataDialog(project, node.devSpace(), nhctlPVCItems, false).showAndGet();

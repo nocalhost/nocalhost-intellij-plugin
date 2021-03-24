@@ -33,7 +33,6 @@ import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class UpgradeAppAction extends AnAction {
@@ -72,9 +71,8 @@ public class UpgradeAppAction extends AnAction {
         final Application.Context context = application.getContext();
         final String installType = NhctlHelper.generateInstallType(application.getContext());
 
-        final NhctlUpgradeOptions opts = new NhctlUpgradeOptions();
+        final NhctlUpgradeOptions opts = new NhctlUpgradeOptions(devSpace);
         opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
-        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(devSpace).toString());
 
         if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {
             String message = StringUtils.equals(installType, "rawManifestLocal")

@@ -8,24 +8,17 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 
-import org.apache.commons.compress.utils.Lists;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeApplication;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import lombok.SneakyThrows;
 
 public class ApplyAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(ApplyAction.class);
@@ -41,60 +34,32 @@ public class ApplyAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
-        nhctlDescribeOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.getDevSpace()).toString());
-        try {
-            NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(
-                    node.getApplication().getContext().getApplicationName(),
-                    nhctlDescribeOptions,
-                    NhctlDescribeApplication.class
-            );
-            if (nhctlDescribeApplication.getSvcProfile().stream().anyMatch(NhctlDescribeService::isDeveloping)) {
-                Messages.showErrorDialog("Cannot apply to a developing deployment, please exit the dev mode before apply.", "Apply Kubernetes Configuration");
-                return;
-            }
-        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-            LOG.error("error occurred while describing application", e);
+        final Path chosenPath = FileChooseUtil.chooseSingleFileOrDirectory(project);
+        if (chosenPath == null) {
             return;
         }
 
-        final List<Path> chosenPaths = FileChooseUtil.chooseFilesAndDirectories(project);
-        if (chosenPaths.size() <= 0) {
-            return;
-        }
-
-        ProgressManager.getInstance().run(new Task.Modal(project, "Applying Kubernetes Configuration", false) {
-            private final List<String> errorMessages = Lists.newArrayList();
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Applying Kubernetes Configuration", false) {
+            private String result = "";
 
             @Override
-            public void onFinished() {
-                if (errorMessages.size() > 0) {
-                    Messages.showErrorDialog(String.join(", ", errorMessages), "Errors while applying kubernetes configuration");
-                }
+            public void onThrowable(@NotNull Throwable e) {
+                LOG.error("error occurred while apply kubernetes config file", e);
+                NocalhostNotifier.getInstance(project).notifyError("Nocalhost apply error", "Error occurred while applying kubernetes file", e.getMessage());
             }
 
+            @Override
+            public void onSuccess() {
+                NocalhostNotifier.getInstance(project).notifySuccess("Kubernetes configuration applied", result);
+            }
+
+            @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
-                final double perFraction = 1.0 / chosenPaths.size();
-                final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-
-                double fraction = 0.0;
-                progressIndicator.setIndeterminate(false);
-                progressIndicator.setFraction(fraction);
-
-                for (Path path : chosenPaths) {
-                    progressIndicator.setText("Applying " + path.toString());
-
-                    try {
-                        kubectlCommand.apply(path, node.getDevSpace());
-                    } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                        errorMessages.add(e.getMessage());
-                    }
-
-                    fraction += perFraction;
-                    progressIndicator.setFraction(fraction);
-                }
+                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(node.getDevSpace());
+                nhctlApplyOptions.setFile(chosenPath.toString());
+                result = nhctlCommand.apply(node.getApplication().getContext().getApplicationName(), nhctlApplyOptions);
             }
         });
     }

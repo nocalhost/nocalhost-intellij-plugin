@@ -54,7 +54,6 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ExecutableUtil;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class PortForwardConfigurationDialog extends DialogWrapper {
@@ -103,12 +102,11 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
     private void updatePortForwardList() {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-        NhctlDescribeOptions opts = new NhctlDescribeOptions();
+        NhctlDescribeOptions opts = new NhctlDescribeOptions(node.devSpace());
         opts.setDeployment(node.resourceName());
         if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
             opts.setType("statefulset");
         }
-        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
         ProgressManager.getInstance().run(new Task.Modal(project, "Loading Port Forward List", false) {
             private List<NhctlPortForward> devPortForwardList;
@@ -242,13 +240,11 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     public void run(@NotNull ProgressIndicator indicator) {
                         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-                        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions();
+                        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(node.devSpace());
                         nhctlDescribeOptions.setDeployment(node.resourceName());
                         if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
                             nhctlDescribeOptions.setType("statefulset");
                         }
-                        nhctlDescribeOptions.setKubeconfig(
-                                KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
                         NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                                 node.application().getContext().getApplicationName(),
                                 nhctlDescribeOptions,
@@ -262,15 +258,13 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                         portForwardsToBeStarted.removeAll(existedPortForwards);
                         if (portForwardsToBeStarted.size() > 0) {
                             final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-                            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions();
+                            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(node.devSpace());
                             nhctlPortForwardStartOptions.setDevPorts(Lists.newArrayList(portForwardsToBeStarted.iterator()));
                             nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
                             nhctlPortForwardStartOptions.setDeployment(node.resourceName());
                             if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
                                 nhctlPortForwardStartOptions.setType("statefulset");
                             }
-                            nhctlPortForwardStartOptions.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
-
                             nhctlPortForwardStartOptions.setPod(finalContainer);
 
                             outputCapturedNhctlCommand.startPortForward(node.application().getContext().getApplicationName(), nhctlPortForwardStartOptions, sudoPassword.get());
@@ -388,13 +382,12 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     public void run(@NotNull ProgressIndicator indicator) {
                         final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
-                        NhctlPortForwardEndOptions opts = new NhctlPortForwardEndOptions();
+                        NhctlPortForwardEndOptions opts = new NhctlPortForwardEndOptions(node.devSpace());
                         opts.setPort(portForward.portForwardStr());
                         opts.setDeployment(node.resourceName());
                         if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
                             opts.setType("statefulset");
                         }
-                        opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
 
                         outputCapturedNhctlCommand.endPortForward(node.application().getContext().getApplicationName(), opts, sudoPassword.get());
                     }

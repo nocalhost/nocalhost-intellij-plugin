@@ -87,9 +87,8 @@ public class StartDevelopAction extends AnAction {
         String startDevelopContainerName = "";
         try {
             final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-            NhctlDescribeOptions opts = new NhctlDescribeOptions();
+            NhctlDescribeOptions opts = new NhctlDescribeOptions(node.devSpace());
             opts.setDeployment(node.resourceName());
-            opts.setKubeconfig(KubeConfigUtil.kubeConfigPath(node.devSpace()).toString());
             nhctlDescribeService = nhctlCommand.describe(
                     node.application().getContext().getApplicationName(),
                     opts,
