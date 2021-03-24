@@ -27,6 +27,7 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.AliveDeployment;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncResumeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -114,6 +115,33 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
     @Override
     public @Nullable("null means the widget is unable to show the popup") ListPopup getPopupStep() {
+        if (nhctlSyncStatus != null && nhctlSyncStatus.getStatus().equalsIgnoreCase("disconnected")) {
+            int exitCode = MessageDialogBuilder.yesNoCancel("Sync resume", "do you want to resume file sync?")
+                                               .guessWindowAndAsk();
+            switch (exitCode) {
+                case Messages.YES: {
+                    final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                    List<AliveDeployment> aliveDeployments = UserDataKeyHelper.findAliveDeploymentsByProject(project);
+                    if (aliveDeployments == null) {
+                        return null;
+                    }
+                    AliveDeployment aliveDeployment = aliveDeployments.get(0);
+                    DevSpace devSpace = aliveDeployment.getDevSpace();
+                    String deployment = aliveDeployment.getDeployment();
+                    NhctlSyncResumeOptions options = new NhctlSyncResumeOptions(devSpace);
+                    options.setDeployment(deployment);
+                    try {
+                        nhctlCommand.syncResume(aliveDeployment.getApplication().getContext().getApplicationName(), options);
+                    } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
+                        LOG.error("error occurred while sync resume ", e);
+                    }
+                }
+                case Messages.NO: {
+                    break;
+                }
+                default:
+            }
+        }
         if (nhctlSyncStatus != null && StringUtils.isNoneBlank(nhctlSyncStatus.getOutOfSync())) {
             int exitCode = MessageDialogBuilder.yesNoCancel("Sync warning", "Override the remote changes according to the local folders?")
                     .guessWindowAndAsk();
