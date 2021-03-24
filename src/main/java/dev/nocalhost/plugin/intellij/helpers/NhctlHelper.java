@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeApplication;
@@ -13,7 +14,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 
 public final class NhctlHelper {
-    public static String generateInstallType(DevSpace.Context context) {
+    public static String generateInstallType(Application.Context context) {
         String source = context.getSource();
         String originInstallType = context.getInstallType();
         if (StringUtils.equals(source, "git")
@@ -29,9 +30,9 @@ public final class NhctlHelper {
         }
     }
 
-    public static boolean isApplicationInstalled(DevSpace devSpace) throws IOException, InterruptedException {
+    public static boolean isApplicationInstalled(DevSpace devSpace, Application application) throws IOException, InterruptedException {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        final String applicationName = devSpace.getContext().getApplicationName();
+        final String applicationName = application.getContext().getApplicationName();
 
         NhctlDescribeOptions opts = new NhctlDescribeOptions(devSpace);
 

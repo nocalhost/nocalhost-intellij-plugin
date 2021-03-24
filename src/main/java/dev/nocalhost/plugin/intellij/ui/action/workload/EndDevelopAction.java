@@ -18,12 +18,10 @@ import java.io.IOException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.AliveDeployment;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -49,7 +47,7 @@ public class EndDevelopAction extends AnAction {
         NhctlDescribeService nhctlDescribeService;
         try {
             nhctlDescribeService = nhctlCommand.describe(
-                    node.devSpace().getContext().getApplicationName(),
+                    node.application().getContext().getApplicationName(),
                     opts,
                     NhctlDescribeService.class);
             if (!nhctlDescribeService.isDeveloping()) {
@@ -69,7 +67,7 @@ public class EndDevelopAction extends AnAction {
 
                 try {
                     final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-                    outputCapturedNhctlCommand.devEnd(node.devSpace().getContext().getApplicationName(), opts);
+                    outputCapturedNhctlCommand.devEnd(node.application().getContext().getApplicationName(), opts);
 
                     ApplicationManager.getApplication().getMessageBus()
                             .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
@@ -77,7 +75,7 @@ public class EndDevelopAction extends AnAction {
 
 
                     NocalhostNotifier.getInstance(project).notifySuccess("DevMode ended", "");
-                    UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(node.devSpace(), nhctlDescribeService.getRawConfig().getName(), project.getProjectFilePath()));
+//                    UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(node.devSpace(), nhctlDescribeService.getRawConfig().getName(), project.getProjectFilePath()));
                 } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while ending develop", e);
                 }

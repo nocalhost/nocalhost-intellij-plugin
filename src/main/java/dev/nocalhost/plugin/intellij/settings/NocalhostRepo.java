@@ -14,6 +14,7 @@ public class NocalhostRepo implements Serializable {
     private String host;
     private String email;
     private String appName;
+    private int devSpaceId;
     private String deploymentName;
     private String repoPath;
 
@@ -22,7 +23,12 @@ public class NocalhostRepo implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         NocalhostRepo that = (NocalhostRepo) o;
-        return Objects.equal(host, that.host) && Objects.equal(email, that.email) && Objects.equal(appName, that.appName) && Objects.equal(deploymentName, that.deploymentName) && Objects.equal(repoPath, that.repoPath);
+        return Objects.equal(host, that.host)
+                && Objects.equal(email, that.email)
+                && Objects.equal(appName, that.appName)
+                && Objects.equal(devSpaceId, that.devSpaceId)
+                && Objects.equal(deploymentName, that.deploymentName)
+                && Objects.equal(repoPath, that.repoPath);
     }
 
     @Override

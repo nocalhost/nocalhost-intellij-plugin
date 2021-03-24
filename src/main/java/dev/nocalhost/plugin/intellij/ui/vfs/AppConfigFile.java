@@ -26,7 +26,7 @@ import java.util.Date;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.AllArgsConstructor;
@@ -39,7 +39,7 @@ public class AppConfigFile extends VirtualFile {
     private String name;
     private String content;
     private Project project;
-    private DevSpaceNode node;
+    private ApplicationNode node;
 
     @Override
     public @NotNull @NlsSafe String getName() {
@@ -113,7 +113,7 @@ public class AppConfigFile extends VirtualFile {
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(node.getDevSpace());
                 nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
                 nhctlConfigOptions.setAppConfig(true);
-                nhctlCommand.editConfig(node.getDevSpace().getContext().getApplicationName(), nhctlConfigOptions);
+                nhctlCommand.editConfig(node.getApplication().getContext().getApplicationName(), nhctlConfigOptions);
             }
         });
     }

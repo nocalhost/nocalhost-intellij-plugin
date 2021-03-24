@@ -1,11 +1,9 @@
-package dev.nocalhost.plugin.intellij.ui.action.devspace;
+package dev.nocalhost.plugin.intellij.ui.action.application;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -18,24 +16,23 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-import dev.nocalhost.plugin.intellij.api.NocalhostApi;
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 
 public class UninstallAppAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(UninstallAppAction.class);
 
     private final Project project;
-    private final DevSpaceNode node;
+    private final ApplicationNode node;
 
-    public UninstallAppAction(Project project, DevSpaceNode node) {
+    public UninstallAppAction(Project project, ApplicationNode node) {
         super("Uninstall App", "", AllIcons.Actions.Uninstall);
         this.project = project;
         this.node = node;
@@ -43,10 +40,11 @@ public class UninstallAppAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
+        final Application application = node.getApplication();
         final DevSpace devSpace = node.getDevSpace();
 
         try {
-            if (!NhctlHelper.isApplicationInstalled(devSpace)) {
+            if (!NhctlHelper.isApplicationInstalled(devSpace, application)) {
                 Messages.showMessageDialog("Application has not been installed.", "Uninstall application", null);
                 return;
             }
@@ -55,7 +53,7 @@ public class UninstallAppAction extends AnAction {
             return;
         }
 
-        final String appName = devSpace.getContext().getApplicationName();
+        final String appName = application.getContext().getApplicationName();
         if (!MessageDialogBuilder.yesNo("Uninstall application", "Uninstall application " + appName + "?").guessWindowAndAsk()) {
             return;
         }
@@ -70,17 +68,13 @@ public class UninstallAppAction extends AnAction {
                 try {
                     outputCapturedNhctlCommand.uninstall(appName, opts);
 
-                    final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-                    nocalhostApi.syncInstallStatus(devSpace, 0);
-
-                    final Application application = ApplicationManager.getApplication();
-                    DevSpaceListUpdatedNotifier publisher = application.getMessageBus()
+                    DevSpaceListUpdatedNotifier publisher = ApplicationManager.getApplication().getMessageBus()
                             .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
                     publisher.action();
 
                     NocalhostNotifier.getInstance(project).notifySuccess("Application " + appName + " uninstalled", "");
 
-                } catch (InterruptedException | IOException | NocalhostExecuteCmdException | NocalhostApiException e) {
+                } catch (InterruptedException | IOException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while uninstalling application", e);
                 }
             }

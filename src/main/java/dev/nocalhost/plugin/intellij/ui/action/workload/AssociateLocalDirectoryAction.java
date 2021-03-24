@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 
 import dev.nocalhost.plugin.intellij.settings.NocalhostRepo;
@@ -39,11 +40,14 @@ public class AssociateLocalDirectoryAction extends AnAction {
             return;
         }
 
-        final Optional<NocalhostRepo> repo = nocalhostSettings.getRepos().stream()
-                                                                       .filter(repos -> repos.getHost().equals(nocalhostSettings.getBaseUrl())
-                                                                               && repos.getEmail().equals(nocalhostSettings.getUserInfo().getEmail())
-                                                                               && repos.getAppName().equals(node.devSpace().getContext().getApplicationName())
-                                                                               && repos.getDeploymentName().equals(node.resourceName())).findFirst();
+        final Optional<NocalhostRepo> repo = nocalhostSettings.getRepos()
+                                                              .stream()
+                                                              .filter(r -> Objects.equals(nocalhostSettings.getBaseUrl(), r.getHost())
+                                                                      && Objects.equals(nocalhostSettings.getUserInfo().getEmail(), r.getEmail())
+                                                                      && Objects.equals(node.application().getContext().getApplicationName(), r.getAppName())
+                                                                      && Objects.equals(node.devSpace().getId(), r.getDevSpaceId())
+                                                                      && Objects.equals(node.resourceName(), r.getDeploymentName()))
+                                                              .findFirst();
 
         NocalhostRepo nocalhostRepo;
         if (repo.isPresent()) {
@@ -51,7 +55,14 @@ public class AssociateLocalDirectoryAction extends AnAction {
             nocalhostSettings.removeRepos(nocalhostRepo);
             nocalhostRepo.setRepoPath(parentDir.toString());
         } else {
-            nocalhostRepo = new NocalhostRepo(nocalhostSettings.getBaseUrl(), nocalhostSettings.getUserInfo().getEmail(), node.devSpace().getContext().getApplicationName(), node.resourceName(), parentDir.toString());
+            nocalhostRepo = new NocalhostRepo(
+                    nocalhostSettings.getBaseUrl(),
+                    nocalhostSettings.getUserInfo().getEmail(),
+                    node.application().getContext().getApplicationName(),
+                    node.devSpace().getId(),
+                    node.resourceName(),
+                    parentDir.toString()
+            );
         }
         nocalhostSettings.addRepos(nocalhostRepo);
     }

@@ -29,14 +29,14 @@ import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.ui.action.devspace.ApplyAction;
-import dev.nocalhost.plugin.intellij.ui.action.devspace.ClearAppPersisentDataAction;
-import dev.nocalhost.plugin.intellij.ui.action.devspace.ConfigAppAction;
+import dev.nocalhost.plugin.intellij.ui.action.application.ApplyAction;
+import dev.nocalhost.plugin.intellij.ui.action.application.ClearAppPersisentDataAction;
+import dev.nocalhost.plugin.intellij.ui.action.application.ConfigAppAction;
+import dev.nocalhost.plugin.intellij.ui.action.application.LoadResourceAction;
+import dev.nocalhost.plugin.intellij.ui.action.application.UninstallAppAction;
+import dev.nocalhost.plugin.intellij.ui.action.application.UpgradeAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.InstallAppAction;
-import dev.nocalhost.plugin.intellij.ui.action.devspace.LoadResourceAction;
-import dev.nocalhost.plugin.intellij.ui.action.devspace.ResetAppAction;
-import dev.nocalhost.plugin.intellij.ui.action.devspace.UninstallAppAction;
-import dev.nocalhost.plugin.intellij.ui.action.devspace.UpgradeAppAction;
+import dev.nocalhost.plugin.intellij.ui.action.devspace.ResetDevSpaceAction;
 import dev.nocalhost.plugin.intellij.ui.action.devspace.ViewKubeConfigAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
@@ -47,6 +47,7 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.PortForwardAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ResetAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.StartDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.TerminalAction;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.KubeConfigFile;
@@ -89,7 +90,7 @@ public class TreeMouseListener extends MouseAdapter {
                     @Override
                     public void onThrowable(@NotNull Throwable e) {
                         LOG.error("error occurred while loading kubernetes resource yaml", e);
-                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while loading kubernetes resource yaml", e.getMessage());
+                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost load kubernetes resource error", "Error occurred while loading kubernetes resource yaml", e.getMessage());
                     }
 
                     @SneakyThrows
@@ -100,7 +101,13 @@ public class TreeMouseListener extends MouseAdapter {
                                 resourceNode.getKubeResource().getKind(),
                                 resourceNode.getKubeResource().getMetadata().getName(),
                                 resourceNode.devSpace());
-                        virtualFile = new KubeConfigFile(resourceNode.resourceName() + ".yaml", resourceNode.resourceName() + ".yaml", resourceNode.resourceName(), content, project, resourceNode.devSpace());
+                        String appName;
+                        if (resourceNode.getParent().getParent().getParent() instanceof ApplicationNode) {
+                            appName = resourceNode.application().getContext().getApplicationName();
+                        } else {
+                            appName = "default.application";
+                        }
+                        virtualFile = new KubeConfigFile(resourceNode.resourceName() + ".yaml", resourceNode.resourceName() + ".yaml", resourceNode.resourceName(), content, project, resourceNode.devSpace(), appName);
                     }
                 });
                 return;
@@ -123,6 +130,12 @@ public class TreeMouseListener extends MouseAdapter {
                 return;
             }
 
+            if (object instanceof ApplicationNode) {
+                ApplicationNode applicationNode = (ApplicationNode) object;
+                renderApplicationAction(event, applicationNode);
+                return;
+            }
+
             if (object instanceof ResourceNode) {
                 ResourceNode resourceNode = (ResourceNode) object;
                 renderWorkloadAction(event, resourceNode);
@@ -131,30 +144,31 @@ public class TreeMouseListener extends MouseAdapter {
         }
     }
 
+    private void renderApplicationAction(MouseEvent event, ApplicationNode applicationNode) {
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+        if (applicationNode.isInstalled()) {
+            actionGroup.add(new UninstallAppAction(project, applicationNode));
+
+            actionGroup.add(new Separator());
+            actionGroup.add(new ApplyAction(project, applicationNode));
+            actionGroup.add(new ConfigAppAction(project, applicationNode));
+            actionGroup.add(new ClearAppPersisentDataAction(project, applicationNode));
+            actionGroup.add(new Separator());
+            actionGroup.add(new UpgradeAppAction(project, applicationNode));
+
+            actionGroup.add(new Separator());
+            actionGroup.add(new LoadResourceAction(project, applicationNode));
+        }
+        ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Application.Actions", actionGroup);
+        JBPopupMenu.showByEvent(event, menu.getComponent());
+    }
+
     private void renderDevSpaceAction(MouseEvent event, DevSpaceNode devSpaceNode) {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
-        if (devSpaceNode.isInstalled()) {
-            actionGroup.add(new UninstallAppAction(project, devSpaceNode));
-
-            actionGroup.add(new Separator());
-            actionGroup.add(new ApplyAction(project, devSpaceNode));
-            actionGroup.add(new ConfigAppAction(project, devSpaceNode));
-            actionGroup.add(new ClearAppPersisentDataAction(project, devSpaceNode));
-            actionGroup.add(new ResetAppAction(project, devSpaceNode));
-            actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
-
-            actionGroup.add(new Separator());
-            actionGroup.add(new UpgradeAppAction(project, devSpaceNode));
-
-            actionGroup.add(new Separator());
-            actionGroup.add(new LoadResourceAction(project, devSpaceNode));
-        } else {
-            actionGroup.add(new InstallAppAction(project, devSpaceNode));
-
-            actionGroup.add(new Separator());
-            actionGroup.add(new ResetAppAction(project, devSpaceNode));
-            actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
-        }
+        actionGroup.add(new InstallAppAction(project, devSpaceNode));
+        actionGroup.add(new Separator());
+        actionGroup.add(new ViewKubeConfigAction(project, devSpaceNode));
+        actionGroup.add(new ResetDevSpaceAction(project, devSpaceNode));
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Devspace.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());

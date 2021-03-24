@@ -1,8 +1,7 @@
-package dev.nocalhost.plugin.intellij.ui.action.devspace;
+package dev.nocalhost.plugin.intellij.ui.action.application;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
@@ -31,7 +31,7 @@ import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import lombok.SneakyThrows;
 
@@ -40,9 +40,9 @@ public class UpgradeAppAction extends AnAction {
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
     private final Project project;
-    private final DevSpaceNode node;
+    private final ApplicationNode node;
 
-    public UpgradeAppAction(Project project, DevSpaceNode node) {
+    public UpgradeAppAction(Project project, ApplicationNode node) {
         super("Upgrade App");
         this.project = project;
         this.node = node;
@@ -51,9 +51,10 @@ public class UpgradeAppAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         final DevSpace devSpace = node.getDevSpace();
+        final Application application = node.getApplication();
 
         try {
-            if (!NhctlHelper.isApplicationInstalled(devSpace)) {
+            if (!NhctlHelper.isApplicationInstalled(devSpace, application)) {
                 Messages.showMessageDialog("Application has not been installed.", "Upgrade application", null);
                 return;
             }
@@ -66,8 +67,9 @@ public class UpgradeAppAction extends AnAction {
 
     private void upgradeApp() throws IOException {
         final DevSpace devSpace = node.getDevSpace();
-        final DevSpace.Context context = devSpace.getContext();
-        final String installType = NhctlHelper.generateInstallType(devSpace.getContext());
+        final Application application = node.getApplication();
+        final Application.Context context = application.getContext();
+        final String installType = NhctlHelper.generateInstallType(application.getContext());
 
         final NhctlUpgradeOptions opts = new NhctlUpgradeOptions(devSpace);
         opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
@@ -100,7 +102,7 @@ public class UpgradeAppAction extends AnAction {
             opts.setConfig(configPath.toString());
 
         } else {
-            AppInstallOrUpgradeOption upgradeOption = askAndGetUpgradeOption(installType, devSpace);
+            AppInstallOrUpgradeOption upgradeOption = askAndGetUpgradeOption(installType, application);
             if (upgradeOption == null) {
                 return;
             }
@@ -123,8 +125,7 @@ public class UpgradeAppAction extends AnAction {
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Upgrading application: " + context.getApplicationName(), false) {
             @Override
             public void onSuccess() {
-                final Application application = ApplicationManager.getApplication();
-                DevSpaceListUpdatedNotifier publisher = application.getMessageBus()
+                DevSpaceListUpdatedNotifier publisher = ApplicationManager.getApplication().getMessageBus()
                         .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
                 publisher.action();
 
@@ -146,8 +147,8 @@ public class UpgradeAppAction extends AnAction {
         });
     }
 
-    private AppInstallOrUpgradeOption askAndGetUpgradeOption(String installType, DevSpace devSpace) {
-        final String title = "Upgrade DevSpace: " + devSpace.getSpaceName();
+    private AppInstallOrUpgradeOption askAndGetUpgradeOption(String installType, Application application) {
+        final String title = "Upgrade DevSpace: " + application.getContext().getApplicationName();
         AppInstallOrUpgradeOptionDialog dialog;
         if (StringUtils.equals(installType, "helmRepo")) {
             dialog = new AppInstallOrUpgradeOptionDialog(

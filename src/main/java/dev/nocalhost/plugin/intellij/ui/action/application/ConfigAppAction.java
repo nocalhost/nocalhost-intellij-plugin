@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.ui.action.devspace;
+package dev.nocalhost.plugin.intellij.ui.action.application;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.AppConfigFile;
 import lombok.SneakyThrows;
 
@@ -25,9 +25,9 @@ public class ConfigAppAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(ConfigAppAction.class);
 
     private final Project project;
-    private final DevSpaceNode node;
+    private final ApplicationNode node;
 
-    public ConfigAppAction(Project project, DevSpaceNode node) {
+    public ConfigAppAction(Project project, ApplicationNode node) {
         super("Config", "", AllIcons.Nodes.Editorconfig);
         this.project = project;
         this.node = node;
@@ -41,7 +41,7 @@ public class ConfigAppAction extends AnAction {
 
             @Override
             public void onSuccess() {
-                String filename = node.getDevSpace().getContext().getApplicationName() + ".yaml";
+                String filename = node.getApplication().getContext().getApplicationName() + ".yaml";
                 VirtualFile virtualFile = new AppConfigFile(filename, config, project, node);
                 OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
                 FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
@@ -60,7 +60,7 @@ public class ConfigAppAction extends AnAction {
 
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(node.getDevSpace());
                 nhctlConfigOptions.setAppConfig(true);
-                config = nhctlCommand.getConfig(node.getDevSpace().getContext().getApplicationName(), nhctlConfigOptions);
+                config = nhctlCommand.getConfig(node.getApplication().getContext().getApplicationName(), nhctlConfigOptions);
             }
         });
     }

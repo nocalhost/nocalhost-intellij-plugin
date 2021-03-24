@@ -19,7 +19,6 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ConfigFile;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ConfigAction extends AnAction {
@@ -60,7 +59,7 @@ public class ConfigAction extends AnAction {
 
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(node.devSpace());
                 nhctlConfigOptions.setDeployment(node.resourceName());
-                config = nhctlCommand.getConfig(node.devSpace().getContext().getApplicationName(), nhctlConfigOptions);
+                config = nhctlCommand.getConfig(node.application().getContext().getApplicationName(), nhctlConfigOptions);
             }
         });
     }

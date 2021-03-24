@@ -31,7 +31,6 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 
@@ -45,6 +44,7 @@ public class KubeConfigFile extends VirtualFile {
     private String content;
     private Project project;
     private DevSpace devSpace;
+    private String appName;
 
     @Override
     public @NotNull @NlsSafe String getName() {
@@ -125,7 +125,7 @@ public class KubeConfigFile extends VirtualFile {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
                 NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(devSpace);
                 nhctlApplyOptions.setFile(tempFile.getAbsolutePath());
-                result = nhctlCommand.apply(devSpace.getContext().getApplicationName(), nhctlApplyOptions);
+                result = nhctlCommand.apply(appName, nhctlApplyOptions);
             }
         });
     }
