@@ -50,6 +50,16 @@ public class ResourceNode extends DefaultMutableTreeNode {
         return ((DevSpaceNode) node).getDevSpace();
     }
 
+    public boolean isDefaultResource() {
+        TreeNode node = this;
+        for (int i = 0; i < 3; i++) {
+            if (node != null) {
+                node = node.getParent();
+            }
+        }
+        return node instanceof DefaultResourceNode;
+    }
+
     public String resourceName() {
         return kubeResource.getMetadata().getName();
     }

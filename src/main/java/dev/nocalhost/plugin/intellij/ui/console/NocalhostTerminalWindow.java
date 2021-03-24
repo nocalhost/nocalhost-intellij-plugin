@@ -28,14 +28,17 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlTerminalOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
@@ -78,53 +81,54 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
         this.devSpace = node.devSpace();
 
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
+        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
         final NhctlDescribeOptions opts = new NhctlDescribeOptions(node.devSpace());
         opts.setDeployment(node.resourceName());
         try {
             List<String> args;
-            if (node.getNhctlDescribeService().isDeveloping()) {
-                args = Lists.newArrayList(
-                        "nhctl",
-                        "dev",
-                        "terminal", node.application().getContext().getApplicationName(),
-                        "--deployment", node.resourceName(),
-                        "--kubeconfig", kubeconfigPath,
-                        "--namespace", devSpace.getNamespace()
-                );
-            } else {
-                final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-                final KubeResourceList pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), node.devSpace());
 
-                String podName = null;
-                final List<KubeResource> running = pods
-                        .getItems()
-                        .stream()
-                        .filter(KubeResource::canSelector)
-                        .collect(Collectors.toList());
-                if (running.size() > 0) {
-                    List<String> containers = running
-                            .stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
-                    podName = selectContainer(containers);
-                }
-                if (StringUtils.isBlank(podName)) {
-                    return;
-                }
-                final String containerName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");
-
+            if (node.isDefaultResource() && ((ResourceTypeNode)node.getParent()).getName().equalsIgnoreCase("pods")) {
+                final String containerName = node.getKubeResource().getSpec().getContainers().get(0).getName();
                 args = Lists.newArrayList(
                         "kubectl",
                         "exec",
-                        "-it", podName,
+                        "-it", node.resourceName(),
                         "-c", containerName,
                         "--kubeconfig", kubeconfigPath,
                         "--namespace", devSpace.getNamespace(),
                         "--", "sh -c \"clear; (zsh || bash || ash || sh)\""
                 );
+                title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), containerName, node.resourceName());
+            } else {
+                NhctlTerminalOptions nhctlTerminalOptions = new NhctlTerminalOptions(node.devSpace());
+                nhctlTerminalOptions.setDeployment(node.resourceName());
+                if (!node.getNhctlDescribeService().isDeveloping()) {
+                    final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+                    final KubeResourceList pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), node.devSpace());
 
+                    String podName = null;
+                    final List<KubeResource> running = pods
+                            .getItems()
+                            .stream()
+                            .filter(KubeResource::canSelector)
+                            .collect(Collectors.toList());
+                    if (running.size() > 0) {
+                        List<String> containers = running
+                                .stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
+                        podName = selectContainer(containers);
+                    }
+                    if (StringUtils.isBlank(podName)) {
+                        return;
+                    }
+                    final String containerName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");
+                    nhctlTerminalOptions.setContainer(containerName);
+                    nhctlTerminalOptions.setPod(podName);
+                }
+                args = nhctlCommand.terminal(node.application().getContext().getApplicationName(), nhctlTerminalOptions);
+                title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), node.application().getContext().getApplicationName(), node.resourceName());
             }
             final String cmd = String.join(" ", args.toArray(new String[]{}));
-            title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), node.application().getContext().getApplicationName(), node.resourceName());
 
             toTerminal(cmd);
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {

@@ -36,6 +36,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlTerminalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -326,6 +327,24 @@ public class NhctlCommand {
             args.add(opts.getDeployment());
         }
         execute(args, opts);
+    }
+
+    public List<String> terminal(String name, NhctlTerminalOptions opts) {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "terminal", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        if (StringUtils.isNotEmpty(opts.getContainer())) {
+            args.add("--container");
+            args.add(opts.getContainer());
+        }
+        if (StringUtils.isNotEmpty(opts.getPod())) {
+            args.add("--pod");
+            args.add(opts.getPod());
+        }
+        addGlobalOptions(args, opts);
+        return args;
     }
 
     public String getConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {

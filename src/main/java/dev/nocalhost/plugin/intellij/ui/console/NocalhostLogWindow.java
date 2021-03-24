@@ -107,7 +107,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
             case CronJobs:
                 break;
             case Pod:
-                podName = node.getKubeResource().getMetadata().getName();
+                podName = node.resourceName();
                 containerName = node.getKubeResource().getSpec().getContainers().get(0).getName();
                 break;
             default:
