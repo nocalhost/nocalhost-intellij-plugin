@@ -280,11 +280,16 @@ public class NocalhostTree extends Tree {
                 continue;
             }
 
-            if (devSpaceNode.getDevSpace().getId() == devSpace.getId() && nhctlListApplicationOptional.isPresent()) {
-                final List<NhctlListApplication.Application> collect = Arrays.stream(nhctlListApplicationOptional.get().getApplication()).filter(a -> !"default.application".equals(a.getName())).collect(Collectors.toList());
-                if (collect.size() + 1 != devSpaceNode.getChildCount()) {
+            if (devSpaceNode.getDevSpace().getId() == devSpace.getId()) {
+                if (nhctlListApplicationOptional.isPresent()) {
+                    final List<NhctlListApplication.Application> collect = Arrays.stream(nhctlListApplicationOptional.get().getApplication()).filter(a -> !"default.application".equals(a.getName())).collect(Collectors.toList());
+                    if (collect.size() + 1 != devSpaceNode.getChildCount()) {
+                        model.removeNodeFromParent(devSpaceNode);
+                        model.insertNodeInto(createDevSpaceNode(devSpace, applications, nhctlListApplicationOptional), root, i + 1);
+                    }
+                } else {
                     model.removeNodeFromParent(devSpaceNode);
-                    model.insertNodeInto(createDevSpaceNode(devSpace, applications, nhctlListApplicationOptional), root, i + 1);
+                    model.insertNodeInto(createDevSpaceNode(devSpace, applications, Optional.empty()), root, i + 1);
                 }
             }
 
