@@ -195,25 +195,22 @@ public class TreeMouseListener extends MouseAdapter {
                 actionGroup.add(new Separator());
                 actionGroup.add(new ClearPersistentDataAction(project, resourceNode));
                 actionGroup.add(new Separator());
-                actionGroup.add(new LogsAction(project, resourceNode, Deployment));
+                actionGroup.add(new LogsAction(project, resourceNode));
                 actionGroup.add(new PortForwardAction(project, resourceNode));
                 actionGroup.add(new ResetAction(project, resourceNode));
-                actionGroup.add(new TerminalAction(project, resourceNode, Deployment));
+                actionGroup.add(new TerminalAction(project, resourceNode));
                 break;
             case Daemonset:
+            case Job:
+            case CronJobs:
                 break;
             case Statefulset:
                 actionGroup.add(new PortForwardAction(project, resourceNode));
                 break;
-            case Job:
-                actionGroup.add(new PortForwardAction(project, resourceNode));
-                break;
-            case CronJobs:
-                break;
             case Pod:
-                actionGroup.add(new LogsAction(project, resourceNode, Pod));
+                actionGroup.add(new LogsAction(project, resourceNode));
                 actionGroup.add(new PortForwardAction(project, resourceNode));
-                actionGroup.add(new TerminalAction(project, resourceNode, Pod));
+                actionGroup.add(new TerminalAction(project, resourceNode));
                 break;
             default:
                 return;

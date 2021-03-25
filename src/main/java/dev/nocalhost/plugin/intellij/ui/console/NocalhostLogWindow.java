@@ -17,10 +17,10 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.ToolWindow;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,8 +44,6 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
     private static final Logger LOG = Logger.getInstance(NocalhostLogWindow.class);
 
     private final Project project;
-    private final ToolWindow toolWindow;
-    private final ResourceNode node;
 
     private String title;
     private ConsoleView consoleView;
@@ -59,28 +57,25 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
     private final DevSpace devSpace;
     private final KubectlCommand kubectlCommand;
 
-    public NocalhostLogWindow(Project project, ToolWindow toolWindow, KubeResourceType type, ResourceNode node) {
+    public NocalhostLogWindow(Project project, ResourceNode node) {
         this.project = project;
-        this.toolWindow = toolWindow;
-        this.node = node;
-
 
         kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-        final String workloadName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");
         devSpace = node.devSpace();
         stop = false;
         pause = false;
-        toolWindow.show();
 
-        switch (type) {
+        String type = node.getKubeResource().getKind();
+
+        switch (EnumUtils.getEnumIgnoreCase(KubeResourceType.class, type)) {
             case Deployment:
-                containerName = workloadName;
+                containerName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");;
                 KubeResourceList pods = null;
                 try {
                     pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), devSpace);
                 } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while getting workload pods", e);
-                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost log error", String.format("error occurred while getting workload pods workloadName:[%s] devSpace:[%s]", workloadName, devSpace), e.getMessage());
+                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost log error", String.format("error occurred while getting workload pods containerName:[%s] devSpace:[%s]", containerName, devSpace), e.getMessage());
                     return;
                 }
                 if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {

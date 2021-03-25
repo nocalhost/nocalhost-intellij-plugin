@@ -17,7 +17,6 @@ import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
@@ -74,25 +73,26 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
     }
 
     private void newTerminal(DevSpace devSpace, Application app, String deploymentName) {
-        NocalhostConsoleWindow nocalhostConsoleWindow = new NocalhostTerminalWindow(project, toolWindow, devSpace, app, deploymentName);
+        NocalhostConsoleWindow nocalhostConsoleWindow = new NocalhostTerminalWindow(project, devSpace, app, deploymentName);
         addContent(nocalhostConsoleWindow);
         toolWindow.show();
     }
 
-    private void updateTab(ResourceNode node, KubeResourceType type, Action action) {
+    private void updateTab(ResourceNode node, Action action) {
         toolWindow.show();
         NocalhostConsoleWindow nocalhostConsoleWindow;
         switch (action) {
             case LOGS:
-                nocalhostConsoleWindow = new NocalhostLogWindow(project, toolWindow, type, node);
+                nocalhostConsoleWindow = new NocalhostLogWindow(project, node);
                 break;
             case TERMINAL:
-                nocalhostConsoleWindow = new NocalhostTerminalWindow(project, toolWindow, type, node);
+                nocalhostConsoleWindow = new NocalhostTerminalWindow(project, node);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + action);
         }
         addContent(nocalhostConsoleWindow);
+        toolWindow.show();
     }
 
     private void addContent(final NocalhostConsoleWindow nocalhostConsoleWindow) {

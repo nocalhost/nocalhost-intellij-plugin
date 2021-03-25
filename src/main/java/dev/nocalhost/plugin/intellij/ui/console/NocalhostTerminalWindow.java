@@ -7,7 +7,6 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.wm.ToolWindow;
 import com.jediterm.pty.PtyProcessTtyConnector;
 import com.jediterm.terminal.TtyConnector;
 import com.pty4j.PtyProcess;
@@ -31,7 +30,6 @@ import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlTerminalOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -45,19 +43,15 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
     private static final Logger LOG = Logger.getInstance(NocalhostTerminalWindow.class);
 
     private final Project project;
-    private final ToolWindow toolWindow;
-    private final ResourceNode node;
     private final DevSpace devSpace;
 
     private JComponent panel;
 
     private String title;
 
-    public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, DevSpace devSpace, Application application, String deploymentName) {
+    public NocalhostTerminalWindow(Project project, DevSpace devSpace, Application application, String deploymentName) {
         this.project = project;
-        this.toolWindow = toolWindow;
         this.devSpace = devSpace;
-        this.node = null;
 
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
 
@@ -74,10 +68,8 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
         toTerminal(cmd);
     }
 
-    public NocalhostTerminalWindow(Project project, ToolWindow toolWindow, KubeResourceType type, ResourceNode node) {
+    public NocalhostTerminalWindow(Project project, ResourceNode node) {
         this.project = project;
-        this.toolWindow = toolWindow;
-        this.node = node;
         this.devSpace = node.devSpace();
 
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
