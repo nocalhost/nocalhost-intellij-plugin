@@ -62,8 +62,12 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         String status = null;
         try {
             status = nhctlCommand.syncStatus(aliveDeployment.getApplication().getContext().getApplicationName(), options);
-        } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
+        } catch (InterruptedException | IOException e) {
             LOG.error("error occurred while get sync status ", e);
+        } catch (NocalhostExecuteCmdException e) {
+            if (StringUtils.contains(e.getMessage(), "not found")) {
+                UserDataKeyHelper.removeAliveDeployments(project, aliveDeployment);
+            }
         }
         nhctlSyncStatus = DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
         return nhctlSyncStatus;
