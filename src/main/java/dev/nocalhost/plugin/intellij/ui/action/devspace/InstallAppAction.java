@@ -39,6 +39,7 @@ import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.InstallApplicationChooseDialog;
+import dev.nocalhost.plugin.intellij.ui.KustomizePathDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
@@ -110,7 +111,9 @@ public class InstallAppAction extends AnAction {
 
         final NhctlInstallOptions opts = new NhctlInstallOptions(devSpace);
         opts.setType(installType);
-        opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
+
+        List<String> resourceDirs = Arrays.asList(context.getResourceDir());
+
         opts.setNamespace(devSpace.getNamespace());
 
         if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {
@@ -162,6 +165,19 @@ public class InstallAppAction extends AnAction {
             }
         }
 
+
+        if (StringUtils.equalsIgnoreCase(installType, "kustomizeGit")) {
+            KustomizePathDialog kustomizePathDialog = new KustomizePathDialog(project);
+            if (kustomizePathDialog.showAndGet()) {
+                String specifyPath = kustomizePathDialog.getSpecifyPath();
+                if (StringUtils.isNotBlank(specifyPath)) {
+                    resourceDirs.add(specifyPath);
+                }
+            } else {
+                return;
+            }
+        }
+
         if (Set.of("helmGit", "helmRepo", "helmLocal").contains(installType)) {
             HelmValuesChooseDialog helmValuesChooseDialog = new HelmValuesChooseDialog(project);
             if (helmValuesChooseDialog.showAndGet()) {
@@ -176,6 +192,7 @@ public class InstallAppAction extends AnAction {
                 return;
             }
         }
+        opts.setResourcesPath(resourceDirs);
 
         ProgressManager.getInstance().run(new InstallAppTask(project, devSpace, app, opts));
     }
