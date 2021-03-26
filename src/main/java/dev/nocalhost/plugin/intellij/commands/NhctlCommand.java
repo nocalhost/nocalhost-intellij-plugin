@@ -3,6 +3,7 @@ package dev.nocalhost.plugin.intellij.commands;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
+import com.google.gson.reflect.TypeToken;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
@@ -413,24 +414,9 @@ public class NhctlCommand {
             args.add("--svc");
             args.add(opts.getSvc());
         }
-        args.add("--yaml");
+        args.add("--json");
         String output = execute(args, opts);
-
-        List<Map> mapItems = DataUtils.YAML.load(output);
-        List<NhctlPVCItem> nhctlPVCItems = Lists.newArrayList();
-        for (Map map : mapItems) {
-            NhctlPVCItem nhctlPVCItem = new NhctlPVCItem();
-            nhctlPVCItem.setName((String) map.get("name"));
-            nhctlPVCItem.setAppName((String) map.get("appName"));
-            nhctlPVCItem.setServiceName((String) map.get("serviceName"));
-            nhctlPVCItem.setCapacity((String) map.get("capacity"));
-            nhctlPVCItem.setStorageClass((String) map.get("storageClass"));
-            nhctlPVCItem.setStatus((String) map.get("status"));
-            nhctlPVCItem.setMountPath((String) map.get("mountPath"));
-            nhctlPVCItems.add(nhctlPVCItem);
-        }
-
-        return nhctlPVCItems;
+        return DataUtils.GSON.fromJson(output, TypeToken.getParameterized(List.class, NhctlPVCItem.class).getType());
     }
 
     public void cleanPVC(NhctlCleanPVCOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
