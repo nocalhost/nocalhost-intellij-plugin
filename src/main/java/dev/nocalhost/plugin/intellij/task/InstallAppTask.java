@@ -37,7 +37,6 @@ import dev.nocalhost.plugin.intellij.commands.data.ServiceContainerInstall;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class InstallAppTask extends Task.Backgroundable {
@@ -58,10 +57,10 @@ public class InstallAppTask extends Task.Backgroundable {
     private final Project project;
     private final DevSpace devSpace;
     private final Application application;
-    private NhctlInstallOptions opts;
+    private final NhctlInstallOptions opts;
 
-    private NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-    String productPagePort;
+    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private String productPagePort;
 
     public InstallAppTask(@Nullable Project project, DevSpace devSpace, Application application, NhctlInstallOptions opts) {
         super(project, "Installing application: " + application.getContext().getApplicationName(), false);

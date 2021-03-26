@@ -12,7 +12,6 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
-import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 
@@ -41,15 +40,12 @@ public class NocalhostWindow {
     private static final Logger LOG = Logger.getInstance(NocalhostWindow.class);
 
     private final Project project;
-    private final ToolWindow toolWindow;
 
-    private SimpleToolWindowPanel panel;
+    private final SimpleToolWindowPanel panel;
     private NocalhostTree tree;
-    private JBScrollPane scrollPane;
 
-    public NocalhostWindow(Project project, ToolWindow toolWindow) {
+    public NocalhostWindow(Project project) {
         this.project = project;
-        this.toolWindow = toolWindow;
 
         checkNocalhostVersion();
 
@@ -110,7 +106,7 @@ public class NocalhostWindow {
         if (StringUtils.isNotBlank(jwt)) {
             tree = new NocalhostTree(project);
             tree.updateDevSpaces();
-            scrollPane = new JBScrollPane(tree);
+            JBScrollPane scrollPane = new JBScrollPane(tree);
             scrollPane.setBorder(new TopLineBorder(new JBColor(0xD5D5D5, 0x323232), 1));
             panel.add(scrollPane);
         } else {

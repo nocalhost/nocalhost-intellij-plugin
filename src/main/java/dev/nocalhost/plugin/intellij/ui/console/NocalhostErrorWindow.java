@@ -4,31 +4,19 @@ import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.ToolWindow;
 
 import javax.swing.*;
 
 public class NocalhostErrorWindow extends NocalhostConsoleWindow {
 
-    private final Project project;
-    private final ToolWindow toolWindow;
+    private final LogPanel panel;
+    private final String title;
 
-    private LogPanel panel;
-    private ConsoleView consoleView;
-
-    private String title;
-    private String content;
-    private String eMessage;
-
-    public NocalhostErrorWindow(Project project, ToolWindow toolWindow, String title, String content, String eMessage) {
-        this.project = project;
-        this.toolWindow = toolWindow;
+    public NocalhostErrorWindow(Project project, String title, String content, String eMessage) {
         this.title = title;
-        this.content = content;
-        this.eMessage = eMessage;
 
 
-        consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+        ConsoleView consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
 
         panel = new LogPanel(false);
         consoleView.print(

@@ -9,7 +9,6 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.ToolWindow;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -18,17 +17,11 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 
 public class NocalhostOutputWindow {
-    private final Project project;
-    private final ToolWindow toolWindow;
 
-    private LogPanel panel;
+    private final LogPanel panel;
+    private final ConsoleView consoleView;
 
-
-    private ConsoleView consoleView;
-
-    public NocalhostOutputWindow(Project project, ToolWindow toolWindow) {
-        this.project = project;
-        this.toolWindow = toolWindow;
+    public NocalhostOutputWindow(Project project) {
 
         consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
 

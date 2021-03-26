@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public class NocalhostWindowFactory implements ToolWindowFactory, DumbAware {
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        NocalhostWindow nocalhostWindow = new NocalhostWindow(project, toolWindow);
+        NocalhostWindow nocalhostWindow = new NocalhostWindow(project);
 
         ContentManager contentManager = toolWindow.getContentManager();
         Content content = ContentFactory.SERVICE.getInstance().createContent(nocalhostWindow.getPanel(), "", false);

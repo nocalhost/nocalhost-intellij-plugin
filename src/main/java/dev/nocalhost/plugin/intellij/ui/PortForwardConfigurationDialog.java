@@ -64,8 +64,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
     private final ResourceNode node;
     private final Project project;
 
-    private JPanel dialogPanel;
-    private JScrollPane scrollPane;
+    private final JPanel dialogPanel;
     private JPanel listPanel;
 
     private JBTextField startTextField;
@@ -300,7 +299,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
     private void setupStopPanel() {
         listPanel = new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true));
 
-        scrollPane = new JBScrollPane(listPanel);
+        JScrollPane scrollPane = new JBScrollPane(listPanel);
         scrollPane.setPreferredSize(new Dimension(-1, 400));
 
         GridConstraints scrollPaneConstraints = new GridConstraints();

@@ -33,22 +33,16 @@ import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 
 public class NocalhostSettingComponent {
     private final JPanel settingPanel;
-    private final JBTextField nhctlField;
     private final TextFieldWithBrowseButton nhctlBinary;
-    private final JButton nhctlTestButton;
-    private final JPanel nhctlPanel;
-    private final JBTextField kubeField;
     private final TextFieldWithBrowseButton kubectlBinary;
-    private final JButton kubectlTestButton;
-    private final JPanel kubectlPanel;
     private final JBTextArea showVersion;
 
 
     public NocalhostSettingComponent() {
-        nhctlField = new JBTextField();
+        JBTextField nhctlField = new JBTextField();
         nhctlField.getEmptyText().appendText("nhctl");
         nhctlBinary = new TextFieldWithBrowseButton(nhctlField);
-        kubeField = new JBTextField();
+        JBTextField kubeField = new JBTextField();
         kubeField.getEmptyText().appendText("kubectl");
         kubectlBinary = new TextFieldWithBrowseButton(kubeField);
         nhctlBinary.addBrowseFolderListener("", "Select nhctl binary", null,
@@ -57,14 +51,14 @@ public class NocalhostSettingComponent {
         kubectlBinary.addBrowseFolderListener("", "Select kubectl binary", null,
                 FileChooseUtil.singleFileChooserDescriptor(),
                 TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
-        nhctlTestButton = new JButton("Test");
+        JButton nhctlTestButton = new JButton("Test");
         nhctlTestButton.addActionListener(new TestNhctlListener());
-        nhctlPanel = new JPanel(new BorderLayout());
+        JPanel nhctlPanel = new JPanel(new BorderLayout());
         nhctlPanel.add(nhctlBinary, BorderLayout.CENTER);
         nhctlPanel.add(nhctlTestButton, BorderLayout.EAST);
-        kubectlTestButton = new JButton("Test");
+        JButton kubectlTestButton = new JButton("Test");
         kubectlTestButton.addActionListener(new TestKubectlListener());
-        kubectlPanel = new JPanel(new BorderLayout());
+        JPanel kubectlPanel = new JPanel(new BorderLayout());
         kubectlPanel.add(kubectlBinary, BorderLayout.CENTER);
         kubectlPanel.add(kubectlTestButton, BorderLayout.EAST);
 
@@ -115,12 +109,10 @@ public class NocalhostSettingComponent {
             String nhctl = StringUtils.isBlank(nhctlBinary.getText()) ? "nhctl" : nhctlBinary.getText();
             final Map<String, String> environment = new HashMap<>(EnvironmentUtil.getEnvironmentMap());
             environment.put("DISABLE_SPINNER", "true");
-            if (SystemInfo.isMac || SystemInfo.isLinux) {
-                if (StringUtils.contains(nhctl, "/")) {
-                    String path = environment.get("PATH");
-                    path = nhctl.substring(0, nhctl.lastIndexOf("/")) + ":" + path;
-                    environment.put("PATH", path);
-                }
+            if ((SystemInfo.isMac || SystemInfo.isLinux) && StringUtils.contains(nhctl, "/")) {
+                String path = environment.get("PATH");
+                path = nhctl.substring(0, nhctl.lastIndexOf("/")) + ":" + path;
+                environment.put("PATH", path);
             }
             GeneralCommandLine commandLine = new GeneralCommandLine(Lists.newArrayList(nhctl, "version")).withEnvironment(environment);
             commandLine.setCharset(CharsetToolkit.getDefaultSystemCharset());
@@ -143,12 +135,10 @@ public class NocalhostSettingComponent {
             String kubectl = StringUtils.isBlank(kubectlBinary.getText()) ? "kubectl" : kubectlBinary.getText();
             final Map<String, String> environment = new HashMap<>(EnvironmentUtil.getEnvironmentMap());
             environment.put("DISABLE_SPINNER", "true");
-            if (SystemInfo.isMac || SystemInfo.isLinux) {
-                if (StringUtils.contains(kubectl, "/")) {
-                    String path = environment.get("PATH");
-                    path = kubectl.substring(0, kubectl.lastIndexOf("/")) + ":" + path;
-                    environment.put("PATH", path);
-                }
+            if ((SystemInfo.isMac || SystemInfo.isLinux) && StringUtils.contains(kubectl, "/")) {
+                String path = environment.get("PATH");
+                path = kubectl.substring(0, kubectl.lastIndexOf("/")) + ":" + path;
+                environment.put("PATH", path);
             }
             GeneralCommandLine commandLine = new GeneralCommandLine(Lists.newArrayList(kubectl, "version")).withEnvironment(environment);
             commandLine.setCharset(CharsetToolkit.getDefaultSystemCharset());
