@@ -85,8 +85,10 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                             .filter(KubeResource::canSelector)
                             .collect(Collectors.toList());
                     if (running.size() > 0) {
-                        List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
-                        podName = selectContainer(containers);
+                        List<String> containersName = pods.getItems().stream().flatMap(r -> r.getSpec().getContainers().stream().map(KubeResource.Spec.Container::getName)).collect(Collectors.toList());
+                        containerName = selectContainer(containersName);
+                        List<String> podsName = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
+                        podName = selectContainer(podsName);
                     }
                     if (StringUtils.isBlank(podName)) {
                         return;
