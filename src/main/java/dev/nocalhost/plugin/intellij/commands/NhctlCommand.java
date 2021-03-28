@@ -111,10 +111,6 @@ public class NhctlCommand {
         if (opts.isIgnorePreInstall()) {
             args.add("--ignore-pre-install");
         }
-        if (StringUtils.isNotEmpty(opts.getNamespace())) {
-            args.add("--namespace");
-            args.add(opts.getNamespace());
-        }
         if (StringUtils.isNotEmpty(opts.getOuterConfig())) {
             args.add("--outer-config");
             args.add(opts.getOuterConfig());
