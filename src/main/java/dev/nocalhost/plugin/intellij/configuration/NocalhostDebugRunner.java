@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import lombok.SneakyThrows;
 
 public class NocalhostDebugRunner implements ProgramRunner<RunnerSettings> {
-    private static final long DEFAULT_POLL_TIMEOUT = 10 * 60 * 1000; // 1 minute
+    private static final long DEFAULT_POLL_TIMEOUT = 10 * 60 * 1000; // 10 minute
 
     @Override
     public @NotNull
