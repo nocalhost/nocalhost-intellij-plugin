@@ -8,17 +8,17 @@ import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.configurations.RemoteConnection;
 import com.intellij.execution.configurations.RemoteState;
 import com.intellij.execution.executors.DefaultDebugExecutor;
-import com.intellij.execution.executors.DefaultRunExecutor;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -32,6 +32,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
@@ -40,6 +41,8 @@ import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class NocalhostProfileState extends CommandLineState implements RemoteState {
+    private static final Logger LOG = Logger.getInstance(NocalhostProfileState.class);
+
     private static final String DEFAULT_SHELL = "sh";
 
     private final AtomicReference<NocalhostDevInfo> devInfoHolder = new AtomicReference<>(null);
@@ -55,15 +58,16 @@ public class NocalhostProfileState extends CommandLineState implements RemoteSta
             throw new ExecutionException("Call prepareDevInfo() before this method");
         }
 
-        String executorId = getEnvironment().getExecutor().getId();
-        switch (executorId) {
-            case DefaultRunExecutor.EXECUTOR_ID:
-                return startRunProcess();
-            case DefaultDebugExecutor.EXECUTOR_ID:
-                return startDebugProcess();
-            default:
-                throw new ExecutionException(MessageFormat.format("Executor '{0}' is unable to execute nocalhost configuration.", executorId));
-        }
+        String shell = StringUtils.isNotEmpty(nocalhostDevInfo.getShell()) ? nocalhostDevInfo.getShell() : DEFAULT_SHELL;
+        String command = isDebugExecutor() ? nocalhostDevInfo.getCommand().getDebug() : nocalhostDevInfo.getCommand().getRun();
+        List<String> commandLine = Lists.newArrayList(
+                "nhctl", "exec", nocalhostDevInfo.getApplication().getContext().getApplicationName(),
+                "--deployment", nocalhostDevInfo.getDevModeService().getServiceName(),
+                "--command", shell, "--command", "-c", "--command", command,
+                "--kubeconfig", KubeConfigUtil.kubeConfigPath(nocalhostDevInfo.getDevSpace()).toString(),
+                "--namespace", nocalhostDevInfo.getDevSpace().getNamespace()
+        );
+        return new NocalhostDevProcessHandler(new GeneralCommandLine(commandLine), getEnvironment(), this);
     }
 
     @Override
@@ -106,15 +110,22 @@ public class NocalhostProfileState extends CommandLineState implements RemoteSta
             }
 
             NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(serviceContainer), resolveDebugCommand(serviceContainer));
-
             NocalhostDevInfo.Debug debug = null;
-            if (StringUtils.equals(DefaultDebugExecutor.EXECUTOR_ID, getEnvironment().getExecutor().getId())) {
+            if (isDebugExecutor()) {
+                if (!StringUtils.isNotEmpty(command.getDebug())) {
+                    throw new ExecutionException("Debug command not configured");
+                }
+
                 String remotePort = resolveDebugPort(serviceContainer);
                 if (!StringUtils.isNotEmpty(remotePort)) {
                     throw new ExecutionException("Remote debug port not configured.");
                 }
                 String localPort = startDebugPortForward(devSpace, app, devModeService, remotePort);
                 debug = new NocalhostDevInfo.Debug(remotePort, localPort);
+            } else {
+                if (!StringUtils.isNotEmpty(command.getRun())) {
+                    throw new ExecutionException("Run command not configured");
+                }
             }
 
             devInfoHolder.set(new NocalhostDevInfo(
@@ -130,30 +141,8 @@ public class NocalhostProfileState extends CommandLineState implements RemoteSta
         }
     }
 
-    private @NotNull ProcessHandler startRunProcess() throws ExecutionException {
-        NocalhostDevInfo nocalhostDevInfo = devInfoHolder.get();
-        String shell = StringUtils.isNotEmpty(nocalhostDevInfo.getShell()) ? nocalhostDevInfo.getShell() : DEFAULT_SHELL;
-        List<String> command = Lists.newArrayList(
-                "nhctl", "exec", nocalhostDevInfo.getApplication().getContext().getApplicationName(),
-                "--deployment", nocalhostDevInfo.getDevModeService().getServiceName(),
-                "--command", shell, "--command", "-c", "--command", nocalhostDevInfo.getCommand().getRun(),
-                "--kubeconfig", KubeConfigUtil.kubeConfigPath(nocalhostDevInfo.getDevSpace()).toString(),
-                "--namespace", nocalhostDevInfo.getDevSpace().getNamespace()
-        );
-        return new NocalhostDevProcessHandler(new GeneralCommandLine(command), getEnvironment());
-    }
-
-    private @NotNull ProcessHandler startDebugProcess() throws ExecutionException {
-        NocalhostDevInfo nocalhostDevInfo = devInfoHolder.get();
-        String shell = StringUtils.isNotEmpty(nocalhostDevInfo.getShell()) ? nocalhostDevInfo.getShell() : DEFAULT_SHELL;
-        List<String> command = Lists.newArrayList(
-                "nhctl", "exec", nocalhostDevInfo.getApplication().getContext().getApplicationName(),
-                "--deployment", nocalhostDevInfo.getDevModeService().getServiceName(),
-                "--command", shell, "--command", "-c", "--command", nocalhostDevInfo.getCommand().getDebug(),
-                "--kubeconfig", KubeConfigUtil.kubeConfigPath(nocalhostDevInfo.getDevSpace()).toString(),
-                "--namespace", nocalhostDevInfo.getDevSpace().getNamespace()
-        );
-        return new NocalhostDevProcessHandler(new GeneralCommandLine(command), getEnvironment(), nocalhostDevInfo);
+    private boolean isDebugExecutor() {
+        return StringUtils.equals(DefaultDebugExecutor.EXECUTOR_ID, getEnvironment().getExecutor().getId());
     }
 
     private String startDebugPortForward(DevSpace devSpace, Application app, DevModeService devModeService, String remotePort) throws ExecutionException {
@@ -196,6 +185,32 @@ public class NocalhostProfileState extends CommandLineState implements RemoteSta
         } catch (Exception e) {
             throw new ExecutionException(e);
         }
+    }
+
+    public void stopDebugPortForward() {
+        NocalhostDevInfo nocalhostDevInfo = devInfoHolder.get();
+        NocalhostDevInfo.Debug debug = nocalhostDevInfo.getDebug();
+        if (debug == null) {
+            return;
+        }
+
+        DevSpace devSpace = nocalhostDevInfo.getDevSpace();
+        Application app = nocalhostDevInfo.getApplication();
+        DevModeService devModeService = nocalhostDevInfo.getDevModeService();
+
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+
+                NhctlPortForwardEndOptions nhctlPortForwardEndOptions = new NhctlPortForwardEndOptions(devSpace);
+                nhctlPortForwardEndOptions.setPort(debug.getLocalPort() + ":" + debug.getRemotePort());
+                nhctlPortForwardEndOptions.setDeployment(devModeService.getServiceName());
+
+                nhctlCommand.endPortForward(app.getContext().getApplicationName(), nhctlPortForwardEndOptions);
+            } catch (Exception e) {
+                LOG.error(e);
+            }
+        });
     }
 
     private DevModeService getDevModeService() {
