@@ -5,8 +5,6 @@ import com.google.common.collect.Lists;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.CommandLineState;
 import com.intellij.execution.configurations.GeneralCommandLine;
-import com.intellij.execution.configurations.RemoteConnection;
-import com.intellij.execution.configurations.RemoteState;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
@@ -40,7 +38,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
-public class NocalhostProfileState extends CommandLineState implements RemoteState {
+public class NocalhostProfileState extends CommandLineState {
     private static final Logger LOG = Logger.getInstance(NocalhostProfileState.class);
 
     private static final String DEFAULT_SHELL = "sh";
@@ -70,10 +68,9 @@ public class NocalhostProfileState extends CommandLineState implements RemoteSta
         return new NocalhostDevProcessHandler(new GeneralCommandLine(commandLine), getEnvironment(), this);
     }
 
-    @Override
-    public RemoteConnection getRemoteConnection() {
+    public String getDebugPort() {
         NocalhostDevInfo nocalhostDevInfo = devInfoHolder.get();
-        return new RemoteConnection(true, "127.0.0.1", nocalhostDevInfo.getDebug().getLocalPort(), false);
+        return nocalhostDevInfo.getDebug().getLocalPort();
     }
 
     public void prepareDevInfo() throws ExecutionException {

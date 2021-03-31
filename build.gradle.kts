@@ -45,8 +45,7 @@ intellij {
     version = project.property("ideaVersion") as String
     val plugins = mutableListOf(
         git4idea,
-        terminal,
-        "com.intellij.java"
+        terminal
     )
     setPlugins(*plugins.toTypedArray())
     pluginName = "nocalhost-intellij-plugin"
