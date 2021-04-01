@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
@@ -49,7 +48,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
 
     private String title;
 
-    public NocalhostTerminalWindow(Project project, DevSpace devSpace, Application application, String deploymentName) {
+    public NocalhostTerminalWindow(Project project, DevSpace devSpace, String application, String deploymentName) {
         this.project = project;
         this.devSpace = devSpace;
 
@@ -58,12 +57,12 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
         List<String> args = Lists.newArrayList(
                 "nhctl",
                 "dev",
-                "terminal", application.getContext().getApplicationName(),
+                "terminal", application,
                 "--deployment", deploymentName,
                 "--kubeconfig", kubeconfigPath
         );
         final String cmd = String.join(" ", args.toArray(new String[]{}));
-        title = String.format("%s-%s-%s Terminal", devSpace.getNamespace(), application.getContext().getApplicationName(), deploymentName);
+        title = String.format("%s-%s-%s Terminal", devSpace.getNamespace(), application, deploymentName);
 
         toTerminal(cmd);
     }
@@ -117,8 +116,8 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                     nhctlTerminalOptions.setContainer(containerName);
                     nhctlTerminalOptions.setPod(podName);
                 }
-                args = nhctlCommand.terminal(node.application().getContext().getApplicationName(), nhctlTerminalOptions);
-                title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), node.application().getContext().getApplicationName(), node.resourceName());
+                args = nhctlCommand.terminal(node.applicationName(), nhctlTerminalOptions);
+                title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), node.applicationName(), node.resourceName());
             }
             final String cmd = String.join(" ", args.toArray(new String[]{}));
 

@@ -113,7 +113,7 @@ public class ConfigFile extends VirtualFile {
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(node.devSpace());
                 nhctlConfigOptions.setDeployment(node.resourceName());
                 nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
-                nhctlCommand.editConfig(node.application().getContext().getApplicationName(), nhctlConfigOptions);
+                nhctlCommand.editConfig(node.applicationName(), nhctlConfigOptions);
             }
         });
     }

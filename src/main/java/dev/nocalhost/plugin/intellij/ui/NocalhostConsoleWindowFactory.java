@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
@@ -72,7 +71,7 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
         contentManager.setSelectedContent(content);
     }
 
-    private void newTerminal(DevSpace devSpace, Application app, String deploymentName) {
+    private void newTerminal(DevSpace devSpace, String app, String deploymentName) {
         NocalhostConsoleWindow nocalhostConsoleWindow = new NocalhostTerminalWindow(project, devSpace, app, deploymentName);
         addContent(nocalhostConsoleWindow);
         toolWindow.show();

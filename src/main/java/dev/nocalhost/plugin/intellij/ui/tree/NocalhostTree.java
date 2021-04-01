@@ -64,6 +64,10 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
 
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
+import static dev.nocalhost.plugin.intellij.utils.Constants.HELM_ANNOTATION_NAME;
+import static dev.nocalhost.plugin.intellij.utils.Constants.NOCALHOST_ANNOTATION_NAME;
+
 public class NocalhostTree extends Tree {
     private static final Logger LOG = Logger.getInstance(NocalhostTree.class);
 
@@ -283,7 +287,7 @@ public class NocalhostTree extends Tree {
 
             if (devSpaceNode.getDevSpace().getId() == devSpace.getId()) {
                 if (nhctlListApplicationOptional.isPresent()) {
-                    final List<NhctlListApplication.Application> collect = Arrays.stream(nhctlListApplicationOptional.get().getApplication()).filter(a -> !"default.application".equals(a.getName())).collect(Collectors.toList());
+                    final List<NhctlListApplication.Application> collect = Arrays.stream(nhctlListApplicationOptional.get().getApplication()).filter(a -> !DEFAULT_APPLICATION_NAME.equals(a.getName())).collect(Collectors.toList());
                     if (collect.size() + 1 != devSpaceNode.getChildCount()) {
                         model.removeNodeFromParent(devSpaceNode);
                         model.insertNodeInto(createDevSpaceNode(devSpace, applications, nhctlListApplicationOptional), root, i + 1);
@@ -343,7 +347,7 @@ public class NocalhostTree extends Tree {
         List<KubeResource> resources;
         String applicationName;
         if (application == null) {
-            applicationName = "default.application";
+            applicationName = DEFAULT_APPLICATION_NAME;
         } else {
             applicationName = application.getContext().getApplicationName();
         }
@@ -351,14 +355,14 @@ public class NocalhostTree extends Tree {
         NhctlDescribeService[] nhctlDescribeServices = nhctlDescribeAllService.getSvcProfile();
         resources = kubeResourceList.getItems()
                                     .stream()
-                                    .filter(i -> StringUtils.equals(i.getMetadata().getAnnotations().get("dev.nocalhost/application-name"), applicationName)
-                                            || StringUtils.equals(i.getMetadata().getAnnotations().get("meta.helm.sh/release-name"), applicationName))
+                                    .filter(i -> StringUtils.equals(i.getMetadata().getAnnotations().get(NOCALHOST_ANNOTATION_NAME), applicationName)
+                                            || StringUtils.equals(i.getMetadata().getAnnotations().get(HELM_ANNOTATION_NAME), applicationName))
                                     .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(resources)){
             resources = kubeResourceList.getItems()
                                         .stream()
-                                        .filter(i -> StringUtils.isBlank(i.getMetadata().getAnnotations().get("dev.nocalhost/application-name"))
-                                                && StringUtils.isBlank(i.getMetadata().getAnnotations().get("meta.helm.sh/release-name")))
+                                        .filter(i -> StringUtils.isBlank(i.getMetadata().getAnnotations().get(NOCALHOST_ANNOTATION_NAME))
+                                                && StringUtils.isBlank(i.getMetadata().getAnnotations().get(HELM_ANNOTATION_NAME)))
                                         .collect(Collectors.toList());
         }
         for (KubeResource kubeResource : resources) {

@@ -46,7 +46,7 @@ public class EndDevelopAction extends AnAction {
         NhctlDescribeService nhctlDescribeService;
         try {
             nhctlDescribeService = nhctlCommand.describe(
-                    node.application().getContext().getApplicationName(),
+                    node.applicationName(),
                     opts,
                     NhctlDescribeService.class);
             if (!nhctlDescribeService.isDeveloping()) {
@@ -66,7 +66,7 @@ public class EndDevelopAction extends AnAction {
 
                 try {
                     final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-                    outputCapturedNhctlCommand.devEnd(node.application().getContext().getApplicationName(), opts);
+                    outputCapturedNhctlCommand.devEnd(node.applicationName(), opts);
 
                     ApplicationManager.getApplication().getMessageBus()
                             .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
@@ -74,7 +74,6 @@ public class EndDevelopAction extends AnAction {
 
 
                     NocalhostNotifier.getInstance(project).notifySuccess("DevMode ended", "");
-//                    UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(node.devSpace(), nhctlDescribeService.getRawConfig().getName(), project.getProjectFilePath()));
                 } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while ending develop", e);
                 }

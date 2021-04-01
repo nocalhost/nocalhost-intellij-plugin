@@ -35,7 +35,7 @@ public class ClearPersistentDataAction extends AnAction {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
         NhctlListPVCOptions opts = new NhctlListPVCOptions(node.devSpace());
-        opts.setApp(node.application().getContext().getApplicationName());
+        opts.setApp(node.applicationName());
         opts.setSvc(node.getNhctlDescribeService().getRawConfig().getName());
         try {
             List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);

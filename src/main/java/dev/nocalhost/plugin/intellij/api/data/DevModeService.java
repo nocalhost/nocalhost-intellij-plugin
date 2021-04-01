@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DevModeService {
-    private int applicationId;
+    private String applicationName;
     private int devSpaceId;
     private String serviceName;
     private String containerName;

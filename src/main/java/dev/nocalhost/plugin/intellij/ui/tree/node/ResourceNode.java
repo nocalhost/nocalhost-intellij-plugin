@@ -11,6 +11,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -24,6 +26,21 @@ public class ResourceNode extends DefaultMutableTreeNode {
 
     public ResourceNode clone() {
         return new ResourceNode(kubeResource, nhctlDescribeService);
+    }
+
+    public String applicationName() {
+        TreeNode node = this;
+        for (int i = 0; i < 3; i++) {
+            if (node != null) {
+                node = node.getParent();
+            } else {
+                return null;
+            }
+        }
+        if (node instanceof ApplicationNode) {
+            return ((ApplicationNode) node).getApplication().getContext().getApplicationName();
+        }
+        return DEFAULT_APPLICATION_NAME;
     }
 
     public Application application() {

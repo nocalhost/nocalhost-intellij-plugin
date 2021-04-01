@@ -48,27 +48,24 @@ public class StartingDevModeTask extends Task.Backgroundable {
     private final Project project;
     private final DevSpace devSpace;
     private final DevModeService devModeService;
-    private final Application application;
+    private final String application;
 
     private NhctlDescribeService nhctlDescribeService;
     private NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-    private final String appName;
     private List<String> portForward = Lists.newArrayList();
 
-    public StartingDevModeTask(Project project, DevSpace devSpace, Application application, DevModeService devModeService) {
+    public StartingDevModeTask(Project project, DevSpace devSpace, String application, DevModeService devModeService) {
         super(project, "Starting DevMode", false);
         this.project = project;
         this.devSpace = devSpace;
         this.devModeService = devModeService;
         this.application = application;
 
-        appName = application.getContext().getApplicationName();
-
         final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(devSpace);
         nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
         try {
             nhctlDescribeService = nhctlCommand.describe(
-                    application.getContext().getApplicationName(),
+                    application,
                     nhctlDescribeOptions,
                     NhctlDescribeService.class);
             for (ServiceContainer container : nhctlDescribeService.getRawConfig().getContainers()) {
@@ -102,7 +99,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         NocalhostRepo nocalhostRepo = new NocalhostRepo(
                 nocalhostSettings.getBaseUrl(),
                 nocalhostSettings.getUserInfo().getEmail(),
-                appName,
+                application,
                 devSpace.getId(),
                 devModeService.getServiceName(),
                 project.getBasePath()
@@ -130,7 +127,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             nhctlDevStartOptions.setContainer(devModeService.getContainerName());
             nhctlDevStartOptions.setStorageClass(devSpace.getStorageClass());
             final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-            outputCapturedNhctlCommand.devStart(appName, nhctlDevStartOptions);
+            outputCapturedNhctlCommand.devStart(application, nhctlDevStartOptions);
 
             // wait for nocalhost-dev container started
             final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
@@ -148,7 +145,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(devSpace);
             nhctlSyncOptions.setDeployment(devModeService.getServiceName());
             nhctlSyncOptions.setContainer(devModeService.getContainerName());
-            outputCapturedNhctlCommand.sync(appName, nhctlSyncOptions);
+            outputCapturedNhctlCommand.sync(application, nhctlSyncOptions);
 
             // nhctl port-forward ...
             if (portForward.size() > 0) {
@@ -157,9 +154,8 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 nhctlPortForwardOptions.setDeployment(devModeService.getServiceName());
                 nhctlPortForwardOptions.setWay(NhctlPortForwardStartOptions.Way.DEV_PORTS);
                 nhctlPortForwardOptions.setDevPorts(portForward);
-                outputCapturedNhctlCommand.startPortForward(appName, nhctlPortForwardOptions);
+                outputCapturedNhctlCommand.startPortForward(application, nhctlPortForwardOptions);
             }
-//            UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, devModeService.getServiceName(), project.getProjectFilePath()));
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while starting dev mode", e);
             NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());

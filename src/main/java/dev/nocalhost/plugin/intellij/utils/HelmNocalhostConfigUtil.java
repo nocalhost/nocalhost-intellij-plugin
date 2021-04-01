@@ -17,7 +17,7 @@ public class HelmNocalhostConfigUtil {
             ".nh/intellij-plugin/helmNHConfigs");
 
     public static Path helmNocalhostConfigPath(DevSpace devSpace, Application application) {
-        Path path = HELM_CONFIGS_DIR.resolve(devSpace.getApplicationId() + "_" + devSpace.getId() + "_config");
+        Path path = HELM_CONFIGS_DIR.resolve(devSpace.getId() + "_" + devSpace.getNamespace() + "_config");
         try {
             if (!Files.exists(path)) {
                 Files.createDirectories(path.getParent());

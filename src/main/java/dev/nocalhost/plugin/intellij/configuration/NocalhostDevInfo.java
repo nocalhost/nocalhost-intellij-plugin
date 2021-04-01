@@ -1,6 +1,5 @@
 package dev.nocalhost.plugin.intellij.configuration;
 
-import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import lombok.AllArgsConstructor;
@@ -15,7 +14,7 @@ public class NocalhostDevInfo {
     private Debug debug;
     private String shell;
     private DevSpace devSpace;
-    private Application application;
+    private String application;
     private DevModeService devModeService;
 
     @AllArgsConstructor

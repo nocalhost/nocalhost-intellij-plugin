@@ -53,9 +53,6 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.KubeConfigFile;
 import lombok.SneakyThrows;
 
-import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Deployment;
-import static dev.nocalhost.plugin.intellij.commands.data.KubeResourceType.Pod;
-
 public class TreeMouseListener extends MouseAdapter {
     private static final Logger LOG = Logger.getInstance(TreeMouseListener.class);
 
@@ -101,13 +98,7 @@ public class TreeMouseListener extends MouseAdapter {
                                 resourceNode.getKubeResource().getKind(),
                                 resourceNode.getKubeResource().getMetadata().getName(),
                                 resourceNode.devSpace());
-                        String appName;
-                        if (resourceNode.getParent().getParent().getParent() instanceof ApplicationNode) {
-                            appName = resourceNode.application().getContext().getApplicationName();
-                        } else {
-                            appName = "default.application";
-                        }
-                        virtualFile = new KubeConfigFile(resourceNode.resourceName() + ".yaml", resourceNode.resourceName() + ".yaml", resourceNode.resourceName(), content, project, resourceNode.devSpace(), appName);
+                        virtualFile = new KubeConfigFile(resourceNode.resourceName() + ".yaml", resourceNode.resourceName() + ".yaml", resourceNode.resourceName(), content, project, resourceNode.devSpace(), resourceNode.applicationName());
                     }
                 });
                 return;

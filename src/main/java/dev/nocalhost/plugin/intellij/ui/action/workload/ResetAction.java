@@ -43,7 +43,7 @@ public class ResetAction extends AnAction {
                 opts.setDeployment(node.resourceName());
 
                 try {
-                    nhctlCommand.reset(node.application().getContext().getApplicationName(), opts);
+                    nhctlCommand.reset(node.applicationName(), opts);
 
                     NocalhostNotifier.getInstance(project).notifySuccess(node.resourceName() + " reset complete", "");
                 } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {

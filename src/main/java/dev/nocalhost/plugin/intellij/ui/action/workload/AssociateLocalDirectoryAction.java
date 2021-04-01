@@ -44,7 +44,7 @@ public class AssociateLocalDirectoryAction extends AnAction {
                                                               .stream()
                                                               .filter(r -> Objects.equals(nocalhostSettings.getBaseUrl(), r.getHost())
                                                                       && Objects.equals(nocalhostSettings.getUserInfo().getEmail(), r.getEmail())
-                                                                      && Objects.equals(node.application().getContext().getApplicationName(), r.getAppName())
+                                                                      && Objects.equals(node.applicationName(), r.getAppName())
                                                                       && Objects.equals(node.devSpace().getId(), r.getDevSpaceId())
                                                                       && Objects.equals(node.resourceName(), r.getDeploymentName()))
                                                               .findFirst();
@@ -58,7 +58,7 @@ public class AssociateLocalDirectoryAction extends AnAction {
             nocalhostRepo = new NocalhostRepo(
                     nocalhostSettings.getBaseUrl(),
                     nocalhostSettings.getUserInfo().getEmail(),
-                    node.application().getContext().getApplicationName(),
+                    node.applicationName(),
                     node.devSpace().getId(),
                     node.resourceName(),
                     parentDir.toString()

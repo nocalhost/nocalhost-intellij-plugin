@@ -59,7 +59,7 @@ public class ConfigAction extends AnAction {
 
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(node.devSpace());
                 nhctlConfigOptions.setDeployment(node.resourceName());
-                config = nhctlCommand.getConfig(node.application().getContext().getApplicationName(), nhctlConfigOptions);
+                config = nhctlCommand.getConfig(node.applicationName(), nhctlConfigOptions);
             }
         });
     }
