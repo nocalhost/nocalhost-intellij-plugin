@@ -13,6 +13,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.ui.LoadingNode;
 import com.intellij.ui.treeStructure.Tree;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -340,18 +341,20 @@ public class NocalhostTree extends Tree {
         final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(devSpace);
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
         List<KubeResource> resources;
-        Application finalApplication = application;
-        NhctlDescribeAllService nhctlDescribeAllService = null;
-        NhctlDescribeService[] nhctlDescribeServices = null;
-        if (finalApplication != null) {
-            nhctlDescribeAllService = nhctlCommand.describe(finalApplication.getContext().getApplicationName(), nhctlDescribeOptions, NhctlDescribeAllService.class);
-            nhctlDescribeServices = nhctlDescribeAllService.getSvcProfile();
-            resources = kubeResourceList.getItems()
-                                        .stream()
-                                        .filter(i -> StringUtils.equals(i.getMetadata().getAnnotations().get("dev.nocalhost/application-name"), finalApplication.getContext().getApplicationName())
-                                                || StringUtils.equals(i.getMetadata().getAnnotations().get("meta.helm.sh/release-name"), finalApplication.getContext().getApplicationName()))
-                                        .collect(Collectors.toList());
+        String applicationName;
+        if (application == null) {
+            applicationName = "default.application";
         } else {
+            applicationName = application.getContext().getApplicationName();
+        }
+        NhctlDescribeAllService nhctlDescribeAllService = nhctlCommand.describe(applicationName, nhctlDescribeOptions, NhctlDescribeAllService.class);
+        NhctlDescribeService[] nhctlDescribeServices = nhctlDescribeAllService.getSvcProfile();
+        resources = kubeResourceList.getItems()
+                                    .stream()
+                                    .filter(i -> StringUtils.equals(i.getMetadata().getAnnotations().get("dev.nocalhost/application-name"), applicationName)
+                                            || StringUtils.equals(i.getMetadata().getAnnotations().get("meta.helm.sh/release-name"), applicationName))
+                                    .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(resources)){
             resources = kubeResourceList.getItems()
                                         .stream()
                                         .filter(i -> StringUtils.isBlank(i.getMetadata().getAnnotations().get("dev.nocalhost/application-name"))
@@ -363,20 +366,18 @@ public class NocalhostTree extends Tree {
                     ArrayUtils.isEmpty(nhctlDescribeServices) ? Optional.empty() : Arrays.stream(nhctlDescribeServices).filter(svc -> svc.getRawConfig().getName().equals(kubeResource.getMetadata().getName())).findFirst();
             if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "Deployment") && nhctlDescribeService.isPresent()) {
                 NhctlDescribeService nhctlDescribe = nhctlDescribeService.get();
-                if (finalApplication != null) {
-                    final Optional<NocalhostRepo> nocalhostRepo =
-                            nocalhostSettings.getRepos().stream()
-                                             .filter(repo -> Objects.equals(nocalhostSettings.getBaseUrl(), repo.getHost())
-                                                     && Objects.equals(nocalhostSettings.getUserInfo().getEmail(), repo.getEmail())
-                                                     && Objects.equals(finalApplication.getContext().getApplicationName(), repo.getAppName())
-                                                     && Objects.equals(devSpace.getId(), repo.getDevSpaceId())
-                                                     && Objects.equals(nhctlDescribe.getRawConfig().getName(), repo.getDeploymentName()))
-                                             .findFirst();
-                    if (nhctlDescribe.isDeveloping()) {
-                        nocalhostRepo.ifPresent(repos -> UserDataKeyHelper.addAliveDeployments(project, new AliveDeployment(devSpace, finalApplication, nhctlDescribe.getRawConfig().getName(), repos.getRepoPath())));
-                    } else {
-                        nocalhostRepo.ifPresent(repos -> UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, finalApplication, nhctlDescribe.getRawConfig().getName(), repos.getRepoPath())));
-                    }
+                final Optional<NocalhostRepo> nocalhostRepo =
+                        nocalhostSettings.getRepos().stream()
+                                         .filter(repo -> Objects.equals(nocalhostSettings.getBaseUrl(), repo.getHost())
+                                                 && Objects.equals(nocalhostSettings.getUserInfo().getEmail(), repo.getEmail())
+                                                 && Objects.equals(applicationName, repo.getAppName())
+                                                 && Objects.equals(devSpace.getId(), repo.getDevSpaceId())
+                                                 && Objects.equals(nhctlDescribe.getRawConfig().getName(), repo.getDeploymentName()))
+                                         .findFirst();
+                if (nhctlDescribe.isDeveloping()) {
+                    nocalhostRepo.ifPresent(repos -> UserDataKeyHelper.addAliveDeployments(project, new AliveDeployment(devSpace, applicationName, nhctlDescribe.getRawConfig().getName(), repos.getRepoPath())));
+                } else {
+                    nocalhostRepo.ifPresent(repos -> UserDataKeyHelper.removeAliveDeployments(project, new AliveDeployment(devSpace, applicationName, nhctlDescribe.getRawConfig().getName(), repos.getRepoPath())));
                 }
                 resourceNodes.add(new ResourceNode(kubeResource, nhctlDescribe));
             } else if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "StatefulSet")) {

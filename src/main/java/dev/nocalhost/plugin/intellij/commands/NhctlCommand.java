@@ -524,6 +524,7 @@ public class NhctlCommand {
         }
 
         GeneralCommandLine commandLine = getCommandline(args);
+        System.out.println("Execute command: " + cmd);
         Process process;
         try {
             process = commandLine.createProcess();

@@ -13,7 +13,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class AliveDeployment {
     private DevSpace devSpace;
-    private Application application;
+    private String applicationName;
     private String deployment;
     private String projectPath;
 
@@ -24,13 +24,13 @@ public class AliveDeployment {
         if (this.devSpace == null) return false;
         if (that.devSpace == null) return false;
         return Objects.equals(devSpace.getId(), that.devSpace.getId())
-                && Objects.equals(application.getContext().getApplicationName(), that.application.getContext().getApplicationName())
+                && Objects.equals(applicationName, that.applicationName)
                 && Objects.equals(deployment, that.deployment)
                 && Objects.equals(projectPath, that.projectPath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(application.getContext().getApplicationName(), deployment, projectPath);
+        return Objects.hash(applicationName, deployment, projectPath);
     }
 }

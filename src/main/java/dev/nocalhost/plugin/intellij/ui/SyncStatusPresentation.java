@@ -61,7 +61,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         options.setDeployment(deployment);
         String status = null;
         try {
-            status = nhctlCommand.syncStatus(aliveDeployment.getApplication().getContext().getApplicationName(), options);
+            status = nhctlCommand.syncStatus(aliveDeployment.getApplicationName(), options);
         } catch (InterruptedException | IOException e) {
             LOG.error("error occurred while get sync status ", e);
         } catch (NocalhostExecuteCmdException e) {
@@ -135,7 +135,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                     NhctlSyncResumeOptions options = new NhctlSyncResumeOptions(devSpace);
                     options.setDeployment(deployment);
                     try {
-                        nhctlCommand.syncResume(aliveDeployment.getApplication().getContext().getApplicationName(), options);
+                        nhctlCommand.syncResume(aliveDeployment.getApplicationName(), options);
                     } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
                         LOG.error("error occurred while sync resume ", e);
                     }
@@ -163,7 +163,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                     NhctlSyncStatusOptions options = new NhctlSyncStatusOptions(devSpace);
                     options.setDeployment(deployment);
                     try {
-                        nhctlCommand.syncStatusOverride(aliveDeployment.getApplication().getContext().getApplicationName(), options);
+                        nhctlCommand.syncStatusOverride(aliveDeployment.getApplicationName(), options);
                     } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
                         LOG.error("error occurred while sync status override ", e);
                     }
