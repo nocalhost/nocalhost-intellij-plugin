@@ -310,9 +310,12 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
     }
 
     private void createList(List<NhctlPortForward> portForwards) {
+        final List<NhctlPortForward> ports = portForwards.stream()
+                                                         .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
+                                                         .collect(Collectors.toList());
         List<JPanel> items = Lists.newArrayList();
 
-        for (NhctlPortForward portForward : portForwards) {
+        for (NhctlPortForward portForward : ports) {
             items.add(createItem(portForward));
         }
 

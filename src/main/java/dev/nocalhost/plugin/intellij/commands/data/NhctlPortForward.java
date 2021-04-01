@@ -15,6 +15,7 @@ public class NhctlPortForward {
     private String reson;
     private String updated;
     private Integer pid;
+    private String role;
 
     public String portForward() {
         if (StringUtils.isNotEmpty(way)) {

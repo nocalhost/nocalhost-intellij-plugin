@@ -55,7 +55,7 @@ public class UpgradeAppAction extends AnAction {
 
         try {
             if (!NhctlHelper.isApplicationInstalled(devSpace, application)) {
-                Messages.showMessageDialog("Application has not been installed.", "Upgrade application", null);
+                Messages.showMessageDialog("Application has not been installed.", "Upgrade Application", null);
                 return;
             }
             upgradeApp();
