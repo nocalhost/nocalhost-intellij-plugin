@@ -54,6 +54,33 @@ intellij {
 
 tasks {
     patchPluginXml {
+        pluginId("dev.nocalhost.nocalhost-intellij-plugin")
+        pluginDescription(
+            """
+            <html>
+                <p>
+                    Nocalhost Intellij Plugin
+                </p>
+    
+                <p>
+                    Nocalhost is Cloud Native Development Environment.
+                </p>
+    
+                <p>
+                    Features:
+                    <ul>
+                        <li>Login to nocalhost API Server and list the DevSpaces</li>
+                        <li>Install and Uninstall DevSpaces</li>
+                        <li>Start DevMode to develop services</li>
+                    </ul>
+                </p>
+    
+                <p>
+                Refer to <a href="https://nocalhost.dev/">nocalhost.dev</a> for more Nocalhost information.
+                </p>
+            </html>
+            """.trimIndent()
+        )
         changeNotes(
             """
           Fix: Get unnamed container error. <br />
