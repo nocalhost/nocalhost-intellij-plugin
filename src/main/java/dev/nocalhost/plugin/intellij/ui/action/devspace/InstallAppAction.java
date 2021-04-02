@@ -208,6 +208,14 @@ public class InstallAppAction extends AnAction {
                     "Default Version",
                     "Input the version of chart",
                     "Chart version cannot be empty");
+        } else if (StringUtils.equals(installType, "kustomizeGit")) {
+            dialog = new AppInstallOrUpgradeOptionDialog(
+                    project,
+                    title,
+                    "Which branch to install(Kustomize in Git Repo)?",
+                    "Default Branch",
+                    "Input the branch of repository",
+                    "Git ref cannot be empty");
         } else {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,

@@ -23,6 +23,9 @@ public final class NhctlHelper {
         } else if (StringUtils.equals(source, "git")
                 && StringUtils.equals(originInstallType, "helm_chart")) {
             return "helmGit";
+        } else if (StringUtils.equals(source, "git")
+                && StringUtils.equals(originInstallType, "kustomize")) {
+            return "kustomizeGit";
         } else if (StringUtils.equals(source, "local")) {
             return originInstallType;
         } else {
