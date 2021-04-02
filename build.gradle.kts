@@ -51,25 +51,28 @@ intellij {
     pluginName = "nocalhost-intellij-plugin"
     updateSinceUntilBuild = false
 }
-tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml") {
-    changeNotes(
-        """
-      Fix: Get unnamed container error. <br />
-      Port forwarding after installing devspace. <br />
-      Support port forwarding on privileged ports. <br />
-      Support statefulset port forwarding. <br />
-      Support app upgrade. <br />
-      Add support for installing local application. <br />
-      Add synchronization status in the status bar. <br />
-      Support for applying kubernetes configuration from local files or directories. <br />
-      Fix: Port forwarding error occurs when deploying more pods.<br />
-      Fix: On MacOS nhctl not found <br />
-      Support nocalhost v0.2.x. <br />
-      First Upload. <br />
-      """
-    )
-}
 
-tasks.getByName<org.jetbrains.intellij.tasks.BuildSearchableOptionsTask>("buildSearchableOptions") {
-    this.enabled = false
+tasks {
+    patchPluginXml {
+        changeNotes(
+            """
+          Fix: Get unnamed container error. <br />
+          Port forwarding after installing devspace. <br />
+          Support port forwarding on privileged ports. <br />
+          Support statefulset port forwarding. <br />
+          Support app upgrade. <br />
+          Add support for installing local application. <br />
+          Add synchronization status in the status bar. <br />
+          Support for applying kubernetes configuration from local files or directories. <br />
+          Fix: Port forwarding error occurs when deploying more pods.<br />
+          Fix: On MacOS nhctl not found <br />
+          Support nocalhost v0.2.x. <br />
+          First Upload. <br />
+          """
+        )
+    }
+
+    buildSearchableOptions {
+        enabled = false
+    }
 }
