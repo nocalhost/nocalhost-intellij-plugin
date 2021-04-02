@@ -74,7 +74,6 @@ public class UpgradeAppAction extends AnAction {
 
         final NhctlUpgradeOptions opts = new NhctlUpgradeOptions(devSpace);
         List<String> resourceDirs = Arrays.asList(context.getResourceDir());
-        opts.setResourcesPath(resourceDirs);
 
         if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {
             String message = StringUtils.equals(installType, "rawManifestLocal")
@@ -135,6 +134,7 @@ public class UpgradeAppAction extends AnAction {
                 }
             }
         }
+        opts.setResourcesPath(resourceDirs);
 
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Upgrading application: " + context.getApplicationName(), false) {
             @Override
