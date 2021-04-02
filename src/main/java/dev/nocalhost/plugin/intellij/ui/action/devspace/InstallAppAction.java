@@ -112,7 +112,7 @@ public class InstallAppAction extends AnAction {
         final NhctlInstallOptions opts = new NhctlInstallOptions(devSpace);
         opts.setType(installType);
 
-        List<String> resourceDirs = Arrays.asList(context.getResourceDir());
+        List<String> resourceDirs = Lists.newArrayList(context.getResourceDir());
 
         opts.setNamespace(devSpace.getNamespace());
 

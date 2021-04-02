@@ -55,9 +55,9 @@ public class KustomizePathDialog extends DialogWrapper {
     @Override
     protected void doOKAction() {
         if (useDefaultValuesRadioButton.isSelected()) {
-            specifyPath = specifyTextField.getText();
-        } else {
             specifyPath = "";
+        } else {
+            specifyPath = specifyTextField.getText();
         }
         super.doOKAction();
 

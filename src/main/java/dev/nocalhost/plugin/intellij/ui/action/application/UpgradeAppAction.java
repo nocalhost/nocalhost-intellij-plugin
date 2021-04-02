@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.application;
 
+import com.google.common.collect.Lists;
+
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
@@ -10,14 +12,12 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -73,7 +73,7 @@ public class UpgradeAppAction extends AnAction {
         final String installType = NhctlHelper.generateInstallType(application.getContext());
 
         final NhctlUpgradeOptions opts = new NhctlUpgradeOptions(devSpace);
-        List<String> resourceDirs = Arrays.asList(context.getResourceDir());
+        List<String> resourceDirs = Lists.newArrayList(context.getResourceDir());
 
         if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {
             String message = StringUtils.equals(installType, "rawManifestLocal")
