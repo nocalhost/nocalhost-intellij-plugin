@@ -31,6 +31,7 @@ import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
+import dev.nocalhost.plugin.intellij.ui.KustomizePathDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import lombok.SneakyThrows;
@@ -72,7 +73,8 @@ public class UpgradeAppAction extends AnAction {
         final String installType = NhctlHelper.generateInstallType(application.getContext());
 
         final NhctlUpgradeOptions opts = new NhctlUpgradeOptions(devSpace);
-        opts.setResourcesPath(Arrays.asList(context.getResourceDir()));
+        List<String> resourceDirs = Arrays.asList(context.getResourceDir());
+        opts.setResourcesPath(resourceDirs);
 
         if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {
             String message = StringUtils.equals(installType, "rawManifestLocal")
@@ -118,6 +120,18 @@ public class UpgradeAppAction extends AnAction {
                 opts.setConfig(context.getApplicationConfigPath());
                 if (upgradeOption.isSpecifyOneSelected()) {
                     opts.setGitRef(upgradeOption.getSpecifyText());
+                }
+            }
+
+            if (StringUtils.equalsIgnoreCase(installType, "kustomizeGit")) {
+                KustomizePathDialog kustomizePathDialog = new KustomizePathDialog(project);
+                if (kustomizePathDialog.showAndGet()) {
+                    String specifyPath = kustomizePathDialog.getSpecifyPath();
+                    if (StringUtils.isNotBlank(specifyPath)) {
+                        resourceDirs.add(specifyPath);
+                    }
+                } else {
+                    return;
                 }
             }
         }
