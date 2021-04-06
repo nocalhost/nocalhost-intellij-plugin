@@ -197,6 +197,8 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         }
         String status = nhctlSyncStatus.getStatus();
         switch (status) {
+            case "outOfSync":
+                return AllIcons.General.Warning;
             case "disconnected":
                 return AllIcons.Nodes.Pluginnotinstalled;
             case "error":
