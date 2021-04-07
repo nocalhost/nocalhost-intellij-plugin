@@ -1,0 +1,5 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostGoDlvDebugRunner" order="first"/>
+    </extensions>
+</idea-plugin>

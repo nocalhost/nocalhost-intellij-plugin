@@ -34,6 +34,10 @@ dependencies {
         exclude("org.slf4j")
     }
 
+    implementation("com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6") {
+        exclude("org.slf4j")
+    }
+
     annotationProcessor("org.projectlombok:lombok:1.18.16")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.16")
 
@@ -42,15 +46,21 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
+    type = "IU"
     version = project.property("ideaVersion") as String
     val plugins = mutableListOf(
         git4idea,
         terminal,
-        "com.intellij.java"
+        "com.intellij.java",
+        "org.jetbrains.plugins.go:203.5981.114"
     )
     setPlugins(*plugins.toTypedArray())
     pluginName = "nocalhost-intellij-plugin"
     updateSinceUntilBuild = false
+}
+
+tasks.runIde {
+    ideDirectory("/Applications/GoLand.app/Contents")
 }
 
 tasks {
