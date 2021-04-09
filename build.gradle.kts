@@ -63,7 +63,7 @@ intellij {
         git4idea,
         terminal,
         "com.intellij.java",
-        "org.jetbrains.plugins.go:203.5981.114"
+        "org.jetbrains.plugins.go:211.6693.111"
     )
     setPlugins(*plugins.toTypedArray())
     pluginName = "nocalhost-intellij-plugin"
