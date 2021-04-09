@@ -3,7 +3,7 @@
     <vendor url="https://nocalhost.dev/">Nocalhost</vendor>
 
     <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
-    <idea-version since-build="203.5981.155" until-build="203.*" />
+    <idea-version since-build="211.0" />
 
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->

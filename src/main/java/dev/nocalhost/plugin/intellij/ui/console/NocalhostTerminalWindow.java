@@ -7,6 +7,7 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.terminal.JBTerminalWidget;
 import com.jediterm.pty.PtyProcessTtyConnector;
 import com.jediterm.terminal.TtyConnector;
 import com.pty4j.PtyProcess;
@@ -15,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.plugins.terminal.JBTerminalSystemSettingsProvider;
 import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner;
 import org.jetbrains.plugins.terminal.ShellTerminalWidget;
+import org.jetbrains.plugins.terminal.TerminalProcessOptions;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -144,11 +146,12 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
     private void toTerminal(String cmd) {
         try {
             LocalTerminalDirectRunner localTerminalDirectRunner = LocalTerminalDirectRunner.createTerminalRunner(project);
-            PtyProcess ptyProcess = localTerminalDirectRunner.createProcess(project.getBasePath());
-            TtyConnector connector = new PtyProcessTtyConnector(ptyProcess, StandardCharsets.UTF_8);
+            TerminalProcessOptions options = new TerminalProcessOptions(project.getBasePath(), 0, 0);
             JBTerminalSystemSettingsProvider settingsProvider = new JBTerminalSystemSettingsProvider();
+            JBTerminalWidget widget = new JBTerminalWidget(project, settingsProvider, new TermDisposable());
+            PtyProcess ptyProcess = localTerminalDirectRunner.createProcess(options, widget);
+            TtyConnector connector = new PtyProcessTtyConnector(ptyProcess, StandardCharsets.UTF_8);
             ShellTerminalWidget terminal = new ShellTerminalWidget(project, settingsProvider, new TermDisposable());
-            Disposer.register(terminal, settingsProvider);
             terminal.start(connector);
             terminal.executeCommand(cmd);
             panel = terminal;
