@@ -44,6 +44,11 @@ dependencies {
     testImplementation("junit", "junit", "4.12")
 }
 
+var baseIDE = "Goland"
+if (project.hasProperty("baseIDE")) {
+    baseIDE = project.property("baseIDE") as String
+}
+
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     type = "IU"
@@ -54,13 +59,18 @@ intellij {
         "com.intellij.java",
         "org.jetbrains.plugins.go:203.5981.114"
     )
+    if ("Goland" != baseIDE) {
+        type = "IC"
+    }
     setPlugins(*plugins.toTypedArray())
     pluginName = "nocalhost-intellij-plugin"
     updateSinceUntilBuild = false
 }
 
 tasks.runIde {
-    ideDirectory("/Applications/GoLand.app/Contents")
+    if ("Goland" == baseIDE) {
+        ideDirectory("/Applications/GoLand.app/Contents")
+    }
 }
 
 tasks {
