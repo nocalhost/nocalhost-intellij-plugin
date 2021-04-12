@@ -1,5 +1,5 @@
 plugins {
-    id("org.jetbrains.intellij") version "0.6.5"
+    id("org.jetbrains.intellij") version "0.7.2"
     java
     kotlin("jvm") version "1.4.21"
     id("io.franzbecker.gradle-lombok") version "2.1"
@@ -51,7 +51,13 @@ if (project.hasProperty("baseIDE")) {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    type = if (baseIDE == "Goland") "IU" else "IC"
+    type = "IC"
+    if (baseIDE == "Goland") {
+        type = "GO"
+    }
+    if (baseIDE == "IU") {
+        type = "IU"
+    }
     version = project.property("ideaVersion") as String
     val plugins = mutableListOf(
         git4idea,
@@ -62,12 +68,6 @@ intellij {
     setPlugins(*plugins.toTypedArray())
     pluginName = "nocalhost-intellij-plugin"
     updateSinceUntilBuild = false
-}
-
-tasks.runIde {
-    if (baseIDE == "Goland") {
-        ideDirectory("/Applications/GoLand.app/Contents")
-    }
 }
 
 tasks {
