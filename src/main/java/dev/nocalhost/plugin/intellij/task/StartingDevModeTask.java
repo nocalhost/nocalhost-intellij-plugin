@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
@@ -37,8 +36,8 @@ import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.NocalhostRepo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
 
 public class StartingDevModeTask extends Task.Backgroundable {
     private static final Logger LOG = Logger.getInstance(StartingDevModeTask.class);
@@ -90,9 +89,9 @@ public class StartingDevModeTask extends Task.Backgroundable {
                    .action(devSpace, application, devModeService.getServiceName());
         });
 
-        ApplicationManager.getApplication().getMessageBus()
-                          .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
-                          .action();
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                NocalhostTreeDataUpdateNotifier.NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
+        ).action();
         NocalhostNotifier.getInstance(project).notifySuccess("DevMode started", "");
 
         NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
