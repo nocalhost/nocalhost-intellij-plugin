@@ -25,11 +25,11 @@ import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugProcessStarter;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebuggerManager;
-import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Objects;
@@ -81,14 +81,19 @@ public class NocalhostGoDlvDebugRunner implements ProgramRunner<RunnerSettings> 
 
     private void waitForDebuggerStartup(Project project, String debugPort) throws ExecutionException {
         ProgressManager.getInstance().run(new Task.WithResult<String, ExecutionException>(project, "Starting Delve debugger...", true) {
-
-            @SneakyThrows
             @Override
             protected String compute(@NotNull ProgressIndicator indicator) throws ExecutionException {
                 indicator.setText("Waiting for remote debug process start...");
+                final long startTime = System.currentTimeMillis();
                 while (true) {
-                    Thread.sleep(1000);
-                    try (Socket socket = new Socket("127.0.0.1", Integer.parseInt(debugPort))) {
+                    if (System.currentTimeMillis() - startTime > 30 * 1000) {
+                        throw new ExecutionException("Wait remote debug port start timeout");
+                    }
+
+                    Socket socket = null;
+                    try {
+                        Thread.sleep(500);
+                        socket = new Socket("127.0.0.1", Integer.parseInt(debugPort));
                         JsonRpcClient client = new JsonRpcClient();
                         client.invokeAndReadResponse("RPCServer.GetVersion", null, DlvApi.GetVersion.class, socket.getOutputStream(), socket.getInputStream());
                         break;
@@ -100,6 +105,13 @@ public class NocalhostGoDlvDebugRunner implements ProgramRunner<RunnerSettings> 
                             continue;
                         }
                         throw new ExecutionException(e);
+                    } finally {
+                        if (socket != null) {
+                            try {
+                                socket.close();
+                            } catch (IOException ignored) {
+                            }
+                        }
                     }
                 }
                 return "";
