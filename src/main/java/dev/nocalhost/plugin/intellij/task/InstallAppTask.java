@@ -22,7 +22,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
 import lombok.SneakyThrows;
 
 public class InstallAppTask extends Task.Backgroundable {
@@ -60,9 +60,9 @@ public class InstallAppTask extends Task.Backgroundable {
     @Override
     public void onSuccess() {
         bookinfo();
-        DevSpaceListUpdatedNotifier publisher = ApplicationManager.getApplication().getMessageBus()
-                                                           .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
-        publisher.action();
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                NocalhostTreeDataUpdateNotifier.NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
+        ).action();
 
         NocalhostNotifier.getInstance(project).notifySuccess("Application " + application.getContext().getApplicationName() + " installed", "");
     }

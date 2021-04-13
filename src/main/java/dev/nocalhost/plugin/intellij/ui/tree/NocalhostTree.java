@@ -2,6 +2,7 @@ package dev.nocalhost.plugin.intellij.ui.tree;
 
 import com.google.common.collect.Lists;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -37,7 +38,6 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
@@ -49,13 +49,13 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeAllService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
-import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostRepo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.topic.DevSpaceTreeAutoRefreshNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUiUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.DefaultResourceNode;
@@ -68,7 +68,7 @@ import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_
 import static dev.nocalhost.plugin.intellij.utils.Constants.HELM_ANNOTATION_NAME;
 import static dev.nocalhost.plugin.intellij.utils.Constants.NOCALHOST_ANNOTATION_NAME;
 
-public class NocalhostTree extends Tree {
+public class NocalhostTree extends Tree implements Disposable {
     private static final Logger LOG = Logger.getInstance(NocalhostTree.class);
 
     private static final List<Pair<String, List<String>>> PAIRS = Lists.newArrayList(
@@ -212,38 +212,34 @@ public class NocalhostTree extends Tree {
             }
         });
 
-        ApplicationManager.getApplication().getMessageBus().connect().subscribe(
-                DevSpaceTreeAutoRefreshNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC,
-                this::updateDevSpaces
+        ApplicationManager.getApplication().getMessageBus().connect(this).subscribe(
+                NocalhostTreeUiUpdateNotifier.NOCALHOST_TREE_UI_UPDATE_NOTIFIER_TOPIC,
+                this::updateTree
         );
     }
 
     public void updateDevSpaces() {
-        if (!updatingDecSpaces.compareAndSet(false, true)) {
-            return;
-        }
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Fetching nocalhost data", false) {
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                try {
-                    List<DevSpace> devSpaces = nocalhostApi.listDevSpaces();
-                    List<NhctlListApplication> nhctlListApplications = nhctlCommand.listApplication();
-                    List<Application> applications = nocalhostApi.listApplications();
-                    updateDevSpaces(devSpaces, applications, nhctlListApplications);
-                } catch (IOException | InterruptedException | NocalhostExecuteCmdException | NocalhostApiException e) {
-                    LOG.error(e);
-                    if (StringUtils.contains(e.getMessage(), "No such file or directory")) {
-                        NocalhostNotifier.getInstance(project).notifyNhctlNotFound();
-                    } else {
-                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost fetch data error", "Error occurred while fetching data", e.getMessage());
-                    }
-                } finally {
-                    updatingDecSpaces.set(false);
-                }
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                NocalhostTreeDataUpdateNotifier.NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
+        ).action();
+    }
+
+    private void updateTree(List<DevSpace> devSpaces,
+                            List<Application> applications,
+                            List<NhctlListApplication> nhctlListApplications) {
+        try {
+            updateDevSpaces(devSpaces, applications, nhctlListApplications);
+        } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
+            LOG.error(e);
+            if (StringUtils.contains(e.getMessage(), "No such file or directory")) {
+                NocalhostNotifier.getInstance(project).notifyNhctlNotFound();
+            } else {
+                NocalhostNotifier.getInstance(project).notifyError(
+                        "Nocalhost update tree error",
+                        "Error occurred while updating tree",
+                        e.getMessage());
             }
-        });
+        }
     }
 
     private void updateDevSpaces(List<DevSpace> devSpaces, List<Application> applications, List<NhctlListApplication> nhctlListApplications) throws InterruptedException, NocalhostExecuteCmdException, IOException {
@@ -513,5 +509,10 @@ public class NocalhostTree extends Tree {
             resourceGroupNode.add(new ResourceTypeNode(name));
         }
         return resourceGroupNode;
+    }
+
+    @Override
+    public void dispose() {
+
     }
 }

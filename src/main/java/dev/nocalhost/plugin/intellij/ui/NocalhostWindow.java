@@ -2,6 +2,7 @@ package dev.nocalhost.plugin.intellij.ui;
 
 import com.github.zafarkhaja.semver.Version;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
@@ -12,6 +13,7 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 
@@ -29,14 +31,13 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
 import dev.nocalhost.plugin.intellij.ui.action.LogoutAction;
 import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
 import dev.nocalhost.plugin.intellij.ui.action.SettingAction;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 
-public class NocalhostWindow {
+public class NocalhostWindow implements Disposable {
     private static final Logger LOG = Logger.getInstance(NocalhostWindow.class);
 
     private final Project project;
@@ -50,13 +51,9 @@ public class NocalhostWindow {
         checkNocalhostVersion();
 
         final Application application = ApplicationManager.getApplication();
-        application.getMessageBus().connect().subscribe(
+        application.getMessageBus().connect(this).subscribe(
                 NocalhostAccountChangedNotifier.NOCALHOST_ACCOUNT_CHANGED_NOTIFIER_TOPIC,
                 NocalhostWindow.this::toggleContent
-        );
-        application.getMessageBus().connect().subscribe(
-                DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC,
-                NocalhostWindow.this::updateTree
         );
 
         panel = new SimpleToolWindowPanel(true, false);
@@ -105,11 +102,16 @@ public class NocalhostWindow {
 
         if (StringUtils.isNotBlank(jwt)) {
             tree = new NocalhostTree(project);
+            Disposer.register(this, tree);
             tree.updateDevSpaces();
             JBScrollPane scrollPane = new JBScrollPane(tree);
             scrollPane.setBorder(new TopLineBorder(new JBColor(0xD5D5D5, 0x323232), 1));
             panel.add(scrollPane);
         } else {
+            if (tree != null) {
+                Disposer.dispose(tree);
+                tree = null;
+            }
             panel.add(new NocalhostWindowLoginPanel().getPanel());
         }
         setToolbar();
@@ -144,12 +146,12 @@ public class NocalhostWindow {
         }
     }
 
-    private void updateTree() {
-        tree.updateDevSpaces();
-    }
-
-
     public JPanel getPanel() {
         return panel;
+    }
+
+    @Override
+    public void dispose() {
+
     }
 }

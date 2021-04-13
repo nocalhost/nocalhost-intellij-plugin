@@ -28,7 +28,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
-import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.KustomizePathDialog;
@@ -139,9 +139,9 @@ public class UpgradeAppAction extends AnAction {
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Upgrading application: " + context.getApplicationName(), false) {
             @Override
             public void onSuccess() {
-                DevSpaceListUpdatedNotifier publisher = ApplicationManager.getApplication().getMessageBus()
-                        .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
-                publisher.action();
+                ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                        NocalhostTreeDataUpdateNotifier.NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
+                ).action();
 
                 NocalhostNotifier.getInstance(project).notifySuccess("Application " + context.getApplicationName() + " upgraded", "");
             }

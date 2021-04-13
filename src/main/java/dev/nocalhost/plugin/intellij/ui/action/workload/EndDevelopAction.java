@@ -22,7 +22,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import icons.NocalhostIcons;
 
@@ -68,9 +68,10 @@ public class EndDevelopAction extends AnAction {
                     final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
                     outputCapturedNhctlCommand.devEnd(node.applicationName(), opts);
 
-                    ApplicationManager.getApplication().getMessageBus()
-                            .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC)
-                            .action();
+                    ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                            NocalhostTreeDataUpdateNotifier
+                                    .NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
+                    ).action();
 
 
                     NocalhostNotifier.getInstance(project).notifySuccess("DevMode ended", "");

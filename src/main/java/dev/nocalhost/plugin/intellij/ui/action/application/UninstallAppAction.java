@@ -23,7 +23,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
-import dev.nocalhost.plugin.intellij.topic.DevSpaceListUpdatedNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 
 public class UninstallAppAction extends AnAction {
@@ -68,9 +68,10 @@ public class UninstallAppAction extends AnAction {
                 try {
                     outputCapturedNhctlCommand.uninstall(appName, opts);
 
-                    DevSpaceListUpdatedNotifier publisher = ApplicationManager.getApplication().getMessageBus()
-                            .syncPublisher(DevSpaceListUpdatedNotifier.DEV_SPACE_LIST_UPDATED_NOTIFIER_TOPIC);
-                    publisher.action();
+                    ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                            NocalhostTreeDataUpdateNotifier
+                                    .NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
+                    ).action();
 
                     NocalhostNotifier.getInstance(project).notifySuccess("Application " + appName + " uninstalled", "");
 
