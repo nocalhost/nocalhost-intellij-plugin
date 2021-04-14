@@ -14,6 +14,7 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.api.data.LoginRequest;
 import dev.nocalhost.plugin.intellij.api.data.LoginResponse;
 import dev.nocalhost.plugin.intellij.api.data.NocalhostApiResponse;
+import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
 import dev.nocalhost.plugin.intellij.api.data.UserInfo;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
@@ -109,6 +110,32 @@ public class NocalhostApi {
             }
             List<DevSpace> devSpaces = resp.getData();
             return devSpaces.stream().peek(devSpace -> devSpace.setSpaceResourceLimit(DataUtils.GSON.fromJson(devSpace.getSpaceResourceLimitStr(), DevSpace.SpaceResourceLimit.class))).collect(Collectors.toList());
+        }
+    }
+
+    public List<ServiceAccount> listServiceAccount() throws NocalhostApiException, IOException {
+        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        String url = NocalhostApiUrl.serviceAccounts(nocalhostSettings.getBaseUrl());
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("authorization", "Bearer " + nocalhostSettings.getJwt())
+                .get()
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new NocalhostApiException(url, "list serviceAccounts", response.code(), "");
+            }
+            String body = response.body().string();
+            NocalhostApiResponse<List<ServiceAccount>> resp = DataUtils.GSON.fromJson(body,
+                    TypeToken.getParameterized(
+                            NocalhostApiResponse.class,
+                            TypeToken.getParameterized(List.class, ServiceAccount.class).getType()
+                    ).getType());
+            if (resp.getCode() != 0) {
+                throw new NocalhostApiException(url, "list serviceAccounts", response.code(), resp.getMessage());
+            }
+            return resp.getData();
         }
     }
 
