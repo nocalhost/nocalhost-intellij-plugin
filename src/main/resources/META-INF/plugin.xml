@@ -52,7 +52,6 @@
         <errorHandler
                 implementation="dev.nocalhost.plugin.intellij.exception.report.NocalhostErrorReportSubmitter"/>
 
-        <configurationType implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostConfigurationType"/>
         <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostRunner" order="first"/>
     </extensions>
 
