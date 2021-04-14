@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.startup;
 
+import com.google.common.collect.Lists;
+
 import com.intellij.ide.AppLifecycleListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
@@ -13,6 +15,7 @@ import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUiUpdateNotifier;
 
@@ -61,9 +64,12 @@ public class DevSpaceTreeAutoRefreshListener implements AppLifecycleListener {
             final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
             final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-            List<DevSpace> devSpaces = nocalhostApi.listDevSpaces();
             List<Application> applications = nocalhostApi.listApplications();
-            List<NhctlListApplication> nhctlListApplications = nhctlCommand.listApplication();
+            List<DevSpace> devSpaces = nocalhostApi.listDevSpaces();
+            List<NhctlListApplication> nhctlListApplications = Lists.newArrayList();
+            for (DevSpace devSpace : devSpaces) {
+                nhctlListApplications.addAll(nhctlCommand.listApplication(new NhctlListApplicationOptions(devSpace)));
+            }
             ApplicationManager.getApplication().getMessageBus().syncPublisher(
                     NocalhostTreeUiUpdateNotifier.NOCALHOST_TREE_UI_UPDATE_NOTIFIER_TOPIC
             ).action(devSpaces, applications, nhctlListApplications);

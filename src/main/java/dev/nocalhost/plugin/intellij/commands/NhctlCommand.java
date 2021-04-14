@@ -30,6 +30,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlExecOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
@@ -51,9 +52,9 @@ import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 public class NhctlCommand {
     private static final String NHCTL_COMMAND = "nhctl";
 
-    public List<NhctlListApplication> listApplication() throws InterruptedException, NocalhostExecuteCmdException, IOException {
+    public List<NhctlListApplication> listApplication(NhctlListApplicationOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "list", "--yaml");
-        String result = execute(args, null);
+        String result = execute(args, opts);
         List<Map> mapItems = DataUtils.YAML.load(result);
         List<NhctlListApplication> nhctlListApplications = Lists.newArrayList();
         for (Map map : mapItems) {
