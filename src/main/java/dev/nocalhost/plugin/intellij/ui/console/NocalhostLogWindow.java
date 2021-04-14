@@ -69,7 +69,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
         switch (EnumUtils.getEnumIgnoreCase(KubeResourceType.class, type)) {
             case Deployment:
-                containerName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");;
+                containerName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");
                 KubeResourceList pods = null;
                 try {
                     pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), devSpace);
