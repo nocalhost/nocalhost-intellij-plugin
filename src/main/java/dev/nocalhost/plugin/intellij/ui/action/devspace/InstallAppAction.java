@@ -30,6 +30,7 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
@@ -67,7 +68,7 @@ public class InstallAppAction extends AnAction {
             final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
             List<Application> applications = nocalhostApi.listApplications();
-            List<NhctlListApplication> nhctlListApplications = nhctlCommand.listApplication();
+            List<NhctlListApplication> nhctlListApplications = nhctlCommand.listApplication(new NhctlListApplicationOptions(devSpace));
             final Set<String> apps = applications.stream().map(a -> a.getContext().getApplicationName()).collect(Collectors.toSet());
             final Optional<NhctlListApplication> currentDevspacesApp = nhctlListApplications.stream().filter(d -> d.getNamespace().equals(devSpace.getNamespace())).findFirst();
             List<String> installed = null;
