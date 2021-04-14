@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.configuration;
+package dev.nocalhost.plugin.intellij.configuration.go;
 
 import com.goide.dlv.DlvDisconnectOption;
 import com.goide.dlv.protocol.DlvApi;
@@ -25,6 +25,7 @@ import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugProcessStarter;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebuggerManager;
+
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +34,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Objects;
+
+import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
+import dev.nocalhost.plugin.intellij.configuration.NocalhostRunner;
 
 public class NocalhostGoDlvDebugRunner implements ProgramRunner<RunnerSettings> {
     @Override
@@ -44,7 +48,7 @@ public class NocalhostGoDlvDebugRunner implements ProgramRunner<RunnerSettings> 
 
     @Override
     public boolean canRun(@NotNull String executorId, @NotNull RunProfile profile) {
-        return DefaultDebugExecutor.EXECUTOR_ID.equals(executorId) && profile instanceof NocalhostConfiguration;
+        return DefaultDebugExecutor.EXECUTOR_ID.equals(executorId) && profile instanceof NocalhostGoConfiguration;
     }
 
     @Override
@@ -60,8 +64,8 @@ public class NocalhostGoDlvDebugRunner implements ProgramRunner<RunnerSettings> 
     private RunContentDescriptor attachDlv(RunProfileState state,
                                            @NotNull ExecutionEnvironment env,
                                            String debugPort) throws ExecutionException {
-        NocalhostConfigurationFactory factory = (NocalhostConfigurationFactory) (new NocalhostConfigurationType().getConfigurationFactories())[0];
-        NocalhostConfiguration configuration = (NocalhostConfiguration) factory.createTemplateConfiguration(env.getProject());
+        NocalhostGoConfigurationFactory factory = (NocalhostGoConfigurationFactory) (new NocalhostGoConfigurationType().getConfigurationFactories())[0];
+        NocalhostGoConfiguration configuration = (NocalhostGoConfiguration) factory.createTemplateConfiguration(env.getProject());
         Executor executor = DefaultDebugExecutor.getDebugExecutorInstance();
         ExecutionEnvironment environment = ExecutionEnvironmentBuilder.create(env.getProject(), executor, configuration).build();
         NocalhostRunner runner = Objects.requireNonNull(ProgramRunner.PROGRAM_RUNNER_EP.findExtension(NocalhostRunner.class));
