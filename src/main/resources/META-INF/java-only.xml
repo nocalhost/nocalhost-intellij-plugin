@@ -1,5 +1,6 @@
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
-        <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostJavaDebugRunner" order="first"/>
+        <configurationType implementation="dev.nocalhost.plugin.intellij.configuration.java.NocalhostJavaConfigurationType"/>
+        <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.java.NocalhostJavaDebugRunner" order="first"/>
     </extensions>
 </idea-plugin>

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -137,6 +138,7 @@ public class StartDevelopAction extends AnAction {
                                                                        .filter(repos -> repos.getHost().equals(nocalhostSettings.getBaseUrl())
                                                                                 && repos.getEmail().equals(nocalhostSettings.getUserInfo().getEmail())
                                                                                 && repos.getAppName().equals(node.applicationName())
+                                                                                && Objects.equals(repos.getDevSpaceId(), devModeService.getDevSpaceId())
                                                                                 && repos.getDeploymentName().equals(devModeService.getServiceName())).findFirst();
 
         if (nocalhostRepo.isPresent()) {

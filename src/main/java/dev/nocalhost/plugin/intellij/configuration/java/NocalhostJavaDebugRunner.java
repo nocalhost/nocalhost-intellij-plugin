@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.configuration;
+package dev.nocalhost.plugin.intellij.configuration.java;
 
 import com.intellij.debugger.DebugEnvironment;
 import com.intellij.debugger.DebuggerManagerEx;
@@ -28,6 +28,8 @@ import com.intellij.xdebugger.impl.XDebugSessionImpl;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
+
 public class NocalhostJavaDebugRunner implements ProgramRunner<RunnerSettings> {
     private static final long DEFAULT_POLL_TIMEOUT = 10 * 60 * 1000; // 10 minute
 
@@ -40,7 +42,7 @@ public class NocalhostJavaDebugRunner implements ProgramRunner<RunnerSettings> {
 
     @Override
     public boolean canRun(@NotNull String executorId, @NotNull RunProfile profile) {
-        return DefaultDebugExecutor.EXECUTOR_ID.equals(executorId) && profile instanceof NocalhostConfiguration;
+        return DefaultDebugExecutor.EXECUTOR_ID.equals(executorId) && profile instanceof NocalhostJavaConfiguration;
     }
 
     @Override
