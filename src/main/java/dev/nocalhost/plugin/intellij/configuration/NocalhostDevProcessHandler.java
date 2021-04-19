@@ -10,13 +10,18 @@ import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.ui.RunContentDescriptor;
 import com.intellij.execution.ui.RunContentManager;
+import com.intellij.openapi.diagnostic.Logger;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 
 public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
+    private static final Logger LOG = Logger.getInstance(NocalhostDevProcessHandler.class);
+
     private final ExecutionEnvironment executionEnvironment;
     private final NocalhostProfileState nocalhostProfileState;
 
@@ -34,6 +39,22 @@ public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
                 NocalhostDevProcessHandler.this.nocalhostProfileState.stopDebugPortForward();
             }
         });
+    }
+
+    @Override
+    protected void doDestroyProcess() {
+        sendCtrlC();
+        super.doDestroyProcess();
+    }
+
+    private void sendCtrlC() {
+        OutputStream outputStream = this.getProcess().getOutputStream();
+        try {
+            outputStream.write(3);
+            outputStream.flush();
+        } catch (IOException e) {
+            LOG.warn("Fail to send ctrl+c to remote process", e);
+        }
     }
 
     @Override
