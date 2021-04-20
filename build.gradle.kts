@@ -52,10 +52,7 @@ if (project.hasProperty("baseIDE")) {
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     type = "IC"
-    if (baseIDE == "Goland") {
-        type = "GO"
-    }
-    if (baseIDE == "IU") {
+    if (baseIDE == "GO") {
         type = "IU"
     }
     version = project.property("ideaVersion") as String
@@ -68,6 +65,12 @@ intellij {
     setPlugins(*plugins.toTypedArray())
     pluginName = "nocalhost-intellij-plugin"
     updateSinceUntilBuild = false
+}
+
+tasks.runIde {
+    if (baseIDE == "GO") {
+        ideDirectory("/Applications/GoLand.app/Contents")
+    }
 }
 
 tasks {
