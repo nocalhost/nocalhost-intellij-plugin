@@ -7,6 +7,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,6 +18,7 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUiUpdateNotifier;
 
@@ -40,7 +43,8 @@ public class DevSpaceTreeAutoRefreshListener implements AppLifecycleListener {
             while (!forceExit) {
                 try {
                     Thread.sleep(NOCALHOST_TREE_REFRESH_INTERVAL_MILLIS);
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+                }
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(
                         NocalhostTreeDataUpdateNotifier.NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
                 ).action();
@@ -61,18 +65,23 @@ public class DevSpaceTreeAutoRefreshListener implements AppLifecycleListener {
             return;
         }
         try {
+            final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
             final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
             final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-            List<Application> applications = nocalhostApi.listApplications();
-            List<DevSpace> devSpaces = nocalhostApi.listDevSpaces();
-            List<NhctlListApplication> nhctlListApplications = Lists.newArrayList();
-            for (DevSpace devSpace : devSpaces) {
-                nhctlListApplications.addAll(nhctlCommand.listApplication(new NhctlListApplicationOptions(devSpace)));
+            String jwt = nocalhostSettings.getJwt();
+            if (StringUtils.isNotBlank(jwt)) {
+                List<Application> applications = nocalhostApi.listApplications();
+                List<DevSpace> devSpaces = nocalhostApi.listDevSpaces();
+                List<NhctlListApplication> nhctlListApplications = Lists.newArrayList();
+                for (DevSpace devSpace : devSpaces) {
+                    NhctlListApplicationOptions opts = new NhctlListApplicationOptions(devSpace);
+                    nhctlListApplications.addAll(nhctlCommand.listApplication(opts));
+                }
+                ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                        NocalhostTreeUiUpdateNotifier.NOCALHOST_TREE_UI_UPDATE_NOTIFIER_TOPIC
+                ).action(devSpaces, applications, nhctlListApplications);
             }
-            ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                    NocalhostTreeUiUpdateNotifier.NOCALHOST_TREE_UI_UPDATE_NOTIFIER_TOPIC
-            ).action(devSpaces, applications, nhctlListApplications);
         } catch (Exception e) {
             LOG.error(e);
         } finally {
