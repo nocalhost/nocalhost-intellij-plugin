@@ -15,6 +15,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.JBColor;
+import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.components.JBScrollPane;
 
 import org.apache.commons.lang3.StringUtils;
@@ -102,6 +103,7 @@ public class NocalhostWindow implements Disposable {
 
         if (StringUtils.isNotBlank(jwt)) {
             tree = new NocalhostTree(project);
+            new TreeSpeedSearch(tree);
             Disposer.register(this, tree);
             tree.updateDevSpaces();
             JBScrollPane scrollPane = new JBScrollPane(tree);
