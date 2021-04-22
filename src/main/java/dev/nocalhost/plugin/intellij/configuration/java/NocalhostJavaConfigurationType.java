@@ -27,7 +27,7 @@ public class NocalhostJavaConfigurationType implements ConfigurationType {
 
     @Override
     public Icon getIcon() {
-        return NocalhostIcons.LogoColorful;
+        return NocalhostIcons.ConfigurationLogo;
     }
 
     @Override
