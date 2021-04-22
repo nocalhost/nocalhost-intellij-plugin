@@ -22,6 +22,6 @@ public class NocalhostGoConfigurationFactory extends ConfigurationFactory {
     @NotNull
     @NonNls
     public String getId() {
-        return "NocalhostGoConfigurationFactory";
+        return getType().getDisplayName();
     }
 }

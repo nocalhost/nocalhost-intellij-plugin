@@ -23,6 +23,6 @@ public class NocalhostJavaConfigurationFactory extends ConfigurationFactory {
     @NotNull
     @NonNls
     public String getId() {
-        return "NocalhostJavaConfigurationFactory";
+        return getType().getDisplayName();
     }
 }
