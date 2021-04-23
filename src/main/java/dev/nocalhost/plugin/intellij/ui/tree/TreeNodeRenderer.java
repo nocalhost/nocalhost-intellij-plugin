@@ -55,13 +55,6 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (value instanceof ApplicationNode) {
             ApplicationNode node = (ApplicationNode) value;
             append(node.getApplication().getContext().getApplicationName());
-            if (node.isInstalled()) {
-                if (node.isInstalled()) {
-                    setIcon(NocalhostIcons.App.Connected);
-                } else {
-                    setIcon(NocalhostIcons.App.Inactive);
-                }
-            }
         }
 
         if (value instanceof DefaultResourceNode) {

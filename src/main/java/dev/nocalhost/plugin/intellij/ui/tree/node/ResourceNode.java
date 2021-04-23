@@ -24,10 +24,6 @@ public class ResourceNode extends DefaultMutableTreeNode {
         this(kubeResource, null);
     }
 
-    public ResourceNode clone() {
-        return new ResourceNode(kubeResource, nhctlDescribeService);
-    }
-
     public String applicationName() {
         TreeNode node = this;
         for (int i = 0; i < 3; i++) {
