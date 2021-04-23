@@ -11,22 +11,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class ApplicationNode extends DefaultMutableTreeNode {
+public class ApplicationNode extends DefaultMutableTreeNode implements ResourceKeeperNode {
     private Application application;
-    private DevSpace devSpace;
-    private boolean expanded;
-    private boolean installed;
 
-    public ApplicationNode(Application application, DevSpace devSpace) {
-        this(application, devSpace, false, false);
-    }
-
-    @Override
-    public boolean isLeaf() {
-        return !installed;
-    }
-
-    public ApplicationNode clone() {
-        return new ApplicationNode(application, devSpace, expanded, installed);
+    public DevSpace getDevSpace() {
+        return ((DevSpaceNode) this.getParent()).getDevSpace();
     }
 }

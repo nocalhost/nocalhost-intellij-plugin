@@ -137,19 +137,19 @@ public class TreeMouseListener extends MouseAdapter {
 
     private void renderApplicationAction(MouseEvent event, ApplicationNode applicationNode) {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
-        if (applicationNode.isInstalled()) {
-            actionGroup.add(new UninstallAppAction(project, applicationNode));
 
-            actionGroup.add(new Separator());
-            actionGroup.add(new ApplyAction(project, applicationNode));
-            actionGroup.add(new ConfigAppAction(project, applicationNode));
-            actionGroup.add(new ClearAppPersisentDataAction(project, applicationNode));
-            actionGroup.add(new Separator());
-            actionGroup.add(new UpgradeAppAction(project, applicationNode));
+        actionGroup.add(new UninstallAppAction(project, applicationNode));
 
-            actionGroup.add(new Separator());
-            actionGroup.add(new LoadResourceAction(project, applicationNode));
-        }
+        actionGroup.add(new Separator());
+        actionGroup.add(new ApplyAction(project, applicationNode));
+        actionGroup.add(new ConfigAppAction(project, applicationNode));
+        actionGroup.add(new ClearAppPersisentDataAction(project, applicationNode));
+        actionGroup.add(new Separator());
+        actionGroup.add(new UpgradeAppAction(project, applicationNode));
+
+        actionGroup.add(new Separator());
+        actionGroup.add(new LoadResourceAction(project, applicationNode));
+
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Application.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
     }
