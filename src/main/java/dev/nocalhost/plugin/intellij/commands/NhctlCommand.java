@@ -478,6 +478,10 @@ public class NhctlCommand {
             args.add("--helm-repo-version");
             args.add(opts.getHelmRepoVersion());
         }
+        if (StringUtils.isNotEmpty(opts.getHelmValues())) {
+            args.add("--helm-values");
+            args.add(opts.getHelmValues());
+        }
         if (StringUtils.isNotEmpty(opts.getLocalPath())) {
             args.add("--local-path");
             args.add(opts.getLocalPath());
@@ -487,6 +491,18 @@ public class NhctlCommand {
                 args.add("--resource-path");
                 args.add(e);
             });
+        }
+        if (opts.getValues() != null) {
+            String values = opts.getValues().entrySet()
+                                .stream()
+                                .map((e) -> e.getKey() + "=" + e.getValue())
+                                .collect(Collectors.toList())
+                                .stream()
+                                .reduce(",", String::join);
+            if (StringUtils.isNotEmpty(values)) {
+                args.add("--set");
+                args.add(values);
+            }
         }
         execute(args, opts);
     }

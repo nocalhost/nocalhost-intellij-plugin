@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
 import java.util.List;
+import java.util.Map;
 
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import lombok.Getter;
@@ -16,6 +17,8 @@ public class NhctlUpgradeOptions extends NhctlGlobalOptions {
     private String helmRepoName;
     private String helmRepoUrl;
     private String helmRepoVersion;
+    private String helmValues;
+    private Map<String, String> values;
     private String localPath;
     private List<String> resourcesPath;
 
