@@ -9,7 +9,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-
+import com.intellij.openapi.util.Disposer;
 import org.apache.commons.lang3.ArrayUtils;
 
 import javax.swing.*;
@@ -24,6 +24,7 @@ public class NocalhostOutputWindow {
     public NocalhostOutputWindow(Project project) {
 
         consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+        Disposer.register(project, consoleView);
 
         panel = new LogPanel(false);
         panel.add(consoleView.getComponent());
