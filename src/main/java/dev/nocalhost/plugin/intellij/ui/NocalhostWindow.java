@@ -31,12 +31,12 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
 import dev.nocalhost.plugin.intellij.ui.action.LogoutAction;
 import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
 import dev.nocalhost.plugin.intellij.ui.action.SettingAction;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
+import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
 public class NocalhostWindow implements Disposable {
     private static final Logger LOG = Logger.getInstance(NocalhostWindow.class);
@@ -96,12 +96,9 @@ public class NocalhostWindow implements Disposable {
     }
 
     private void toggleContent() {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        String jwt = nocalhostSettings.getJwt();
-
         panel.removeAll();
 
-        if (StringUtils.isNotBlank(jwt)) {
+        if (TokenUtil.isTokenValid()) {
             tree = new NocalhostTree(project);
             new TreeSpeedSearch(tree);
             Disposer.register(this, tree);
@@ -123,9 +120,7 @@ public class NocalhostWindow implements Disposable {
     }
 
     private void setToolbar() {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        String jwt = nocalhostSettings.getJwt();
-        if (StringUtils.isNotBlank(jwt)) {
+        if (TokenUtil.isTokenValid()) {
             DefaultActionGroup moreActionGroup = new DefaultActionGroup();
             moreActionGroup.getTemplatePresentation().setText("More");
             moreActionGroup.getTemplatePresentation().setDescription("More");

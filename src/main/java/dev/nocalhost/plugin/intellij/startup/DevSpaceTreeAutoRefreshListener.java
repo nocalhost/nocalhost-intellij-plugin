@@ -7,8 +7,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -18,9 +16,9 @@ import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUiUpdateNotifier;
+import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
 public class DevSpaceTreeAutoRefreshListener implements AppLifecycleListener {
     private static final Logger LOG = Logger.getInstance(DevSpaceTreeAutoRefreshListener.class);
@@ -65,12 +63,10 @@ public class DevSpaceTreeAutoRefreshListener implements AppLifecycleListener {
             return;
         }
         try {
-            final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
             final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
             final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-            String jwt = nocalhostSettings.getJwt();
-            if (StringUtils.isNotBlank(jwt)) {
+            if (TokenUtil.isTokenValid()) {
                 List<Application> applications = nocalhostApi.listApplications();
                 List<DevSpace> devSpaces = nocalhostApi.listDevSpaces();
                 List<NhctlListApplication> nhctlListApplications = Lists.newArrayList();
