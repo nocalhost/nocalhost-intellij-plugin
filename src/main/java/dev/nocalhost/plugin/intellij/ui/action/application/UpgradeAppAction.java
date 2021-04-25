@@ -31,6 +31,8 @@ import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
+import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseDialog;
+import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.KustomizePathDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
@@ -132,6 +134,20 @@ public class UpgradeAppAction extends AnAction {
                 } else {
                     return;
                 }
+            }
+        }
+        if (Set.of("helmGit", "helmRepo", "helmLocal").contains(installType)) {
+            HelmValuesChooseDialog helmValuesChooseDialog = new HelmValuesChooseDialog(project);
+            if (helmValuesChooseDialog.showAndGet()) {
+                HelmValuesChooseState helmValuesChooseState = helmValuesChooseDialog.getHelmValuesChooseState();
+                if (helmValuesChooseState.isSpecifyValuesYamlSelected()) {
+                    opts.setHelmValues(helmValuesChooseState.getValuesYamlPath());
+                }
+                if (helmValuesChooseState.isSpecifyValues() && Set.of("helmGit", "helmRepo").contains(installType)) {
+                    opts.setValues(helmValuesChooseState.getValues());
+                }
+            } else {
+                return;
             }
         }
         opts.setResourcesPath(resourceDirs);
