@@ -41,6 +41,7 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
     private String nhctlBinary;
     private String kubectlBinary;
     private String nocalhostRepos;
+    private int apiErrorCount;
 
     @Override
     public @Nullable NocalhostSettings getState() {
