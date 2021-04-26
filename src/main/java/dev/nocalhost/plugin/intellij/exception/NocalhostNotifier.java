@@ -101,12 +101,12 @@ public class NocalhostNotifier {
         });
     }
 
-    public void notifyVersionTips(String requiredVersion, String currentVersion) {
-        String content = String.format("<html>Nocalhost required nhctl(%s), current version is v%s, please upgrade your nhctl to the specify version. <a href=\"nocalhost.setting\">Get nhctl</a></html>", requiredVersion, currentVersion);
+    public void notifyVersionTips() {
+        String content = "<html>nocalhost plugin need upgrade. <a href=\"nocalhost.setting\">upgrade plugin</a></html>";
         notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new NotificationListener.Adapter() {
             @Override
             protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
-                BrowserUtil.browse("https://nocalhost.dev/installation/");
+                BrowserUtil.browse("https://plugins.jetbrains.com/plugin/16058-nocalhost/versions");
             }
         });
     }
