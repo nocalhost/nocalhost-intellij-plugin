@@ -1,6 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui;
 
-import com.github.zafarkhaja.semver.Version;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
@@ -9,7 +8,6 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
@@ -18,24 +16,14 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.components.JBScrollPane;
 
-import org.apache.commons.lang3.StringUtils;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Properties;
-
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostAccountChangedNotifier;
 import dev.nocalhost.plugin.intellij.ui.action.LogoutAction;
 import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
 import dev.nocalhost.plugin.intellij.ui.action.SettingAction;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
+import dev.nocalhost.plugin.intellij.service.NocalhostBinService;
 import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
 public class NocalhostWindow implements Disposable {
@@ -49,7 +37,7 @@ public class NocalhostWindow implements Disposable {
     public NocalhostWindow(Project project) {
         this.project = project;
 
-        checkNocalhostVersion();
+        checkNocalhost();
 
         final Application application = ApplicationManager.getApplication();
         application.getMessageBus().connect(this).subscribe(
@@ -62,37 +50,10 @@ public class NocalhostWindow implements Disposable {
         toggleContent();
     }
 
-    private void checkNocalhostVersion() {
-        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        try {
-            String versionInfo = nhctlCommand.version();
-            String version = "";
-            final String[] infos = StringUtils.split(versionInfo, "\n");
-            final Optional<String> versionLine = Arrays.stream(infos).filter(s -> s.trim().startsWith("Version")).findFirst();
-            if (versionLine.isPresent()) {
-                final String[] versionLines = versionLine.get().split("v");
-                if (versionLines.length != 2) {
-                    return;
-                }
-                version = versionLines[1];
-            }
-            if (StringUtils.isBlank(version)) {
-                return;
-            }
-
-            InputStream in = NocalhostWindow.class.getClassLoader().getResourceAsStream("config.properties");
-            Properties properties = new Properties();
-            properties.load(in);
-            String nhctlVersion = properties.getProperty("nhctlVersion");
-
-            Version v = Version.valueOf(version);
-
-            if (!v.satisfies(nhctlVersion)) {
-                NocalhostNotifier.getInstance(project).notifyVersionTips(nhctlVersion, version);
-            }
-        } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
-            NocalhostNotifier.getInstance(project).notifyError("Get nhctl version error", e.getMessage());
-        }
+    private void checkNocalhost() {
+        NocalhostBinService nocalhostBinService = new NocalhostBinService(project);
+        nocalhostBinService.checkBin();
+        nocalhostBinService.checkVersion();
     }
 
     private void toggleContent() {
