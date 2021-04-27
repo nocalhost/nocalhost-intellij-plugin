@@ -71,6 +71,7 @@ public class KubeResource {
 
     public boolean canSelector() {
         return getStatus() != null && getMetadata() != null
-                && StringUtils.equalsIgnoreCase(getStatus().getPhase(), "running") && StringUtils.isBlank(getMetadata().getDeletionTimestamp());
+                && StringUtils.equalsIgnoreCase(getStatus().getPhase(), "running")
+                && StringUtils.isBlank(getMetadata().getDeletionTimestamp());
     }
 }
