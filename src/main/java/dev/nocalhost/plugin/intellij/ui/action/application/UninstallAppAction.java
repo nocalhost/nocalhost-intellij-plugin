@@ -20,14 +20,16 @@ import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
+import lombok.SneakyThrows;
 
 public class UninstallAppAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(UninstallAppAction.class);
+
+    final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final Project project;
     private final ApplicationNode node;
@@ -36,6 +38,7 @@ public class UninstallAppAction extends AnAction {
         super("Uninstall App", "", AllIcons.Actions.Uninstall);
         this.project = project;
         this.node = node;
+        outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
 
     @Override
@@ -43,41 +46,69 @@ public class UninstallAppAction extends AnAction {
         final Application application = node.getApplication();
         final DevSpace devSpace = node.getDevSpace();
 
-        try {
-            if (!NhctlHelper.isApplicationInstalled(devSpace, application)) {
-                Messages.showMessageDialog("Application has not been installed.", "Uninstall application", null);
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                if (!NhctlHelper.isApplicationInstalled(devSpace, application)) {
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        Messages.showMessageDialog(
+                                "Application has not been installed.",
+                                "Uninstall application",
+                                null);
+                    });
+
+                    return;
+                }
+
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    final String appName = application.getContext().getApplicationName();
+                    if (!MessageDialogBuilder.yesNo(
+                            "Uninstall application",
+                            "Uninstall application " + appName + "?"
+                    ).guessWindowAndAsk()) {
+                        return;
+                    }
+
+                    uninstall();
+                });
+            } catch (IOException | InterruptedException e) {
+                LOG.error("error occurred while checking if application was installed", e);
                 return;
             }
-        } catch (IOException | InterruptedException e) {
-            LOG.error("error occurred while checking if application was installed", e);
-            return;
-        }
+        });
+    }
 
-        final String appName = application.getContext().getApplicationName();
-        if (!MessageDialogBuilder.yesNo("Uninstall application", "Uninstall application " + appName + "?").guessWindowAndAsk()) {
-            return;
-        }
+    private void uninstall() {
+        final DevSpace devSpace = node.getDevSpace();
+        final String appName = node.getApplication().getContext().getApplicationName();
 
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Uninstalling application: " + appName, false) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(
+                null,
+                "Uninstalling application: " + appName,
+                false
+        ) {
+            @Override
+            public void onSuccess() {
+                ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                        NocalhostTreeDataUpdateNotifier
+                                .NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
+                ).action();
+
+                NocalhostNotifier.getInstance(project).notifySuccess(
+                        "Application " + appName + " uninstalled",
+                        "");
+            }
+
+            @Override
+            public void onThrowable(@NotNull Throwable e) {
+                LOG.error("error occurred while uninstalling application", e);
+            }
+
+            @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-
                 NhctlUninstallOptions opts = new NhctlUninstallOptions(devSpace);
                 opts.setForce(true);
-                try {
-                    outputCapturedNhctlCommand.uninstall(appName, opts);
-
-                    ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                            NocalhostTreeDataUpdateNotifier
-                                    .NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
-                    ).action();
-
-                    NocalhostNotifier.getInstance(project).notifySuccess("Application " + appName + " uninstalled", "");
-
-                } catch (InterruptedException | IOException | NocalhostExecuteCmdException e) {
-                    LOG.error("error occurred while uninstalling application", e);
-                }
+                outputCapturedNhctlCommand.uninstall(appName, opts);
             }
         });
     }

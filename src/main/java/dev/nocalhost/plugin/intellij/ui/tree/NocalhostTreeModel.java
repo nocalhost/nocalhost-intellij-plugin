@@ -381,8 +381,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             nhctlDescribeAllService = nhctlCommand.describe(applicationName, nhctlDescribeOptions,
                     NhctlDescribeAllService.class);
         } catch (NocalhostExecuteCmdException e) {
-            if (StringUtils.contains(e.getMessage(), String.format(
-                    "Application %s in %s not found", applicationName, devSpace.getNamespace()))) {
+            if (StringUtils.contains(e.getMessage(), "Application not found")) {
                 return null;
             }
             throw e;

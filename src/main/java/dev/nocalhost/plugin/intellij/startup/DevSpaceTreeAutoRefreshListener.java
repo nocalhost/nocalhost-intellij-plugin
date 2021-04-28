@@ -67,6 +67,11 @@ public class DevSpaceTreeAutoRefreshListener implements AppLifecycleListener {
     }
 
     private void handleNocalhostTreeDataUpdate() {
+        ApplicationManager.getApplication().executeOnPooledThread(
+                this::doHandleNocalhostTreeDataUpdate);
+    }
+
+    private void doHandleNocalhostTreeDataUpdate() {
         @NotNull Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
         if (openProjects.length <= 0) {
             return;
