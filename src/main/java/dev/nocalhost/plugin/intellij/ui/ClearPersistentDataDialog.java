@@ -59,6 +59,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
             pvcList.clearSelection();
         });
 
+        pvcList.setVisibleRowCount(18);
         pvcList.setCellRenderer(new ListItemCheckBox());
         pvcList.setSelectionModel(new DefaultListSelectionModel() {
             @Override

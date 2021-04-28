@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
@@ -49,6 +50,9 @@ public class InstallAppAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(InstallAppAction.class);
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
+    private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+
     private final Project project;
     private final DevSpaceNode node;
 
@@ -62,46 +66,86 @@ public class InstallAppAction extends AnAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         final DevSpace devSpace = node.getDevSpace();
 
-        try {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                List<Application> applications = nocalhostApi.listApplications();
+                List<NhctlListApplication> nhctlListApplications = nhctlCommand.listApplication(
+                        new NhctlListApplicationOptions(devSpace));
 
-            final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-            final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    install(applications, nhctlListApplications);
+                });
 
-            List<Application> applications = nocalhostApi.listApplications();
-            List<NhctlListApplication> nhctlListApplications = nhctlCommand.listApplication(new NhctlListApplicationOptions(devSpace));
-            final Set<String> apps = applications.stream().map(a -> a.getContext().getApplicationName()).collect(Collectors.toSet());
-            final Optional<NhctlListApplication> currentDevspacesApp = nhctlListApplications.stream().filter(d -> d.getNamespace().equals(devSpace.getNamespace())).findFirst();
-            List<String> installed = null;
-            if (currentDevspacesApp.isPresent()) {
-                 installed = Arrays.stream(currentDevspacesApp.get().getApplication()).map(NhctlListApplication.Application::getName).collect(Collectors.toList());
+            } catch (IOException
+                    | NocalhostApiException
+                    | InterruptedException
+                    | NocalhostExecuteCmdException e) {
+                LOG.error(
+                        "error occurred while listing necessary data before installing application",
+                        e
+                );
             }
-            if (CollectionUtils.isNotEmpty(installed)) {
-                for (String installedApp : installed) {
-                    apps.remove(installedApp);
-                }
-            }
-            if (apps.size() == 0) {
-                Messages.showMessageDialog("All applications are installed.", "Install Application", null);
-                return;
-            }
+        });
+    }
 
-            InstallApplicationChooseDialog dialog = new InstallApplicationChooseDialog(Lists.newArrayList(apps));
-            if (dialog.showAndGet()) {
-                final Optional<Application> app = applications.stream()
-                                                              .filter(a -> StringUtils.equals(dialog.getSelected(), a.getContext().getApplicationName()))
-                                                              .findFirst();
-                if (app.isPresent()) {
-                    if (NhctlHelper.isApplicationInstalled(devSpace, app.get())) {
-                        Messages.showMessageDialog("Application has been installed.", "Install Application", null);
-                        return;
-                    }
-                    installApp(app.get());
-                }
+    private void install(List<Application> applications,
+                         List<NhctlListApplication> nhctlListApplications) {
+        final DevSpace devSpace = node.getDevSpace();
 
+        final Set<String> apps = applications.stream()
+                .map(a -> a.getContext().getApplicationName())
+                .collect(Collectors.toSet());
+        final Optional<NhctlListApplication> currentDevspacesApp = nhctlListApplications.stream()
+                .filter(d -> d.getNamespace().equals(devSpace.getNamespace())).findFirst();
+        List<String> installed = null;
+        if (currentDevspacesApp.isPresent()) {
+            installed = Arrays.stream(currentDevspacesApp.get().getApplication())
+                    .map(NhctlListApplication.Application::getName).collect(Collectors.toList());
+        }
+        if (CollectionUtils.isNotEmpty(installed)) {
+            for (String installedApp : installed) {
+                apps.remove(installedApp);
             }
-        } catch (IOException | NocalhostApiException | InterruptedException | NocalhostExecuteCmdException e) {
-            LOG.error("error occurred while checking if application was installed", e);
+        }
+        if (apps.size() == 0) {
+            Messages.showMessageDialog("All applications are installed.", "Install Application", null);
             return;
+        }
+
+        InstallApplicationChooseDialog dialog = new InstallApplicationChooseDialog(
+                Lists.newArrayList(apps));
+        if (dialog.showAndGet()) {
+            final Optional<Application> app = applications.stream()
+                    .filter(a ->
+                            StringUtils.equals(
+                                    dialog.getSelected(),
+                                    a.getContext().getApplicationName()
+                            )
+                    )
+                    .findFirst();
+            app.ifPresent(application -> ApplicationManager.getApplication()
+                    .executeOnPooledThread(() -> {
+                        try {
+                            if (NhctlHelper.isApplicationInstalled(devSpace, application)) {
+                                ApplicationManager.getApplication().invokeLater(() -> {
+                                    Messages.showMessageDialog("Application has been installed.",
+                                            "Install Application", null);
+                                });
+                                return;
+                            }
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                try {
+                                    installApp(application);
+                                } catch (IOException e) {
+                                    LOG.error("error occurred while installing application", e);
+                                }
+                            });
+                        } catch (IOException | InterruptedException e) {
+                            LOG.error("error occurred while checking if application was installed",
+                                    e);
+                        }
+                    }));
+
         }
     }
 
@@ -135,7 +179,11 @@ public class InstallAppAction extends AnAction {
             } else if (configs.size() == 1) {
                 configPath = configs.get(0);
             } else if (configs.size() > 1) {
-                configPath = FileChooseUtil.chooseSingleFile(project, "Please select your configuration file", nocalhostConfigPath, CONFIG_FILE_EXTENSIONS);
+                configPath = FileChooseUtil.chooseSingleFile(
+                        project,
+                        "Please select your configuration file",
+                        nocalhostConfigPath,
+                        CONFIG_FILE_EXTENSIONS);
             }
             if (configPath == null) {
                 return;
@@ -153,7 +201,8 @@ public class InstallAppAction extends AnAction {
             if (StringUtils.equals(installType, "helmRepo")) {
                 opts.setHelmRepoUrl(context.getApplicationUrl());
                 opts.setHelmChartName(context.getApplicationName());
-                opts.setOuterConfig(HelmNocalhostConfigUtil.helmNocalhostConfigPath(devSpace, app).toString());
+                opts.setOuterConfig(HelmNocalhostConfigUtil.helmNocalhostConfigPath(devSpace, app)
+                        .toString());
                 if (installOption.isSpecifyOneSelected()) {
                     opts.setHelmRepoVersion(installOption.getSpecifyText());
                 }
@@ -182,11 +231,13 @@ public class InstallAppAction extends AnAction {
         if (Set.of("helmGit", "helmRepo", "helmLocal").contains(installType)) {
             HelmValuesChooseDialog helmValuesChooseDialog = new HelmValuesChooseDialog(project);
             if (helmValuesChooseDialog.showAndGet()) {
-                HelmValuesChooseState helmValuesChooseState = helmValuesChooseDialog.getHelmValuesChooseState();
+                HelmValuesChooseState helmValuesChooseState = helmValuesChooseDialog
+                        .getHelmValuesChooseState();
                 if (helmValuesChooseState.isSpecifyValuesYamlSelected()) {
                     opts.setHelmValues(helmValuesChooseState.getValuesYamlPath());
                 }
-                if (helmValuesChooseState.isSpecifyValues() && Set.of("helmGit", "helmRepo").contains(installType)) {
+                if (helmValuesChooseState.isSpecifyValues()
+                        && Set.of("helmGit", "helmRepo").contains(installType)) {
                     opts.setValues(helmValuesChooseState.getValues());
                 }
             } else {
@@ -241,7 +292,12 @@ public class InstallAppAction extends AnAction {
 
         return Files.list(localPath)
                 .filter(Files::isRegularFile)
-                .filter(e -> CONFIG_FILE_EXTENSIONS.contains(com.google.common.io.Files.getFileExtension(e.getFileName().toString())))
+                .filter(e ->
+                        CONFIG_FILE_EXTENSIONS.contains(
+                                com.google.common.io.Files.getFileExtension(
+                                        e.getFileName().toString())
+                        )
+                )
                 .map(Path::toAbsolutePath)
                 .collect(Collectors.toList());
     }

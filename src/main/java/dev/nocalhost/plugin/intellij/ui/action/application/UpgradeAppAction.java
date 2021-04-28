@@ -56,16 +56,30 @@ public class UpgradeAppAction extends AnAction {
         final DevSpace devSpace = node.getDevSpace();
         final Application application = node.getApplication();
 
-        try {
-            if (!NhctlHelper.isApplicationInstalled(devSpace, application)) {
-                Messages.showMessageDialog("Application has not been installed.", "Upgrade Application", null);
-                return;
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                if (!NhctlHelper.isApplicationInstalled(devSpace, application)) {
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        Messages.showMessageDialog(
+                                "Application has not been installed.",
+                                "Upgrade Application",
+                                null);
+                    });
+                    return;
+                }
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    try {
+                        upgradeApp();
+                    } catch (IOException e) {
+                        LOG.error("error occurred while upgrading application", e);
+                    }
+                });
+            } catch (IOException | InterruptedException e) {
+                LOG.error("error occurred while checking application status", e);
             }
-            upgradeApp();
-        } catch (IOException | InterruptedException e) {
-            LOG.error("error occurred while upgrading application", e);
-            return;
-        }
+        });
+
+
     }
 
     private void upgradeApp() throws IOException {
