@@ -120,6 +120,10 @@ tasks {
         )
     }
 
+    publishPlugin {
+        token(System.getenv("JETBRAINS_TOKEN"))
+    }
+
     buildSearchableOptions {
         enabled = false
     }
