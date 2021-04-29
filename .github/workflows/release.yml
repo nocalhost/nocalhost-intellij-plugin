@@ -25,6 +25,8 @@ jobs:
         echo "NHCTL_VERSION=${GITHUB_REF#refs/*/}" | sed 's/v//g' | sed -E 's/-202.+//g' >> $GITHUB_ENV
 
     - name: Build
+      env:
+        JETBRAINS_TOKEN: ${{ secrets.JETBRAINS_TOKEN }}
       run: |
         sed -i "s/sentryDsn=/sentryDsn=${{secrets.INTELLIJ_PLUGIN_SENTRY_DSN}}/g" src/main/resources/config.properties
         sed -i -E "s/nhctlVersion=(.+)/nhctlVersion=${{ env.NHCTL_VERSION }}/g" src/main/resources/config.properties
