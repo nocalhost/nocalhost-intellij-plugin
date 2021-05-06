@@ -34,10 +34,6 @@ public class LoginDialog extends DialogWrapper {
 
         setTitle("Login Nocalhost Server");
 
-        hostTextField.getEmptyText().appendText("Input your api server url");
-        emailTextField.getEmptyText().appendText("Input your email");
-        passwordField.getEmptyText().appendText("Input your password");
-
         final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
         if (StringUtils.isNotEmpty(nocalhostSettings.getBaseUrl())) {
             hostTextField.setText(nocalhostSettings.getBaseUrl());
