@@ -1,8 +1,8 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import java.nio.file.Path;
 import java.util.List;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,8 +16,8 @@ public class NhctlPortForwardStartOptions extends NhctlGlobalOptions {
     private String pod;
     private String type;
 
-    public NhctlPortForwardStartOptions(DevSpace devSpace) {
-        super(devSpace);
+    public NhctlPortForwardStartOptions(Path kubeConfigPath, String namespace) {
+        super(kubeConfigPath, namespace);
     }
 
     public enum Way {

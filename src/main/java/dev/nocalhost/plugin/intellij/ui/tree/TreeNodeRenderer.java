@@ -17,10 +17,9 @@ import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DefaultResourceNode;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
@@ -41,25 +40,26 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             return;
         }
 
-        if (value instanceof AccountNode) {
-            AccountNode node = (AccountNode) value;
-            append("Hi, " + node.getUserInfo().getName());
-            setIcon(AllIcons.General.User);
+        if (value instanceof ClusterNode) {
+            ClusterNode node = (ClusterNode) value;
+            if (node.getNocalhostAccount() != null) {
+                append(node.getKubeConfig().getContexts().get(0).getName() + " ["
+                        + node.getNocalhostAccount().getUsername() + " on "
+                        + node.getNocalhostAccount().getServer() + "]");
+            } else {
+                append(node.getKubeConfig().getContexts().get(0).getName());
+            }
+            setIcon(AllIcons.Webreferences.Server);
         }
 
-        if (value instanceof DevSpaceNode) {
-            DevSpaceNode node = (DevSpaceNode) value;
-            append(node.getDevSpace().getSpaceName());
+        if (value instanceof NamespaceNode) {
+            NamespaceNode node = (NamespaceNode) value;
+            append(node.getName());
         }
 
         if (value instanceof ApplicationNode) {
             ApplicationNode node = (ApplicationNode) value;
-            append(node.getApplication().getContext().getApplicationName());
-            setIcon(NocalhostIcons.App.Connected);
-        }
-
-        if (value instanceof DefaultResourceNode) {
-            append("Default Resources");
+            append(node.getName());
             setIcon(NocalhostIcons.App.Connected);
         }
 

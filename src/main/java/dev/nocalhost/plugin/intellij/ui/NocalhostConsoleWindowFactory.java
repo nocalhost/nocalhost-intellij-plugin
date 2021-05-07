@@ -13,9 +13,10 @@ import com.intellij.ui.content.ContentManagerListener;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
+
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
@@ -71,8 +72,12 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
         contentManager.setSelectedContent(content);
     }
 
-    private void newTerminal(DevSpace devSpace, String app, String deploymentName) {
-        NocalhostConsoleWindow nocalhostConsoleWindow = new NocalhostTerminalWindow(project, devSpace, app, deploymentName);
+    private void newTerminal(Path kubeConfigPath,
+                             String namespace,
+                             String applicationName,
+                             String deploymentName) {
+        NocalhostConsoleWindow nocalhostConsoleWindow = new NocalhostTerminalWindow(project,
+                kubeConfigPath, namespace, applicationName, deploymentName);
         addContent(nocalhostConsoleWindow);
         toolWindow.show();
     }

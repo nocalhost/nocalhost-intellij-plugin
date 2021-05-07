@@ -40,10 +40,8 @@ public class NocalhostTreeModelBase extends DefaultTreeModel {
             boolean inserted = false;
             for (int i = 0; i < count; i++) {
                 int comp = comparator.compare(child, (TreeNode) getChild(parent, i));
-                if (comp <= 0) {
-                    if (comp < 0) {
-                        super.insertNodeInto(child, parent, i);
-                    }
+                if (comp < 0) {
+                    super.insertNodeInto(child, parent, i);
                     inserted = true;
                     break;
                 }

@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
@@ -18,6 +19,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class ClearAppPersisentDataAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(ClearAppPersisentDataAction.class);
@@ -25,23 +27,27 @@ public class ClearAppPersisentDataAction extends AnAction {
     final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
     private final Project project;
-    private final ApplicationNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
+    private final String applicationName;
 
     public ClearAppPersisentDataAction(Project project, ApplicationNode node) {
         super("Clear Persistent Data");
         this.project = project;
-        this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
+        this.applicationName = node.getName();
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            NhctlListPVCOptions opts = new NhctlListPVCOptions(node.getDevSpace());
-            opts.setApp(node.getApplication().getContext().getApplicationName());
+            NhctlListPVCOptions opts = new NhctlListPVCOptions(kubeConfigPath, namespace);
+            opts.setApp(applicationName);
             try {
                 List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    new ClearPersistentDataDialog(project, node.getDevSpace(), nhctlPVCItems, true)
+                    new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems, true)
                             .showAndGet();
                 });
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {

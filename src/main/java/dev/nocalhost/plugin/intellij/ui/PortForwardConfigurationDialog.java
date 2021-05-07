@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -54,6 +55,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ExecutableUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class PortForwardConfigurationDialog extends DialogWrapper {
@@ -63,6 +65,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     private final ResourceNode node;
     private final Project project;
+    private final Path kubeConfigPath;
+    private final String namespace;
 
     private final JPanel dialogPanel;
     private JPanel listPanel;
@@ -76,6 +80,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
         this.node = node;
         this.project = project;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
 
         dialogPanel = new SimpleToolWindowPanel(true);
 
@@ -101,7 +107,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
     private void updatePortForwardList() {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-        NhctlDescribeOptions opts = new NhctlDescribeOptions(node.devSpace());
+        NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
         opts.setDeployment(node.resourceName());
         if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
             opts.setType("statefulset");
@@ -173,7 +179,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             String container = null;
             KubeResourceList pods = null;
             try {
-                pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), node.devSpace());
+                pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), kubeConfigPath, namespace);
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "List Resource error while starting port forward", e.getMessage());
             }
@@ -239,7 +245,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     public void run(@NotNull ProgressIndicator indicator) {
                         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-                        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(node.devSpace());
+                        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, namespace);
                         nhctlDescribeOptions.setDeployment(node.resourceName());
                         if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {
                             nhctlDescribeOptions.setType("statefulset");
@@ -257,7 +263,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                         portForwardsToBeStarted.removeAll(existedPortForwards);
                         if (portForwardsToBeStarted.size() > 0) {
                             final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-                            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(node.devSpace());
+                            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(kubeConfigPath, namespace);
                             nhctlPortForwardStartOptions.setDevPorts(Lists.newArrayList(portForwardsToBeStarted.iterator()));
                             nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
                             nhctlPortForwardStartOptions.setDeployment(node.resourceName());
@@ -384,7 +390,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     public void run(@NotNull ProgressIndicator indicator) {
                         final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
-                        NhctlPortForwardEndOptions opts = new NhctlPortForwardEndOptions(node.devSpace());
+                        NhctlPortForwardEndOptions opts = new NhctlPortForwardEndOptions(kubeConfigPath, namespace);
                         opts.setPort(portForward.portForwardStr());
                         opts.setDeployment(node.resourceName());
                         if (node.getKubeResource().getKind().equalsIgnoreCase("statefulset")) {

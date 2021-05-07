@@ -55,16 +55,6 @@
         <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostRunner" order="first"/>
     </extensions>
 
-    <actions>
-
-        <action id="Nocalhost.RefreshAction" text="Refresh"
-                class="dev.nocalhost.plugin.intellij.ui.action.RefreshAction"/>
-        <action id="Nocalhost.LogoutAction" text="Logout"
-                class="dev.nocalhost.plugin.intellij.ui.action.LogoutAction"/>
-        <action id="Nocalhost.SettingAction" text="Setting"
-                class="dev.nocalhost.plugin.intellij.ui.action.SettingAction"/>
-    </actions>
-
     <applicationListeners>
         <listener class="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"
                   topic="com.intellij.ide.AppLifecycleListener"

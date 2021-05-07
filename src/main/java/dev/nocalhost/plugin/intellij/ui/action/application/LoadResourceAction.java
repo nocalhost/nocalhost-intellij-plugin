@@ -14,31 +14,33 @@ import com.intellij.openapi.vfs.VirtualFile;
 
 import org.jetbrains.annotations.NotNull;
 
-import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
+import java.nio.file.Path;
+
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class LoadResourceAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(LoadResourceAction.class);
 
     private final Project project;
-    private final ApplicationNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
+    private final String applicationName;
 
     public LoadResourceAction(Project project, ApplicationNode node) {
         super("Load Resource");
         this.project = project;
-        this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
+        this.applicationName = node.getName();
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        final DevSpace devSpace = node.getDevSpace();
-        final Application application = node.getApplication();
-
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Loading kubernetes resources") {
             private VirtualFile virtualFile;
 
@@ -57,9 +59,9 @@ public class LoadResourceAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-                NhctlDescribeOptions opts = new NhctlDescribeOptions(devSpace);
-                String resource = nhctlCommand.describe(application.getContext().getApplicationName(), opts);
-                String filename = application.getContext().getApplicationName() + ".yaml";
+                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                String resource = nhctlCommand.describe(applicationName, opts);
+                String filename = applicationName + ".yaml";
                 virtualFile = new ReadOnlyVirtualFile(filename, filename, resource);
             }
         });

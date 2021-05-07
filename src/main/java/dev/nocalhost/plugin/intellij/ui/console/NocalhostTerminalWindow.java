@@ -19,13 +19,13 @@ import org.jetbrains.plugins.terminal.TerminalProcessOptions;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
@@ -34,75 +34,75 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlTerminalOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
 
 public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
     private static final Logger LOG = Logger.getInstance(NocalhostTerminalWindow.class);
 
     private final Project project;
-    private final DevSpace devSpace;
 
     private JComponent panel;
 
     private String title;
 
-    public NocalhostTerminalWindow(Project project, DevSpace devSpace, String application, String deploymentName) {
+    public NocalhostTerminalWindow(Project project,
+                                   Path kubeConfigPath,
+                                   String namespace,
+                                   String applicationName,
+                                   String deploymentName) {
         this.project = project;
-        this.devSpace = devSpace;
-
-        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
-
-        NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        String nhctlBinaryPath = StringUtils.isNotEmpty(nocalhostSettings.getNhctlBinary())
-                ? nocalhostSettings.getNhctlBinary() : "nhctl";
 
         List<String> args = Lists.newArrayList(
-                nhctlBinaryPath,
+                NhctlUtil.binaryPath(),
                 "dev",
-                "terminal", application,
+                "terminal", applicationName,
                 "--deployment", deploymentName,
-                "--kubeconfig", kubeconfigPath
+                "--kubeconfig", kubeConfigPath.toString(),
+                "--namespace", namespace
         );
         final String cmd = String.join(" ", args.toArray(new String[]{}));
-        title = String.format("%s-%s-%s Terminal", devSpace.getNamespace(), application, deploymentName);
+        title = String.format("%s-%s-%s Terminal", namespace, applicationName, deploymentName);
 
         toTerminal(cmd);
     }
 
     public NocalhostTerminalWindow(Project project, ResourceNode node) {
         this.project = project;
-        this.devSpace = node.devSpace();
 
-        final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(node.devSpace()).toString();
+        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        String namespace = node.getNamespaceNode().getName();
+
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-        final NhctlDescribeOptions opts = new NhctlDescribeOptions(node.devSpace());
+        final NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
         opts.setDeployment(node.resourceName());
         try {
             List<String> args;
 
-            if (node.isDefaultResource() && ((ResourceTypeNode) node.getParent()).getName().equalsIgnoreCase("pods")) {
+            if (StringUtils.equals(DEFAULT_APPLICATION_NAME, node.applicationName()) && ((ResourceTypeNode) node.getParent()).getName().equalsIgnoreCase("pods")) {
                 final String containerName = node.getKubeResource().getSpec().getContainers().get(0).getName();
                 args = Lists.newArrayList(
                         "kubectl",
                         "exec",
                         "-it", node.resourceName(),
                         "-c", containerName,
-                        "--kubeconfig", kubeconfigPath,
-                        "--namespace", devSpace.getNamespace(),
+                        "--kubeconfig", kubeConfigPath.toString(),
+                        "--namespace", namespace,
                         "--", "sh -c \"clear; (zsh || bash || ash || sh)\""
                 );
-                title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), containerName, node.resourceName());
+                title = String.format("%s-%s-%s Terminal", namespace, containerName, node.resourceName());
             } else {
-                NhctlTerminalOptions nhctlTerminalOptions = new NhctlTerminalOptions(node.devSpace());
+                NhctlTerminalOptions nhctlTerminalOptions = new NhctlTerminalOptions(kubeConfigPath, namespace);
                 nhctlTerminalOptions.setDeployment(node.resourceName());
                 if (!node.getNhctlDescribeService().isDeveloping()) {
                     final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-                    final KubeResourceList pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), node.devSpace());
+                    final KubeResourceList pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), kubeConfigPath, namespace);
 
                     String podName = null;
                     final List<KubeResource> running = pods
@@ -123,7 +123,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                     nhctlTerminalOptions.setPod(podName);
                 }
                 args = nhctlCommand.terminal(node.applicationName(), nhctlTerminalOptions);
-                title = String.format("%s-%s-%s Terminal", node.devSpace().getNamespace(), node.applicationName(), node.resourceName());
+                title = String.format("%s-%s-%s Terminal", namespace, node.applicationName(), node.resourceName());
             }
             final String cmd = String.join(" ", args.toArray(new String[]{}));
 

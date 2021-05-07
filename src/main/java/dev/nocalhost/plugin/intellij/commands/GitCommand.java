@@ -24,7 +24,7 @@ public class GitCommand {
         GitLineHandlerListener progressListener = GitStandardProgressAnalyzer.createListener(indicator);
 
         NocalhostOutputAppendNotifier publisher = project.getMessageBus()
-                                                         .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC);
+                .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC);
 
         final CloneOutputResultListener cloneOutputResultListener = new CloneOutputResultListener(publisher);
 

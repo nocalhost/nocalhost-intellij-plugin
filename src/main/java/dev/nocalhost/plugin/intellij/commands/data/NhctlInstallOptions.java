@@ -1,9 +1,9 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,7 +19,6 @@ public class NhctlInstallOptions extends NhctlGlobalOptions {
     private String helmRepoVersion;
     private String helmValues;
     private boolean ignorePreInstall;
-    private String namespace;
     private String outerConfig;
     private List<String> resourcesPath;
     private Map<String, String> values;
@@ -27,7 +26,7 @@ public class NhctlInstallOptions extends NhctlGlobalOptions {
     private boolean wait;
     private String localPath;
 
-    public NhctlInstallOptions(DevSpace devSpace) {
-        super(devSpace);
+    public NhctlInstallOptions(Path kubeConfigPath, String namespace) {
+        super(kubeConfigPath, namespace);
     }
 }

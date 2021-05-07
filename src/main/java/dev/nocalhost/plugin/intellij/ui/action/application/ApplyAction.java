@@ -18,18 +18,23 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ApplyAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(ApplyAction.class);
 
     private final Project project;
-    private final ApplicationNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
+    private final String applicationName;
 
     public ApplyAction(Project project, ApplicationNode node) {
         super("Apply");
         this.project = project;
-        this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
+        this.applicationName = node.getName();
     }
 
     @Override
@@ -57,9 +62,9 @@ public class ApplyAction extends AnAction {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(node.getDevSpace());
+                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace);
                 nhctlApplyOptions.setFile(chosenPath.toString());
-                result = nhctlCommand.apply(node.getApplication().getContext().getApplicationName(), nhctlApplyOptions);
+                result = nhctlCommand.apply(applicationName, nhctlApplyOptions);
             }
         });
     }

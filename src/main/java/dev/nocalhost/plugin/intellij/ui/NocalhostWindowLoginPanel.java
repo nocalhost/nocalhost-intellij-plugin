@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui;
 
+import com.intellij.openapi.project.Project;
+
 import javax.swing.*;
 
 public class NocalhostWindowLoginPanel {
@@ -11,9 +13,9 @@ public class NocalhostWindowLoginPanel {
     private JPanel mainPanel;
 
 
-    public NocalhostWindowLoginPanel() {
+    public NocalhostWindowLoginPanel(Project project) {
         loginText.setEditable(false);
-        loginButton.addActionListener(e -> new LoginDialog().showAndGet());
+        loginButton.addActionListener(e -> new ConnectNocalhostServerDialog(project).showAndGet());
     }
 
     public JPanel getPanel() {

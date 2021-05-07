@@ -1,20 +1,16 @@
 package dev.nocalhost.plugin.intellij.utils;
 
-import com.intellij.openapi.components.ServiceManager;
-
 import org.apache.commons.lang3.StringUtils;
 
+import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Date;
 
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import lombok.Getter;
 import lombok.Setter;
 
 public final class TokenUtil {
-    public static boolean isTokenValid() {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(
-                NocalhostSettings.class);
-        String jwt = nocalhostSettings.getJwt();
+    public static boolean isValid(String jwt) {
         if (!StringUtils.isNotEmpty(jwt)) {
             return false;
         }
@@ -26,6 +22,18 @@ public final class TokenUtil {
         String json = new String(Base64.getDecoder().decode(parts[1]));
         Token token = DataUtils.GSON.fromJson(json, Token.class);
         return System.currentTimeMillis() < token.getExp() * 1000;
+    }
+
+    public static String expiredAt(String jwt) {
+        String[] parts = jwt.split("\\.");
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Invalid JWT");
+        }
+        String json = new String(Base64.getDecoder().decode(parts[1]));
+        Token token = DataUtils.GSON.fromJson(json, Token.class);
+        Date date = new Date(token.getExp() * 1000);
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return format.format(date);
     }
 
     @Getter

@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
+import java.nio.file.Path;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,7 +11,7 @@ public class NhctlListPVCOptions extends NhctlGlobalOptions {
     private String app;
     private String svc;
 
-    public NhctlListPVCOptions(DevSpace devSpace) {
-        super(devSpace);
+    public NhctlListPVCOptions(Path kubeConfigPath, String namespace) {
+        super(kubeConfigPath, namespace);
     }
 }

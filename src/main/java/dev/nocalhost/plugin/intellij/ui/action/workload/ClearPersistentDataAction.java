@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
@@ -17,29 +18,34 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class ClearPersistentDataAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(ClearPersistentDataAction.class);
 
     private final Project project;
     private final ResourceNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
 
     public ClearPersistentDataAction(Project project, ResourceNode node) {
         super("Clear Persistent Data");
         this.project = project;
         this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-        NhctlListPVCOptions opts = new NhctlListPVCOptions(node.devSpace());
+        NhctlListPVCOptions opts = new NhctlListPVCOptions(kubeConfigPath, namespace);
         opts.setApp(node.applicationName());
         opts.setSvc(node.getNhctlDescribeService().getRawConfig().getName());
         try {
             List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
-            new ClearPersistentDataDialog(project, node.devSpace(), nhctlPVCItems, false).showAndGet();
+            new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems, false).showAndGet();
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
             LOG.error("error occurred while listing pvc", e);
         }

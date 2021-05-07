@@ -25,9 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Date;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
@@ -43,8 +43,9 @@ public class KubeConfigFile extends VirtualFile {
     private String resourceName;
     private String content;
     private Project project;
-    private DevSpace devSpace;
     private String appName;
+    private Path kubeConfigPath;
+    private String namespace;
 
     @Override
     public @NotNull @NlsSafe String getName() {
@@ -123,7 +124,7 @@ public class KubeConfigFile extends VirtualFile {
                 FileOutputStream outputStream = new FileOutputStream(tempFile);
                 IOUtils.write(newContent, outputStream, StandardCharsets.UTF_8);
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(devSpace);
+                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace);
                 nhctlApplyOptions.setFile(tempFile.getAbsolutePath());
                 result = nhctlCommand.apply(appName, nhctlApplyOptions);
             }

@@ -15,10 +15,13 @@ import com.intellij.openapi.vfs.VirtualFile;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
+
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.AppConfigFile;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ConfigAppAction extends AnAction {
@@ -41,7 +44,7 @@ public class ConfigAppAction extends AnAction {
 
             @Override
             public void onSuccess() {
-                String filename = node.getApplication().getContext().getApplicationName() + ".yaml";
+                String filename = node.getName() + ".yaml";
                 VirtualFile virtualFile = new AppConfigFile(filename, config, project, node);
                 OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
                 FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
@@ -58,9 +61,11 @@ public class ConfigAppAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(node.getDevSpace());
+                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+                String namespace = node.getNamespaceNode().getName();
+                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, namespace);
                 nhctlConfigOptions.setAppConfig(true);
-                config = nhctlCommand.getConfig(node.getApplication().getContext().getApplicationName(), nhctlConfigOptions);
+                config = nhctlCommand.getConfig(node.getName(), nhctlConfigOptions);
             }
         });
     }

@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Date;
 
@@ -28,6 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 
@@ -110,7 +112,8 @@ public class ConfigFile extends VirtualFile {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(node.devSpace());
+                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, node.getNamespaceNode().getName());
                 nhctlConfigOptions.setDeployment(node.resourceName());
                 nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
                 nhctlCommand.editConfig(node.applicationName(), nhctlConfigOptions);

@@ -16,39 +16,34 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class KubectlCommand {
     private static final String KUBECTL_COMMAND = "kubectl";
 
-    public KubeResourceList getResourceList(String kind, Map<String, String> labels, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
-
+    public KubeResourceList getResourceList(String kind, Map<String, String> labels, Path kubeConfigPath, String namespace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind);
         args.add("-n");
-        args.add(devSpace.getNamespace());
+        args.add(namespace);
         args.add("-o");
         args.add("json");
         args.add("--kubeconfig");
-        args.add(kubeconfigPath.toString());
+        args.add(kubeConfigPath.toString());
         if (labels != null) {
             args.add("--selector");
             args.add(labels.entrySet().stream()
-                           .map((e) -> e.getKey() + "=" + e.getValue())
-                           .collect(Collectors.joining(","))
+                    .map((e) -> e.getKey() + "=" + e.getValue())
+                    .collect(Collectors.joining(","))
             );
         }
 
@@ -56,33 +51,40 @@ public class KubectlCommand {
         return DataUtils.GSON.fromJson(output, KubeResourceList.class);
     }
 
-    public KubeResource getResource(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
+    public KubeResourceList getNamespaceList(Path kubeConfigPath) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+        List<String> args = Lists.newArrayList(getKubectlCmd(), "get", "namespace");
+        args.add("-o");
+        args.add("json");
+        args.add("--kubeconfig");
+        args.add(kubeConfigPath.toString());
 
+        String output = executeCmd(args);
+        return DataUtils.GSON.fromJson(output, KubeResourceList.class);
+    }
+
+    public KubeResource getResource(String kind, String name, Path kubeConfigPath, String namespace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind);
         if (StringUtils.isNotBlank(name)) {
             args.add(name);
         }
         args.add("-n");
-        args.add(devSpace.getNamespace());
+        args.add(namespace);
         args.add("-o");
         args.add("json");
         args.add("--kubeconfig");
-        args.add(kubeconfigPath.toString());
+        args.add(kubeConfigPath.toString());
 
         return DataUtils.GSON.fromJson(executeCmd(args), KubeResource.class);
     }
 
-    public String getResourceYaml(String kind, String name, DevSpace devSpace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
-
+    public String getResourceYaml(String kind, String name, Path kubeConfigPath, String namespace) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getKubectlCmd(), "get", kind, name);
         args.add("-n");
-        args.add(devSpace.getNamespace());
+        args.add(namespace);
         args.add("-o");
         args.add("yaml");
         args.add("--kubeconfig");
-        args.add(kubeconfigPath.toString());
+        args.add(kubeConfigPath.toString());
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
         System.out.println("Execute command: " + cmd);
@@ -97,38 +99,22 @@ public class KubectlCommand {
         return output;
     }
 
-    public ProcessHandler getLogsProcessHandler(String podName, String containerName, DevSpace devSpace) throws ExecutionException {
-        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
-
+    public ProcessHandler getLogsProcessHandler(String podName, String containerName, Path kubeConfigPath, String namespace) throws ExecutionException {
         List<String> args = Lists.newArrayList(getKubectlCmd(), "logs", podName);
         args.add("--follow=true");
         args.add("--tail=200");
         args.add("--container");
         args.add(containerName);
         args.add("--kubeconfig");
-        args.add(kubeconfigPath.toString());
+        args.add(kubeConfigPath.toString());
+        args.add("--namespace");
+        args.add(namespace);
 
         String cmd = String.join(" ", args.toArray(new String[]{}));
         GeneralCommandLine commandLine = getCommandline(args);
         System.out.println("Execute command: " + cmd);
 
         return ProcessHandlerFactory.getInstance().createProcessHandler(commandLine);
-    }
-
-    public void apply(Path path, DevSpace devSpace) throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        Path kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace);
-
-        List<String> args = Lists.newArrayList(getKubectlCmd(), "apply");
-        if (Files.isDirectory(path)) {
-            args.add("--kustomize");
-        } else {
-            args.add("--filename");
-        }
-        args.add(path.toString());
-        args.add("--kubeconfig");
-        args.add(kubeconfigPath.toString());
-
-        executeCmd(args);
     }
 
     private String executeCmd(List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
