@@ -36,6 +36,7 @@ import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
@@ -60,8 +61,13 @@ public class NocalhostProfileState extends CommandLineState {
 
         String shell = StringUtils.isNotEmpty(nocalhostDevInfo.getShell()) ? nocalhostDevInfo.getShell() : DEFAULT_SHELL;
         String command = isDebugExecutor() ? nocalhostDevInfo.getCommand().getDebug() : nocalhostDevInfo.getCommand().getRun();
+
+        NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        String nhctlBinaryPath = StringUtils.isNotEmpty(nocalhostSettings.getNhctlBinary())
+                ? nocalhostSettings.getNhctlBinary() : "nhctl";
+
         List<String> commandLine = Lists.newArrayList(
-                "nhctl", "exec", nocalhostDevInfo.getApplication(),
+                nhctlBinaryPath, "exec", nocalhostDevInfo.getApplication(),
                 "--deployment", nocalhostDevInfo.getDevModeService().getServiceName(),
                 "--command", shell, "--command", "-c", "--command", command,
                 "--kubeconfig", KubeConfigUtil.kubeConfigPath(nocalhostDevInfo.getDevSpace()).toString(),

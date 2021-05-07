@@ -33,6 +33,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlTerminalOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
@@ -54,8 +55,12 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
 
         final String kubeconfigPath = KubeConfigUtil.kubeConfigPath(devSpace).toString();
 
+        NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+        String nhctlBinaryPath = StringUtils.isNotEmpty(nocalhostSettings.getNhctlBinary())
+                ? nocalhostSettings.getNhctlBinary() : "nhctl";
+
         List<String> args = Lists.newArrayList(
-                "nhctl",
+                nhctlBinaryPath,
                 "dev",
                 "terminal", application,
                 "--deployment", deploymentName,
@@ -79,7 +84,7 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
         try {
             List<String> args;
 
-            if (node.isDefaultResource() && ((ResourceTypeNode)node.getParent()).getName().equalsIgnoreCase("pods")) {
+            if (node.isDefaultResource() && ((ResourceTypeNode) node.getParent()).getName().equalsIgnoreCase("pods")) {
                 final String containerName = node.getKubeResource().getSpec().getContainers().get(0).getName();
                 args = Lists.newArrayList(
                         "kubectl",
