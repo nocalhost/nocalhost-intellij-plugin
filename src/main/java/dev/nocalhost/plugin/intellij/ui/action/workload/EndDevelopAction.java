@@ -14,6 +14,7 @@ import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
@@ -22,8 +23,9 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import icons.NocalhostIcons;
 import lombok.SneakyThrows;
 
@@ -35,18 +37,22 @@ public class EndDevelopAction extends AnAction {
 
     private final Project project;
     private final ResourceNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
 
     public EndDevelopAction(Project project, ResourceNode node) {
         super("End Develop", "", NocalhostIcons.Status.DevEnd);
         this.project = project;
         this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            NhctlDescribeOptions opts = new NhctlDescribeOptions(node.devSpace());
+            NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
             opts.setDeployment(node.resourceName());
             NhctlDescribeService nhctlDescribeService;
             try {
@@ -74,9 +80,7 @@ public class EndDevelopAction extends AnAction {
             @Override
             public void onSuccess() {
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                        NocalhostTreeDataUpdateNotifier
-                                .NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
-                ).action();
+                        NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
                 NocalhostNotifier.getInstance(project).notifySuccess("DevMode ended", "");
             }
@@ -89,7 +93,7 @@ public class EndDevelopAction extends AnAction {
             @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                NhctlDevEndOptions opts = new NhctlDevEndOptions(node.devSpace());
+                NhctlDevEndOptions opts = new NhctlDevEndOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
 
                 outputCapturedNhctlCommand.devEnd(node.applicationName(), opts);

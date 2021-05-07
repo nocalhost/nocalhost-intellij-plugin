@@ -8,7 +8,7 @@ import com.intellij.openapi.project.DumbAware;
 
 import org.jetbrains.annotations.NotNull;
 
-import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 
 public class RefreshAction extends AnAction implements DumbAware {
 
@@ -19,7 +19,6 @@ public class RefreshAction extends AnAction implements DumbAware {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                NocalhostTreeDataUpdateNotifier.NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
-        ).action();
+                NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
     }
 }

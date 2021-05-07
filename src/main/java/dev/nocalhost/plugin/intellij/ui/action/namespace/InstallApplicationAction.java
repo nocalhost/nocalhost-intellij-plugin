@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.ui.action.devspace;
+package dev.nocalhost.plugin.intellij.ui.action.namespace;
 
 import com.google.common.collect.Lists;
 
@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,7 +26,6 @@ import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
@@ -35,42 +33,51 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
-import dev.nocalhost.plugin.intellij.task.InstallAppTask;
+import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
+import dev.nocalhost.plugin.intellij.task.InstallApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.InstallApplicationChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.KustomizePathDialog;
-import dev.nocalhost.plugin.intellij.ui.tree.node.DevSpaceNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
-public class InstallAppAction extends AnAction {
-    private static final Logger LOG = Logger.getInstance(InstallAppAction.class);
+public class InstallApplicationAction extends AnAction {
+    private static final Logger LOG = Logger.getInstance(InstallApplicationAction.class);
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
     private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
     private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
     private final Project project;
-    private final DevSpaceNode node;
+    private final NamespaceNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
 
-    public InstallAppAction(Project project, DevSpaceNode node) {
-        super("Install App", "", AllIcons.Actions.Install);
+    public InstallApplicationAction(Project project, NamespaceNode node) {
+        super("Install Application", "", AllIcons.Actions.Install);
         this.project = project;
         this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getName();
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        final DevSpace devSpace = node.getDevSpace();
-
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                List<Application> applications = nocalhostApi.listApplications();
+                NocalhostAccount nocalhostAccount = node.getClusterNode().getNocalhostAccount();
+                List<Application> applications = nocalhostApi.listApplications(
+                        nocalhostAccount.getServer(),
+                        nocalhostAccount.getJwt(),
+                        nocalhostAccount.getUserInfo().getId()
+                );
                 List<NhctlListApplication> nhctlListApplications = nhctlCommand.listApplication(
-                        new NhctlListApplicationOptions(devSpace));
+                        new NhctlListApplicationOptions(kubeConfigPath, namespace));
 
                 ApplicationManager.getApplication().invokeLater(() -> {
                     install(applications, nhctlListApplications);
@@ -90,17 +97,16 @@ public class InstallAppAction extends AnAction {
 
     private void install(List<Application> applications,
                          List<NhctlListApplication> nhctlListApplications) {
-        final DevSpace devSpace = node.getDevSpace();
-
         final Set<String> apps = applications.stream()
                 .map(a -> a.getContext().getApplicationName())
                 .collect(Collectors.toSet());
         final Optional<NhctlListApplication> currentDevspacesApp = nhctlListApplications.stream()
-                .filter(d -> d.getNamespace().equals(devSpace.getNamespace())).findFirst();
+                .filter(d -> d.getNamespace().equals(namespace)).findFirst();
         List<String> installed = null;
         if (currentDevspacesApp.isPresent()) {
-            installed = Arrays.stream(currentDevspacesApp.get().getApplication())
-                    .map(NhctlListApplication.Application::getName).collect(Collectors.toList());
+            installed = currentDevspacesApp.get().getApplication().stream()
+                    .map(NhctlListApplication.Application::getName)
+                    .collect(Collectors.toList());
         }
         if (CollectionUtils.isNotEmpty(installed)) {
             for (String installedApp : installed) {
@@ -126,7 +132,8 @@ public class InstallAppAction extends AnAction {
             app.ifPresent(application -> ApplicationManager.getApplication()
                     .executeOnPooledThread(() -> {
                         try {
-                            if (NhctlHelper.isApplicationInstalled(devSpace, application)) {
+                            if (NhctlHelper.isApplicationInstalled(kubeConfigPath, namespace,
+                                    application.getContext().getApplicationName())) {
                                 ApplicationManager.getApplication().invokeLater(() -> {
                                     Messages.showMessageDialog("Application has been installed.",
                                             "Install Application", null);
@@ -150,16 +157,13 @@ public class InstallAppAction extends AnAction {
     }
 
     private void installApp(Application app) throws IOException {
-        final DevSpace devSpace = node.getDevSpace();
         final Application.Context context = app.getContext();
         final String installType = NhctlHelper.generateInstallType(context);
 
-        final NhctlInstallOptions opts = new NhctlInstallOptions(devSpace);
+        final NhctlInstallOptions opts = new NhctlInstallOptions(kubeConfigPath, namespace);
         opts.setType(installType);
 
         List<String> resourceDirs = Lists.newArrayList(context.getResourceDir());
-
-        opts.setNamespace(devSpace.getNamespace());
 
         if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {
             String message = StringUtils.equals(installType, "rawManifestLocal")
@@ -201,8 +205,7 @@ public class InstallAppAction extends AnAction {
             if (StringUtils.equals(installType, "helmRepo")) {
                 opts.setHelmRepoUrl(context.getApplicationUrl());
                 opts.setHelmChartName(context.getApplicationName());
-                opts.setOuterConfig(HelmNocalhostConfigUtil.helmNocalhostConfigPath(devSpace, app)
-                        .toString());
+                opts.setOuterConfig(HelmNocalhostConfigUtil.helmNocalhostConfigPath(app).toString());
                 if (installOption.isSpecifyOneSelected()) {
                     opts.setHelmRepoVersion(installOption.getSpecifyText());
                 }
@@ -246,7 +249,7 @@ public class InstallAppAction extends AnAction {
         }
         opts.setResourcesPath(resourceDirs);
 
-        ProgressManager.getInstance().run(new InstallAppTask(project, devSpace, app, opts));
+        ProgressManager.getInstance().run(new InstallApplicationTask(project, app, opts));
     }
 
     private AppInstallOrUpgradeOption askAndGetInstallOption(String installType, Application app) {

@@ -1,35 +1,51 @@
 package dev.nocalhost.plugin.intellij.utils;
 
+import com.google.common.collect.Maps;
+
 import org.apache.commons.codec.binary.StringUtils;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
+import java.util.Map;
+import java.util.UUID;
 
 public class KubeConfigUtil {
     private static final Path KUBE_CONFIGS_DIR = Paths.get(
             System.getProperty("user.home"),
             ".nh/intellij-plugin/kubeConfigs");
 
-    public static Path kubeConfigPath(DevSpace devSpace) {
-        Path path = KUBE_CONFIGS_DIR.resolve(devSpace.getId() + "_" + devSpace.getNamespace() + "_config");
-        try {
-            if (!Files.exists(path)) {
-                Files.createDirectories(path.getParent());
-                Files.write(path, devSpace.getKubeConfig().getBytes(StandardCharsets.UTF_8));
-            } else {
-                String currentKubeConfig = new String(Files.readAllBytes(path));
-                if (!StringUtils.equals(currentKubeConfig, devSpace.getKubeConfig())) {
-                    Files.write(path, devSpace.getKubeConfig().getBytes(StandardCharsets.UTF_8));
+    private static final Map<String, Path> kubeConfigPathMap = Maps.newHashMap();
+
+    public static Path kubeConfigPath(String kubeConfig) {
+        synchronized (kubeConfigPathMap) {
+            try {
+                if (!kubeConfigPathMap.containsKey(kubeConfig)) {
+                    Path path;
+                    while (true) {
+                        path = KUBE_CONFIGS_DIR.resolve(UUID.randomUUID().toString() + "_config");
+                        if (!Files.exists(path)) {
+                            kubeConfigPathMap.put(kubeConfig, path);
+                            break;
+                        }
+                    }
                 }
+                Path path = kubeConfigPathMap.get(kubeConfig);
+                if (!Files.exists(path)) {
+                    Files.createDirectories(path.getParent());
+                    Files.write(path, kubeConfig.getBytes(StandardCharsets.UTF_8));
+                    path.toFile().deleteOnExit();
+                } else {
+                    String content = new String(Files.readAllBytes(path));
+                    if (!StringUtils.equals(content, kubeConfig)) {
+                        Files.write(path, kubeConfig.getBytes(StandardCharsets.UTF_8));
+                    }
+                }
+                return path.toAbsolutePath();
+            } catch (Exception e) {
+                throw new RuntimeException("Preparing kubeconfig file error", e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
-        return path;
     }
 }

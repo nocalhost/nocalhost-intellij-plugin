@@ -11,8 +11,9 @@ import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreeSelectionModel;
 
-import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
-import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUiUpdateNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
+import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
 
 public class NocalhostTree extends Tree implements Disposable {
@@ -21,7 +22,7 @@ public class NocalhostTree extends Tree implements Disposable {
 
     public NocalhostTree(Project project) {
         this.project = project;
-        this.model = new NocalhostTreeModel(project);
+        this.model = new NocalhostTreeModel(project, this);
         this.setModel(this.model);
 
         init();
@@ -36,9 +37,17 @@ public class NocalhostTree extends Tree implements Disposable {
             @Override
             public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
                 Object node = event.getPath().getLastPathComponent();
+                if (node instanceof ClusterNode) {
+                    ClusterNode clusterNode = (ClusterNode) node;
+                    model.insertLoadingNode(clusterNode);
+                }
+                if (node instanceof NamespaceNode) {
+                    NamespaceNode namespaceNode = (NamespaceNode) node;
+                    model.insertLoadingNode(namespaceNode);
+                }
                 if (node instanceof ResourceTypeNode) {
                     ResourceTypeNode resourceTypeNode = (ResourceTypeNode) node;
-                    resourceTypeNode.setLoaded(true);
+                    model.insertLoadingNode(resourceTypeNode);
                 }
             }
 
@@ -51,6 +60,14 @@ public class NocalhostTree extends Tree implements Disposable {
             @Override
             public void treeExpanded(TreeExpansionEvent event) {
                 Object node = event.getPath().getLastPathComponent();
+                if (node instanceof ClusterNode) {
+                    ClusterNode clusterNode = (ClusterNode) node;
+                    model.updateNamespaces(clusterNode);
+                }
+                if (node instanceof NamespaceNode) {
+                    NamespaceNode namespaceNode = (NamespaceNode) node;
+                    model.updateApplications(namespaceNode);
+                }
                 if (node instanceof ResourceTypeNode) {
                     ResourceTypeNode resourceTypeNode = (ResourceTypeNode) node;
                     model.updateResources(resourceTypeNode);
@@ -64,14 +81,14 @@ public class NocalhostTree extends Tree implements Disposable {
         });
 
         ApplicationManager.getApplication().getMessageBus().connect(this).subscribe(
-                NocalhostTreeUiUpdateNotifier.NOCALHOST_TREE_UI_UPDATE_NOTIFIER_TOPIC,
+                NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC,
                 model::update
         );
     }
 
     public void updateDevSpaces() {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                NocalhostTreeDataUpdateNotifier.NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
+                NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC
         ).action();
     }
 

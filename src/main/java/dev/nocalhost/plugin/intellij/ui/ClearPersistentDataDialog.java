@@ -13,12 +13,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
@@ -27,8 +27,9 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 
 public class ClearPersistentDataDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(ClearPersistentDataDialog.class);
-    private final DevSpace devSpace;
     private final Project project;
+    private final Path kubeConfigPath;
+    private final String namespace;
 
     private JPanel contentPane;
     private JButton selectAllButton;
@@ -37,13 +38,14 @@ public class ClearPersistentDataDialog extends DialogWrapper {
 
     private boolean showSvcNames;
 
-    public ClearPersistentDataDialog(Project project, DevSpace devSpace, List<NhctlPVCItem> nhctlPVCItems, boolean showSvcNames) {
+    public ClearPersistentDataDialog(Project project, Path kubeConfigPath, String namespace, List<NhctlPVCItem> nhctlPVCItems, boolean showSvcNames) {
         super(true);
         init();
         setTitle("Clear Persistent Data");
 
-        this.devSpace = devSpace;
         this.project = project;
+        this.kubeConfigPath = kubeConfigPath;
+        this.namespace = namespace;
         this.showSvcNames = showSvcNames;
 
         this.setOKActionEnabled(false);
@@ -114,7 +116,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                         indicator.setText(item.getMountPath());
                     }
 
-                    NhctlCleanPVCOptions opts = new NhctlCleanPVCOptions(devSpace);
+                    NhctlCleanPVCOptions opts = new NhctlCleanPVCOptions(kubeConfigPath, namespace);
                     opts.setApp(item.getAppName());
                     opts.setSvc(item.getServiceName());
                     opts.setName(item.getName());

@@ -2,19 +2,21 @@ package dev.nocalhost.plugin.intellij.ui.tree.node;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
-@AllArgsConstructor
-public class ApplicationNode extends DefaultMutableTreeNode implements ResourceKeeperNode {
-    private Application application;
+public class ApplicationNode extends DefaultMutableTreeNode {
+    private String name;
 
-    public DevSpace getDevSpace() {
-        return ((DevSpaceNode) this.getParent()).getDevSpace();
+    public ApplicationNode(String name) {
+        this.name = name;
+    }
+
+    public NamespaceNode getNamespaceNode() {
+        return (NamespaceNode) this.getParent();
+    }
+
+    public ClusterNode getClusterNode() {
+        return (ClusterNode) getNamespaceNode().getParent();
     }
 }

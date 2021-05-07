@@ -11,19 +11,15 @@ import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.util.Pair;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import dev.nocalhost.plugin.intellij.api.NocalhostApi;
-import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.api.data.DevModeService;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
@@ -33,13 +29,11 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
-import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-
-import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class NocalhostProfileState extends CommandLineState {
     private static final Logger LOG = Logger.getInstance(NocalhostProfileState.class);
@@ -58,20 +52,18 @@ public class NocalhostProfileState extends CommandLineState {
         if (nocalhostDevInfo == null) {
             throw new ExecutionException("Call prepareDevInfo() before this method");
         }
+        ServiceProjectPath devModeService = nocalhostDevInfo.getDevModeService();
 
         String shell = StringUtils.isNotEmpty(nocalhostDevInfo.getShell()) ? nocalhostDevInfo.getShell() : DEFAULT_SHELL;
         String command = isDebugExecutor() ? nocalhostDevInfo.getCommand().getDebug() : nocalhostDevInfo.getCommand().getRun();
-
-        NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        String nhctlBinaryPath = StringUtils.isNotEmpty(nocalhostSettings.getNhctlBinary())
-                ? nocalhostSettings.getNhctlBinary() : "nhctl";
+        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
         List<String> commandLine = Lists.newArrayList(
-                nhctlBinaryPath, "exec", nocalhostDevInfo.getApplication(),
+                NhctlUtil.binaryPath(), "exec", devModeService.getApplicationName(),
                 "--deployment", nocalhostDevInfo.getDevModeService().getServiceName(),
                 "--command", shell, "--command", "-c", "--command", command,
-                "--kubeconfig", KubeConfigUtil.kubeConfigPath(nocalhostDevInfo.getDevSpace()).toString(),
-                "--namespace", nocalhostDevInfo.getDevSpace().getNamespace()
+                "--kubeconfig", kubeConfigPath.toString(),
+                "--namespace", devModeService.getNamespace()
         );
         return new NocalhostDevProcessHandler(new GeneralCommandLine(commandLine), getEnvironment(), this);
     }
@@ -83,19 +75,12 @@ public class NocalhostProfileState extends CommandLineState {
 
     public void prepareDevInfo() throws ExecutionException {
         try {
-            DevModeService devModeService = getDevModeService();
+            ServiceProjectPath devModeService = getDevModeService();
             if (devModeService == null) {
                 throw new ExecutionException("Service is not in dev mode.");
             }
 
-            Pair<DevSpace, String> pair = getDevSpaceAndApplication(devModeService);
-            if (pair == null) {
-                throw new ExecutionException("Service is not in dev mode.");
-            }
-            DevSpace devSpace = pair.first;
-            String app = pair.second;
-
-            NhctlDescribeService nhctlDescribeService = getNhctlDescribeService(devModeService, devSpace, app);
+            NhctlDescribeService nhctlDescribeService = getNhctlDescribeService(devModeService);
             if (!nhctlDescribeService.isDeveloping() || !projectPathMatched(nhctlDescribeService)) {
                 throw new ExecutionException("Service is not in dev mode.");
             }
@@ -125,7 +110,7 @@ public class NocalhostProfileState extends CommandLineState {
                 if (!StringUtils.isNotEmpty(remotePort)) {
                     throw new ExecutionException("Remote debug port not configured.");
                 }
-                String localPort = startDebugPortForward(devSpace, app, devModeService, remotePort);
+                String localPort = startDebugPortForward(devModeService, remotePort);
                 debug = new NocalhostDevInfo.Debug(remotePort, localPort);
             } else {
                 if (!StringUtils.isNotEmpty(command.getRun())) {
@@ -137,11 +122,9 @@ public class NocalhostProfileState extends CommandLineState {
                     command,
                     debug,
                     serviceContainer.getDev().getShell(),
-                    devSpace,
-                    app,
                     devModeService
             ));
-        } catch (NocalhostApiException | IOException | InterruptedException | NocalhostExecuteCmdException | ExecutionException e) {
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException | ExecutionException e) {
             throw new ExecutionException(e);
         }
     }
@@ -150,13 +133,14 @@ public class NocalhostProfileState extends CommandLineState {
         return StringUtils.equals(DefaultDebugExecutor.EXECUTOR_ID, getEnvironment().getExecutor().getId());
     }
 
-    private String startDebugPortForward(DevSpace devSpace, String app, DevModeService devModeService, String remotePort) throws ExecutionException {
+    private String startDebugPortForward(ServiceProjectPath devModeService, String remotePort) throws ExecutionException {
         NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
         try {
-            KubeResource deployment = kubectlCommand.getResource("deployment", devModeService.getServiceName(), devSpace);
-            List<KubeResource> pods = kubectlCommand.getResourceList("pods", deployment.getSpec().getSelector().getMatchLabels(), devSpace).getItems();
+            KubeResource deployment = kubectlCommand.getResource("deployment", devModeService.getServiceName(), kubeConfigPath, devModeService.getNamespace());
+            List<KubeResource> pods = kubectlCommand.getResourceList("pods", deployment.getSpec().getSelector().getMatchLabels(), kubeConfigPath, devModeService.getNamespace()).getItems();
             KubeResource selectedPod = null;
             for (KubeResource pod : pods) {
                 for (KubeResource.Spec.Container container : pod.getSpec().getContainers()) {
@@ -170,16 +154,16 @@ public class NocalhostProfileState extends CommandLineState {
                 throw new ExecutionException("Pod not found");
             }
 
-            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(devSpace);
+            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(kubeConfigPath, devModeService.getNamespace());
             nhctlPortForwardStartOptions.setDevPorts(List.of(":" + remotePort));
             nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
             nhctlPortForwardStartOptions.setDeployment(devModeService.getServiceName());
             nhctlPortForwardStartOptions.setPod(selectedPod.getMetadata().getName());
-            nhctlCommand.startPortForward(app, nhctlPortForwardStartOptions);
+            nhctlCommand.startPortForward(devModeService.getApplicationName(), nhctlPortForwardStartOptions);
 
-            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(devSpace);
+            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, devModeService.getNamespace());
             nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
-            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(app, nhctlDescribeOptions, NhctlDescribeService.class);
+            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(devModeService.getApplicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
 
             for (NhctlPortForward pf : nhctlDescribeService.getDevPortForwardList()) {
                 if (StringUtils.equals(pf.getRemoteport(), remotePort)) {
@@ -199,60 +183,38 @@ public class NocalhostProfileState extends CommandLineState {
             return;
         }
 
-        DevSpace devSpace = nocalhostDevInfo.getDevSpace();
-        String app = nocalhostDevInfo.getApplication();
-        DevModeService devModeService = nocalhostDevInfo.getDevModeService();
+        ServiceProjectPath devModeService = nocalhostDevInfo.getDevModeService();
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
-                NhctlPortForwardEndOptions nhctlPortForwardEndOptions = new NhctlPortForwardEndOptions(devSpace);
+                NhctlPortForwardEndOptions nhctlPortForwardEndOptions = new NhctlPortForwardEndOptions(kubeConfigPath, devModeService.getNamespace());
                 nhctlPortForwardEndOptions.setPort(debug.getLocalPort() + ":" + debug.getRemotePort());
                 nhctlPortForwardEndOptions.setDeployment(devModeService.getServiceName());
 
-                nhctlCommand.endPortForward(app, nhctlPortForwardEndOptions);
+                nhctlCommand.endPortForward(devModeService.getApplicationName(), nhctlPortForwardEndOptions);
             } catch (Exception e) {
                 LOG.error(e);
             }
         });
     }
 
-    private DevModeService getDevModeService() {
+    private ServiceProjectPath getDevModeService() {
         final NocalhostProjectSettings nocalhostProjectSettings =
                 getEnvironment().getProject().getService(NocalhostProjectSettings.class);
         return nocalhostProjectSettings.getDevModeService();
     }
 
-    private static Pair<DevSpace, String> getDevSpaceAndApplication(
-            DevModeService devModeService
-    ) throws IOException, NocalhostApiException {
-        final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-        for (DevSpace devSpace : nocalhostApi.listDevSpaces()) {
-            if (StringUtils.equals(devModeService.getApplicationName(), DEFAULT_APPLICATION_NAME)
-                    && devSpace.getId() == devModeService.getDevSpaceId()) {
-                return Pair.create(devSpace, devModeService.getApplicationName());
-            }
-            for (Application app : nocalhostApi.listApplications()) {
-                if ((StringUtils.equals(app.getContext().getApplicationName(), devModeService.getApplicationName()) || StringUtils.equals(devModeService.getServiceName(), DEFAULT_APPLICATION_NAME))
-                        && devSpace.getId() == devModeService.getDevSpaceId()) {
-                    return Pair.create(devSpace, devModeService.getApplicationName());
-                }
-            }
-        }
-        return null;
-    }
-
-    private static NhctlDescribeService getNhctlDescribeService(
-            DevModeService devModeService,
-            DevSpace devSpace,
-            String app
-    ) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+    private NhctlDescribeService getNhctlDescribeService(ServiceProjectPath serviceProjectPath)
+            throws InterruptedException, NocalhostExecuteCmdException, IOException {
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        NhctlDescribeOptions opts = new NhctlDescribeOptions(devSpace);
-        opts.setDeployment(devModeService.getServiceName());
+        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
+        NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, serviceProjectPath.getNamespace());
+        opts.setDeployment(serviceProjectPath.getServiceName());
         return nhctlCommand.describe(
-                app,
+                serviceProjectPath.getApplicationName(),
                 opts,
                 NhctlDescribeService.class);
     }

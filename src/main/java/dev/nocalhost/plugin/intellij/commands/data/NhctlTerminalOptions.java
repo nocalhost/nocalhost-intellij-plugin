@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
+import java.nio.file.Path;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +12,7 @@ public class NhctlTerminalOptions extends NhctlGlobalOptions {
     private String container;
     private String pod;
 
-    public NhctlTerminalOptions(DevSpace devSpace) {
-        super(devSpace);
+    public NhctlTerminalOptions(Path kubeConfigPath, String namespace) {
+        super(kubeConfigPath, namespace);
     }
 }

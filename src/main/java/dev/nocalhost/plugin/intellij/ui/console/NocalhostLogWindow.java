@@ -25,12 +25,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
@@ -39,11 +39,17 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class NocalhostLogWindow extends NocalhostConsoleWindow {
     private static final Logger LOG = Logger.getInstance(NocalhostLogWindow.class);
 
+    private final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+
     private final Project project;
+    private final ResourceNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
 
     private String title;
     private ConsoleView consoleView;
@@ -54,14 +60,13 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
     private boolean pause;
     private String podName;
     private String containerName;
-    private final DevSpace devSpace;
-    private final KubectlCommand kubectlCommand;
 
     public NocalhostLogWindow(Project project, ResourceNode node) {
         this.project = project;
+        this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
 
-        kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-        devSpace = node.devSpace();
         stop = false;
         pause = false;
 
@@ -72,10 +77,13 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                 containerName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");
                 KubeResourceList pods = null;
                 try {
-                    pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), devSpace);
+                    pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), kubeConfigPath, namespace);
                 } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while getting workload pods", e);
-                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost log error", String.format("error occurred while getting workload pods containerName:[%s] devSpace:[%s]", containerName, devSpace), e.getMessage());
+                    NocalhostNotifier.getInstance(project).notifyError(
+                            "Nocalhost log error",
+                            String.format("error occurred while getting workload pods containerName:[%s] namespace:[%s]", containerName, namespace),
+                            e.getMessage());
                     return;
                 }
                 if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
@@ -126,7 +134,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
         StartAction startAction = new StartAction(this);
         PauseAction pauseAction = new PauseAction(this);
         StopAction stopAction = new StopAction(this);
-        AnAction[] customActions = new AnAction[] {startAction, pauseAction, stopAction, new Separator()};
+        AnAction[] customActions = new AnAction[]{startAction, pauseAction, stopAction, new Separator()};
         DefaultActionGroup actionGroup = new DefaultActionGroup(ArrayUtils.addAll(customActions, consoleViewActions));
 
         ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("Nocalhost.Log.Window.Toolbar", actionGroup, false);
@@ -222,7 +230,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
             return;
         }
         try {
-            logsProcessHandler = kubectlCommand.getLogsProcessHandler(podName, containerName, devSpace);
+            logsProcessHandler = kubectlCommand.getLogsProcessHandler(podName, containerName, kubeConfigPath, namespace);
             logsProcessHandler.startNotify();
             consoleView.attachToProcess(logsProcessHandler);
             consoleView.print(
@@ -231,7 +239,10 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
             stop = false;
             pause = false;
         } catch (ExecutionException e) {
-            NocalhostNotifier.getInstance(project).notifyError("Nocalhost log error", String.format("failed to log podName:[%s] containerName:[%s] devSpace:[%s]", podName, containerName, devSpace), e.getMessage());
+            NocalhostNotifier.getInstance(project).notifyError(
+                    "Nocalhost log error",
+                    String.format("failed to log podName:[%s] containerName:[%s] namespace:[%s]", podName, containerName, namespace),
+                    e.getMessage());
         }
     }
 

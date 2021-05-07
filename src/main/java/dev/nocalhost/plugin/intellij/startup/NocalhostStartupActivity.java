@@ -9,15 +9,9 @@ import com.intellij.openapi.startup.StartupActivity;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-
-import dev.nocalhost.plugin.intellij.api.NocalhostApi;
-import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.api.data.DevModeService;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
-import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
@@ -31,30 +25,28 @@ public final class NocalhostStartupActivity implements StartupActivity {
     }
 
     private void devStart(Project project) {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        DevModeService devModeService = nocalhostSettings.getDevModeProjectBasePath2Service().get(project.getBasePath());
-        if (nocalhostSettings.getUserInfo() != null && devModeService != null) {
-            final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+        final NocalhostSettings nocalhostSettings = ServiceManager
+                .getService(NocalhostSettings.class);
+        ServiceProjectPath serviceProjectPath = nocalhostSettings
+                .getDevModeServiceByProjectPath(project.getBasePath());
+        if (serviceProjectPath != null) {
             try {
-                for (DevSpace devSpace : nocalhostApi.listDevSpaces()) {
-                    if (StringUtils.equals(devModeService.getApplicationName(), DEFAULT_APPLICATION_NAME)
-                            && devSpace.getId() == devModeService.getDevSpaceId()) {
-                        ProgressManager.getInstance().run(new StartingDevModeTask(project, devSpace, devModeService.getApplicationName(), devModeService));
-                        break;
-                    }
-                    for (Application app : nocalhostApi.listApplications()) {
-                        if (StringUtils.equals(app.getContext().getApplicationName(), devModeService.getApplicationName())
-                                && devSpace.getId() == devModeService.getDevSpaceId()) {
-                            ProgressManager.getInstance().run(new StartingDevModeTask(project, devSpace, devModeService.getApplicationName(), devModeService));
-                            break;
-                        }
-                    }
+                if (StringUtils.equals(serviceProjectPath.getApplicationName(),
+                        DEFAULT_APPLICATION_NAME)) {
+                    ProgressManager.getInstance().run(new StartingDevModeTask(project,
+                            serviceProjectPath));
+                } else {
+                    ProgressManager.getInstance().run(new StartingDevModeTask(project,
+                            serviceProjectPath));
                 }
-            } catch (IOException | NocalhostApiException e) {
+            } catch (Exception e) {
                 LOG.error("error occurred while starting develop", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost starting dev mode error", "Error occurred while starting dev mode", e.getMessage());
+                NocalhostNotifier.getInstance(project).notifyError(
+                        "Nocalhost starting dev mode error",
+                        "Error occurred while starting dev mode",
+                        e.getMessage());
             } finally {
-                nocalhostSettings.getDevModeProjectBasePath2Service().remove(project.getBasePath());
+                nocalhostSettings.removeDevModeServiceByProjectPath(project.getBasePath());
             }
         }
     }

@@ -1,36 +1,54 @@
 package dev.nocalhost.plugin.intellij.utils;
 
+import com.google.common.collect.Maps;
+
 import org.apache.commons.codec.binary.StringUtils;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
+import java.util.UUID;
 
 import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 
 public class HelmNocalhostConfigUtil {
     private static final Path HELM_CONFIGS_DIR = Paths.get(
             System.getProperty("user.home"),
             ".nh/intellij-plugin/helmNHConfigs");
 
-    public static Path helmNocalhostConfigPath(DevSpace devSpace, Application application) {
-        Path path = HELM_CONFIGS_DIR.resolve(devSpace.getId() + "_" + devSpace.getNamespace() + "_config");
-        try {
-            if (!Files.exists(path)) {
-                Files.createDirectories(path.getParent());
-                Files.write(path, application.getContext().getNocalhostConfig().getBytes(StandardCharsets.UTF_8));
-            } else {
-                String currentKubeConfig = new String(Files.readAllBytes(path));
-                if (!StringUtils.equals(currentKubeConfig, devSpace.getKubeConfig())) {
-                    Files.write(path, application.getContext().getNocalhostConfig().getBytes(StandardCharsets.UTF_8));
+    private static final Map<String, Path> nocalhostConfigPathMap = Maps.newHashMap();
+
+    public static Path helmNocalhostConfigPath(Application application) {
+        String nocalhostConfig = application.getContext().getNocalhostConfig();
+        synchronized (nocalhostConfigPathMap) {
+            try {
+                if (!nocalhostConfigPathMap.containsKey(nocalhostConfig)) {
+                    Path path;
+                    while (true) {
+                        path = HELM_CONFIGS_DIR.resolve(UUID.randomUUID().toString() + "_config");
+                        if (!Files.exists(path)) {
+                            nocalhostConfigPathMap.put(nocalhostConfig, path);
+                            break;
+                        }
+                    }
                 }
+                Path path = nocalhostConfigPathMap.get(nocalhostConfig);
+                if (!Files.exists(path)) {
+                    Files.createDirectories(path.getParent());
+                    Files.write(path, nocalhostConfig.getBytes(StandardCharsets.UTF_8));
+                    path.toFile().deleteOnExit();
+                } else {
+                    String content = new String(Files.readAllBytes(path));
+                    if (!StringUtils.equals(content, nocalhostConfig)) {
+                        Files.write(path, nocalhostConfig.getBytes(StandardCharsets.UTF_8));
+                    }
+                }
+                return path.toAbsolutePath();
+            } catch (Exception e) {
+                throw new RuntimeException("Preparing nocalhost config file error", e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
-        return path;
     }
 }

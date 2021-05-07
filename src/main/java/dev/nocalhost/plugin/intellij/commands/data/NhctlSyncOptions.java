@@ -1,8 +1,8 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import java.nio.file.Path;
 import java.util.List;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +16,7 @@ public class NhctlSyncOptions extends NhctlGlobalOptions {
     private List<String> ignoredPatterns;
     private List<String> syncedPatterns;
 
-    public NhctlSyncOptions(DevSpace devSpace) {
-        super(devSpace);
+    public NhctlSyncOptions(Path kubeConfigPath, String namespace) {
+        super(kubeConfigPath, namespace);
     }
 }

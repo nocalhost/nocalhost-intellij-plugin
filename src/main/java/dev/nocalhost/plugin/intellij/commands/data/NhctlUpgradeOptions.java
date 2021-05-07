@@ -1,9 +1,9 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,7 +22,7 @@ public class NhctlUpgradeOptions extends NhctlGlobalOptions {
     private String localPath;
     private List<String> resourcesPath;
 
-    public NhctlUpgradeOptions(DevSpace devSpace) {
-        super(devSpace);
+    public NhctlUpgradeOptions(Path kubeConfigPath, String namespace) {
+        super(kubeConfigPath, namespace);
     }
 }

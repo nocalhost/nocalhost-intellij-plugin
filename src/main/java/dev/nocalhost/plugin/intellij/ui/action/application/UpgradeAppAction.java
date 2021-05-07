@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -19,16 +20,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
-import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
+import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseDialog;
@@ -36,29 +40,35 @@ import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.KustomizePathDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class UpgradeAppAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(UpgradeAppAction.class);
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
+    private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+
     private final Project project;
     private final ApplicationNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
+    private final String applicationName;
 
     public UpgradeAppAction(Project project, ApplicationNode node) {
         super("Upgrade App");
         this.project = project;
         this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
+        this.applicationName = node.getName();
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        final DevSpace devSpace = node.getDevSpace();
-        final Application application = node.getApplication();
-
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                if (!NhctlHelper.isApplicationInstalled(devSpace, application)) {
+                if (!NhctlHelper.isApplicationInstalled(kubeConfigPath, namespace, applicationName)) {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         Messages.showMessageDialog(
                                 "Application has not been installed.",
@@ -67,28 +77,46 @@ public class UpgradeAppAction extends AnAction {
                     });
                     return;
                 }
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    try {
-                        upgradeApp();
-                    } catch (IOException e) {
-                        LOG.error("error occurred while upgrading application", e);
-                    }
-                });
-            } catch (IOException | InterruptedException e) {
+
+                NocalhostAccount nocalhostAccount = node.getClusterNode().getNocalhostAccount();
+                List<Application> nocalhostApplications = nocalhostApi.listApplications(
+                        nocalhostAccount.getServer(),
+                        nocalhostAccount.getJwt(),
+                        nocalhostAccount.getUserInfo().getId()
+                );
+                Optional<Application> applicationOptional = nocalhostApplications.stream()
+                        .filter(e -> StringUtils.equals(
+                                applicationName,
+                                e.getContext().getApplicationName()
+                        ))
+                        .findFirst();
+                if (applicationOptional.isPresent()) {
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        try {
+                            upgradeApp(applicationOptional.get());
+                        } catch (IOException e) {
+                            LOG.error("error occurred while upgrading application", e);
+                        }
+                    });
+                } else {
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        NocalhostNotifier.getInstance(project).notifyError(
+                                "Application '" + applicationName + "' not found", "");
+                    });
+                }
+
+
+            } catch (IOException | InterruptedException | NocalhostApiException e) {
                 LOG.error("error occurred while checking application status", e);
             }
         });
-
-
     }
 
-    private void upgradeApp() throws IOException {
-        final DevSpace devSpace = node.getDevSpace();
-        final Application application = node.getApplication();
+    private void upgradeApp(Application application) throws IOException {
         final Application.Context context = application.getContext();
         final String installType = NhctlHelper.generateInstallType(application.getContext());
 
-        final NhctlUpgradeOptions opts = new NhctlUpgradeOptions(devSpace);
+        final NhctlUpgradeOptions opts = new NhctlUpgradeOptions(kubeConfigPath, namespace);
         List<String> resourceDirs = Lists.newArrayList(context.getResourceDir());
 
         if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {
@@ -119,14 +147,14 @@ public class UpgradeAppAction extends AnAction {
             opts.setConfig(configPath.toString());
 
         } else {
-            AppInstallOrUpgradeOption upgradeOption = askAndGetUpgradeOption(installType, application);
+            AppInstallOrUpgradeOption upgradeOption = askAndGetUpgradeOption(installType);
             if (upgradeOption == null) {
                 return;
             }
 
             if (StringUtils.equals(installType, "helmRepo")) {
                 opts.setHelmRepoUrl(context.getApplicationUrl());
-                opts.setHelmChartName(context.getApplicationName());
+                opts.setHelmChartName(applicationName);
                 if (upgradeOption.isSpecifyOneSelected()) {
                     opts.setHelmRepoVersion(upgradeOption.getSpecifyText());
                 }
@@ -166,14 +194,13 @@ public class UpgradeAppAction extends AnAction {
         }
         opts.setResourcesPath(resourceDirs);
 
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Upgrading application: " + context.getApplicationName(), false) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Upgrading application: " + applicationName, false) {
             @Override
             public void onSuccess() {
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                        NocalhostTreeDataUpdateNotifier.NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
-                ).action();
+                        NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
-                NocalhostNotifier.getInstance(project).notifySuccess("Application " + context.getApplicationName() + " upgraded", "");
+                NocalhostNotifier.getInstance(project).notifySuccess("Application " + applicationName + " upgraded", "");
             }
 
             @Override
@@ -186,13 +213,13 @@ public class UpgradeAppAction extends AnAction {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-                outputCapturedNhctlCommand.upgrade(context.getApplicationName(), opts);
+                outputCapturedNhctlCommand.upgrade(applicationName, opts);
             }
         });
     }
 
-    private AppInstallOrUpgradeOption askAndGetUpgradeOption(String installType, Application application) {
-        final String title = "Upgrade DevSpace: " + application.getContext().getApplicationName();
+    private AppInstallOrUpgradeOption askAndGetUpgradeOption(String installType) {
+        final String title = "Upgrade DevSpace: " + applicationName;
         AppInstallOrUpgradeOptionDialog dialog;
         if (StringUtils.equals(installType, "helmRepo")) {
             dialog = new AppInstallOrUpgradeOptionDialog(

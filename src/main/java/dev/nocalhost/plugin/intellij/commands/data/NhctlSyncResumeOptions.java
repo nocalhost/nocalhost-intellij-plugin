@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
+import java.nio.file.Path;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,7 +11,7 @@ public class NhctlSyncResumeOptions extends NhctlGlobalOptions {
 
     private String deployment;
 
-    public NhctlSyncResumeOptions(DevSpace devSpace) {
-        super(devSpace);
+    public NhctlSyncResumeOptions(Path kubeConfigPath, String namespace) {
+        super(kubeConfigPath, namespace);
     }
 }

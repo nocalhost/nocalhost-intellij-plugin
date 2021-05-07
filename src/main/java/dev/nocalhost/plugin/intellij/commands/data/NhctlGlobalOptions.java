@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import java.nio.file.Path;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,8 +12,8 @@ public abstract class NhctlGlobalOptions {
     private String kubeconfig;
     private String namespace;
 
-    protected NhctlGlobalOptions(DevSpace devSpace) {
-        kubeconfig = KubeConfigUtil.kubeConfigPath(devSpace).toString();
-        namespace = devSpace.getNamespace();
+    protected NhctlGlobalOptions(Path kubeConfigPath, String namespace) {
+        this.kubeconfig = kubeConfigPath.toString();
+        this.namespace = namespace;
     }
 }

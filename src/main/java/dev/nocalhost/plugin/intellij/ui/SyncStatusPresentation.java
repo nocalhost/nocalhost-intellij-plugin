@@ -20,19 +20,19 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.event.MouseEvent;
 import java.io.IOException;
-import java.util.List;
+import java.nio.file.Path;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.AliveDeployment;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncResumeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.helpers.UserDataKeyHelper;
+import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
+import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValuesPresentation, StatusBarWidget.Multiframe {
 
@@ -49,24 +49,25 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             return null;
         }
         final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        final NocalhostProjectSettings nocalhostProjectSettings = project.getService(NocalhostProjectSettings.class);
 
-        List<AliveDeployment> aliveDeployments = UserDataKeyHelper.findAliveDeploymentsByProject(project);
-        if (aliveDeployments == null) {
+        ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
+        if (devModeService == null || devModeService.getRawKubeConfig() == null) {
             return null;
         }
-        AliveDeployment aliveDeployment = aliveDeployments.get(0);
-        DevSpace devSpace = aliveDeployment.getDevSpace();
-        String deployment = aliveDeployment.getDeployment();
-        NhctlSyncStatusOptions options = new NhctlSyncStatusOptions(devSpace);
-        options.setDeployment(deployment);
+
+        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
+
+        NhctlSyncStatusOptions options = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
+        options.setDeployment(devModeService.getServiceName());
         String status = null;
         try {
-            status = nhctlCommand.syncStatus(aliveDeployment.getApplicationName(), options);
+            status = nhctlCommand.syncStatus(devModeService.getApplicationName(), options);
         } catch (InterruptedException | IOException e) {
             LOG.error("error occurred while get sync status ", e);
         } catch (NocalhostExecuteCmdException e) {
-            if (StringUtils.contains(e.getMessage(), "not found")) {
-                UserDataKeyHelper.removeAliveDeployments(project, aliveDeployment);
+            if (!StringUtils.contains(e.getMessage(), "not found")) {
+                LOG.error("Fail to get sync status", e);
             }
         }
         nhctlSyncStatus = DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
@@ -121,21 +122,23 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     public @Nullable("null means the widget is unable to show the popup") ListPopup getPopupStep() {
         if (nhctlSyncStatus != null && nhctlSyncStatus.getStatus().equalsIgnoreCase("disconnected")) {
             int exitCode = MessageDialogBuilder.yesNoCancel("Sync resume", "do you want to resume file sync?")
-                                               .guessWindowAndAsk();
+                    .guessWindowAndAsk();
             switch (exitCode) {
                 case Messages.YES: {
                     final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                    List<AliveDeployment> aliveDeployments = UserDataKeyHelper.findAliveDeploymentsByProject(project);
-                    if (aliveDeployments == null) {
+                    final NocalhostProjectSettings nocalhostProjectSettings = project.getService(NocalhostProjectSettings.class);
+
+                    ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
+                    if (devModeService == null || devModeService.getRawKubeConfig() == null) {
                         return null;
                     }
-                    AliveDeployment aliveDeployment = aliveDeployments.get(0);
-                    DevSpace devSpace = aliveDeployment.getDevSpace();
-                    String deployment = aliveDeployment.getDeployment();
-                    NhctlSyncResumeOptions options = new NhctlSyncResumeOptions(devSpace);
-                    options.setDeployment(deployment);
+
+                    Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
+
+                    NhctlSyncResumeOptions options = new NhctlSyncResumeOptions(kubeConfigPath, devModeService.getNamespace());
+                    options.setDeployment(devModeService.getServiceName());
                     try {
-                        nhctlCommand.syncResume(aliveDeployment.getApplicationName(), options);
+                        nhctlCommand.syncResume(devModeService.getApplicationName(), options);
                     } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
                         LOG.error("error occurred while sync resume ", e);
                     }
@@ -152,18 +155,19 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             switch (exitCode) {
                 case Messages.YES: {
                     final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                    final NocalhostProjectSettings nocalhostProjectSettings = project.getService(NocalhostProjectSettings.class);
 
-                    List<AliveDeployment> aliveDeployments = UserDataKeyHelper.findAliveDeploymentsByProject(project);
-                    if (aliveDeployments == null) {
+                    ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
+                    if (devModeService == null || devModeService.getRawKubeConfig() == null) {
                         return null;
                     }
-                    AliveDeployment aliveDeployment = aliveDeployments.get(0);
-                    DevSpace devSpace = aliveDeployment.getDevSpace();
-                    String deployment = aliveDeployment.getDeployment();
-                    NhctlSyncStatusOptions options = new NhctlSyncStatusOptions(devSpace);
-                    options.setDeployment(deployment);
+
+                    Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
+
+                    NhctlSyncStatusOptions options = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
+                    options.setDeployment(devModeService.getServiceName());
                     try {
-                        nhctlCommand.syncStatusOverride(aliveDeployment.getApplicationName(), options);
+                        nhctlCommand.syncStatusOverride(devModeService.getApplicationName(), options);
                     } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
                         LOG.error("error occurred while sync status override ", e);
                     }

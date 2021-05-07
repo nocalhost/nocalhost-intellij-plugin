@@ -17,16 +17,15 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import lombok.SneakyThrows;
 
-public class InstallAppTask extends Task.Backgroundable {
-    private static final Logger LOG = Logger.getInstance(InstallAppTask.class);
+public class InstallApplicationTask extends Task.Backgroundable {
+    private static final Logger LOG = Logger.getInstance(InstallApplicationTask.class);
 
     private static final List<String> BOOKINFO_URLS = Lists.newArrayList(
             "https://github.com/nocalhost/bookinfo.git",
@@ -41,17 +40,15 @@ public class InstallAppTask extends Task.Backgroundable {
 
 
     private final Project project;
-    private final DevSpace devSpace;
     private final Application application;
     private final NhctlInstallOptions opts;
 
     private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
     private String productPagePort;
 
-    public InstallAppTask(@Nullable Project project, DevSpace devSpace, Application application, NhctlInstallOptions opts) {
+    public InstallApplicationTask(@Nullable Project project, Application application, NhctlInstallOptions opts) {
         super(project, "Installing application: " + application.getContext().getApplicationName(), false);
         this.project = project;
-        this.devSpace = devSpace;
         this.application = application;
         this.opts = opts;
     }
@@ -61,8 +58,7 @@ public class InstallAppTask extends Task.Backgroundable {
     public void onSuccess() {
         bookinfo();
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                NocalhostTreeDataUpdateNotifier.NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
-        ).action();
+                NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
         NocalhostNotifier.getInstance(project).notifySuccess("Application " + application.getContext().getApplicationName() + " installed", "");
     }

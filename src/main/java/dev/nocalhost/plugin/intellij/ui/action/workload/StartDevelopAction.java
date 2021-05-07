@@ -23,11 +23,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.api.data.DevModeService;
 import dev.nocalhost.plugin.intellij.commands.GitCommand;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
@@ -39,12 +37,13 @@ import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostGitException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.settings.NocalhostRepo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import icons.NocalhostIcons;
 
 public class StartDevelopAction extends AnAction {
@@ -57,11 +56,15 @@ public class StartDevelopAction extends AnAction {
 
     private final Project project;
     private final ResourceNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
 
     public StartDevelopAction(Project project, ResourceNode node) {
         super("Start Develop", "", NocalhostIcons.Status.DevStart);
         this.project = project;
         this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
     }
 
     private String selectContainer(List<String> containers) {
@@ -87,7 +90,7 @@ public class StartDevelopAction extends AnAction {
 
     private Optional<NhctlDescribeService> getNhctlDescribeService() {
         try {
-            NhctlDescribeOptions opts = new NhctlDescribeOptions(node.devSpace());
+            NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
             opts.setDeployment(node.resourceName());
             NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                     node.applicationName(), opts, NhctlDescribeService.class);
@@ -101,9 +104,9 @@ public class StartDevelopAction extends AnAction {
     private List<KubeResource> getDeploymentPods() {
         try {
             KubeResource deployment = kubectlCommand.getResource("deployment",
-                    node.resourceName(), node.devSpace());
+                    node.resourceName(), kubeConfigPath, namespace);
             KubeResourceList pods = kubectlCommand.getResourceList("pods",
-                    deployment.getSpec().getSelector().getMatchLabels(), node.devSpace());
+                    deployment.getSpec().getSelector().getMatchLabels(), kubeConfigPath, namespace);
             return pods.getItems().stream()
                     .filter(KubeResource::canSelector)
                     .collect(Collectors.toList());
@@ -113,7 +116,7 @@ public class StartDevelopAction extends AnAction {
         return Lists.newArrayList();
     }
 
-    private void selectSourceDirectory(final String gitUrl, final DevModeService devModeService) {
+    private void selectSourceDirectory(final String gitUrl, final ServiceProjectPath serviceProjectPath) {
         ApplicationManager.getApplication().invokeLater(() -> {
             int exitCode = MessageDialogBuilder
                     .yesNoCancel(
@@ -154,10 +157,8 @@ public class StartDevelopAction extends AnAction {
 
                                 gitDir = parentDir.resolve(node.resourceName());
 
-                                nocalhostSettings.getDevModeProjectBasePath2Service().put(
-                                        gitDir.toString(),
-                                        devModeService
-                                );
+                                serviceProjectPath.setProjectPath(gitDir.toString());
+                                nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
                             } catch (NocalhostGitException e) {
                                 LOG.error("error occurred while cloning git repository", e);
                                 NocalhostNotifier.getInstance(project).notifyError(
@@ -176,10 +177,8 @@ public class StartDevelopAction extends AnAction {
                         return;
                     }
 
-                    nocalhostSettings.getDevModeProjectBasePath2Service().put(
-                            basePath.toString(),
-                            devModeService
-                    );
+                    serviceProjectPath.setProjectPath(basePath.toString());
+                    nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
 
                     ProjectManagerEx.getInstanceEx().openProject(basePath, new OpenProjectTask());
                 }
@@ -227,28 +226,38 @@ public class StartDevelopAction extends AnAction {
                 String gitUrl = findGitUrl(nhctlDescribeService.getRawConfig().getContainers(),
                         containerName);
 
-                DevModeService devModeService = new DevModeService(node.applicationName(),
-                        node.devSpace().getId(), node.resourceName(), containerName);
+                ServiceProjectPath serviceProjectPath;
+                if (node.getClusterNode().getNocalhostAccount() != null) {
+                    serviceProjectPath = ServiceProjectPath.builder()
+                            .server(node.getClusterNode().getNocalhostAccount().getServer())
+                            .username(node.getClusterNode().getNocalhostAccount().getUsername())
+                            .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
+                            .namespace(node.getNamespaceNode().getName())
+                            .applicationName(node.applicationName())
+                            .serviceName(node.resourceName())
+                            .containerName(containerName)
+                            .build();
+                } else {
+                    serviceProjectPath = ServiceProjectPath.builder()
+                            .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
+                            .namespace(node.getNamespaceNode().getName())
+                            .applicationName(node.applicationName())
+                            .serviceName(node.resourceName())
+                            .containerName(containerName)
+                            .build();
+                }
 
-                final Optional<NocalhostRepo> nocalhostRepo = nocalhostSettings.getRepos().stream()
-                        .filter(repos -> repos.getHost().equals(nocalhostSettings.getBaseUrl())
-                                && repos.getEmail().equals(nocalhostSettings.getUserInfo().getEmail())
-                                && repos.getAppName().equals(node.applicationName())
-                                && Objects.equals(repos.getDevSpaceId(), devModeService.getDevSpaceId())
-                                && repos.getDeploymentName().equals(devModeService.getServiceName())).findFirst();
+                String projectPath = nocalhostSettings.findProjectPathByService(serviceProjectPath);
 
-                if (nocalhostRepo.isPresent()) {
-                    final NocalhostRepo repo = nocalhostRepo.get();
-                    if (repo.getRepoPath().equals(project.getBasePath())) {
+                if (StringUtils.isNotEmpty(projectPath)) {
+                    if (StringUtils.equals(projectPath, project.getBasePath())) {
                         ProgressManager.getInstance().run(new StartingDevModeTask(project,
-                                node.devSpace(), node.applicationName(), devModeService));
+                                serviceProjectPath));
                     } else {
-                        nocalhostSettings.getDevModeProjectBasePath2Service().put(
-                                repo.getRepoPath(),
-                                devModeService
-                        );
+                        serviceProjectPath.setProjectPath(projectPath);
+                        nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
 
-                        ProjectManagerEx.getInstanceEx().openProject(Path.of(repo.getRepoPath()),
+                        ProjectManagerEx.getInstanceEx().openProject(Path.of(projectPath),
                                 new OpenProjectTask());
                     }
                     return;
@@ -263,14 +272,14 @@ public class StartDevelopAction extends AnAction {
                         if (optionalPath.isPresent()) {
                             ApplicationManager.getApplication().invokeLater(() -> {
                                 ProgressManager.getInstance().run(new StartingDevModeTask(project,
-                                        node.devSpace(), node.applicationName(), devModeService));
+                                        serviceProjectPath));
                             });
                             return;
                         }
                     } catch (Exception ignored) {
                     }
 
-                    selectSourceDirectory(gitUrl, devModeService);
+                    selectSourceDirectory(gitUrl, serviceProjectPath);
                 });
             });
         });

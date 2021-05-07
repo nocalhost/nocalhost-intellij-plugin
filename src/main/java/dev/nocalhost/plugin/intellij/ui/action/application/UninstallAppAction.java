@@ -15,15 +15,15 @@ import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
-import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.api.data.DevSpace;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
-import dev.nocalhost.plugin.intellij.topic.NocalhostTreeDataUpdateNotifier;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class UninstallAppAction extends AnAction {
@@ -32,23 +32,24 @@ public class UninstallAppAction extends AnAction {
     final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final Project project;
-    private final ApplicationNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
+    private final String applicationName;
 
     public UninstallAppAction(Project project, ApplicationNode node) {
         super("Uninstall App", "", AllIcons.Actions.Uninstall);
         this.project = project;
-        this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
+        this.applicationName = node.getName();
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        final Application application = node.getApplication();
-        final DevSpace devSpace = node.getDevSpace();
-
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                if (!NhctlHelper.isApplicationInstalled(devSpace, application)) {
+                if (!NhctlHelper.isApplicationInstalled(kubeConfigPath, namespace, applicationName)) {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         Messages.showMessageDialog(
                                 "Application has not been installed.",
@@ -60,10 +61,9 @@ public class UninstallAppAction extends AnAction {
                 }
 
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    final String appName = application.getContext().getApplicationName();
                     if (!MessageDialogBuilder.yesNo(
                             "Uninstall application",
-                            "Uninstall application " + appName + "?"
+                            "Uninstall application " + applicationName + "?"
                     ).guessWindowAndAsk()) {
                         return;
                     }
@@ -78,23 +78,18 @@ public class UninstallAppAction extends AnAction {
     }
 
     private void uninstall() {
-        final DevSpace devSpace = node.getDevSpace();
-        final String appName = node.getApplication().getContext().getApplicationName();
-
         ProgressManager.getInstance().run(new Task.Backgroundable(
                 null,
-                "Uninstalling application: " + appName,
+                "Uninstalling application: " + applicationName,
                 false
         ) {
             @Override
             public void onSuccess() {
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                        NocalhostTreeDataUpdateNotifier
-                                .NOCALHOST_TREE_DATA_UPDATE_NOTIFIER_TOPIC
-                ).action();
+                        NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
                 NocalhostNotifier.getInstance(project).notifySuccess(
-                        "Application " + appName + " uninstalled",
+                        "Application " + applicationName + " uninstalled",
                         "");
             }
 
@@ -106,9 +101,9 @@ public class UninstallAppAction extends AnAction {
             @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                NhctlUninstallOptions opts = new NhctlUninstallOptions(devSpace);
+                NhctlUninstallOptions opts = new NhctlUninstallOptions(kubeConfigPath, namespace);
                 opts.setForce(true);
-                outputCapturedNhctlCommand.uninstall(appName, opts);
+                outputCapturedNhctlCommand.uninstall(applicationName, opts);
             }
         });
     }

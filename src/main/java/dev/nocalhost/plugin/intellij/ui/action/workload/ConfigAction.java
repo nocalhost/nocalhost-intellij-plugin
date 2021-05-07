@@ -15,10 +15,13 @@ import com.intellij.openapi.vfs.VirtualFile;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
+
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ConfigFile;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ConfigAction extends AnAction {
@@ -26,11 +29,15 @@ public class ConfigAction extends AnAction {
 
     private final Project project;
     private final ResourceNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
 
     public ConfigAction(Project project, ResourceNode node) {
         super("Config", "", AllIcons.Nodes.Editorconfig);
         this.project = project;
         this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
     }
 
     @Override
@@ -57,7 +64,7 @@ public class ConfigAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
-                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(node.devSpace());
+                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, namespace);
                 nhctlConfigOptions.setDeployment(node.resourceName());
                 config = nhctlCommand.getConfig(node.applicationName(), nhctlConfigOptions);
             }

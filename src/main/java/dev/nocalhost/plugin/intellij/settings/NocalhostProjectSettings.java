@@ -8,16 +8,14 @@ import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import dev.nocalhost.plugin.intellij.api.data.DevModeService;
+import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import lombok.Getter;
-import lombok.Setter;
 
-@State(name = "NocalhostSettings", storages = @Storage("nocalhost.xml"))
+@State(name = "NocalhostProjectSettings", storages = @Storage("nocalhost.xml"))
 @Getter
-@Setter
 public class NocalhostProjectSettings implements PersistentStateComponent<NocalhostProjectSettings> {
-    private String devModeServiceJson;
+    private String serviceProjectPathJson;
 
     @Override
     public @Nullable NocalhostProjectSettings getState() {
@@ -29,11 +27,11 @@ public class NocalhostProjectSettings implements PersistentStateComponent<Nocalh
         XmlSerializerUtil.copyBean(state, this);
     }
 
-    public DevModeService getDevModeService() {
-        return DataUtils.GSON.fromJson(devModeServiceJson, DevModeService.class);
+    public ServiceProjectPath getDevModeService() {
+        return DataUtils.GSON.fromJson(serviceProjectPathJson, ServiceProjectPath.class);
     }
 
-    public void setDevModeService(DevModeService devModeService) {
-        devModeServiceJson = DataUtils.GSON.toJson(devModeService);
+    public void setDevModeService(ServiceProjectPath serviceProjectPath) {
+        serviceProjectPathJson = DataUtils.GSON.toJson(serviceProjectPath);
     }
 }

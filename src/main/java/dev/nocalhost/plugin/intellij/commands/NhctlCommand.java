@@ -7,7 +7,6 @@ import com.google.gson.reflect.TypeToken;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.EnvironmentUtil;
 
@@ -35,7 +34,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncResumeOptions;
@@ -44,35 +42,17 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlTerminalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 
-
 public class NhctlCommand {
-    private static final String NHCTL_COMMAND = "nhctl";
-
-    public List<NhctlListApplication> listApplication(NhctlListApplicationOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "list", "--yaml");
+    public List<NhctlListApplication> listApplication(NhctlListApplicationOptions opts)
+            throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "list", "--json");
         String result = execute(args, opts);
-        List<Map> mapItems = DataUtils.YAML.load(result);
-        List<NhctlListApplication> nhctlListApplications = Lists.newArrayList();
-        for (Map map : mapItems) {
-            NhctlListApplication nhctlListApplication = new NhctlListApplication();
-
-            nhctlListApplication.setNamespace((String) map.get("namespace"));
-            List<Map> appMaps = (List<Map>) map.get("application");
-            List<NhctlListApplication.Application> applications = Lists.newArrayList();
-            for (Map appMap : appMaps) {
-                NhctlListApplication.Application application = new NhctlListApplication.Application();
-                application.setName((String) appMap.get("name"));
-                application.setType((String) appMap.get("type"));
-                applications.add(application);
-            }
-            nhctlListApplication.setApplication(applications.toArray(new NhctlListApplication.Application[0]));
-            nhctlListApplications.add(nhctlListApplication);
-        }
-        return nhctlListApplications;
+        return DataUtils.GSON.fromJson(result,
+                TypeToken.getParameterized(List.class, NhctlListApplication.class).getType());
     }
 
     public void install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
@@ -157,12 +137,6 @@ public class NhctlCommand {
             args.add("--force");
         }
 
-        execute(args, opts);
-    }
-
-    public void resetDevSpace(NhctlResetDevSpaceOptions opts
-    ) throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "reset");
         execute(args, opts);
     }
 
@@ -494,11 +468,11 @@ public class NhctlCommand {
         }
         if (opts.getValues() != null) {
             String values = opts.getValues().entrySet()
-                                .stream()
-                                .map((e) -> e.getKey() + "=" + e.getValue())
-                                .collect(Collectors.toList())
-                                .stream()
-                                .reduce(",", String::join);
+                    .stream()
+                    .map((e) -> e.getKey() + "=" + e.getValue())
+                    .collect(Collectors.toList())
+                    .stream()
+                    .reduce(",", String::join);
             if (StringUtils.isNotEmpty(values)) {
                 args.add("--set");
                 args.add(values);
@@ -580,12 +554,7 @@ public class NhctlCommand {
     }
 
     protected String getNhctlCmd() {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        String nhctlCmd = NHCTL_COMMAND;
-        if (StringUtils.isNoneBlank(nocalhostSettings.getNhctlBinary())) {
-            nhctlCmd = nocalhostSettings.getNhctlBinary();
-        }
-        return nhctlCmd;
+        return NhctlUtil.binaryPath();
     }
 
     protected GeneralCommandLine getCommandline(List<String> args) {
