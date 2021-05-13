@@ -86,17 +86,7 @@ public class KubectlCommand {
         args.add("--kubeconfig");
         args.add(kubeConfigPath.toString());
 
-        String cmd = String.join(" ", args.toArray(new String[]{}));
-        System.out.println("Execute command: " + cmd);
-
-        Process process = new ProcessBuilder(args).start();
-        String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            throw new NocalhostExecuteCmdException(cmd, exitCode, CharStreams.toString(new InputStreamReader(process.getErrorStream(), Charsets.UTF_8)));
-        }
-
-        return output;
+        return executeCmd(args);
     }
 
     public ProcessHandler getLogsProcessHandler(String podName, String containerName, Path kubeConfigPath, String namespace) throws ExecutionException {
@@ -157,6 +147,6 @@ public class KubectlCommand {
                 environment.put("PATH", path);
             }
         }
-        return new GeneralCommandLine(args).withEnvironment(environment).withRedirectErrorStream(true);
+        return new GeneralCommandLine(args).withEnvironment(environment);
     }
 }
