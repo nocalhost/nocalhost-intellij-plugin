@@ -17,6 +17,7 @@ import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
+import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 
 public class HelmValuesChooseDialog extends DialogWrapper {
     private JPanel dialogPanel;
@@ -55,6 +56,10 @@ public class HelmValuesChooseDialog extends DialogWrapper {
         specifyValuesYamlTextField.addBrowseFolderListener("Select the value file path", "", project, FileChooseUtil.singleFileChooserDescriptor());
 
         specifyValuesTextArea.getEmptyText().appendText("eg: key1=val1,key2=val2");
+
+        TextUiUtil.setCutCopyPastePopup(
+                specifyValuesYamlTextField.getTextField(),
+                specifyValuesTextArea);
     }
 
     @Override

@@ -33,6 +33,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.task.AddStandaloneClusterTask;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
+import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 
 public class AddStandaloneClustersDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(AddStandaloneClustersDialog.class);
@@ -95,6 +96,10 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 }
             }
         });
+
+        TextUiUtil.setCutCopyPastePopup(
+                kubeconfigFileSelectTextField.getTextField(),
+                kubeconfigFilePasteTextField);
 
         init();
     }

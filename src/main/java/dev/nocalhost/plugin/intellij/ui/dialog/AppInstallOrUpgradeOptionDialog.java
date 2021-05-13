@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
+import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 
 public class AppInstallOrUpgradeOptionDialog extends DialogWrapper {
     private JPanel dialogPanel;
@@ -54,6 +55,8 @@ public class AppInstallOrUpgradeOptionDialog extends DialogWrapper {
         messageLabel.setText(messageLabelText);
         defaultRadioButton.setText(defaultRadioButtonText);
         specifyOneTextField.getEmptyText().appendText(specifyOneTextFieldPlaceHolder);
+
+        TextUiUtil.setCutCopyPastePopup(specifyOneTextField);
     }
 
     @Override
