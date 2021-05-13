@@ -97,6 +97,8 @@ public class ConfigFile extends VirtualFile {
         Object yml = DataUtils.YAML.load(newContent);
         String json = DataUtils.GSON.toJson(yml);
         ProgressManager.getInstance().run(new Task.Backgroundable(null, "Saving " + name, false) {
+            private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+
             @Override
             public void onSuccess() {
                 NocalhostNotifier.getInstance(project).notifySuccess(name + " saved", "");
@@ -111,7 +113,6 @@ public class ConfigFile extends VirtualFile {
             @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
                 Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, node.getNamespaceNode().getName());
                 nhctlConfigOptions.setDeployment(node.resourceName());

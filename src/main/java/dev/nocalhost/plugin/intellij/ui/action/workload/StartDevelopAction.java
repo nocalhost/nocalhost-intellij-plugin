@@ -33,6 +33,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostGitException;
@@ -42,6 +43,7 @@ import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.dialog.StartDevelopContainerChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import icons.NocalhostIcons;
@@ -159,6 +161,8 @@ public class StartDevelopAction extends AnAction {
 
                                 serviceProjectPath.setProjectPath(gitDir.toString());
                                 nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
+
+                                associateProjectPath(gitDir.toString());
                             } catch (NocalhostGitException e) {
                                 LOG.error("error occurred while cloning git repository", e);
                                 NocalhostNotifier.getInstance(project).notifyError(
@@ -180,10 +184,27 @@ public class StartDevelopAction extends AnAction {
                     serviceProjectPath.setProjectPath(basePath.toString());
                     nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
 
+                    associateProjectPath(basePath.toString());
+
                     ProjectManagerEx.getInstanceEx().openProject(basePath, new OpenProjectTask());
                 }
                 break;
                 default:
+            }
+        });
+    }
+
+    private void associateProjectPath(String projectPath) {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace);
+                opts.setAssociate(projectPath);
+                opts.setDeployment(node.resourceName());
+                opts.setControllerType(node.getKubeResource().getKind());
+                nhctlCommand.devAssociate(node.applicationName(), opts);
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Associating project path error",
+                        "Error occurs while associating project path", e);
             }
         });
     }
@@ -247,7 +268,7 @@ public class StartDevelopAction extends AnAction {
                             .build();
                 }
 
-                String projectPath = nocalhostSettings.findProjectPathByService(serviceProjectPath);
+                String projectPath = nhctlDescribeService.getAssociate();
 
                 if (StringUtils.isNotEmpty(projectPath)) {
                     if (StringUtils.equals(projectPath, project.getBasePath())) {

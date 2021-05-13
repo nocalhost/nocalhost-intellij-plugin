@@ -27,6 +27,8 @@ import lombok.SneakyThrows;
 public class ConfigAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(ConfigAction.class);
 
+    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+
     private final Project project;
     private final ResourceNode node;
     private final Path kubeConfigPath;
@@ -62,8 +64,6 @@ public class ConfigAction extends AnAction {
             @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, namespace);
                 nhctlConfigOptions.setDeployment(node.resourceName());
                 config = nhctlCommand.getConfig(node.applicationName(), nhctlConfigOptions);

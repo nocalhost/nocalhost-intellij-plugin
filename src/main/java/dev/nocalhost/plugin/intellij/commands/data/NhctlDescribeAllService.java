@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import java.util.List;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,9 +14,9 @@ public class NhctlDescribeAllService {
     private String kubeconfig;
     private String dependencyConfigMapName;
     private String appType;
-    private NhctlDescribeService[] svcProfile;
+    private List<NhctlDescribeService> svcProfile;
     private boolean installed;
-    private String[] syncDirs;
-    private String[] resourcePath;
-    private String[] ignoredPath;
+    private List<String> syncDirs;
+    private List<String> resourcePath;
+    private List<String> ignoredPath;
 }

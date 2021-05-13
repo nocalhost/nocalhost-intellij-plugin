@@ -17,14 +17,14 @@ import java.util.stream.Collectors;
 public final class FileChooseUtil {
     public static FileChooserDescriptor singleFileChooserDescriptor() {
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, false, false, false, false, false);
-        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
+        
         return fileChooserDescriptor;
     }
 
     public static Path chooseSingleFile(Project project) {
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, false, false, false, false, false)
                 .withFileFilter(f -> !f.isDirectory());
-        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
+        
         VirtualFile virtualFile = FileChooser.chooseFile(fileChooserDescriptor, project, null);
         if (virtualFile == null) {
             return null;
@@ -37,7 +37,7 @@ public final class FileChooseUtil {
                 .withTitle(title)
                 .withRoots(LocalFileSystem.getInstance().findFileByNioFile(root))
                 .withFileFilter(f -> !f.isDirectory() && extensions.contains(Files.getFileExtension(f.getName())));
-        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
+        
         VirtualFile virtualFile = FileChooser.chooseFile(fileChooserDescriptor, project, null);
         if (virtualFile == null) {
             return null;
@@ -48,7 +48,7 @@ public final class FileChooseUtil {
     public static Path chooseSingleDirectory(Project project) {
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(false, true, false, false, false, false)
                 .withFileFilter(VirtualFile::isDirectory);
-        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
+        
         VirtualFile virtualFile = FileChooser.chooseFile(fileChooserDescriptor, project, null);
         if (virtualFile == null) {
             return null;
@@ -60,7 +60,7 @@ public final class FileChooseUtil {
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(false, true, false, false, false, false)
                 .withTitle(title)
                 .withFileFilter(VirtualFile::isDirectory);
-        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
+        
         VirtualFile virtualFile = FileChooser.chooseFile(fileChooserDescriptor, project, null);
         if (virtualFile == null) {
             return null;
@@ -70,7 +70,7 @@ public final class FileChooseUtil {
 
     public static Path chooseSingleFileOrDirectory(Project project) {
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, true, false, false, false, false);
-        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
+        
         VirtualFile virtualFile = FileChooser.chooseFile(fileChooserDescriptor, project, null);
         if (virtualFile == null) {
             return null;
@@ -80,7 +80,7 @@ public final class FileChooseUtil {
 
     public static List<Path> chooseFilesAndDirectories(Project project) {
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, true, false, false, false, true);
-        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
+        
         VirtualFile[] virtualFiles = FileChooser.chooseFiles(fileChooserDescriptor, project, null);
         return Arrays.stream(virtualFiles).map(e -> e.toNioPath()).collect(Collectors.toList());
     }

@@ -23,6 +23,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlExecOptions;
@@ -34,6 +35,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncResumeOptions;
@@ -347,6 +349,11 @@ public class NhctlCommand {
         return execute(args, opts);
     }
 
+    public <T> T getConfig(String name, NhctlConfigOptions opts, Class<T> type) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        String output = getConfig(name, opts);
+        return DataUtils.YAML.loadAs(output, type);
+    }
+
     public void getTemplateConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "config", "template", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
@@ -493,6 +500,23 @@ public class NhctlCommand {
                 args.add("--command");
                 args.add(e);
             });
+        }
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        execute(args, opts);
+    }
+
+    public void devAssociate(String name, NhctlDevAssociateOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "associate", name);
+        if (StringUtils.isNotEmpty(opts.getAssociate())) {
+            args.add("--associate");
+            args.add(opts.getAssociate());
+        }
+        if (StringUtils.isNotEmpty(opts.getControllerType())) {
+            args.add("--controller-type");
+            args.add(opts.getControllerType());
         }
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");

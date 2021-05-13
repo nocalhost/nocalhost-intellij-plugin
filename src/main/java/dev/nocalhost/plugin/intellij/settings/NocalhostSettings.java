@@ -1,6 +1,5 @@
 package dev.nocalhost.plugin.intellij.settings;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.gson.reflect.TypeToken;
@@ -16,10 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
@@ -40,7 +36,6 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
     private String standaloneClustersJson;
     private String nocalhostAccountsJson;
 
-    private String serviceProjectPathsJson;
     private Map<String, String> devModeProjectPathServiceMap = Maps.newHashMap();
 
     private String nhctlBinary;
@@ -104,45 +99,6 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
             return Sets.newHashSet();
         }
         return set;
-    }
-
-    public synchronized String findProjectPathByService(ServiceProjectPath serviceProjectPath) {
-        List<ServiceProjectPath> list = DataUtils.GSON.fromJson(serviceProjectPathsJson,
-                TypeToken.getParameterized(List.class, ServiceProjectPath.class).getType());
-        if (list == null) {
-            list = Lists.newArrayList();
-        }
-        Optional<ServiceProjectPath> serviceProjectPathOptional = list.stream()
-                .filter(e -> Objects.equals(serviceProjectPath.getServer(), e.getServer())
-                        && Objects.equals(serviceProjectPath.getUsername(), e.getUsername())
-                        && Objects.equals(serviceProjectPath.getRawKubeConfig(), e.getRawKubeConfig())
-                        && Objects.equals(serviceProjectPath.getNamespace(), e.getNamespace())
-                        && Objects.equals(serviceProjectPath.getApplicationName(), e.getApplicationName())
-                        && Objects.equals(serviceProjectPath.getServiceName(), e.getServiceName()))
-                .findFirst();
-        return serviceProjectPathOptional.map(ServiceProjectPath::getProjectPath)
-                .orElse(null);
-    }
-
-    public synchronized void saveServiceProjectPath(ServiceProjectPath serviceProjectPath) {
-        List<ServiceProjectPath> list = DataUtils.GSON.fromJson(serviceProjectPathsJson,
-                TypeToken.getParameterized(List.class, ServiceProjectPath.class).getType());
-        if (list == null) {
-            list = Lists.newArrayList();
-        }
-        Optional<ServiceProjectPath> serviceProjectPathOptional = list.stream()
-                .filter(e -> Objects.equals(serviceProjectPath.getServer(), e.getServer())
-                        && Objects.equals(serviceProjectPath.getUsername(), e.getUsername())
-                        && Objects.equals(serviceProjectPath.getRawKubeConfig(), e.getRawKubeConfig())
-                        && Objects.equals(serviceProjectPath.getNamespace(), e.getNamespace())
-                        && Objects.equals(serviceProjectPath.getApplicationName(), e.getApplicationName())
-                        && Objects.equals(serviceProjectPath.getServiceName(), e.getServiceName()))
-                .findFirst();
-        if (serviceProjectPathOptional.isPresent()) {
-            list.remove(serviceProjectPathOptional.get());
-        }
-        list.add(serviceProjectPath);
-        serviceProjectPathsJson = DataUtils.GSON.toJson(list);
     }
 
     public synchronized ServiceProjectPath getDevModeServiceByProjectPath(String projectPath) {
