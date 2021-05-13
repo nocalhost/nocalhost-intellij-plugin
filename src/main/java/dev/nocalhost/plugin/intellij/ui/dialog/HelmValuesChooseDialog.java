@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.ui;
+package dev.nocalhost.plugin.intellij.ui.dialog;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 
 public class HelmValuesChooseDialog extends DialogWrapper {

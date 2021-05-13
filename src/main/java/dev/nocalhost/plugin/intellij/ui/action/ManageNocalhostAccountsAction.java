@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
-import dev.nocalhost.plugin.intellij.ui.ManagerNocalhostAccountsDialog;
+import dev.nocalhost.plugin.intellij.ui.dialog.ManagerNocalhostAccountsDialog;
 
 public class ManageNocalhostAccountsAction extends AnAction {
     private final Project project;

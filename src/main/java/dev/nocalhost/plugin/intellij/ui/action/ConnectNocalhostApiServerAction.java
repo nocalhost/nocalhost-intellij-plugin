@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
-import dev.nocalhost.plugin.intellij.ui.ConnectNocalhostServerDialog;
+import dev.nocalhost.plugin.intellij.ui.dialog.ConnectNocalhostServerDialog;
 
 public class ConnectNocalhostApiServerAction extends AnAction implements DumbAware {
     private final Project project;

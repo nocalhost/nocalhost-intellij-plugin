@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.event.HyperlinkEvent;
 
 import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
-import dev.nocalhost.plugin.intellij.ui.ConnectNocalhostServerDialog;
 import icons.NocalhostIcons;
 
 public class NocalhostNotifier {
