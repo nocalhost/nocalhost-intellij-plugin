@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.Getter;
 
 public class SudoPasswordDialog extends DialogWrapper {
@@ -22,6 +23,7 @@ public class SudoPasswordDialog extends DialogWrapper {
         super(project);
         setTitle("Sudo Password");
         messageLabel.setText(command.trim() + " wants to make changes. Type your password to allow this.");
+        TextUiUtil.setCutCopyPastePopup(passwordField);
         init();
     }
 

@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
+
 public class KustomizePathDialog extends DialogWrapper {
     private JPanel dialogPanel;
     private JRadioButton useDefaultValuesRadioButton;
@@ -19,7 +21,7 @@ public class KustomizePathDialog extends DialogWrapper {
     private String specifyPath;
 
     public KustomizePathDialog(Project project) {
-        super(true);
+        super(project, true);
         init();
         setTitle("Select Kustomize Path");
 
@@ -33,6 +35,8 @@ public class KustomizePathDialog extends DialogWrapper {
         useDefaultValuesRadioButton.setSelected(true);
         specifyOneRadioButton.setSelected(false);
         specifyTextField.getEmptyText().appendText("Input the custom path of Kustomize");
+
+        TextUiUtil.setCutCopyPastePopup(specifyTextField);
     }
 
     private void updateComponentEnabled() {

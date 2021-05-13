@@ -18,6 +18,7 @@ import java.awt.event.FocusEvent;
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.task.ConnectNocalhostServerTask;
+import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 
 public class ConnectNocalhostServerDialog extends DialogWrapper {
     private final Project project;
@@ -40,6 +41,9 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
             }
         });
         setOKButtonText("Connect");
+
+        TextUiUtil.setCutCopyPastePopup(serverTextField, usernameTextField, passwordField);
+
         init();
     }
 

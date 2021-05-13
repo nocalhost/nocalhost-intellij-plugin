@@ -53,7 +53,19 @@
                 implementation="dev.nocalhost.plugin.intellij.exception.report.NocalhostErrorReportSubmitter"/>
 
         <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostRunner" order="first"/>
+
     </extensions>
+
+    <actions>
+        <group id="NocalhostEditActions">
+            <action id="NocalhostEditCut" class="com.intellij.openapi.editor.actions.CutAction"
+                    use-shortcut-of="$Cut" icon="AllIcons.Actions.MenuCut" text="Cut"/>
+            <action id="NocalhostEditCopy" class="com.intellij.openapi.editor.actions.CopyAction"
+                    use-shortcut-of="$Copy" icon="AllIcons.Actions.Copy" text="Copy"/>
+            <action id="NocalhostEditPaste" class="com.intellij.openapi.editor.actions.PasteAction"
+                    use-shortcut-of="$Paste" icon="AllIcons.Actions.MenuPaste" text="Paste"/>
+        </group>
+    </actions>
 
     <applicationListeners>
         <listener class="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"

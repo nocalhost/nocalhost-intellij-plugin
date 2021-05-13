@@ -57,6 +57,7 @@ import dev.nocalhost.plugin.intellij.ui.VerticalFlowLayout;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ExecutableUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.SneakyThrows;
 
 public class PortForwardConfigurationDialog extends DialogWrapper {
@@ -88,6 +89,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
         setupStartPanel();
         setupStopPanel();
+
+        TextUiUtil.setCutCopyPastePopup(startTextField);
 
         init();
 
@@ -318,8 +321,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     private void createList(List<NhctlPortForward> portForwards) {
         final List<NhctlPortForward> ports = portForwards.stream()
-                                                         .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
-                                                         .collect(Collectors.toList());
+                .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
+                .collect(Collectors.toList());
         List<JPanel> items = Lists.newArrayList();
 
         for (NhctlPortForward portForward : ports) {
