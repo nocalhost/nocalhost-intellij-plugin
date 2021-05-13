@@ -17,6 +17,7 @@ public class ServiceProjectPath {
     private String applicationName;
     private String serviceName;
     private String containerName;
+    private String imageUrl;
 
     private String projectPath;
 

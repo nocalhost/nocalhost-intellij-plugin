@@ -29,6 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
@@ -61,36 +62,11 @@ public class StartingDevModeTask extends Task.Backgroundable {
     private final ServiceProjectPath serviceProjectPath;
     private final Path kubeConfigPath;
 
-    private NhctlDescribeService nhctlDescribeService;
-    private List<String> portForward = Lists.newArrayList();
-
     public StartingDevModeTask(Project project, ServiceProjectPath serviceProjectPath) {
         super(project, "Starting DevMode", false);
         this.project = project;
         this.serviceProjectPath = serviceProjectPath;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
-
-        final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
-                serviceProjectPath.getNamespace());
-        nhctlDescribeOptions.setDeployment(serviceProjectPath.getServiceName());
-        try {
-            nhctlDescribeService = nhctlCommand.describe(
-                    serviceProjectPath.getApplicationName(),
-                    nhctlDescribeOptions,
-                    NhctlDescribeService.class);
-            for (ServiceContainer container : nhctlDescribeService.getRawConfig().getContainers()) {
-                if (StringUtils.equals(serviceProjectPath.getContainerName(), container.getName())) {
-                    portForward = container.getDev().getPortForward();
-                    break;
-                }
-            }
-        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-            LOG.error("error occurred while describing application", e);
-            NocalhostNotifier.getInstance(project).notifyError(
-                    "Nocalhost starting dev mode error",
-                    "Error occurred while starting dev mode",
-                    e.getMessage());
-        }
     }
 
     @Override
@@ -110,8 +86,6 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
         NocalhostNotifier.getInstance(project).notifySuccess("DevMode started", "");
 
-        nocalhostSettings.saveServiceProjectPath(serviceProjectPath);
-
         final NocalhostProjectSettings nocalhostProjectSettings = project.getService(
                 NocalhostProjectSettings.class);
         nocalhostProjectSettings.setDevModeService(serviceProjectPath);
@@ -129,6 +103,22 @@ public class StartingDevModeTask extends Task.Backgroundable {
     @SneakyThrows
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
+        final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
+                serviceProjectPath.getNamespace());
+        nhctlDescribeOptions.setDeployment(serviceProjectPath.getServiceName());
+
+        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                serviceProjectPath.getApplicationName(),
+                nhctlDescribeOptions,
+                NhctlDescribeService.class);
+
+        List<String> portForward = Lists.newArrayList();
+        for (ServiceContainer container : nhctlDescribeService.getRawConfig().getContainers()) {
+            if (StringUtils.equals(serviceProjectPath.getContainerName(), container.getName())) {
+                portForward = container.getDev().getPortForward();
+                break;
+            }
+        }
 
         // check if devmode already started
         if (nhctlDescribeService.isDeveloping()) {
@@ -145,6 +135,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
         nhctlDevStartOptions.setContainer(serviceProjectPath.getContainerName());
         nhctlDevStartOptions.setStorageClass(storageClass);
+        nhctlDevStartOptions.setImage(serviceProjectPath.getImageUrl());
         final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project
                 .getService(OutputCapturedNhctlCommand.class);
         outputCapturedNhctlCommand.devStart(serviceProjectPath.getApplicationName(),

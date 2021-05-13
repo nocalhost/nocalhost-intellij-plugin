@@ -33,6 +33,7 @@ import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallApplicationActio
 import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAndStartDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.EndDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.LogsAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.PortForwardAction;
@@ -164,15 +165,17 @@ public class TreeMouseListener extends MouseAdapter {
         KubeResourceType type = EnumUtils.getEnumIgnoreCase(KubeResourceType.class, kind);
         switch (type) {
             case Deployment:
-                final NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
-
+                NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
                 if (nhctlDescribeService != null) {
                     if (!nhctlDescribeService.isDeveloping()) {
                         actionGroup.add(new StartDevelopAction(project, resourceNode));
                     } else {
                         actionGroup.add(new EndDevelopAction(project, resourceNode));
                     }
+                } else {
+                    actionGroup.add(new ConfigAndStartDevelopAction(project, resourceNode));
                 }
+
                 actionGroup.add(new ConfigAction(project, resourceNode));
                 actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
                 actionGroup.add(new Separator());

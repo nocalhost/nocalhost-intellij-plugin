@@ -493,7 +493,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             throw e;
         }
 
-        NhctlDescribeService[] nhctlDescribeServices = nhctlDescribeAllService.getSvcProfile();
+        List<NhctlDescribeService> nhctlDescribeServices = nhctlDescribeAllService.getSvcProfile();
 
         List<KubeResource> kubeResources = kubeResourceList.getItems().stream()
                 .filter(e -> StringUtils.equals(e.getMetadata().getAnnotations().get(Constants.NOCALHOST_ANNOTATION_NAME), applicationName)
@@ -509,12 +509,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         List<ResourceNode> resources = Lists.newArrayList();
         for (KubeResource kubeResource : kubeResources) {
             final Optional<NhctlDescribeService> nhctlDescribeService =
-                    ArrayUtils.isEmpty(nhctlDescribeServices)
+                    nhctlDescribeServices.isEmpty()
                             ? Optional.empty()
-                            : Arrays.stream(nhctlDescribeServices)
-                            .filter(svc -> StringUtils.equals(
-                                    svc.getRawConfig().getName(),
-                                    kubeResource.getMetadata().getName()))
+                            : nhctlDescribeServices.stream()
+                            .filter(svc -> StringUtils.equals(svc.getRawConfig().getName(), kubeResource.getMetadata().getName()))
                             .findFirst();
             if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "Deployment")
                     && nhctlDescribeService.isPresent()) {
