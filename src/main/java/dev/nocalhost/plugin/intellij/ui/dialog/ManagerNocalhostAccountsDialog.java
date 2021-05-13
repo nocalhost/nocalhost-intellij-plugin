@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.ui;
+package dev.nocalhost.plugin.intellij.ui.dialog;
 
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressManager;

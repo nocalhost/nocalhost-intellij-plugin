@@ -6,7 +6,7 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
-import dev.nocalhost.plugin.intellij.ui.PortForwardConfigurationDialog;
+import dev.nocalhost.plugin.intellij.ui.dialog.PortForwardConfigurationDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class PortForwardAction extends AnAction {

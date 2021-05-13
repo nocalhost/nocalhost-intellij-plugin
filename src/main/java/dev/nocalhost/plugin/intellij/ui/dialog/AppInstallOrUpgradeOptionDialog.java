@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.ui;
+package dev.nocalhost.plugin.intellij.ui.dialog;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -9,6 +9,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+
+import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 
 public class AppInstallOrUpgradeOptionDialog extends DialogWrapper {
     private JPanel dialogPanel;

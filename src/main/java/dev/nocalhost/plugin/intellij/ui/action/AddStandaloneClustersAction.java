@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
-import dev.nocalhost.plugin.intellij.ui.AddStandaloneClustersDialog;
+import dev.nocalhost.plugin.intellij.ui.dialog.AddStandaloneClustersDialog;
 
 public class AddStandaloneClustersAction extends AnAction implements DumbAware {
     private final Project project;

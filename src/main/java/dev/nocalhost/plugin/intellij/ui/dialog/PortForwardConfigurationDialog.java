@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.ui;
+package dev.nocalhost.plugin.intellij.ui.dialog;
 
 import com.intellij.ide.plugins.newui.ColorButton;
 import com.intellij.openapi.components.ServiceManager;
@@ -53,6 +53,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.ui.VerticalFlowLayout;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ExecutableUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
