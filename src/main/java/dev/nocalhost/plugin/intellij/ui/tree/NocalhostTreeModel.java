@@ -221,15 +221,25 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 } else {
                     Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(
                             clusterNode.getRawKubeConfig());
-                    KubeResourceList namespaceList = kubectlCommand.getNamespaceList(
-                            kubeConfigPath);
-                    namespaceNodes = namespaceList.getItems().stream()
-                            .map(e -> new NamespaceNode(e.getMetadata().getName()))
-                            .collect(Collectors.toList());
+                    try {
+                        KubeResourceList namespaceList = kubectlCommand.getNamespaceList(
+                                kubeConfigPath);
+                        namespaceNodes = namespaceList.getItems().stream()
+                                .map(e -> new NamespaceNode(e.getMetadata().getName()))
+                                .collect(Collectors.toList());
+                    } catch (NocalhostExecuteCmdException nece) {
+                        if (StringUtils.contains(nece.getMessage(), "namespaces is forbidden")
+                                && StringUtils.isNotEmpty(clusterNode.getKubeConfig().getContexts().get(0).getContext().getNamespace())) {
+                            namespaceNodes = Lists.newArrayList(new NamespaceNode(clusterNode.getKubeConfig().getContexts().get(0).getContext().getNamespace()));
+                        } else {
+                            throw nece;
+                        }
+                    }
                 }
 
+                final List<NamespaceNode> pendingNamespaces = namespaceNodes;
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    refreshNamespaceNodes(clusterNode, namespaceNodes);
+                    refreshNamespaceNodes(clusterNode, pendingNamespaces);
                 });
             } catch (Exception e) {
                 if (e instanceof NocalhostExecuteCmdException) {
