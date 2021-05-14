@@ -205,6 +205,9 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         if (StringUtils.isNotEmpty(text)) {
             List<KubeContext> contexts = resolveContexts(Paths.get(text));
             contextList.setListData(contexts.toArray(new KubeContext[0]));
+            if (contexts.size() == 1) {
+                contextList.setSelectedIndex(0);
+            }
         }
     }
 
@@ -214,6 +217,9 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         if (StringUtils.isNotEmpty(text)) {
             List<KubeContext> contexts = resolveContexts(text);
             contextList.setListData(contexts.toArray(new KubeContext[0]));
+            if (contexts.size() == 1) {
+                contextList.setSelectedIndex(0);
+            }
         }
     }
 
