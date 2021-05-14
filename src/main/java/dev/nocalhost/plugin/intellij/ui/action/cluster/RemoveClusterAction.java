@@ -25,7 +25,7 @@ public class RemoveClusterAction extends AnAction {
     private final ClusterNode node;
 
     public RemoveClusterAction(Project project, ClusterNode node) {
-        super("Remove", "", AllIcons.Actions.Cancel);
+        super("Remove", "", AllIcons.Vcs.Remove);
         this.project = project;
         this.node = node;
     }
