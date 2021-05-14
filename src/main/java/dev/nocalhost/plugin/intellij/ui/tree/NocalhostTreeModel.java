@@ -302,26 +302,19 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ClusterNode clusterNode = namespaceNode.getClusterNode();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                if (clusterNode.getServiceAccount() != null) {
-                    Path path = KubeConfigUtil.kubeConfigPath(
-                            clusterNode.getRawKubeConfig());
-                    NhctlListApplicationOptions opts = new NhctlListApplicationOptions(path,
-                            namespaceNode.getName());
-                    List<ApplicationNode> applicationNodes = nhctlCommand.listApplication(opts)
-                            .get(0)
-                            .getApplication()
-                            .stream()
-                            .map(e -> new ApplicationNode(e.getName()))
-                            .collect(Collectors.toList());
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        refreshApplicationNodes(namespaceNode, applicationNodes);
-                    });
-                } else {
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        refreshApplicationNodes(namespaceNode,
-                                Lists.newArrayList(new ApplicationNode(DEFAULT_APPLICATION_NAME)));
-                    });
-                }
+                Path path = KubeConfigUtil.kubeConfigPath(
+                        clusterNode.getRawKubeConfig());
+                NhctlListApplicationOptions opts = new NhctlListApplicationOptions(path,
+                        namespaceNode.getName());
+                List<ApplicationNode> applicationNodes = nhctlCommand.listApplication(opts)
+                        .get(0)
+                        .getApplication()
+                        .stream()
+                        .map(e -> new ApplicationNode(e.getName()))
+                        .collect(Collectors.toList());
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    refreshApplicationNodes(namespaceNode, applicationNodes);
+                });
             } catch (Exception e) {
                 if (e instanceof NocalhostExecuteCmdException) {
                     ApplicationManager.getApplication().invokeLater(() -> {
