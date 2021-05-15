@@ -64,7 +64,8 @@ public class NocalhostTerminalWindow extends NocalhostConsoleWindow {
                 "terminal", applicationName,
                 "--deployment", deploymentName,
                 "--kubeconfig", kubeConfigPath.toString(),
-                "--namespace", namespace
+                "--namespace", namespace,
+                "--container", "nocalhost-dev"
         );
         final String cmd = String.join(" ", args.toArray(new String[]{}));
         title = String.format("%s-%s-%s Terminal", namespace, applicationName, deploymentName);
