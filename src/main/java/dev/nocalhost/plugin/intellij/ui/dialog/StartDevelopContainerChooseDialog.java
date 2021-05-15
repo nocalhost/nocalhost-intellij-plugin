@@ -6,6 +6,8 @@ import com.intellij.ui.components.JBList;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 import javax.swing.*;
@@ -28,6 +30,14 @@ public class StartDevelopContainerChooseDialog extends DialogWrapper {
         containerList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         containerList.setListData(containers.toArray(new String[0]));
         containerList.setSelectedIndex(0);
+        containerList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (event.getClickCount() == 2 && event.getButton() == MouseEvent.BUTTON1) {
+                    doOKAction();
+                }
+            }
+        });
 
         init();
     }
