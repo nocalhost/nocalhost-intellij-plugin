@@ -8,6 +8,7 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 
 import org.apache.commons.lang3.StringUtils;
@@ -91,7 +92,9 @@ public class ConfigAndStartDevelopAction extends AnAction {
 
     private void selectAssociateDirectory() {
         ApplicationManager.getApplication().invokeLater(() -> {
-            Path dir = FileChooseUtil.chooseSingleDirectory(project);
+            Path dir = FileChooseUtil.chooseSingleDirectory(project,
+                    "Choose Source Code Directory",
+                    "To start develop, you must specify source code directory.");
             if (dir == null) {
                 return;
             }

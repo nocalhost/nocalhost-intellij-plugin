@@ -170,7 +170,7 @@ public class InstallApplicationAction extends AnAction {
                     ? "Please choose application manifest root directory"
                     : "Please choose unpacked application helm chart root directory";
 
-            Path localPath = FileChooseUtil.chooseSingleDirectory(project, message);
+            Path localPath = FileChooseUtil.chooseSingleDirectory(project, "", message);
             if (localPath == null) {
                 return;
             }
