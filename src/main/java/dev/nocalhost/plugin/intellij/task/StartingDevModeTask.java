@@ -29,14 +29,10 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
-import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostDevModeStartException;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
@@ -112,14 +108,6 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 nhctlDescribeOptions,
                 NhctlDescribeService.class);
 
-        List<String> portForward = Lists.newArrayList();
-        for (ServiceContainer container : nhctlDescribeService.getRawConfig().getContainers()) {
-            if (StringUtils.equals(serviceProjectPath.getContainerName(), container.getName())) {
-                portForward = container.getDev().getPortForward();
-                break;
-            }
-        }
-
         // check if devmode already started
         if (nhctlDescribeService.isDeveloping()) {
             return;
@@ -160,18 +148,6 @@ public class StartingDevModeTask extends Task.Backgroundable {
         nhctlSyncOptions.setContainer(serviceProjectPath.getContainerName());
         outputCapturedNhctlCommand.sync(serviceProjectPath.getApplicationName(),
                 nhctlSyncOptions);
-
-        // nhctl port-forward ...
-        if (portForward.size() > 0) {
-            indicator.setText("Starting DevMode: port forward");
-            NhctlPortForwardStartOptions nhctlPortForwardOptions = new NhctlPortForwardStartOptions(kubeConfigPath, serviceProjectPath.getNamespace());
-            nhctlPortForwardOptions.setDeployment(serviceProjectPath.getServiceName());
-            nhctlPortForwardOptions.setWay(NhctlPortForwardStartOptions.Way.DEV_PORTS);
-            nhctlPortForwardOptions.setDevPorts(portForward);
-            outputCapturedNhctlCommand.startPortForward(serviceProjectPath.getApplicationName(),
-                    nhctlPortForwardOptions);
-        }
-
     }
 
     private String getStorageClass()

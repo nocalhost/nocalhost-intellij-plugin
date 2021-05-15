@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public final class FileChooseUtil {
     public static FileChooserDescriptor singleFileChooserDescriptor() {
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, false, false, false, false, false);
-
+        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
         return fileChooserDescriptor;
     }
 
