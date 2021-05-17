@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class ServiceAccount {
     @SerializedName("cluster_id")
-    private int clusterId;
+    private long clusterId;
 
     @SerializedName("cluster_name")
     private String clusterName;
@@ -28,7 +28,7 @@ public class ServiceAccount {
     @Data
     public static class Namespace {
         @SerializedName("space_id")
-        private int spaceId;
+        private long spaceId;
 
         private String namespace;
 

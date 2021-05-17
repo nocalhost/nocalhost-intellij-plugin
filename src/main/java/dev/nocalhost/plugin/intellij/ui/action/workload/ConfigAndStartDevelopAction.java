@@ -219,6 +219,7 @@ public class ConfigAndStartDevelopAction extends AnAction {
             serviceProjectPath = ServiceProjectPath.builder()
                     .server(node.getClusterNode().getNocalhostAccount().getServer())
                     .username(node.getClusterNode().getNocalhostAccount().getUsername())
+                    .clusterId(node.getClusterNode().getServiceAccount().getClusterId())
                     .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
                     .namespace(node.getNamespaceNode().getName())
                     .applicationName(node.applicationName())

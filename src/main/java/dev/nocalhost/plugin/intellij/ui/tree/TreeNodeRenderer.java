@@ -43,7 +43,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (value instanceof ClusterNode) {
             ClusterNode node = (ClusterNode) value;
             if (node.getNocalhostAccount() != null) {
-                append(node.getKubeConfig().getContexts().get(0).getName() + " ["
+                append(node.getKubeConfig().getClusters().get(0).getName() + " ["
                         + node.getNocalhostAccount().getUsername() + " on "
                         + node.getNocalhostAccount().getServer() + "]");
             } else {
