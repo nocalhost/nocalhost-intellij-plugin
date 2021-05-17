@@ -32,7 +32,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
-import dev.nocalhost.plugin.intellij.exception.NocalhostDevModeStartException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
@@ -150,8 +149,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 nhctlSyncOptions);
     }
 
-    private String getStorageClass()
-            throws NocalhostDevModeStartException, IOException, NocalhostApiException {
+    private String getStorageClass() throws IOException, NocalhostApiException {
         if (serviceProjectPath.getServer() != null) {
             Set<NocalhostAccount> nocalhostAccounts = nocalhostSettings.getNocalhostAccounts();
             Optional<NocalhostAccount> nocalhostAccountOptional = nocalhostAccounts.stream()
@@ -159,20 +157,20 @@ public class StartingDevModeTask extends Task.Backgroundable {
                             && StringUtils.equals(e.getUsername(), serviceProjectPath.getUsername()))
                     .findFirst();
             if (nocalhostAccountOptional.isEmpty()) {
-                throw new NocalhostDevModeStartException("Nocalhost account not found");
+                return null;
             }
             NocalhostAccount nocalhostAccount = nocalhostAccountOptional.get();
 
             List<ServiceAccount> serviceAccounts = nocalhostApi.listServiceAccount(
                     nocalhostAccount.getServer(), nocalhostAccount.getJwt());
             if (serviceAccounts == null) {
-                throw new NocalhostDevModeStartException("Service account not found");
+                return null;
             }
             Optional<ServiceAccount> serviceAccountOptional = serviceAccounts.stream()
                     .filter(e -> StringUtils.equals(e.getKubeConfig(), serviceProjectPath.getRawKubeConfig()))
                     .findFirst();
             if (serviceAccountOptional.isEmpty()) {
-                throw new NocalhostDevModeStartException("Service account not found");
+                return null;
             }
             return serviceAccountOptional.get().getStorageClass();
         }
