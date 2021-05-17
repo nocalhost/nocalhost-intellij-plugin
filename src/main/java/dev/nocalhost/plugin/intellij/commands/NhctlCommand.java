@@ -35,7 +35,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncResumeOptions;
@@ -521,6 +521,31 @@ public class NhctlCommand {
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
+        }
+        execute(args, opts);
+    }
+
+    public void profileSet(String name, NhctlProfileSetOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "profile", "set", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        if (StringUtils.isNotEmpty(opts.getType())) {
+            args.add("--type");
+            args.add(opts.getType());
+        }
+        if (StringUtils.isNotEmpty(opts.getContainer())) {
+            args.add("--container");
+            args.add(opts.getContainer());
+        }
+        if (StringUtils.isNotEmpty(opts.getKey())) {
+            args.add("--key");
+            args.add(opts.getKey());
+        }
+        if (StringUtils.isNotEmpty(opts.getValue())) {
+            args.add("--value");
+            args.add(opts.getValue());
         }
         execute(args, opts);
     }

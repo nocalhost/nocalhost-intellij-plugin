@@ -8,7 +8,6 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 
 import org.apache.commons.lang3.StringUtils;
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.commands.GitCommand;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
@@ -27,6 +25,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
@@ -42,7 +41,6 @@ import icons.NocalhostIcons;
 public class ConfigAndStartDevelopAction extends AnAction {
     private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
     private final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-    private final GitCommand gitCommand = ServiceManager.getService(GitCommand.class);
     private final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
     private final Project project;
@@ -206,9 +204,27 @@ public class ConfigAndStartDevelopAction extends AnAction {
             DevImageChooseDialog devImageChooseDialog = new DevImageChooseDialog(project);
             if (devImageChooseDialog.showAndGet()) {
                 selectedImage = devImageChooseDialog.getSelectedImage();
-                startDevelop();
+                setImage();
             } else {
                 return;
+            }
+        });
+    }
+
+    private void setImage() {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                NhctlProfileSetOptions opts = new NhctlProfileSetOptions(kubeConfigPath, namespace);
+                opts.setDeployment(node.resourceName());
+                opts.setType(node.getKubeResource().getKind());
+                opts.setContainer(selectedContainer);
+                opts.setKey("image");
+                opts.setValue(selectedImage);
+                nhctlCommand.profileSet(node.applicationName(), opts);
+                startDevelop();
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Setting dev image error",
+                        "Error occurs while setting dev image", e);
             }
         });
     }
@@ -225,7 +241,6 @@ public class ConfigAndStartDevelopAction extends AnAction {
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .containerName(selectedContainer)
-                    .imageUrl(selectedImage)
                     .build();
         } else {
             serviceProjectPath = ServiceProjectPath.builder()
@@ -234,7 +249,6 @@ public class ConfigAndStartDevelopAction extends AnAction {
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .containerName(selectedContainer)
-                    .imageUrl(selectedImage)
                     .build();
         }
 

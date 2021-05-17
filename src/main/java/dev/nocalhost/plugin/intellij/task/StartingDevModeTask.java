@@ -122,7 +122,6 @@ public class StartingDevModeTask extends Task.Backgroundable {
         nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
         nhctlDevStartOptions.setContainer(serviceProjectPath.getContainerName());
         nhctlDevStartOptions.setStorageClass(storageClass);
-        nhctlDevStartOptions.setImage(serviceProjectPath.getImageUrl());
         final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project
                 .getService(OutputCapturedNhctlCommand.class);
         outputCapturedNhctlCommand.devStart(serviceProjectPath.getApplicationName(),
