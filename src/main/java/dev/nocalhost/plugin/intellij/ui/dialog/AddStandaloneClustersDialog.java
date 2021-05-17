@@ -203,6 +203,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             KubeConfig kubeConfig = DataUtils.YAML.loadAs(text, KubeConfig.class);
             return kubeConfig.getContexts();
         } catch (Exception ignored) {
+            ignored.printStackTrace();
         }
         return Lists.newArrayList();
     }

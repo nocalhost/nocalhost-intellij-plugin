@@ -7,10 +7,11 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NhctlResetOptions extends NhctlGlobalOptions {
+public class NhctlResetServiceOptions extends NhctlGlobalOptions {
     private String deployment;
+    private String controllerType;
 
-    public NhctlResetOptions(Path kubeConfigPath, String namespace) {
+    public NhctlResetServiceOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);
     }
 }

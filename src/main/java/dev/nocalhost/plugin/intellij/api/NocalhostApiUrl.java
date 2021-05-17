@@ -32,7 +32,7 @@ public class NocalhostApiUrl {
         return String.format(url, applicationId, spaceId);
     }
 
-    public static String recreateDevSpace(String host, int spaceId) {
+    public static String recreateDevSpace(String host, long spaceId) {
         String url = String.format("%s%s%s", host, API_V1_SUFFIX, RECREATE_DEV_SPACE);
         return String.format(url, spaceId);
     }
