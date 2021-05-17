@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class ServiceProjectPath {
     private String server;
     private String username;
+    private long clusterId;
     private String rawKubeConfig;
     private String namespace;
     private String applicationName;

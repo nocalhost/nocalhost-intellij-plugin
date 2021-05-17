@@ -6,15 +6,12 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
-
-import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
 
 public final class NocalhostStartupActivity implements StartupActivity {
     private static final Logger LOG = Logger.getInstance(NocalhostStartupActivity.class);
@@ -31,14 +28,8 @@ public final class NocalhostStartupActivity implements StartupActivity {
                 .getDevModeServiceByProjectPath(project.getBasePath());
         if (serviceProjectPath != null) {
             try {
-                if (StringUtils.equals(serviceProjectPath.getApplicationName(),
-                        DEFAULT_APPLICATION_NAME)) {
-                    ProgressManager.getInstance().run(new StartingDevModeTask(project,
-                            serviceProjectPath));
-                } else {
-                    ProgressManager.getInstance().run(new StartingDevModeTask(project,
-                            serviceProjectPath));
-                }
+                ProgressManager.getInstance().run(new StartingDevModeTask(project,
+                        serviceProjectPath));
             } catch (Exception e) {
                 LOG.error("error occurred while starting develop", e);
                 NocalhostNotifier.getInstance(project).notifyError(

@@ -11,12 +11,10 @@ import com.intellij.ui.LoadingNode;
 import com.intellij.ui.treeStructure.Tree;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -50,8 +48,8 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
 import dev.nocalhost.plugin.intellij.utils.Constants;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import jnr.ffi.Struct;
 
-import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
 import static dev.nocalhost.plugin.intellij.utils.Constants.HELM_ANNOTATION_NAME;
 import static dev.nocalhost.plugin.intellij.utils.Constants.NOCALHOST_ANNOTATION_NAME;
 
@@ -157,10 +155,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 for (int i = getChildCount(parent) - 1; i >= 0; i--) {
                     ClusterNode clusterNode = (ClusterNode) getChild(parent, i);
                     Optional<ClusterNode> pendingClusterNodeOptional = pendingClusterNodes.stream()
-                            .filter(e -> StringUtils.equals(
-                                    clusterNode.getRawKubeConfig(),
-                                    e.getRawKubeConfig()
-                            ))
+                            .filter(e -> clusterNodeEquals(e, clusterNode))
                             .findFirst();
                     if (pendingClusterNodeOptional.isPresent()) {
                         clusterNode.updateFrom(pendingClusterNodeOptional.get());
@@ -177,10 +172,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 boolean existed = false;
                 for (int i = 0; i < getChildCount(parent); i++) {
                     ClusterNode clusterNode = (ClusterNode) getChild(parent, i);
-                    if (StringUtils.equals(
-                            pendingClusterNode.getRawKubeConfig(),
-                            clusterNode.getRawKubeConfig()
-                    )) {
+                    if (clusterNodeEquals(pendingClusterNode, clusterNode)) {
                         existed = true;
                         break;
                     }
@@ -548,5 +540,17 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         if (getChildCount(parent) > 0 && getChild(parent, 0) instanceof LoadingNode) {
             removeNode((LoadingNode) getChild(parent, 0));
         }
+    }
+
+    private boolean clusterNodeEquals(ClusterNode a, ClusterNode b) {
+        if (a.getNocalhostAccount() != null && b.getNocalhostAccount() != null) {
+            return StringUtils.equals(a.getNocalhostAccount().getServer(), b.getNocalhostAccount().getServer())
+                    && StringUtils.equals(a.getNocalhostAccount().getUsername(), b.getNocalhostAccount().getUsername())
+                    && a.getServiceAccount().getClusterId() == b.getServiceAccount().getClusterId();
+        }
+        if (a.getNocalhostAccount() == null && b.getNocalhostAccount() == null) {
+            return StringUtils.equals(a.getRawKubeConfig(), b.getRawKubeConfig());
+        }
+        return false;
     }
 }
