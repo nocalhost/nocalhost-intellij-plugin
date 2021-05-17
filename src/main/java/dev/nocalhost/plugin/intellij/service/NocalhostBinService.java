@@ -11,6 +11,7 @@ import com.intellij.openapi.util.SystemInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -91,8 +92,9 @@ public class NocalhostBinService {
         ProgressManager.getInstance().run(new Task.Modal(project, "Download Nocalhost Command Tool", false) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
+                indicator.setIndeterminate(false);
                 try {
-                    download(url, NOCALHOST_BIN_PATH.toString());
+                    download(url, NOCALHOST_BIN_PATH.toString(), indicator);
                     nocalhostBin.setExecutable(true);
                     nocalhostSettings.setNhctlBinary(nocalhostBin.getAbsolutePath());
                 } catch (IOException e) {
@@ -135,7 +137,7 @@ public class NocalhostBinService {
         }
     }
 
-    public void download(final String url, final String saveDir) throws IOException {
+    public void download(final String url, final String saveDir, final ProgressIndicator indicator) throws IOException {
         String savePath = isExistDir(saveDir);
         Request request = new Request.Builder().url(url).build();
         OkHttpClient client = new OkHttpClient();
@@ -144,7 +146,19 @@ public class NocalhostBinService {
             if (!response.isSuccessful()) {
                 throw new IOException("Failed to download file: " + response);
             }
-            fos.write(response.body().bytes());
+            String contentLength = response.header("Content-Length");
+            long fileSize = Long.parseLong(contentLength);
+            byte[] buffer = new byte[1024 * 1024];
+            long bytesRead = 0;
+
+            while (bytesRead < fileSize) {
+                int len = response.body().byteStream().read(buffer);
+                fos.write(buffer, 0, len);
+                bytesRead += len;
+
+                double fraction = (double)bytesRead / fileSize;
+                indicator.setFraction(fraction);
+            }
         }
     }
 
