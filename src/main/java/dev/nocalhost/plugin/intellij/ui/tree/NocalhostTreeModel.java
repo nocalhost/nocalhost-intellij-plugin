@@ -204,7 +204,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         if (clusterNode.getServiceAccount().getNamespaces() != null) {
                             namespaceNodes = clusterNode.getServiceAccount().getNamespaces()
                                     .stream()
-                                    .map(e -> new NamespaceNode(e.getNamespace(), e.getSpaceName()))
+                                    .map(e -> new NamespaceNode(e.getNamespace(), e.getSpaceName(), e.getSpaceId()))
                                     .collect(Collectors.toList());
                         } else {
                             namespaceNodes = Lists.newArrayList();

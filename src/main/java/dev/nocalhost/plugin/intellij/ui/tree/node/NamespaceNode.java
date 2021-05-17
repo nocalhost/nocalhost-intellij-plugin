@@ -8,14 +8,16 @@ import lombok.Getter;
 public class NamespaceNode extends DefaultMutableTreeNode {
     private String name;
     private String spaceName;
+    private long spaceId;
 
     public NamespaceNode(String name) {
         this.name = name;
     }
 
-    public NamespaceNode(String name, String spaceName) {
+    public NamespaceNode(String name, String spaceName, long spaceId) {
         this.name = name;
         this.spaceName = spaceName;
+        this.spaceId = spaceId;
     }
 
     @Override

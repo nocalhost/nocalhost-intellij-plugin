@@ -119,4 +119,23 @@ public class NocalhostApi {
             return applications.stream().peek(app -> app.setContext(DataUtils.GSON.fromJson(app.getContextStr(), Application.Context.class))).collect(Collectors.toList());
         }
     }
+
+    public void recreate(String server, String jwt, long devSpaceId) throws IOException, NocalhostApiException {
+        String url = NocalhostApiUrl.recreateDevSpace(server, devSpaceId);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("authorization", "Bearer " + jwt)
+                .post(RequestBody.create("".getBytes()))
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new NocalhostApiException(url, "reset application", response.code(), "");
+            }
+            NocalhostApiResponse<Object> resp = DataUtils.GSON.fromJson(response.body().charStream(),
+                    TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType());
+            if (resp.getCode() != 0) {
+                throw new NocalhostApiException(url, "reset application", response.code(), resp.getMessage());
+            }
+        }
+    }
 }

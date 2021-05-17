@@ -36,7 +36,8 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlResetServiceOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncResumeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
@@ -310,11 +311,20 @@ public class NhctlCommand {
         return DataUtils.YAML.loadAs(result, type);
     }
 
-    public void reset(String name, NhctlResetOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    public void resetDevSpace(NhctlResetDevSpaceOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "reset");
+        execute(args, opts);
+    }
+
+    public void resetService(String name, NhctlResetServiceOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "reset", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
+        }
+        if (StringUtils.isNotEmpty(opts.getControllerType())) {
+            args.add("--controller-type");
+            args.add(opts.getControllerType());
         }
         execute(args, opts);
     }

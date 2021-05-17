@@ -12,15 +12,14 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlResetOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlResetServiceOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import lombok.SneakyThrows;
 
 public class ResetAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(ResetAction.class);
@@ -44,19 +43,22 @@ public class ResetAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ProgressManager.getInstance().run(new Task.Backgroundable(null, "Resetting " + node.resourceName(), false) {
             @Override
+            public void onSuccess() {
+                NocalhostNotifier.getInstance(project).notifySuccess(node.resourceName() + " reset complete", "");
+            }
+
+            @Override
+            public void onThrowable(@NotNull Throwable e) {
+                LOG.error("error occurred while resetting service", e);
+            }
+
+            @SneakyThrows
+            @Override
             public void run(@NotNull ProgressIndicator indicator) {
-
-
-                NhctlResetOptions opts = new NhctlResetOptions(kubeConfigPath, namespace);
+                NhctlResetServiceOptions opts = new NhctlResetServiceOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
-
-                try {
-                    nhctlCommand.reset(node.applicationName(), opts);
-
-                    NocalhostNotifier.getInstance(project).notifySuccess(node.resourceName() + " reset complete", "");
-                } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                    LOG.error("error occurred while resetting workload", e);
-                }
+                opts.setControllerType(node.getKubeResource().getKind());
+                nhctlCommand.resetService(node.applicationName(), opts);
             }
         });
     }

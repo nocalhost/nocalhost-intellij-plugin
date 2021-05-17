@@ -37,7 +37,7 @@ public class UninstallAppAction extends DumbAwareAction {
     private final String applicationName;
 
     public UninstallAppAction(Project project, ApplicationNode node) {
-        super("Uninstall App", "", AllIcons.Actions.Uninstall);
+        super("Uninstall Application", "", AllIcons.Actions.Uninstall);
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getName();

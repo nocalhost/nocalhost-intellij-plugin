@@ -30,6 +30,7 @@ import dev.nocalhost.plugin.intellij.ui.action.application.UpgradeAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.RemoveClusterAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.ViewClusterKubeConfigAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallApplicationAction;
+import dev.nocalhost.plugin.intellij.ui.action.namespace.ResetDevSpaceAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
@@ -129,6 +130,10 @@ public class TreeMouseListener extends MouseAdapter {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         actionGroup.add(new InstallApplicationAction(project, namespaceNode));
+
+        if (namespaceNode.getClusterNode().getServiceAccount() != null) {
+            actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
+        }
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Namespace.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
