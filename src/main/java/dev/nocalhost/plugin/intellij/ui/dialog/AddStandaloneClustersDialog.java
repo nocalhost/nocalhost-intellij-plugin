@@ -101,6 +101,14 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 kubeconfigFileSelectTextField.getTextField(),
                 kubeconfigFilePasteTextField);
 
+        try {
+            Path defaultKubeConfig = Paths.get(System.getProperty("user.home"), ".kube/config");
+            if (Files.exists(defaultKubeConfig)) {
+                kubeconfigFileSelectTextField.setText(defaultKubeConfig.toString());
+            }
+        } catch (Exception ignored) {
+        }
+
         init();
     }
 
