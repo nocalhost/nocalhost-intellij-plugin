@@ -21,6 +21,12 @@ public final class FileChooseUtil {
         return fileChooserDescriptor;
     }
 
+    public static FileChooserDescriptor singleDirectoryChooserDescriptor() {
+        FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(false, true, false, false, false, false);
+        fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
+        return fileChooserDescriptor;
+    }
+
     public static Path chooseSingleFile(Project project) {
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, false, false, false, false, false)
                 .withFileFilter(f -> !f.isDirectory());

@@ -16,7 +16,7 @@ public final class ErrorUtil {
                 NocalhostNotifier.getInstance(project).notifyError(title, message, t.getMessage());
             });
         } else {
-            LOG.error("Loading applicatons error", t);
+            LOG.error(title, t);
         }
     }
 }

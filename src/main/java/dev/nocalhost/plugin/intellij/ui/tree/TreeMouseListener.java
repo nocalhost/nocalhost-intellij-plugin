@@ -33,7 +33,6 @@ import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallApplicationActio
 import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
-import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAndStartDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.EndDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.LogsAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.PortForwardAction;
@@ -173,7 +172,7 @@ public class TreeMouseListener extends MouseAdapter {
                         actionGroup.add(new EndDevelopAction(project, resourceNode));
                     }
                 } else {
-                    actionGroup.add(new ConfigAndStartDevelopAction(project, resourceNode));
+                    actionGroup.add(new StartDevelopAction(project, resourceNode));
                 }
 
                 actionGroup.add(new ConfigAction(project, resourceNode));
