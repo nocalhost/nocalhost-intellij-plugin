@@ -111,6 +111,13 @@ public class StartDevelopDialog extends DialogWrapper {
     }
 
     private void updateGitUrl() {
+        gitUrlTextField.setText("");
+
+        String selectedContainer = containerList.getSelectedValue();
+        if (!StringUtils.isNotEmpty(selectedContainer)) {
+            return;
+        }
+
         String gitUrl = "";
         Optional<ServiceContainer> serviceContainerOptional = nhctlDescribeService.getRawConfig()
                 .getContainers().stream()
