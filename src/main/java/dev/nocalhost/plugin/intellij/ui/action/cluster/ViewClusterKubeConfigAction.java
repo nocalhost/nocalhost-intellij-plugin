@@ -1,9 +1,9 @@
 package dev.nocalhost.plugin.intellij.ui.action.cluster;
 
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
 
-public class ViewClusterKubeConfigAction extends AnAction {
+public class ViewClusterKubeConfigAction extends DumbAwareAction {
     private final Project project;
     private final ClusterNode node;
 

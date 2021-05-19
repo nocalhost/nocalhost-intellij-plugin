@@ -1,13 +1,13 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +22,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
-public class ResetAction extends AnAction {
+public class ResetAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(ResetAction.class);
 
     private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);

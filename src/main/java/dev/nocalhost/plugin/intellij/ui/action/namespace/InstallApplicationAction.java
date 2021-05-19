@@ -3,12 +3,12 @@ package dev.nocalhost.plugin.intellij.ui.action.namespace;
 import com.google.common.collect.Lists;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
@@ -36,9 +36,9 @@ import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.task.InstallApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
+import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.dialog.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.HelmValuesChooseDialog;
-import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.dialog.InstallApplicationChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.KustomizePathDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
@@ -46,7 +46,7 @@ import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
-public class InstallApplicationAction extends AnAction {
+public class InstallApplicationAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(InstallApplicationAction.class);
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
@@ -98,15 +98,15 @@ public class InstallApplicationAction extends AnAction {
     private void install(List<Application> applications,
                          List<NhctlListApplication> nhctlListApplications) {
         final Set<String> apps = applications.stream()
-                .map(a -> a.getContext().getApplicationName())
-                .collect(Collectors.toSet());
+                                             .map(a -> a.getContext().getApplicationName())
+                                             .collect(Collectors.toSet());
         final Optional<NhctlListApplication> currentDevspacesApp = nhctlListApplications.stream()
-                .filter(d -> d.getNamespace().equals(namespace)).findFirst();
+                                                                                        .filter(d -> d.getNamespace().equals(namespace)).findFirst();
         List<String> installed = null;
         if (currentDevspacesApp.isPresent()) {
             installed = currentDevspacesApp.get().getApplication().stream()
-                    .map(NhctlListApplication.Application::getName)
-                    .collect(Collectors.toList());
+                                           .map(NhctlListApplication.Application::getName)
+                                           .collect(Collectors.toList());
         }
         if (CollectionUtils.isNotEmpty(installed)) {
             for (String installedApp : installed) {
@@ -122,36 +122,36 @@ public class InstallApplicationAction extends AnAction {
                 Lists.newArrayList(apps));
         if (dialog.showAndGet()) {
             final Optional<Application> app = applications.stream()
-                    .filter(a ->
-                            StringUtils.equals(
-                                    dialog.getSelected(),
-                                    a.getContext().getApplicationName()
-                            )
-                    )
-                    .findFirst();
+                                                          .filter(a ->
+                                                                  StringUtils.equals(
+                                                                          dialog.getSelected(),
+                                                                          a.getContext().getApplicationName()
+                                                                  )
+                                                          )
+                                                          .findFirst();
             app.ifPresent(application -> ApplicationManager.getApplication()
-                    .executeOnPooledThread(() -> {
-                        try {
-                            if (NhctlHelper.isApplicationInstalled(kubeConfigPath, namespace,
-                                    application.getContext().getApplicationName())) {
-                                ApplicationManager.getApplication().invokeLater(() -> {
-                                    Messages.showMessageDialog("Application has been installed.",
-                                            "Install Application", null);
-                                });
-                                return;
-                            }
-                            ApplicationManager.getApplication().invokeLater(() -> {
-                                try {
-                                    installApp(application);
-                                } catch (IOException e) {
-                                    LOG.error("error occurred while installing application", e);
-                                }
-                            });
-                        } catch (IOException | InterruptedException e) {
-                            LOG.error("error occurred while checking if application was installed",
-                                    e);
-                        }
-                    }));
+                                                           .executeOnPooledThread(() -> {
+                                                               try {
+                                                                   if (NhctlHelper.isApplicationInstalled(kubeConfigPath, namespace,
+                                                                           application.getContext().getApplicationName())) {
+                                                                       ApplicationManager.getApplication().invokeLater(() -> {
+                                                                           Messages.showMessageDialog("Application has been installed.",
+                                                                                   "Install Application", null);
+                                                                       });
+                                                                       return;
+                                                                   }
+                                                                   ApplicationManager.getApplication().invokeLater(() -> {
+                                                                       try {
+                                                                           installApp(application);
+                                                                       } catch (IOException e) {
+                                                                           LOG.error("error occurred while installing application", e);
+                                                                       }
+                                                                   });
+                                                               } catch (IOException | InterruptedException e) {
+                                                                   LOG.error("error occurred while checking if application was installed",
+                                                                           e);
+                                                               }
+                                                           }));
 
         }
     }
@@ -294,14 +294,14 @@ public class InstallApplicationAction extends AnAction {
         }
 
         return Files.list(localPath)
-                .filter(Files::isRegularFile)
-                .filter(e ->
-                        CONFIG_FILE_EXTENSIONS.contains(
-                                com.google.common.io.Files.getFileExtension(
-                                        e.getFileName().toString())
-                        )
-                )
-                .map(Path::toAbsolutePath)
-                .collect(Collectors.toList());
+                    .filter(Files::isRegularFile)
+                    .filter(e ->
+                            CONFIG_FILE_EXTENSIONS.contains(
+                                    com.google.common.io.Files.getFileExtension(
+                                            e.getFileName().toString())
+                            )
+                    )
+                    .map(Path::toAbsolutePath)
+                    .collect(Collectors.toList());
     }
 }

@@ -1,13 +1,13 @@
 package dev.nocalhost.plugin.intellij.ui.action.application;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
@@ -26,7 +26,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
-public class UninstallAppAction extends AnAction {
+public class UninstallAppAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(UninstallAppAction.class);
 
     final OutputCapturedNhctlCommand outputCapturedNhctlCommand;

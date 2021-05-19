@@ -1,6 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui.action.application;
 
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -9,6 +8,7 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
@@ -23,7 +23,7 @@ import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
-public class LoadResourceAction extends AnAction {
+public class LoadResourceAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(LoadResourceAction.class);
 
     private final Project project;
