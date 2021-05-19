@@ -82,11 +82,13 @@ public class StartDevelopDialog extends DialogWrapper {
         containerList.setListData(containers.toArray(new String[0]));
         if (nhctlDescribeService.getRawConfig().getContainers().size() == 1) {
             containerList.setSelectedIndex(0);
+            updateGitUrl();
             updateImageList();
         }
         containerList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                updateGitUrl();
                 updateImageList();
             }
         });
@@ -106,6 +108,26 @@ public class StartDevelopDialog extends DialogWrapper {
         TextUiUtil.setCutCopyPastePopup(sourceDirectoryTextField.getTextField(), gitUrlTextField);
 
         init();
+    }
+
+    private void updateGitUrl() {
+        String gitUrl = "";
+        Optional<ServiceContainer> serviceContainerOptional = nhctlDescribeService.getRawConfig()
+                .getContainers().stream()
+                .filter(e -> StringUtils.equals(e.getName(), selectedContainer))
+                .findFirst();
+        if (serviceContainerOptional.isPresent()
+                && serviceContainerOptional.get().getDev() != null) {
+            gitUrl = serviceContainerOptional.get().getDev().getGitUrl();
+        }
+        if (!StringUtils.isNotEmpty(gitUrl)
+                && nhctlDescribeService.getRawConfig().getContainers().size() == 1
+                && StringUtils.equals(nhctlDescribeService.getRawConfig().getContainers().get(0).getName(), "")
+                && nhctlDescribeService.getRawConfig().getContainers().get(0).getDev() != null) {
+            gitUrl = nhctlDescribeService.getRawConfig().getContainers().get(0).getDev().getGitUrl();
+        }
+
+        gitUrlTextField.setText(gitUrl);
     }
 
     private void updateImageList() {
