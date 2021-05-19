@@ -73,14 +73,14 @@ public class StartDevelopAction extends DumbAwareAction {
                 KubeResourceList podList = kubectlCommand.getResourceList("pods",
                         deployment.getSpec().getSelector().getMatchLabels(), kubeConfigPath, namespace);
                 List<KubeResource> pods = podList.getItems().stream()
-                                                 .filter(KubeResource::canSelector)
-                                                 .collect(Collectors.toList());
+                        .filter(KubeResource::canSelector)
+                        .collect(Collectors.toList());
                 containers = pods.get(0)
-                                 .getSpec()
-                                 .getContainers()
-                                 .stream()
-                                 .map(KubeResource.Spec.Container::getName)
-                                 .collect(Collectors.toList());
+                        .getSpec()
+                        .getContainers()
+                        .stream()
+                        .map(KubeResource.Spec.Container::getName)
+                        .collect(Collectors.toList());
 
                 NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
@@ -152,25 +152,27 @@ public class StartDevelopAction extends DumbAwareAction {
         ServiceProjectPath serviceProjectPath;
         if (node.getClusterNode().getNocalhostAccount() != null) {
             serviceProjectPath = ServiceProjectPath.builder()
-                                                   .server(node.getClusterNode().getNocalhostAccount().getServer())
-                                                   .username(node.getClusterNode().getNocalhostAccount().getUsername())
-                                                   .clusterId(node.getClusterNode().getServiceAccount().getClusterId())
-                                                   .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
-                                                   .namespace(node.getNamespaceNode().getName())
-                                                   .applicationName(node.applicationName())
-                                                   .serviceName(node.resourceName())
-                                                   .containerName(containerName)
-                                                   .projectPath(projectPath)
-                                                   .build();
+                    .server(node.getClusterNode().getNocalhostAccount().getServer())
+                    .username(node.getClusterNode().getNocalhostAccount().getUsername())
+                    .clusterId(node.getClusterNode().getServiceAccount().getClusterId())
+                    .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
+                    .namespace(node.getNamespaceNode().getName())
+                    .applicationName(node.applicationName())
+                    .serviceName(node.resourceName())
+                    .serviceType(node.getKubeResource().getKind())
+                    .containerName(containerName)
+                    .projectPath(projectPath)
+                    .build();
         } else {
             serviceProjectPath = ServiceProjectPath.builder()
-                                                   .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
-                                                   .namespace(node.getNamespaceNode().getName())
-                                                   .applicationName(node.applicationName())
-                                                   .serviceName(node.resourceName())
-                                                   .containerName(containerName)
-                                                   .projectPath(projectPath)
-                                                   .build();
+                    .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
+                    .namespace(node.getNamespaceNode().getName())
+                    .applicationName(node.applicationName())
+                    .serviceName(node.resourceName())
+                    .serviceType(node.getKubeResource().getKind())
+                    .containerName(containerName)
+                    .projectPath(projectPath)
+                    .build();
         }
 
         ApplicationManager.getApplication().invokeLater(() -> {
@@ -206,9 +208,7 @@ public class StartDevelopAction extends DumbAwareAction {
         if (StringUtils.equals(projectPath, project.getBasePath())) {
             ProgressManager.getInstance().run(new StartingDevModeTask(project, serviceProjectPath));
         } else {
-            serviceProjectPath.setProjectPath(projectPath);
             nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
-
             ProjectManagerEx.getInstanceEx().openProject(Path.of(projectPath), new OpenProjectTask());
         }
     }

@@ -25,6 +25,7 @@ import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostErrorWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostLogWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostOutputWindow;
+import dev.nocalhost.plugin.intellij.ui.console.NocalhostTerminal;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostTerminalWindow;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
@@ -38,6 +39,17 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
         this.project = project;
         this.toolWindow = toolWindow;
 
+        toolWindow.getContentManager().addContentManagerListener(new ContentManagerListener() {
+            @Override
+            public void contentRemoved(@NotNull ContentManagerEvent event) {
+                Object component = event.getContent().getComponent();
+                if (component instanceof NocalhostTerminal) {
+                    NocalhostTerminal nocalhostTerminal = (NocalhostTerminal) component;
+                    nocalhostTerminal.terminateProcess();
+                }
+            }
+        });
+
         createOutputWindow();
 
         project.getMessageBus().connect().subscribe(
@@ -49,7 +61,7 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
                 this::newTerminal
         );
         project.getMessageBus().connect().subscribe(
-                NocalhostExceptionPrintNotifier.NOCALHOST_CONSOLE_EXECUTE_NOTIFIER_TOPIC,
+                NocalhostExceptionPrintNotifier.NOCALHOST_EXCEPTION_PRINT_NOTIFIER_TOPIC,
                 this::errorPrint
         );
     }

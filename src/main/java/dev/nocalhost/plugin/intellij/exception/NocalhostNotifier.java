@@ -68,7 +68,7 @@ public class NocalhostNotifier {
             @Override
             protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
                 ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
-                    project.getMessageBus().syncPublisher(NocalhostExceptionPrintNotifier.NOCALHOST_CONSOLE_EXECUTE_NOTIFIER_TOPIC)
+                    project.getMessageBus().syncPublisher(NocalhostExceptionPrintNotifier.NOCALHOST_EXCEPTION_PRINT_NOTIFIER_TOPIC)
                             .action(title, message, eMessage);
                 });
             }

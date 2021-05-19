@@ -1,33 +1,180 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
+import com.google.common.collect.Lists;
+
+import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
-import dev.nocalhost.plugin.intellij.ui.console.Action;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
+import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
+import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
-import icons.TerminalIcons;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class TerminalAction extends DumbAwareAction {
-    private static final Logger LOG = Logger.getInstance(TerminalAction.class);
+    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
 
     private final Project project;
     private final ResourceNode node;
+    private final Path kubeConfigPath;
+    private final String namespace;
 
     public TerminalAction(Project project, ResourceNode node) {
-        super("Terminal", "", TerminalIcons.OpenTerminal_13x13);
+        super("Terminal", "", AllIcons.Debugger.Console);
         this.project = project;
         this.node = node;
+        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.namespace = node.getNamespaceNode().getName();
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        project.getMessageBus()
-               .syncPublisher(NocalhostConsoleExecuteNotifier.NOCALHOST_CONSOLE_EXECUTE_NOTIFIER_TOPIC)
-               .action(node, Action.TERMINAL);
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                opts.setDeployment(node.resourceName());
+                opts.setType(node.getKubeResource().getKind());
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                        node.applicationName(), opts, NhctlDescribeService.class);
+                if (nhctlDescribeService.isDeveloping()) {
+                    openDevTerminal();
+                    return;
+                }
+
+                KubeResource deployment = kubectlCommand.getResource(
+                        node.getKubeResource().getKind(),
+                        node.resourceName(),
+                        kubeConfigPath,
+                        namespace);
+                KubeResourceList podList = kubectlCommand.getResourceList(
+                        "pods",
+                        deployment.getSpec().getSelector().getMatchLabels(),
+                        kubeConfigPath,
+                        namespace);
+                List<KubeResource> pods = podList.getItems().stream()
+                        .filter(KubeResource::canSelector)
+                        .collect(Collectors.toList());
+                if (pods.size() > 1) {
+                    selectPod(pods);
+                    return;
+                }
+                selectContainer(pods.get(0));
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Loading service status error",
+                        "Error occurs while loading service status", e);
+            }
+        });
     }
+
+    private void openDevTerminal() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            NocalhostConsoleManager.openTerminalWindow(
+                    project,
+                    String.format(
+                            "%s/%s:terminal",
+                            node.applicationName(),
+                            node.resourceName()
+                    ),
+                    new GeneralCommandLine(Lists.newArrayList(
+                            NhctlUtil.binaryPath(),
+                            "dev",
+                            "terminal", node.applicationName(),
+                            "--deployment", node.resourceName(),
+                            "--kubeconfig", kubeConfigPath.toString(),
+                            "--namespace", namespace,
+                            "--controller-type", node.getKubeResource().getKind(),
+                            "--container", "nocalhost-dev"
+                    ))
+            );
+        });
+    }
+
+    private void selectPod(List<KubeResource> pods) {
+        List<String> podNames = pods.stream()
+                .map(e -> e.getMetadata().getName())
+                .collect(Collectors.toList());
+        ApplicationManager.getApplication().invokeLater(() -> {
+            ListChooseDialog listChooseDialog = new ListChooseDialog(project, "Select Pod",
+                    podNames);
+            if (!listChooseDialog.showAndGet()) {
+                return;
+            }
+            Optional<KubeResource> podOptional = pods.stream()
+                    .filter(e -> StringUtils.equals(e.getMetadata().getName(), listChooseDialog.getSelectedValue()))
+                    .findFirst();
+            if (podOptional.isEmpty()) {
+                return;
+            }
+            selectContainer(podOptional.get());
+        });
+    }
+
+    private void selectContainer(KubeResource pod) {
+        List<String> containers = pod
+                .getSpec()
+                .getContainers()
+                .stream()
+                .map(KubeResource.Spec.Container::getName)
+                .collect(Collectors.toList());
+
+        if (containers.size() > 1) {
+            ApplicationManager.getApplication().invokeLater(() -> {
+                ListChooseDialog listChooseDialog = new ListChooseDialog(project,
+                        "Select Container", containers);
+                if (!listChooseDialog.showAndGet()
+                        || !StringUtils.isNotEmpty(listChooseDialog.getSelectedValue())) {
+                    return;
+                }
+                openTerminal(pod.getMetadata().getName(), listChooseDialog.getSelectedValue());
+            });
+            return;
+        }
+        openTerminal(pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getName());
+    }
+
+    private void openTerminal(String podName, String containerName) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            NocalhostConsoleManager.openTerminalWindow(
+                    project,
+                    String.format(
+                            "%s/%s:terminal",
+                            node.applicationName(),
+                            node.resourceName()
+                    ),
+                    new GeneralCommandLine(Lists.newArrayList(
+                            "kubectl",
+                            "exec",
+                            podName,
+                            "--stdin",
+                            "--tty",
+                            "--container", containerName,
+                            "--kubeconfig", kubeConfigPath.toString(),
+                            "--namespace", namespace,
+                            "--", "sh -c \"clear; (zsh || bash || ash || sh)\""
+                    ))
+            );
+        });
+    }
+
 }
