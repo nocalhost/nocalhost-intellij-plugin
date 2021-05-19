@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.action.application;
 
 import com.google.common.collect.Lists;
 
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
@@ -10,6 +9,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
@@ -34,16 +34,16 @@ import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
+import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.dialog.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.HelmValuesChooseDialog;
-import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.dialog.KustomizePathDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
-public class UpgradeAppAction extends AnAction {
+public class UpgradeAppAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(UpgradeAppAction.class);
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
@@ -85,11 +85,11 @@ public class UpgradeAppAction extends AnAction {
                         nocalhostAccount.getUserInfo().getId()
                 );
                 Optional<Application> applicationOptional = nocalhostApplications.stream()
-                        .filter(e -> StringUtils.equals(
-                                applicationName,
-                                e.getContext().getApplicationName()
-                        ))
-                        .findFirst();
+                                                                                 .filter(e -> StringUtils.equals(
+                                                                                         applicationName,
+                                                                                         e.getContext().getApplicationName()
+                                                                                 ))
+                                                                                 .findFirst();
                 if (applicationOptional.isPresent()) {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         try {
@@ -260,9 +260,9 @@ public class UpgradeAppAction extends AnAction {
         }
 
         return Files.list(localPath)
-                .filter(Files::isRegularFile)
-                .filter(e -> CONFIG_FILE_EXTENSIONS.contains(com.google.common.io.Files.getFileExtension(e.getFileName().toString())))
-                .map(Path::toAbsolutePath)
-                .collect(Collectors.toList());
+                    .filter(Files::isRegularFile)
+                    .filter(e -> CONFIG_FILE_EXTENSIONS.contains(com.google.common.io.Files.getFileExtension(e.getFileName().toString())))
+                    .map(Path::toAbsolutePath)
+                    .collect(Collectors.toList());
     }
 }

@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.ide.impl.OpenProjectTask;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
@@ -9,6 +8,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
 
@@ -40,7 +40,7 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import icons.NocalhostIcons;
 import lombok.SneakyThrows;
 
-public class StartDevelopAction extends AnAction {
+public class StartDevelopAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(StartDevelopAction.class);
 
     private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
@@ -73,14 +73,14 @@ public class StartDevelopAction extends AnAction {
                 KubeResourceList podList = kubectlCommand.getResourceList("pods",
                         deployment.getSpec().getSelector().getMatchLabels(), kubeConfigPath, namespace);
                 List<KubeResource> pods = podList.getItems().stream()
-                        .filter(KubeResource::canSelector)
-                        .collect(Collectors.toList());
+                                                 .filter(KubeResource::canSelector)
+                                                 .collect(Collectors.toList());
                 containers = pods.get(0)
-                        .getSpec()
-                        .getContainers()
-                        .stream()
-                        .map(KubeResource.Spec.Container::getName)
-                        .collect(Collectors.toList());
+                                 .getSpec()
+                                 .getContainers()
+                                 .stream()
+                                 .map(KubeResource.Spec.Container::getName)
+                                 .collect(Collectors.toList());
 
                 NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
@@ -152,25 +152,25 @@ public class StartDevelopAction extends AnAction {
         ServiceProjectPath serviceProjectPath;
         if (node.getClusterNode().getNocalhostAccount() != null) {
             serviceProjectPath = ServiceProjectPath.builder()
-                    .server(node.getClusterNode().getNocalhostAccount().getServer())
-                    .username(node.getClusterNode().getNocalhostAccount().getUsername())
-                    .clusterId(node.getClusterNode().getServiceAccount().getClusterId())
-                    .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
-                    .namespace(node.getNamespaceNode().getName())
-                    .applicationName(node.applicationName())
-                    .serviceName(node.resourceName())
-                    .containerName(containerName)
-                    .projectPath(projectPath)
-                    .build();
+                                                   .server(node.getClusterNode().getNocalhostAccount().getServer())
+                                                   .username(node.getClusterNode().getNocalhostAccount().getUsername())
+                                                   .clusterId(node.getClusterNode().getServiceAccount().getClusterId())
+                                                   .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
+                                                   .namespace(node.getNamespaceNode().getName())
+                                                   .applicationName(node.applicationName())
+                                                   .serviceName(node.resourceName())
+                                                   .containerName(containerName)
+                                                   .projectPath(projectPath)
+                                                   .build();
         } else {
             serviceProjectPath = ServiceProjectPath.builder()
-                    .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
-                    .namespace(node.getNamespaceNode().getName())
-                    .applicationName(node.applicationName())
-                    .serviceName(node.resourceName())
-                    .containerName(containerName)
-                    .projectPath(projectPath)
-                    .build();
+                                                   .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
+                                                   .namespace(node.getNamespaceNode().getName())
+                                                   .applicationName(node.applicationName())
+                                                   .serviceName(node.resourceName())
+                                                   .containerName(containerName)
+                                                   .projectPath(projectPath)
+                                                   .build();
         }
 
         ApplicationManager.getApplication().invokeLater(() -> {

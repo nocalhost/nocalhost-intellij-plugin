@@ -1,10 +1,10 @@
 package dev.nocalhost.plugin.intellij.ui.action.application;
 
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +21,7 @@ import dev.nocalhost.plugin.intellij.ui.dialog.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
-public class ClearAppPersisentDataAction extends AnAction {
+public class ClearAppPersisentDataAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(ClearAppPersisentDataAction.class);
 
     final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
