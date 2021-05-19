@@ -428,9 +428,9 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     private String selectContainer(List<String> containers) {
         if (containers.size() > 1) {
-            StartDevelopContainerChooseDialog dialog = new StartDevelopContainerChooseDialog(containers);
+            ListChooseDialog dialog = new ListChooseDialog(project, "Select Container", containers);
             if (dialog.showAndGet()) {
-                return dialog.getSelectedContainer();
+                return dialog.getSelectedValue();
             } else {
                 return null;
             }

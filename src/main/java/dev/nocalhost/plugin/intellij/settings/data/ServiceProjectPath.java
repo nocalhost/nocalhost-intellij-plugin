@@ -17,11 +17,7 @@ public class ServiceProjectPath {
     private String namespace;
     private String applicationName;
     private String serviceName;
+    private String serviceType;
     private String containerName;
-
     private String projectPath;
-
-    public void setProjectPath(String projectPath) {
-        this.projectPath = projectPath;
-    }
 }

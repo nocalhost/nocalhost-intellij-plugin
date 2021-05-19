@@ -11,6 +11,9 @@ public final class ErrorUtil {
     private static final Logger LOG = Logger.getInstance(ErrorUtil.class);
 
     public static void dealWith(Project project, String title, String message, Throwable t) {
+        if (project.isDisposed()) {
+            return;
+        }
         if (t instanceof NocalhostExecuteCmdException) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 NocalhostNotifier.getInstance(project).notifyError(title, message, t.getMessage());

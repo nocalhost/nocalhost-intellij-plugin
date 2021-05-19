@@ -2,13 +2,13 @@ package dev.nocalhost.plugin.intellij.task;
 
 import com.google.common.collect.Lists;
 
+import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.ToolWindowManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -38,9 +38,10 @@ import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
-import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
+import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import lombok.SneakyThrows;
 
 public class StartingDevModeTask extends Task.Backgroundable {
@@ -67,15 +68,24 @@ public class StartingDevModeTask extends Task.Backgroundable {
     @Override
     public void onSuccess() {
         super.onSuccess();
-        // start dev space terminal
-        ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
-            project.getMessageBus()
-                    .syncPublisher(NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC)
-                    .action(kubeConfigPath,
-                            serviceProjectPath.getNamespace(),
-                            serviceProjectPath.getApplicationName(),
-                            serviceProjectPath.getServiceName());
-        });
+        NocalhostConsoleManager.openTerminalWindow(
+                project,
+                String.format(
+                        "%s/%s:terminal",
+                        serviceProjectPath.getApplicationName(),
+                        serviceProjectPath.getServiceName()
+                ),
+                new GeneralCommandLine(Lists.newArrayList(
+                        NhctlUtil.binaryPath(),
+                        "dev",
+                        "terminal", serviceProjectPath.getApplicationName(),
+                        "--deployment", serviceProjectPath.getServiceName(),
+                        "--kubeconfig", kubeConfigPath.toString(),
+                        "--namespace", serviceProjectPath.getNamespace(),
+                        "--controller-type", serviceProjectPath.getServiceType(),
+                        "--container", "nocalhost-dev"
+                ))
+        );
 
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();

@@ -37,7 +37,7 @@ import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.ui.dialog.StartDevelopContainerChooseDialog;
+import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
@@ -164,9 +164,9 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
     private String selectContainer(List<String> containers) {
         if (containers.size() > 1) {
-            StartDevelopContainerChooseDialog dialog = new StartDevelopContainerChooseDialog(containers);
+            ListChooseDialog dialog = new ListChooseDialog(project, "Select Container", containers);
             if (dialog.showAndGet()) {
-                return dialog.getSelectedContainer();
+                return dialog.getSelectedValue();
             } else {
                 return null;
             }
