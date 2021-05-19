@@ -6,7 +6,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
 
@@ -36,6 +38,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import icons.NocalhostIcons;
+import lombok.SneakyThrows;
 
 public class StartDevelopAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(StartDevelopAction.class);
@@ -106,17 +109,13 @@ public class StartDevelopAction extends AnAction {
     private void updateConfig(StartDevelopDialog startDevelopDialog) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                Path sourceDirectory = startDevelopDialog.getSourceDirectory();
-
-                if (!StringUtils.isNotEmpty(nhctlDescribeService.getAssociate())) {
-                    if (startDevelopDialog.isCloneFromGit()) {
-                        gitCommand.clone(startDevelopDialog.getSourceDirectory(),
-                                startDevelopDialog.getGitUrl(), node.resourceName(), project);
-                        sourceDirectory = startDevelopDialog.getSourceDirectory().resolve(node.resourceName());
-                    }
-
+                String sourceDirectory = startDevelopDialog.getSourceDirectory().toAbsolutePath().toString();
+                if (startDevelopDialog.isCloneFromGit()) {
+                    sourceDirectory = startDevelopDialog.getSourceDirectory().resolve(node.resourceName()).toAbsolutePath().toString();
+                }
+                if (!StringUtils.equals(nhctlDescribeService.getAssociate(), sourceDirectory)) {
                     NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace);
-                    opts.setAssociate(sourceDirectory.toString());
+                    opts.setAssociate(sourceDirectory);
                     opts.setDeployment(node.resourceName());
                     opts.setControllerType(node.getKubeResource().getKind());
                     nhctlCommand.devAssociate(node.applicationName(), opts);
@@ -139,7 +138,7 @@ public class StartDevelopAction extends AnAction {
                     nhctlCommand.profileSet(node.applicationName(), opts);
                 }
 
-                startDevelop(startDevelopDialog.getSelectedContainer(), sourceDirectory);
+                startDevelop(startDevelopDialog, sourceDirectory);
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Updating service profile error",
                         "Error occurs while updating service profile", e);
@@ -147,7 +146,9 @@ public class StartDevelopAction extends AnAction {
         });
     }
 
-    private void startDevelop(String containerName, Path projectPath) {
+    private void startDevelop(StartDevelopDialog startDevelopDialog, String projectPath) {
+        String containerName = startDevelopDialog.getSelectedContainer();
+
         ServiceProjectPath serviceProjectPath;
         if (node.getClusterNode().getNocalhostAccount() != null) {
             serviceProjectPath = ServiceProjectPath.builder()
@@ -159,6 +160,7 @@ public class StartDevelopAction extends AnAction {
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .containerName(containerName)
+                    .projectPath(projectPath)
                     .build();
         } else {
             serviceProjectPath = ServiceProjectPath.builder()
@@ -167,18 +169,47 @@ public class StartDevelopAction extends AnAction {
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .containerName(containerName)
+                    .projectPath(projectPath)
                     .build();
         }
 
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (StringUtils.equals(projectPath.toString(), project.getBasePath())) {
-                ProgressManager.getInstance().run(new StartingDevModeTask(project, serviceProjectPath));
-            } else {
-                serviceProjectPath.setProjectPath(projectPath.toString());
-                nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
+            if (startDevelopDialog.isCloneFromGit()) {
+                ProgressManager.getInstance().run(new Task.Backgroundable(
+                        project, "Git clone " + startDevelopDialog.getGitUrl(), false) {
+                    @Override
+                    public void onSuccess() {
+                        startDevMode(serviceProjectPath);
+                    }
 
-                ProjectManagerEx.getInstanceEx().openProject(projectPath, new OpenProjectTask());
+                    @Override
+                    public void onThrowable(@NotNull Throwable e) {
+                        ErrorUtil.dealWith(project, "Cloning git repository error",
+                                "Error occurs while cloning git repository", e);
+                    }
+
+                    @SneakyThrows
+                    @Override
+                    public void run(@NotNull ProgressIndicator indicator) {
+                        gitCommand.clone(startDevelopDialog.getSourceDirectory(),
+                                startDevelopDialog.getGitUrl(), node.resourceName(), project);
+                    }
+                });
+            } else {
+                startDevMode(serviceProjectPath);
             }
         });
+    }
+
+    public void startDevMode(ServiceProjectPath serviceProjectPath) {
+        String projectPath = serviceProjectPath.getProjectPath();
+        if (StringUtils.equals(projectPath, project.getBasePath())) {
+            ProgressManager.getInstance().run(new StartingDevModeTask(project, serviceProjectPath));
+        } else {
+            serviceProjectPath.setProjectPath(projectPath);
+            nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
+
+            ProjectManagerEx.getInstanceEx().openProject(Path.of(projectPath), new OpenProjectTask());
+        }
     }
 }
