@@ -49,6 +49,7 @@ import dev.nocalhost.plugin.intellij.utils.Constants;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
 import static dev.nocalhost.plugin.intellij.utils.Constants.HELM_ANNOTATION_NAME;
 import static dev.nocalhost.plugin.intellij.utils.Constants.NOCALHOST_ANNOTATION_NAME;
 
@@ -486,14 +487,11 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
 
         List<NhctlDescribeService> nhctlDescribeServices = nhctlDescribeAllService.getSvcProfile();
 
-        List<KubeResource> kubeResources = kubeResourceList.getItems().stream()
-                .filter(e -> StringUtils.equals(e.getMetadata().getAnnotations().get(Constants.NOCALHOST_ANNOTATION_NAME), applicationName)
-                        || StringUtils.equals(e.getMetadata().getAnnotations().get(Constants.HELM_ANNOTATION_NAME), applicationName))
-                .collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(kubeResources)) {
+        List<KubeResource> kubeResources = kubeResourceList.getItems();
+        if (!StringUtils.equals(resourceTypeNode.getApplicationNode().getName(), DEFAULT_APPLICATION_NAME)) {
             kubeResources = kubeResourceList.getItems().stream()
-                    .filter(e -> StringUtils.isBlank(e.getMetadata().getAnnotations().get(NOCALHOST_ANNOTATION_NAME))
-                            && StringUtils.isBlank(e.getMetadata().getAnnotations().get(HELM_ANNOTATION_NAME)))
+                    .filter(e -> StringUtils.equals(e.getMetadata().getAnnotations().get(Constants.NOCALHOST_ANNOTATION_NAME), applicationName)
+                            || StringUtils.equals(e.getMetadata().getAnnotations().get(Constants.HELM_ANNOTATION_NAME), applicationName))
                     .collect(Collectors.toList());
         }
 
