@@ -12,11 +12,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
@@ -90,8 +92,15 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     }
 
     protected Icon getStatefulSetIcon(ResourceNode node) {
+        final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
+
+        List<NhctlPortForward> nhctlPortForwards = nhctlDescribeService.getDevPortForwardList()
+                .stream()
+                .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
+                .collect(Collectors.toList());
+
         if (node.getKubeResource().getStatus().getReadyReplicas() == node.getKubeResource().getStatus().getReplicas()) {
-            if (node.getNhctlDescribeService() != null && CollectionUtils.isNotEmpty(node.getNhctlDescribeService().getDevPortForwardList())) {
+            if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlPortForwards)) {
                 return NocalhostIcons.Status.NormalPortForwarding;
             }
             return NocalhostIcons.Status.Running;
@@ -103,15 +112,21 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     protected Icon getDeploymentIcon(ResourceNode node) {
         final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
 
+        List<NhctlPortForward> nhctlPortForwards = node.getNhctlDescribeService()
+                .getDevPortForwardList()
+                .stream()
+                .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
+                .collect(Collectors.toList());
+
         DeploymentStatus status = getDeploymentStatus(node);
         switch (status) {
             case DEVELOPING:
-                if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlDescribeService.getDevPortForwardList())) {
+                if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlPortForwards)) {
                     return NocalhostIcons.Status.DevPortForwarding;
                 }
                 return NocalhostIcons.Status.DevStart;
             case RUNNING:
-                if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlDescribeService.getDevPortForwardList())) {
+                if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlPortForwards)) {
                     return NocalhostIcons.Status.NormalPortForwarding;
                 }
                 return NocalhostIcons.Status.Running;
