@@ -128,12 +128,7 @@ public class KubectlCommand {
     }
 
     protected String getKubectlCmd() {
-        final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        String kubectlCmd = KUBECTL_COMMAND;
-        if (StringUtils.isNoneBlank(nocalhostSettings.getKubectlBinary())) {
-            kubectlCmd = nocalhostSettings.getKubectlBinary();
-        }
-        return kubectlCmd;
+        return KUBECTL_COMMAND;
     }
 
     protected GeneralCommandLine getCommandline(List<String> args) {

@@ -20,7 +20,6 @@ import dev.nocalhost.plugin.intellij.ui.action.AddStandaloneClustersAction;
 import dev.nocalhost.plugin.intellij.ui.action.ConnectNocalhostApiServerAction;
 import dev.nocalhost.plugin.intellij.ui.action.ManageNocalhostAccountsAction;
 import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
-import dev.nocalhost.plugin.intellij.ui.action.SettingAction;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 
 public class NocalhostWindow implements Disposable {
@@ -67,8 +66,6 @@ public class NocalhostWindow implements Disposable {
         actionGroup.add(new ManageNocalhostAccountsAction(project));
         actionGroup.add(new Separator());
         actionGroup.add(new RefreshAction());
-        actionGroup.add(new Separator());
-        actionGroup.add(new SettingAction());
 
         ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("Nocalhost.Toolbar", actionGroup, true);
         panel.setToolbar(actionToolbar.getComponent());

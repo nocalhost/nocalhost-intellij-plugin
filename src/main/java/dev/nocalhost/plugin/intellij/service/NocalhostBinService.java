@@ -27,16 +27,12 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
 public class NocalhostBinService {
-    private static final Path NOCALHOST_BIN_PATH = Paths.get(
-            System.getProperty("user.home"),
-            ".nh/bin/"
-    );
-
     private static final String NHCTL_LINUX_URL = "https://codingcorp-generic.pkg.coding.net/nocalhost/nhctl/nhctl-linux-amd64?version=v%s";
     private static final String NHCTL_MAC_URL = "https://codingcorp-generic.pkg.coding.net/nocalhost/nhctl/nhctl-darwin-amd64?version=v%s";
     private static final String NHCTL_WINDOWS_URL = "https://codingcorp-generic.pkg.coding.net/nocalhost/nhctl/nhctl-windows-amd64.exe?version=v%s";
@@ -57,20 +53,13 @@ public class NocalhostBinService {
         } catch (IOException ignored) {
         }
         nhctlVersion = properties.getProperty("nhctlVersion");
-        if (SystemInfo.isWindows) {
-            nocalhostBin = new File(NOCALHOST_BIN_PATH.toString() + "/nhctl.exe");
-        } else {
-            nocalhostBin = new File(NOCALHOST_BIN_PATH.toString() + "/nhctl");
-        }
+        nocalhostBin = new File(NhctlUtil.binaryPath());
     }
 
     public void checkBin() {
         if (nocalhostBin.exists()) {
             if (!nocalhostBin.canExecute()) {
                 nocalhostBin.setExecutable(true);
-            }
-            if (StringUtils.isBlank(nocalhostSettings.getNhctlBinary())) {
-                nocalhostSettings.setNhctlBinary(nocalhostBin.getAbsolutePath());
             }
             try {
                 nhctlCommand.version();
@@ -100,9 +89,8 @@ public class NocalhostBinService {
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setIndeterminate(false);
                 try {
-                    download(url, NOCALHOST_BIN_PATH.toString(), indicator);
+                    download(url, NhctlUtil.parentDir(), indicator);
                     nocalhostBin.setExecutable(true);
-                    nocalhostSettings.setNhctlBinary(nocalhostBin.getAbsolutePath());
                 } catch (IOException e) {
                     NocalhostNotifier.getInstance(project).notifyError("Download nhctl error", e.getMessage());
                 } finally {
@@ -166,7 +154,7 @@ public class NocalhostBinService {
                 indicator.setFraction(fraction);
             }
         }
-        Path destPath = Paths.get(savePath, getName());
+        Path destPath = Paths.get(NhctlUtil.binaryPath());
         Files.deleteIfExists(destPath);
         Files.move(downloadingPath, destPath);
     }
@@ -179,15 +167,7 @@ public class NocalhostBinService {
         return downloadFile.getAbsolutePath();
     }
 
-    private String getName() {
-        if (SystemInfo.isWindows) {
-            return "nhctl.exe";
-        } else {
-            return "nhctl";
-        }
-    }
-
     private String getDownloadingName() {
-        return getName() + ".downloading";
+        return NhctlUtil.getName() + ".downloading";
     }
 }
