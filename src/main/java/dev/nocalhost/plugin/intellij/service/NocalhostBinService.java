@@ -11,11 +11,11 @@ import com.intellij.openapi.util.SystemInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -42,6 +42,7 @@ public class NocalhostBinService {
     private static final String NHCTL_WINDOWS_URL = "https://codingcorp-generic.pkg.coding.net/nocalhost/nhctl/nhctl-windows-amd64.exe?version=v%s";
     private final AtomicBoolean nocalhostBinaryDownloading = new AtomicBoolean(false);
     private final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
     private final Project project;
     private final String nhctlVersion;
@@ -70,6 +71,11 @@ public class NocalhostBinService {
             }
             if (StringUtils.isBlank(nocalhostSettings.getNhctlBinary())) {
                 nocalhostSettings.setNhctlBinary(nocalhostBin.getAbsolutePath());
+            }
+            try {
+                nhctlCommand.version();
+            } catch (Exception e) {
+                downloadNhctl(nhctlVersion);
             }
         } else {
             downloadNhctl(nhctlVersion);
@@ -107,7 +113,6 @@ public class NocalhostBinService {
     }
 
     public void checkVersion() {
-        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
         try {
             String versionInfo = nhctlCommand.version();
             String version = "";
@@ -141,8 +146,9 @@ public class NocalhostBinService {
         String savePath = isExistDir(saveDir);
         Request request = new Request.Builder().url(url).build();
         OkHttpClient client = new OkHttpClient();
-        File file = new File(savePath, getName());
-        try (FileOutputStream fos = new FileOutputStream(file); Response response = client.newCall(request).execute()) {
+        Path downloadingPath = Paths.get(savePath, getDownloadingName());
+        try (FileOutputStream fos = new FileOutputStream(downloadingPath.toFile());
+             Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 throw new IOException("Failed to download file: " + response);
             }
@@ -156,10 +162,13 @@ public class NocalhostBinService {
                 fos.write(buffer, 0, len);
                 bytesRead += len;
 
-                double fraction = (double)bytesRead / fileSize;
+                double fraction = (double) bytesRead / fileSize;
                 indicator.setFraction(fraction);
             }
         }
+        Path destPath = Paths.get(savePath, getName());
+        Files.deleteIfExists(destPath);
+        Files.move(downloadingPath, destPath);
     }
 
     private String isExistDir(String saveDir) throws IOException {
@@ -176,5 +185,9 @@ public class NocalhostBinService {
         } else {
             return "nhctl";
         }
+    }
+
+    private String getDownloadingName() {
+        return getName() + ".downloading";
     }
 }
