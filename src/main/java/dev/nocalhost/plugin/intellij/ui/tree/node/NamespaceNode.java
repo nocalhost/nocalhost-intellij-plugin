@@ -7,9 +7,15 @@ import lombok.Getter;
 @Getter
 public class NamespaceNode extends DefaultMutableTreeNode {
     private String name;
+    private String spaceName;
 
     public NamespaceNode(String name) {
         this.name = name;
+    }
+
+    public NamespaceNode(String name, String spaceName) {
+        this.name = name;
+        this.spaceName = spaceName;
     }
 
     @Override

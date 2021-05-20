@@ -48,7 +48,6 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
 import dev.nocalhost.plugin.intellij.utils.Constants;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import jnr.ffi.Struct;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.HELM_ANNOTATION_NAME;
 import static dev.nocalhost.plugin.intellij.utils.Constants.NOCALHOST_ANNOTATION_NAME;
@@ -204,7 +203,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         if (clusterNode.getServiceAccount().getNamespaces() != null) {
                             namespaceNodes = clusterNode.getServiceAccount().getNamespaces()
                                     .stream()
-                                    .map(e -> new NamespaceNode(e.getNamespace()))
+                                    .map(e -> new NamespaceNode(e.getNamespace(), e.getSpaceName()))
                                     .collect(Collectors.toList());
                         } else {
                             namespaceNodes = Lists.newArrayList();
