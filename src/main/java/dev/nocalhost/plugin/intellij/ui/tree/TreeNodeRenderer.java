@@ -57,7 +57,11 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
 
         if (value instanceof NamespaceNode) {
             NamespaceNode node = (NamespaceNode) value;
-            append(node.getName());
+            if (StringUtils.isNotEmpty(node.getSpaceName())) {
+                append(node.getSpaceName());
+            } else {
+                append(node.getName());
+            }
         }
 
         if (value instanceof ApplicationNode) {
@@ -96,7 +100,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
 
         List<NhctlPortForward> nhctlPortForwards = Lists.newArrayList();
-        if (nhctlDescribeService != null && nhctlDescribeService.getDevPortForwardList() != null ) {
+        if (nhctlDescribeService != null && nhctlDescribeService.getDevPortForwardList() != null) {
             nhctlPortForwards = nhctlDescribeService
                     .getDevPortForwardList()
                     .stream()
@@ -118,7 +122,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
 
         List<NhctlPortForward> nhctlPortForwards = Lists.newArrayList();
-        if (nhctlDescribeService != null && nhctlDescribeService.getDevPortForwardList() != null ) {
+        if (nhctlDescribeService != null && nhctlDescribeService.getDevPortForwardList() != null) {
             nhctlPortForwards = nhctlDescribeService
                     .getDevPortForwardList()
                     .stream()
