@@ -38,9 +38,6 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
 
     private Map<String, String> devModeProjectPathServiceMap = Maps.newHashMap();
 
-    private String nhctlBinary;
-    private String kubectlBinary;
-
     public synchronized void updateStandaloneCluster(StandaloneCluster standaloneCluster) {
         Set<StandaloneCluster> set = Sets.newHashSet();
         if (StringUtils.isNotEmpty(standaloneClustersJson)) {

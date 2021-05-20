@@ -1,17 +1,26 @@
 package dev.nocalhost.plugin.intellij.utils;
 
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.util.SystemInfo;
 
-import org.apache.commons.lang3.StringUtils;
-
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public final class NhctlUtil {
-    private static final String NHCTL_COMMAND = "nhctl";
+    private static final Path NOCALHOST_BIN_PATH = Paths.get(System.getProperty("user.home"), ".nh", "bin");
+
+    public static String parentDir() {
+        return NOCALHOST_BIN_PATH.toString();
+    }
+
+    public static String getName() {
+        if (SystemInfo.isWindows) {
+            return "nhctl.exe";
+        } else {
+            return "nhctl";
+        }
+    }
 
     public static String binaryPath() {
-        NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        return StringUtils.isNotEmpty(nocalhostSettings.getNhctlBinary())
-                ? nocalhostSettings.getNhctlBinary() : NHCTL_COMMAND;
+        return NOCALHOST_BIN_PATH.resolve(getName()).toAbsolutePath().toString();
     }
 }

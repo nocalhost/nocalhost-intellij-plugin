@@ -39,11 +39,6 @@
         <notificationGroup id="Nocalhost.Notification" displayType="BALLOON" toolWindowId="Nocalhost"/>
         <notificationGroup id="Nocalhost.Notification.Error" displayType="STICKY_BALLOON" toolWindowId="Nocalhost"/>
 
-
-        <applicationConfigurable parentId="tools" instance="dev.nocalhost.plugin.intellij.ui.NocalhostConfigurable"
-                                 id="dev.nocalhost.plugin.intellij.ui.NocalhostConfigurable"
-                                 displayName="Nocalhost" />
-
         <postStartupActivity
                 implementation="dev.nocalhost.plugin.intellij.startup.NocalhostStartupActivity"/>
         <statusBarWidgetFactory
