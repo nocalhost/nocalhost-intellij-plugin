@@ -159,8 +159,8 @@ public class TerminalAction extends DumbAwareAction {
                     project,
                     String.format(
                             "%s/%s:terminal",
-                            node.applicationName(),
-                            node.resourceName()
+                            podName,
+                            containerName
                     ),
                     new GeneralCommandLine(Lists.newArrayList(
                             "kubectl",
@@ -171,7 +171,7 @@ public class TerminalAction extends DumbAwareAction {
                             "--container", containerName,
                             "--kubeconfig", kubeConfigPath.toString(),
                             "--namespace", namespace,
-                            "--", "sh -c \"clear; (zsh || bash || ash || sh)\""
+                            "--", "sh", "-c", "clear; (zsh || bash || ash || sh)"
                     ))
             );
         });
