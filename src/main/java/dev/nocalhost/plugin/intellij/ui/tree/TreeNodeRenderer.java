@@ -8,6 +8,7 @@ import com.intellij.util.ui.EmptyIcon;
 import com.intellij.util.ui.UIUtil;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -94,10 +95,14 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     protected Icon getStatefulSetIcon(ResourceNode node) {
         final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
 
-        List<NhctlPortForward> nhctlPortForwards = nhctlDescribeService.getDevPortForwardList()
-                .stream()
-                .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
-                .collect(Collectors.toList());
+        List<NhctlPortForward> nhctlPortForwards = Lists.newArrayList();
+        if (nhctlDescribeService != null && nhctlDescribeService.getDevPortForwardList() != null ) {
+            nhctlPortForwards = nhctlDescribeService
+                    .getDevPortForwardList()
+                    .stream()
+                    .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
+                    .collect(Collectors.toList());
+        }
 
         if (node.getKubeResource().getStatus().getReadyReplicas() == node.getKubeResource().getStatus().getReplicas()) {
             if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlPortForwards)) {
@@ -112,11 +117,14 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     protected Icon getDeploymentIcon(ResourceNode node) {
         final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
 
-        List<NhctlPortForward> nhctlPortForwards = node.getNhctlDescribeService()
-                .getDevPortForwardList()
-                .stream()
-                .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
-                .collect(Collectors.toList());
+        List<NhctlPortForward> nhctlPortForwards = Lists.newArrayList();
+        if (nhctlDescribeService != null && nhctlDescribeService.getDevPortForwardList() != null ) {
+            nhctlPortForwards = nhctlDescribeService
+                    .getDevPortForwardList()
+                    .stream()
+                    .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
+                    .collect(Collectors.toList());
+        }
 
         DeploymentStatus status = getDeploymentStatus(node);
         switch (status) {
