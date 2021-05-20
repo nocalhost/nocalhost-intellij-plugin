@@ -1,7 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui.dialog;
 
-import com.google.common.collect.Lists;
-
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -47,7 +45,7 @@ public class StartDevelopDialog extends DialogWrapper {
     private JBTextField gitUrlTextField;
     private JLabel sourceDirectoryLabel;
     private JBList<String> containerList;
-    private JBList<String> imageList;
+    private JComboBox<String> imageComboBox;
 
     @Getter
     private Path sourceDirectory;
@@ -80,20 +78,16 @@ public class StartDevelopDialog extends DialogWrapper {
 
         containerList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         containerList.setListData(containers.toArray(new String[0]));
-        if (nhctlDescribeService.getRawConfig().getContainers().size() == 1) {
-            containerList.setSelectedIndex(0);
-            updateGitUrl();
-            updateImageList();
-        }
+        containerList.setSelectedIndex(0);
+        updateGitUrl();
+        updateImageComboBox();
         containerList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 updateGitUrl();
-                updateImageList();
+                updateImageComboBox();
             }
         });
-
-        imageList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         cloneFromGitRepositoryCheckBox.addChangeListener(e -> {
             if (cloneFromGitRepositoryCheckBox.isSelected()) {
@@ -137,49 +131,36 @@ public class StartDevelopDialog extends DialogWrapper {
         gitUrlTextField.setText(gitUrl);
     }
 
-    private void updateImageList() {
-        imageList.setListData(new String[0]);
+    private void updateImageComboBox() {
+        imageComboBox.removeAllItems();
 
         String selectedContainer = containerList.getSelectedValue();
         if (!StringUtils.isNotEmpty(selectedContainer)) {
             return;
         }
 
-        String selectedImage = "";
+        String configuredImage = "";
         Optional<ServiceContainer> serviceContainerOptional = nhctlDescribeService.getRawConfig()
                 .getContainers().stream()
                 .filter(e -> StringUtils.equals(e.getName(), selectedContainer))
                 .findFirst();
         if (serviceContainerOptional.isPresent()
                 && serviceContainerOptional.get().getDev() != null) {
-            selectedImage = serviceContainerOptional.get().getDev().getImage();
+            configuredImage = serviceContainerOptional.get().getDev().getImage();
         }
-        if (!StringUtils.isNotEmpty(selectedImage)
+        if (!StringUtils.isNotEmpty(configuredImage)
                 && nhctlDescribeService.getRawConfig().getContainers().size() == 1
                 && StringUtils.equals(nhctlDescribeService.getRawConfig().getContainers().get(0).getName(), "")
                 && nhctlDescribeService.getRawConfig().getContainers().get(0).getDev() != null) {
-            selectedImage = nhctlDescribeService.getRawConfig().getContainers().get(0).getDev().getImage();
+            configuredImage = nhctlDescribeService.getRawConfig().getContainers().get(0).getDev().getImage();
         }
 
-        final String selectImageFinal = selectedImage;
-        List<String> images = Lists.newArrayList(DEV_MODE_IMAGES);
-        if (StringUtils.isNotEmpty(selectedImage)) {
-            Optional<String> imageOptional = images.stream()
-                    .filter(e -> StringUtils.equals(e, selectImageFinal)).findFirst();
-            if (imageOptional.isEmpty()) {
-                images.add(0, selectedImage);
-            }
+        if (StringUtils.isNotEmpty(configuredImage)) {
+            imageComboBox.addItem(configuredImage);
         }
+        DEV_MODE_IMAGES.forEach(e -> imageComboBox.addItem(e));
 
-        imageList.setListData(images.toArray(new String[0]));
-        if (StringUtils.isNotEmpty(selectedImage)) {
-            for (int i = 0; i < images.size(); i++) {
-                if (StringUtils.equals(selectImageFinal, images.get(i))) {
-                    imageList.setSelectedIndex(i);
-                    break;
-                }
-            }
-        }
+        imageComboBox.setSelectedItem(configuredImage);
     }
 
     @Override
@@ -198,8 +179,8 @@ public class StartDevelopDialog extends DialogWrapper {
         if (containerList.getSelectedValuesList().size() == 0) {
             return new ValidationInfo("Must select a container", containerList);
         }
-        if (imageList.getSelectedValuesList().size() == 0) {
-            return new ValidationInfo("Must select an image", imageList);
+        if (!StringUtils.isNotEmpty((String) imageComboBox.getSelectedItem())) {
+            return new ValidationInfo("Must specify an image", imageComboBox);
         }
         return null;
     }
@@ -215,7 +196,7 @@ public class StartDevelopDialog extends DialogWrapper {
         cloneFromGit = cloneFromGitRepositoryCheckBox.isSelected();
         gitUrl = gitUrlTextField.getText();
         selectedContainer = containerList.getSelectedValue();
-        selectedImage = imageList.getSelectedValue();
+        selectedImage = (String) imageComboBox.getSelectedItem();
         super.doOKAction();
     }
 }
