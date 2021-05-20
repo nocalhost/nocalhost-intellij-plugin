@@ -95,21 +95,14 @@
               <text value="Image:"/>
             </properties>
           </component>
-          <scrollpane id="2c6c8">
+          <component id="2a360" class="javax.swing.JComboBox" binding="imageComboBox">
             <constraints>
-              <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties/>
-            <border type="line">
-              <color color="-10197916"/>
-            </border>
-            <children>
-              <component id="31a5f" class="com.intellij.ui.components.JBList" binding="imageList">
-                <constraints/>
-                <properties/>
-              </component>
-            </children>
-          </scrollpane>
+            <properties>
+              <editable value="true"/>
+            </properties>
+          </component>
         </children>
       </grid>
     </children>
