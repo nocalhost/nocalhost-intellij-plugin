@@ -8,7 +8,6 @@ import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessHandlerFactory;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.EnvironmentUtil;
 
@@ -25,7 +24,6 @@ import java.util.stream.Collectors;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 
 public class KubectlCommand {
@@ -108,9 +106,9 @@ public class KubectlCommand {
     }
 
     private String executeCmd(List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-
-        String cmd = String.join(" ", args.toArray(new String[]{}));
         GeneralCommandLine commandLine = getCommandline(args);
+        String cmd = commandLine.getCommandLineString();
+
         Process process;
         try {
             process = commandLine.createProcess();

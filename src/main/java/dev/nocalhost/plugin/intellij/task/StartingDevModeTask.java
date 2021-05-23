@@ -18,22 +18,16 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.helpers.KubectlHelper;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
@@ -46,8 +40,6 @@ import lombok.SneakyThrows;
 
 public class StartingDevModeTask extends Task.Backgroundable {
     private static final Logger LOG = Logger.getInstance(StartingDevModeTask.class);
-
-    private static final String NOCALHOST_DEV_CONTAINER_NAME = "nocalhost-dev";
 
     private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
     private final NocalhostSettings nocalhostSettings = ServiceManager.getService(
@@ -117,15 +109,12 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 nhctlDescribeOptions,
                 NhctlDescribeService.class);
 
-        // check if devmode already started
         if (nhctlDescribeService.isDeveloping()) {
             return;
         }
 
         String storageClass = getStorageClass();
 
-        // nhctl dev start ...
-        indicator.setText("Starting DevMode: dev start");
         NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions(kubeConfigPath,
                 serviceProjectPath.getNamespace());
         nhctlDevStartOptions.setDeployment(serviceProjectPath.getServiceName());
@@ -136,26 +125,6 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 .getService(OutputCapturedNhctlCommand.class);
         outputCapturedNhctlCommand.devStart(serviceProjectPath.getApplicationName(),
                 nhctlDevStartOptions);
-
-        // wait for nocalhost-dev container started
-        final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-        KubeResource deployment;
-        List<String> containerNames = Lists.newArrayList();
-        do {
-            Thread.sleep(1000);
-            deployment = kubectlCommand.getResource("deployment", serviceProjectPath.getServiceName(), kubeConfigPath, serviceProjectPath.getNamespace());
-            KubeResourceList pods = kubectlCommand.getResourceList("pods", deployment.getSpec().getSelector().getMatchLabels(), kubeConfigPath, serviceProjectPath.getNamespace());
-            containerNames = pods.getItems().get(0).getSpec().getContainers().stream().map(KubeResource.Spec.Container::getName).collect(Collectors.toList());
-        } while (!KubectlHelper.isKubeResourceAvailable(deployment) || !containerNames.contains(NOCALHOST_DEV_CONTAINER_NAME));
-
-        // nhctl sync ...
-        indicator.setText("Starting DevMode: sync file");
-        NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(kubeConfigPath,
-                serviceProjectPath.getNamespace());
-        nhctlSyncOptions.setDeployment(serviceProjectPath.getServiceName());
-        nhctlSyncOptions.setContainer(serviceProjectPath.getContainerName());
-        outputCapturedNhctlCommand.sync(serviceProjectPath.getApplicationName(),
-                nhctlSyncOptions);
     }
 
     private String getStorageClass() throws IOException, NocalhostApiException {
