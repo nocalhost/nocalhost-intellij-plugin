@@ -4,25 +4,26 @@ import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
+import com.intellij.openapi.ui.MessageDialogBuilder;
+import com.intellij.openapi.ui.Messages;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.commands.GitCommand;
 import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
@@ -33,28 +34,29 @@ import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
-import dev.nocalhost.plugin.intellij.ui.dialog.StartDevelopDialog;
+import dev.nocalhost.plugin.intellij.ui.dialog.ImageChooseDialog;
+import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
+import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import icons.NocalhostIcons;
-import lombok.SneakyThrows;
 
 public class StartDevelopAction extends DumbAwareAction {
-    private static final Logger LOG = Logger.getInstance(StartDevelopAction.class);
-
     private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
     private final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
-    private final GitCommand gitCommand = ServiceManager.getService(GitCommand.class);
     private final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+
+    private final OutputCapturedGitCommand outputCapturedGitCommand;
+    private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final Project project;
     private final ResourceNode node;
     private final Path kubeConfigPath;
     private final String namespace;
 
-    private List<String> containers;
-    private NhctlDescribeService nhctlDescribeService;
+    private String projectPath;
+    private String selectedContainer;
 
     public StartDevelopAction(Project project, ResourceNode node) {
         super("Start Develop", "", NocalhostIcons.Status.DevStart);
@@ -62,33 +64,26 @@ public class StartDevelopAction extends DumbAwareAction {
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getName();
+        outputCapturedGitCommand = project.getService(OutputCapturedGitCommand.class);
+        outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                KubeResource deployment = kubectlCommand.getResource("deployment",
-                        node.resourceName(), kubeConfigPath, namespace);
-                KubeResourceList podList = kubectlCommand.getResourceList("pods",
-                        deployment.getSpec().getSelector().getMatchLabels(), kubeConfigPath, namespace);
-                List<KubeResource> pods = podList.getItems().stream()
-                        .filter(KubeResource::canSelector)
-                        .collect(Collectors.toList());
-                containers = pods.get(0)
-                        .getSpec()
-                        .getContainers()
-                        .stream()
-                        .map(KubeResource.Spec.Container::getName)
-                        .collect(Collectors.toList());
-
                 NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
                 opts.setType(node.getKubeResource().getKind());
-                nhctlDescribeService = nhctlCommand.describe(
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
 
-                showStartDevelopDialog();
+                if (StringUtils.isNotEmpty(nhctlDescribeService.getAssociate())) {
+                    projectPath = nhctlDescribeService.getAssociate();
+                    getContainers();
+                } else {
+                    selectCodeSource();
+                }
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading service profile error",
                         "Error occurs while loading service profile", e);
@@ -96,59 +91,197 @@ public class StartDevelopAction extends DumbAwareAction {
         });
     }
 
-    private void showStartDevelopDialog() {
+    private void selectCodeSource() {
         ApplicationManager.getApplication().invokeLater(() -> {
-            StartDevelopDialog startDevelopDialog = new StartDevelopDialog(project, containers, nhctlDescribeService);
-            if (!startDevelopDialog.showAndGet()) {
-                return;
+            int exitCode = MessageDialogBuilder
+                    .yesNoCancel(
+                            "Start develop",
+                            "To start develop, you must specify source code directory."
+                    )
+                    .yesText("Clone from Git Repo")
+                    .noText("Open local directly")
+                    .guessWindowAndAsk();
+
+            switch (exitCode) {
+                case Messages.YES:
+                    specifyGitUrl();
+                    break;
+                case Messages.NO:
+                    selectDirectory();
+                    break;
+                default:
+                    return;
             }
-            updateConfig(startDevelopDialog);
         });
     }
 
-    private void updateConfig(StartDevelopDialog startDevelopDialog) {
+    private void specifyGitUrl() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            String gitUrl = Messages.showInputDialog(
+                    project,
+                    "Specify git url.",
+                    "Start develop",
+                    null);
+            if (StringUtils.isNotEmpty(gitUrl)) {
+                Path gitParent = FileChooseUtil.chooseSingleDirectory(project, "",
+                        "Select parent directory for git repository.");
+                if (gitParent != null) {
+                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                        try {
+                            outputCapturedGitCommand.clone(gitParent, gitUrl, node.resourceName());
+                            setAssociate(gitParent.resolve(node.resourceName()).toAbsolutePath()
+                                    .toString());
+                        } catch (Exception e) {
+                            ErrorUtil.dealWith(project, "Cloning git repository error",
+                                    "Error occurs while cloning git repository", e);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void selectDirectory() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            Path codeSource = FileChooseUtil.chooseSingleDirectory(project, "",
+                    "Select source code directory.");
+            if (codeSource != null) {
+                setAssociate(codeSource.toString());
+            }
+        });
+    }
+
+    private void setAssociate(String path) {
+        projectPath = path;
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                String sourceDirectory = startDevelopDialog.getSourceDirectory().toAbsolutePath().toString();
-                if (startDevelopDialog.isCloneFromGit()) {
-                    sourceDirectory = startDevelopDialog.getSourceDirectory().resolve(node.resourceName()).toAbsolutePath().toString();
+                NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(
+                        kubeConfigPath, namespace);
+                opts.setAssociate(path);
+                opts.setDeployment(node.resourceName());
+                opts.setControllerType(node.getKubeResource().getKind());
+                outputCapturedNhctlCommand.devAssociate(node.applicationName(), opts);
+
+                getContainers();
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Associating source code directory error",
+                        "Error occurs while associating source code directory", e);
+            }
+        });
+    }
+
+    private void getContainers() {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                KubeResource deployment = kubectlCommand.getResource("deployment",
+                        node.resourceName(), kubeConfigPath, namespace);
+                KubeResourceList podList = kubectlCommand.getResourceList(
+                        "pods",
+                        deployment.getSpec().getSelector().getMatchLabels(),
+                        kubeConfigPath,
+                        namespace);
+                List<KubeResource> pods = podList.getItems().stream()
+                        .filter(KubeResource::canSelector)
+                        .collect(Collectors.toList());
+                List<String> containers = pods.get(0)
+                        .getSpec()
+                        .getContainers()
+                        .stream()
+                        .map(KubeResource.Spec.Container::getName)
+                        .collect(Collectors.toList());
+
+                if (containers.size() > 1) {
+                    selectContainer(containers);
+                } else {
+                    selectedContainer = containers.get(0);
+                    getImage();
                 }
-                if (!StringUtils.equals(nhctlDescribeService.getAssociate(), sourceDirectory)) {
-                    NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace);
-                    opts.setAssociate(sourceDirectory);
-                    opts.setDeployment(node.resourceName());
-                    opts.setControllerType(node.getKubeResource().getKind());
-                    nhctlCommand.devAssociate(node.applicationName(), opts);
-                }
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Loading containers error",
+                        "Error occurs while loading containers", e);
+            }
+        });
+    }
+
+    private void selectContainer(List<String> containers) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            ListChooseDialog listChooseDialog = new ListChooseDialog(project, "Select Container",
+                    containers);
+            if (listChooseDialog.showAndGet()) {
+                selectedContainer = listChooseDialog.getSelectedValue();
+                getImage();
+            }
+        });
+    }
+
+    private void getImage() {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                opts.setDeployment(node.resourceName());
+                opts.setType(node.getKubeResource().getKind());
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                        node.applicationName(), opts, NhctlDescribeService.class);
 
                 Optional<ServiceContainer> serviceContainerOptional = nhctlDescribeService
                         .getRawConfig()
                         .getContainers()
                         .stream()
-                        .filter(e -> StringUtils.equals(e.getName(), startDevelopDialog.getSelectedContainer()))
+                        .filter(e -> StringUtils.equals(e.getName(), selectedContainer))
                         .findFirst();
-                if (serviceContainerOptional.isEmpty()
-                        || !StringUtils.equals(serviceContainerOptional.get().getDev().getImage(), startDevelopDialog.getSelectedImage())) {
-                    NhctlProfileSetOptions opts = new NhctlProfileSetOptions(kubeConfigPath, namespace);
-                    opts.setDeployment(node.resourceName());
-                    opts.setType(node.getKubeResource().getKind());
-                    opts.setContainer(startDevelopDialog.getSelectedContainer());
-                    opts.setKey("image");
-                    opts.setValue(startDevelopDialog.getSelectedImage());
-                    nhctlCommand.profileSet(node.applicationName(), opts);
+                if (serviceContainerOptional.isPresent()) {
+                    ServiceContainer serviceContainer = serviceContainerOptional.get();
+                    if (serviceContainer.getDev() != null
+                            && StringUtils.isNotEmpty(serviceContainer.getDev().getImage())) {
+                        startDevelop();
+                        return;
+                    }
                 }
 
-                startDevelop(startDevelopDialog, sourceDirectory);
+                if (nhctlDescribeService.getRawConfig().getContainers().size() == 1
+                        && StringUtils.equals(nhctlDescribeService.getRawConfig().getContainers().get(0).getName(), "")) {
+                    ServiceContainer serviceContainer = nhctlDescribeService.getRawConfig().getContainers().get(0);
+                    if (serviceContainer.getDev() != null
+                            && StringUtils.isNotEmpty(serviceContainer.getDev().getImage())) {
+                        startDevelop();
+                        return;
+                    }
+                }
+
+                selectImage();
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Updating service profile error",
-                        "Error occurs while updating service profile", e);
+                ErrorUtil.dealWith(project, "Loading dev image",
+                        "Error occurs while loading dev image", e);
             }
         });
     }
 
-    private void startDevelop(StartDevelopDialog startDevelopDialog, String projectPath) {
-        String containerName = startDevelopDialog.getSelectedContainer();
+    private void selectImage() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            ImageChooseDialog imageChooseDialog = new ImageChooseDialog(project);
+            if (imageChooseDialog.showAndGet()) {
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    try {
+                        NhctlProfileSetOptions opts = new NhctlProfileSetOptions(kubeConfigPath,
+                                namespace);
+                        opts.setDeployment(node.resourceName());
+                        opts.setType(node.getKubeResource().getKind());
+                        opts.setContainer(selectedContainer);
+                        opts.setKey("image");
+                        opts.setValue(imageChooseDialog.getSelectedImage());
+                        outputCapturedNhctlCommand.profileSet(node.applicationName(), opts);
 
+                        startDevelop();
+                    } catch (Exception e) {
+                        ErrorUtil.dealWith(project, "Setting dev image",
+                                "Error occurs while setting dev image", e);
+                    }
+                });
+            }
+        });
+    }
+
+    private void startDevelop() {
         ServiceProjectPath serviceProjectPath;
         if (node.getClusterNode().getNocalhostAccount() != null) {
             serviceProjectPath = ServiceProjectPath.builder()
@@ -160,7 +293,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
-                    .containerName(containerName)
+                    .containerName(selectedContainer)
                     .projectPath(projectPath)
                     .build();
         } else {
@@ -170,46 +303,20 @@ public class StartDevelopAction extends DumbAwareAction {
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
-                    .containerName(containerName)
+                    .containerName(selectedContainer)
                     .projectPath(projectPath)
                     .build();
         }
 
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (startDevelopDialog.isCloneFromGit()) {
-                ProgressManager.getInstance().run(new Task.Backgroundable(
-                        project, "Git clone " + startDevelopDialog.getGitUrl(), false) {
-                    @Override
-                    public void onSuccess() {
-                        startDevMode(serviceProjectPath);
-                    }
-
-                    @Override
-                    public void onThrowable(@NotNull Throwable e) {
-                        ErrorUtil.dealWith(project, "Cloning git repository error",
-                                "Error occurs while cloning git repository", e);
-                    }
-
-                    @SneakyThrows
-                    @Override
-                    public void run(@NotNull ProgressIndicator indicator) {
-                        gitCommand.clone(startDevelopDialog.getSourceDirectory(),
-                                startDevelopDialog.getGitUrl(), node.resourceName(), project);
-                    }
-                });
+            if (StringUtils.equals(projectPath, project.getBasePath())) {
+                ProgressManager.getInstance().run(
+                        new StartingDevModeTask(project, serviceProjectPath));
             } else {
-                startDevMode(serviceProjectPath);
+                nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
+                ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPath),
+                        new OpenProjectTask());
             }
         });
-    }
-
-    public void startDevMode(ServiceProjectPath serviceProjectPath) {
-        String projectPath = serviceProjectPath.getProjectPath();
-        if (StringUtils.equals(projectPath, project.getBasePath())) {
-            ProgressManager.getInstance().run(new StartingDevModeTask(project, serviceProjectPath));
-        } else {
-            nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
-            ProjectManagerEx.getInstanceEx().openProject(Path.of(projectPath), new OpenProjectTask());
-        }
     }
 }

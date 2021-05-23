@@ -1,60 +1,67 @@
 package dev.nocalhost.plugin.intellij.commands;
 
-import com.intellij.execution.process.ProcessOutputTypes;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Key;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
+import com.google.common.io.CharStreams;
 
-import java.io.File;
+import com.intellij.execution.ExecutionException;
+import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.openapi.util.SystemInfo;
+import com.intellij.util.EnvironmentUtil;
+
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import dev.nocalhost.plugin.intellij.exception.NocalhostGitException;
-import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
-import git4idea.commands.Git;
-import git4idea.commands.GitCommandResult;
-import git4idea.commands.GitLineHandler;
-import git4idea.commands.GitLineHandlerListener;
-import git4idea.commands.GitStandardProgressAnalyzer;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 
 public class GitCommand {
-    public void clone(Path parentDir, String url, String clonedDirectoryName, Project project) throws NocalhostGitException {
-        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-        indicator.setIndeterminate(false);
-        GitLineHandlerListener progressListener = GitStandardProgressAnalyzer.createListener(indicator);
+    private static final String GIT_COMMANd = "git";
 
-        NocalhostOutputAppendNotifier publisher = project.getMessageBus()
-                .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC);
+    public void clone(Path parentDir, String url, String dir) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(
+                GIT_COMMANd,
+                "clone",
+                url,
+                parentDir.resolve(dir).toAbsolutePath().toString());
 
-        final CloneOutputResultListener cloneOutputResultListener = new CloneOutputResultListener(publisher);
+        execute(args);
+    }
 
-        GitCommandResult gitCommandResult = Git.getInstance().clone(project, parentDir.toFile(), url, clonedDirectoryName, progressListener, cloneOutputResultListener);
-        int exitCode = gitCommandResult.getExitCode();
+    protected String execute(List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+        GeneralCommandLine commandLine = getCommandline(args);
+        String cmd = commandLine.getCommandLineString();
+        Process process;
+        try {
+            process = commandLine.createProcess();
+        } catch (ExecutionException e) {
+            throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
+        }
+
+        String output = CharStreams.toString(new InputStreamReader(process.getInputStream(), Charsets.UTF_8));
+
+        int exitCode = process.waitFor();
         if (exitCode != 0) {
-            throw new NocalhostGitException(exitCode, gitCommandResult.getErrorOutputAsJoinedString());
+            throw new NocalhostExecuteCmdException(cmd, exitCode, output);
         }
+        return output;
     }
 
-    public String getRemote(String path, Project project) {
-        GitLineHandler h = new GitLineHandler(project, new File(path), git4idea.commands.GitCommand.REMOTE);
-        h.addParameters("-v");
-        GitCommandResult gitCommandResult = Git.getInstance().runCommand(h);
-        return gitCommandResult.getOutputAsJoinedString();
-    }
-
-    private static class CloneOutputResultListener implements GitLineHandlerListener {
-
-        private NocalhostOutputAppendNotifier publisher;
-
-        public CloneOutputResultListener(NocalhostOutputAppendNotifier publisher) {
-            this.publisher = publisher;
-        }
-
-        @Override
-        public void onLineAvailable(String line, Key outputType) {
-            if (outputType == ProcessOutputTypes.STDOUT) {
-                publisher.action(line + System.lineSeparator());
+    protected GeneralCommandLine getCommandline(List<String> args) {
+        final Map<String, String> environment = new HashMap<>(EnvironmentUtil.getEnvironmentMap());
+        environment.put("DISABLE_SPINNER", "true");
+        if (SystemInfo.isMac || SystemInfo.isLinux) {
+            String path = environment.get("PATH");
+            if (StringUtils.contains(GIT_COMMANd, "/")) {
+                path = GIT_COMMANd.substring(0, GIT_COMMANd.lastIndexOf("/")) + ":" + path;
+                environment.put("PATH", path);
             }
         }
+        return new GeneralCommandLine(args).withEnvironment(environment).withRedirectErrorStream(true);
     }
 }

@@ -557,14 +557,14 @@ public class NhctlCommand {
     protected String execute(List<String> args, NhctlGlobalOptions opts, String sudoPassword) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         addGlobalOptions(args, opts);
 
-        String cmd = String.join(" ", args.toArray(new String[]{}));
-
         if (sudoPassword != null) {
             args = SudoUtil.toSudoCommand(args);
         }
 
         GeneralCommandLine commandLine = getCommandline(args);
+        String cmd = commandLine.getCommandLineString();
         System.out.println("Execute command: " + cmd);
+
         Process process;
         try {
             process = commandLine.createProcess();
