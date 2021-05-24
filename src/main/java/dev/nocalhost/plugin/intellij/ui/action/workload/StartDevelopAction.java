@@ -72,6 +72,50 @@ public class StartDevelopAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
+                KubeResource deployment = kubectlCommand.getResource("deployment",
+                        node.resourceName(), kubeConfigPath, namespace);
+                KubeResourceList podList = kubectlCommand.getResourceList(
+                        "pods",
+                        deployment.getSpec().getSelector().getMatchLabels(),
+                        kubeConfigPath,
+                        namespace);
+                List<KubeResource> pods = podList.getItems().stream()
+                        .filter(KubeResource::canSelector)
+                        .collect(Collectors.toList());
+                List<String> containers = pods.get(0)
+                        .getSpec()
+                        .getContainers()
+                        .stream()
+                        .map(KubeResource.Spec.Container::getName)
+                        .collect(Collectors.toList());
+
+                if (containers.size() > 1) {
+                    selectContainer(containers);
+                } else {
+                    selectedContainer = containers.get(0);
+                    getAssociate();
+                }
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Loading containers error",
+                        "Error occurs while loading containers", e);
+            }
+        });
+    }
+
+    private void selectContainer(List<String> containers) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            ListChooseDialog listChooseDialog = new ListChooseDialog(project, "Select Container",
+                    containers);
+            if (listChooseDialog.showAndGet()) {
+                selectedContainer = listChooseDialog.getSelectedValue();
+                getAssociate();
+            }
+        });
+    }
+
+    private void getAssociate() {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
                 NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
                 opts.setType(node.getKubeResource().getKind());
@@ -80,7 +124,7 @@ public class StartDevelopAction extends DumbAwareAction {
 
                 if (StringUtils.isNotEmpty(nhctlDescribeService.getAssociate())) {
                     projectPath = nhctlDescribeService.getAssociate();
-                    getContainers();
+                    getImage();
                 } else {
                     selectCodeSource();
                 }
@@ -104,7 +148,7 @@ public class StartDevelopAction extends DumbAwareAction {
 
             switch (exitCode) {
                 case Messages.YES:
-                    specifyGitUrl();
+                    getGitUrl();
                     break;
                 case Messages.NO:
                     selectDirectory();
@@ -115,20 +159,66 @@ public class StartDevelopAction extends DumbAwareAction {
         });
     }
 
-    private void specifyGitUrl() {
+    private void getGitUrl() {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                opts.setDeployment(node.resourceName());
+                opts.setType(node.getKubeResource().getKind());
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                        node.applicationName(), opts, NhctlDescribeService.class);
+
+                Optional<ServiceContainer> serviceContainerOptional = nhctlDescribeService
+                        .getRawConfig()
+                        .getContainers()
+                        .stream()
+                        .filter(e -> StringUtils.equals(e.getName(), selectedContainer))
+                        .findFirst();
+                if (serviceContainerOptional.isPresent()) {
+                    ServiceContainer serviceContainer = serviceContainerOptional.get();
+                    if (serviceContainer.getDev() != null
+                            && StringUtils.isNotEmpty(serviceContainer.getDev().getGitUrl())) {
+                        cloneGitRepository(serviceContainer.getDev().getGitUrl());
+                        return;
+                    }
+                }
+
+                if (nhctlDescribeService.getRawConfig().getContainers().size() == 1
+                        && StringUtils.equals(nhctlDescribeService.getRawConfig().getContainers().get(0).getName(), "")) {
+                    ServiceContainer serviceContainer = nhctlDescribeService.getRawConfig().getContainers().get(0);
+                    if (serviceContainer.getDev() != null
+                            && StringUtils.isNotEmpty(serviceContainer.getDev().getGitUrl())) {
+                        cloneGitRepository(serviceContainer.getDev().getGitUrl());
+                        return;
+                    }
+                }
+
+                cloneGitRepository("");
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Loading dev image error",
+                        "Error occurs while loading dev image", e);
+            }
+        });
+    }
+
+    private void cloneGitRepository(String url) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            String gitUrl = Messages.showInputDialog(
-                    project,
-                    "Specify git url.",
-                    "Start develop",
-                    null);
+            String gitUrl = url;
+            if (!StringUtils.isNotEmpty(gitUrl)) {
+                gitUrl = Messages.showInputDialog(
+                        project,
+                        "Specify git url.",
+                        "Start develop",
+                        null);
+            }
             if (StringUtils.isNotEmpty(gitUrl)) {
                 Path gitParent = FileChooseUtil.chooseSingleDirectory(project, "",
                         "Select parent directory for git repository.");
                 if (gitParent != null) {
+                    String finalGitUrl = gitUrl;
                     ApplicationManager.getApplication().executeOnPooledThread(() -> {
                         try {
-                            outputCapturedGitCommand.clone(gitParent, gitUrl, node.resourceName());
+                            outputCapturedGitCommand.clone(gitParent, finalGitUrl, node.resourceName());
                             setAssociate(gitParent.resolve(node.resourceName()).toAbsolutePath()
                                     .toString());
                         } catch (Exception e) {
@@ -162,54 +252,10 @@ public class StartDevelopAction extends DumbAwareAction {
                 opts.setControllerType(node.getKubeResource().getKind());
                 outputCapturedNhctlCommand.devAssociate(node.applicationName(), opts);
 
-                getContainers();
+                getImage();
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Associating source code directory error",
                         "Error occurs while associating source code directory", e);
-            }
-        });
-    }
-
-    private void getContainers() {
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
-                KubeResource deployment = kubectlCommand.getResource("deployment",
-                        node.resourceName(), kubeConfigPath, namespace);
-                KubeResourceList podList = kubectlCommand.getResourceList(
-                        "pods",
-                        deployment.getSpec().getSelector().getMatchLabels(),
-                        kubeConfigPath,
-                        namespace);
-                List<KubeResource> pods = podList.getItems().stream()
-                        .filter(KubeResource::canSelector)
-                        .collect(Collectors.toList());
-                List<String> containers = pods.get(0)
-                        .getSpec()
-                        .getContainers()
-                        .stream()
-                        .map(KubeResource.Spec.Container::getName)
-                        .collect(Collectors.toList());
-
-                if (containers.size() > 1) {
-                    selectContainer(containers);
-                } else {
-                    selectedContainer = containers.get(0);
-                    getImage();
-                }
-            } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading containers error",
-                        "Error occurs while loading containers", e);
-            }
-        });
-    }
-
-    private void selectContainer(List<String> containers) {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            ListChooseDialog listChooseDialog = new ListChooseDialog(project, "Select Container",
-                    containers);
-            if (listChooseDialog.showAndGet()) {
-                selectedContainer = listChooseDialog.getSelectedValue();
-                getImage();
             }
         });
     }
