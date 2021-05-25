@@ -8,7 +8,6 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -42,7 +41,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent e) {
         final Path dir = FileChooseUtil.chooseSingleDirectory(project);
 
-        if (dir == null || StringUtils.isNotEmpty(dir.toString())) {
+        if (dir == null) {
             return;
         }
 
