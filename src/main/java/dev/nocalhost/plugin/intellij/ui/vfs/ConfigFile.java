@@ -116,6 +116,7 @@ public class ConfigFile extends VirtualFile {
                 Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, node.getNamespaceNode().getName());
                 nhctlConfigOptions.setDeployment(node.resourceName());
+                nhctlConfigOptions.setControllerType(node.getKubeResource().getKind());
                 nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
                 nhctlCommand.editConfig(node.applicationName(), nhctlConfigOptions);
             }

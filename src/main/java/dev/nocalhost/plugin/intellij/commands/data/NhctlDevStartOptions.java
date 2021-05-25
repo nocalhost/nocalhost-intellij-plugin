@@ -17,6 +17,7 @@ public class NhctlDevStartOptions extends NhctlGlobalOptions {
     private String syncthingVersion;
     private String workDir;
     private String container;
+    private String controllerType;
 
     public NhctlDevStartOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);

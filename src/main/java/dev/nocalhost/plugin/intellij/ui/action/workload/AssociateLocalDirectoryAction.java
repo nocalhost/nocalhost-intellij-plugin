@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -12,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -21,7 +20,7 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class AssociateLocalDirectoryAction extends DumbAwareAction {
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final Project project;
     private final ResourceNode node;
@@ -35,6 +34,8 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
         this.node = resourceNode;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getName();
+
+        outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
 
     @Override
@@ -60,7 +61,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
                 opts.setAssociate(dir.toString());
                 opts.setDeployment(node.resourceName());
                 opts.setControllerType(node.getKubeResource().getKind());
-                nhctlCommand.devAssociate(node.applicationName(), opts);
+                outputCapturedNhctlCommand.devAssociate(node.applicationName(), opts);
             }
         });
     }

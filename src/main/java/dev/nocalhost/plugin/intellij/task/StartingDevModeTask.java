@@ -100,9 +100,10 @@ public class StartingDevModeTask extends Task.Backgroundable {
     @SneakyThrows
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        final NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
+        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
                 serviceProjectPath.getNamespace());
         nhctlDescribeOptions.setDeployment(serviceProjectPath.getServiceName());
+        nhctlDescribeOptions.setType(serviceProjectPath.getServiceType());
 
         NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                 serviceProjectPath.getApplicationName(),
@@ -118,6 +119,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions(kubeConfigPath,
                 serviceProjectPath.getNamespace());
         nhctlDevStartOptions.setDeployment(serviceProjectPath.getServiceName());
+        nhctlDevStartOptions.setControllerType(serviceProjectPath.getServiceType());
         nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
         nhctlDevStartOptions.setContainer(serviceProjectPath.getContainerName());
         nhctlDevStartOptions.setStorageClass(storageClass);

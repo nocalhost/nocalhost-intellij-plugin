@@ -74,6 +74,7 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
 
         switch (EnumUtils.getEnumIgnoreCase(KubeResourceType.class, type)) {
             case Deployment:
+            case Statefulset:
                 containerName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");
                 KubeResourceList pods = null;
                 try {
@@ -95,6 +96,9 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                     if (running.size() > 0) {
                         List<String> containersName = pods.getItems().stream().flatMap(r -> r.getSpec().getContainers().stream().map(KubeResource.Spec.Container::getName)).collect(Collectors.toList());
                         containerName = selectContainer(containersName);
+                        if (!StringUtils.isNotEmpty(containerName)) {
+                            return;
+                        }
                         List<String> podsName = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
                         podName = selectContainer(podsName);
                     }
@@ -104,8 +108,6 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                 }
                 break;
             case Daemonset:
-                break;
-            case Statefulset:
                 break;
             case Job:
                 break;

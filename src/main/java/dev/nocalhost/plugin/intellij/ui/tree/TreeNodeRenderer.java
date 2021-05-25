@@ -84,21 +84,21 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             ResourceNode node = (ResourceNode) value;
             append(node.getKubeResource().getMetadata().getName());
 
-            if (StringUtils.equalsIgnoreCase(node.getKubeResource().getKind(), "Deployment")) {
-                Icon icon = getDeploymentIcon(node);
-                setIcon(icon);
-            }
-
-            if (StringUtils.equalsIgnoreCase(node.getKubeResource().getKind(), "StatefulSet")) {
-                Icon icon = getStatefulSetIcon(node);
+            Icon icon = getWorkloadIcon(node);
+            if (icon != null) {
                 setIcon(icon);
             }
         }
     }
 
-    protected Icon getStatefulSetIcon(ResourceNode node) {
-        final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
+    private Icon getWorkloadIcon(ResourceNode node) {
+        String workloadType = node.getKubeResource().getKind();
+        if (!StringUtils.equalsIgnoreCase(workloadType, "Deployment")
+                && !StringUtils.equalsIgnoreCase(workloadType, "StatefulSet")) {
+            return null;
+        }
 
+        NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
         List<NhctlPortForward> nhctlPortForwards = Lists.newArrayList();
         if (nhctlDescribeService != null && nhctlDescribeService.getDevPortForwardList() != null) {
             nhctlPortForwards = nhctlDescribeService
@@ -108,29 +108,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                     .collect(Collectors.toList());
         }
 
-        if (node.getKubeResource().getStatus().getReadyReplicas() == node.getKubeResource().getStatus().getReplicas()) {
-            if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlPortForwards)) {
-                return NocalhostIcons.Status.NormalPortForwarding;
-            }
-            return NocalhostIcons.Status.Running;
-        } else {
-            return NocalhostIcons.Status.Loading;
-        }
-    }
-
-    protected Icon getDeploymentIcon(ResourceNode node) {
-        final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
-
-        List<NhctlPortForward> nhctlPortForwards = Lists.newArrayList();
-        if (nhctlDescribeService != null && nhctlDescribeService.getDevPortForwardList() != null) {
-            nhctlPortForwards = nhctlDescribeService
-                    .getDevPortForwardList()
-                    .stream()
-                    .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
-                    .collect(Collectors.toList());
-        }
-
-        DeploymentStatus status = getDeploymentStatus(node);
+        ServiceStatus status = getServiceStatus(node);
         switch (status) {
             case DEVELOPING:
                 if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlPortForwards)) {
@@ -144,35 +122,40 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                 return NocalhostIcons.Status.Running;
             case STARTING:
                 return NocalhostIcons.Status.Loading;
-            case UNKNOWN:
-                return NocalhostIcons.Status.Unknown;
             default:
-                throw new IllegalStateException("Unexpected value: " + status);
+                return NocalhostIcons.Status.Unknown;
         }
     }
 
-    protected DeploymentStatus getDeploymentStatus(ResourceNode node) {
-        DeploymentStatus status = DeploymentStatus.UNKNOWN;
+    private ServiceStatus getServiceStatus(ResourceNode node) {
+        ServiceStatus status = ServiceStatus.UNKNOWN;
         final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
         if (nhctlDescribeService != null && nhctlDescribeService.isDeveloping()) {
-            return DeploymentStatus.DEVELOPING;
+            return ServiceStatus.DEVELOPING;
         }
         boolean available = false;
         boolean progressing = false;
         List<KubeResource.Status.Condition> conditions = node.getKubeResource().getStatus()
                 .getConditions();
-        for (KubeResource.Status.Condition condition : conditions) {
-            if (StringUtils.equals(condition.getType(), "Available")
-                    && StringUtils.equals(condition.getStatus(), "True")) {
-                status = DeploymentStatus.RUNNING;
-                available = true;
-            } else if (StringUtils.equals(condition.getType(), "Progressing")
-                    && StringUtils.equals(condition.getStatus(), "True")) {
-                progressing = true;
+        if (conditions != null) {
+            for (KubeResource.Status.Condition condition : conditions) {
+                if (StringUtils.equals(condition.getType(), "Available")
+                        && StringUtils.equals(condition.getStatus(), "True")) {
+                    status = ServiceStatus.RUNNING;
+                    available = true;
+                } else if (StringUtils.equals(condition.getType(), "Progressing")
+                        && StringUtils.equals(condition.getStatus(), "True")) {
+                    progressing = true;
+                }
             }
-        }
-        if (progressing && !available) {
-            status = DeploymentStatus.STARTING;
+            if (progressing && !available) {
+                status = ServiceStatus.STARTING;
+            }
+        } else {
+            KubeResource.Status kubeStatus = node.getKubeResource().getStatus();
+            if (kubeStatus.getReplicas() == kubeStatus.getReadyReplicas()) {
+                status = ServiceStatus.RUNNING;
+            }
         }
         return status;
     }

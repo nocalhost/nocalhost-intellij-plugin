@@ -54,6 +54,7 @@ public class EndDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
             opts.setDeployment(node.resourceName());
+            opts.setType(node.getKubeResource().getKind());
             NhctlDescribeService nhctlDescribeService;
             try {
                 nhctlDescribeService = nhctlCommand.describe(
@@ -95,6 +96,7 @@ public class EndDevelopAction extends DumbAwareAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 NhctlDevEndOptions opts = new NhctlDevEndOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
+                opts.setControllerType(node.getKubeResource().getKind());
 
                 outputCapturedNhctlCommand.devEnd(node.applicationName(), opts);
             }

@@ -169,6 +169,7 @@ public class TreeMouseListener extends MouseAdapter {
         KubeResourceType type = EnumUtils.getEnumIgnoreCase(KubeResourceType.class, kind);
         switch (type) {
             case Deployment:
+            case Statefulset:
                 NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
                 if (nhctlDescribeService != null) {
                     if (!nhctlDescribeService.isDeveloping()) {
@@ -193,9 +194,6 @@ public class TreeMouseListener extends MouseAdapter {
             case Daemonset:
             case Job:
             case CronJobs:
-                break;
-            case Statefulset:
-                actionGroup.add(new PortForwardAction(project, resourceNode));
                 break;
             case Pod:
                 actionGroup.add(new LogsAction(project, resourceNode));
