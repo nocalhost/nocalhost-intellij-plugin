@@ -66,6 +66,7 @@ public class ConfigAction extends DumbAwareAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, namespace);
                 nhctlConfigOptions.setDeployment(node.resourceName());
+                nhctlConfigOptions.setControllerType(node.getKubeResource().getKind());
                 config = nhctlCommand.getConfig(node.applicationName(), nhctlConfigOptions);
             }
         });

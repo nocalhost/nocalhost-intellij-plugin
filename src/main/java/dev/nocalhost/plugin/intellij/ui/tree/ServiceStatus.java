@@ -1,6 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.tree;
 
-public enum DeploymentStatus {
+public enum ServiceStatus {
     RUNNING,
     DEVELOPING,
     STARTING,

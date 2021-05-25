@@ -9,6 +9,7 @@ import lombok.Setter;
 @Setter
 public class NhctlDevEndOptions extends NhctlGlobalOptions {
     private String deployment;
+    private String controllerType;
 
     public NhctlDevEndOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);

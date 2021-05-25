@@ -181,6 +181,10 @@ public class NhctlCommand {
             args.add("--container");
             args.add(opts.getContainer());
         }
+        if (StringUtils.isNotEmpty(opts.getControllerType())) {
+            args.add("--controller-type");
+            args.add(opts.getControllerType());
+        }
 
         return execute(args, opts);
     }
@@ -190,6 +194,10 @@ public class NhctlCommand {
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
+        }
+        if (StringUtils.isNotEmpty(opts.getControllerType())) {
+            args.add("--controller-type");
+            args.add(opts.getControllerType());
         }
 
         execute(args, opts);
@@ -356,6 +364,10 @@ public class NhctlCommand {
         if (opts.isAppConfig()) {
             args.add("--app-config");
         }
+        if (StringUtils.isNotEmpty(opts.getControllerType())) {
+            args.add("--controller-type");
+            args.add(opts.getControllerType());
+        }
         return execute(args, opts);
     }
 
@@ -369,6 +381,10 @@ public class NhctlCommand {
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
+        }
+        if (StringUtils.isNotEmpty(opts.getControllerType())) {
+            args.add("--controller-type");
+            args.add(opts.getControllerType());
         }
         execute(args, opts);
     }
@@ -385,6 +401,10 @@ public class NhctlCommand {
         }
         if (opts.isAppConfig()) {
             args.add("--app-config");
+        }
+        if (StringUtils.isNotEmpty(opts.getControllerType())) {
+            args.add("--controller-type");
+            args.add(opts.getControllerType());
         }
         execute(args, opts);
     }

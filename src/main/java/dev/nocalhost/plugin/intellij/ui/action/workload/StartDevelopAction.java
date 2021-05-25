@@ -72,8 +72,11 @@ public class StartDevelopAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                KubeResource deployment = kubectlCommand.getResource("deployment",
-                        node.resourceName(), kubeConfigPath, namespace);
+                KubeResource deployment = kubectlCommand.getResource(
+                        node.getKubeResource().getKind(),
+                        node.resourceName(),
+                        kubeConfigPath,
+                        namespace);
                 KubeResourceList podList = kubectlCommand.getResourceList(
                         "pods",
                         deployment.getSpec().getSelector().getMatchLabels(),
