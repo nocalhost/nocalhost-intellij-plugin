@@ -72,6 +72,29 @@ public class StartDevelopAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
+                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                opts.setDeployment(node.resourceName());
+                opts.setType(node.getKubeResource().getKind());
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                        node.applicationName(), opts, NhctlDescribeService.class);
+                if (nhctlDescribeService.isDeveloping()) {
+                    ApplicationManager.getApplication().invokeLater(() ->
+                            Messages.showMessageDialog("Dev mode has been started.",
+                                    "Start Develop", null));
+                    return;
+                }
+
+                ApplicationManager.getApplication().invokeLater(this::getPods);
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Loading service status error",
+                        "Error occurs while loading service status", e);
+            }
+        });
+    }
+
+    private void getPods() {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
                 KubeResource deployment = kubectlCommand.getResource(
                         node.getKubeResource().getKind(),
                         node.resourceName(),
@@ -85,6 +108,14 @@ public class StartDevelopAction extends DumbAwareAction {
                 List<KubeResource> pods = podList.getItems().stream()
                         .filter(KubeResource::canSelector)
                         .collect(Collectors.toList());
+
+                if (pods.size() == 0) {
+                    ApplicationManager.getApplication().invokeLater(() ->
+                            Messages.showMessageDialog("Pods are not ready. Please try later.",
+                                    "Start Develop", null));
+                    return;
+                }
+
                 List<String> containers = pods.get(0)
                         .getSpec()
                         .getContainers()
@@ -157,7 +188,6 @@ public class StartDevelopAction extends DumbAwareAction {
                     selectDirectory();
                     break;
                 default:
-                    return;
             }
         });
     }
@@ -209,10 +239,7 @@ public class StartDevelopAction extends DumbAwareAction {
             String gitUrl = url;
             if (!StringUtils.isNotEmpty(gitUrl)) {
                 gitUrl = Messages.showInputDialog(
-                        project,
-                        "Specify git url.",
-                        "Start develop",
-                        null);
+                        project, "Specify git url.", "Start Develop", null);
             }
             if (StringUtils.isNotEmpty(gitUrl)) {
                 Path gitParent = FileChooseUtil.chooseSingleDirectory(project, "",

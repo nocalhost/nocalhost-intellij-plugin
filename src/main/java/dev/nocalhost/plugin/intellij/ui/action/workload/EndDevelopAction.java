@@ -52,18 +52,15 @@ public class EndDevelopAction extends DumbAwareAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
-            opts.setDeployment(node.resourceName());
-            opts.setType(node.getKubeResource().getKind());
-            NhctlDescribeService nhctlDescribeService;
             try {
-                nhctlDescribeService = nhctlCommand.describe(
-                        node.applicationName(),
-                        opts,
-                        NhctlDescribeService.class);
+                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                opts.setDeployment(node.resourceName());
+                opts.setType(node.getKubeResource().getKind());
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                        node.applicationName(), opts, NhctlDescribeService.class);
                 if (!nhctlDescribeService.isDeveloping()) {
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        Messages.showMessageDialog("Dev mode has been ended.", "End develop", null);
+                        Messages.showMessageDialog("Dev mode has been ended.", "End Develop", null);
                     });
                     return;
                 }
@@ -71,13 +68,12 @@ public class EndDevelopAction extends DumbAwareAction {
                 ApplicationManager.getApplication().invokeLater(this::endDevelop);
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                 LOG.error("error occurred while checking if service was in development", e);
-                return;
             }
         });
     }
 
     private void endDevelop() {
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Ending DevMode", false) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Ending develop", false) {
             @Override
             public void onSuccess() {
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(
