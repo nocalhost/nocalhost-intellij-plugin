@@ -6,10 +6,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class NhctlUtil {
-    private static final Path NOCALHOST_BIN_PATH = Paths.get(System.getProperty("user.home"), ".nh", "bin");
+    private static final Path NOCALHOST_BIN_DIR = Paths.get(System.getProperty("user.home"), ".nh", "bin");
 
-    public static String parentDir() {
-        return NOCALHOST_BIN_PATH.toString();
+    public static String binaryDir() {
+        return NOCALHOST_BIN_DIR.toString();
     }
 
     public static String getName() {
@@ -21,6 +21,6 @@ public final class NhctlUtil {
     }
 
     public static String binaryPath() {
-        return NOCALHOST_BIN_PATH.resolve(getName()).toAbsolutePath().toString();
+        return NOCALHOST_BIN_DIR.resolve(getName()).toAbsolutePath().toString();
     }
 }
