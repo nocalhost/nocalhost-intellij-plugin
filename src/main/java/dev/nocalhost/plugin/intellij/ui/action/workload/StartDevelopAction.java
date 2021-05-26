@@ -222,6 +222,17 @@ public class StartDevelopAction extends DumbAwareAction {
                     ApplicationManager.getApplication().executeOnPooledThread(() -> {
                         try {
                             outputCapturedGitCommand.clone(gitParent, finalGitUrl, node.resourceName());
+
+                            if (!StringUtils.equals(url, finalGitUrl)) {
+                                NhctlProfileSetOptions opts = new NhctlProfileSetOptions(kubeConfigPath, namespace);
+                                opts.setDeployment(node.resourceName());
+                                opts.setType(node.getKubeResource().getKind());
+                                opts.setContainer(selectedContainer);
+                                opts.setKey("gitUrl");
+                                opts.setValue(finalGitUrl);
+                                outputCapturedNhctlCommand.profileSet(node.applicationName(), opts);
+                            }
+
                             setAssociate(gitParent.resolve(node.resourceName()).toAbsolutePath()
                                     .toString());
                         } catch (Exception e) {
