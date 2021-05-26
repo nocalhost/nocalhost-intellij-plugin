@@ -11,10 +11,6 @@ public class ResourceNode extends DefaultMutableTreeNode {
     private KubeResource kubeResource;
     private NhctlDescribeService nhctlDescribeService;
 
-    public ResourceNode(KubeResource kubeResource) {
-        this(kubeResource, null);
-    }
-
     public ResourceNode(KubeResource kubeResource, NhctlDescribeService nhctlDescribeService) {
         this.kubeResource = kubeResource;
         this.nhctlDescribeService = nhctlDescribeService;

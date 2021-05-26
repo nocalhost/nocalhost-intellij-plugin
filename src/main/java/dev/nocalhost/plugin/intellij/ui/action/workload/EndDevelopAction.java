@@ -9,6 +9,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 
 import org.jetbrains.annotations.NotNull;
@@ -58,14 +59,23 @@ public class EndDevelopAction extends DumbAwareAction {
                 opts.setType(node.getKubeResource().getKind());
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
-                if (!nhctlDescribeService.isDeveloping()) {
-                    ApplicationManager.getApplication().invokeLater(() -> {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    if (!nhctlDescribeService.isDeveloping()) {
                         Messages.showMessageDialog("Dev mode has been ended.", "End Develop", null);
-                    });
-                    return;
-                }
+                        return;
+                    }
 
-                ApplicationManager.getApplication().invokeLater(this::endDevelop);
+                    if (nhctlDescribeService.isPossess()) {
+                        endDevelop();
+                    } else {
+                        if (MessageDialogBuilder.yesNo(
+                                "End Develop",
+                                "You are not the dev possessor of this service, are you sure to exit the DevMode?"
+                        ).guessWindowAndAsk()) {
+                            endDevelop();
+                        }
+                    }
+                });
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                 LOG.error("error occurred while checking if service was in development", e);
             }

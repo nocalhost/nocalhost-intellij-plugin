@@ -25,6 +25,8 @@ import java.nio.file.Path;
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncResumeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
@@ -58,11 +60,28 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
-        NhctlSyncStatusOptions options = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
-        options.setDeployment(devModeService.getServiceName());
         String status = null;
         try {
-            status = nhctlCommand.syncStatus(devModeService.getApplicationName(), options);
+            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
+                    devModeService.getNamespace());
+            nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
+            nhctlDescribeOptions.setType(devModeService.getServiceType());
+            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                    devModeService.getApplicationName(),
+                    nhctlDescribeOptions,
+                    NhctlDescribeService.class
+            );
+            if (nhctlDescribeService.isDeveloping()) {
+                if (!nhctlDescribeService.isPossess()) {
+                    return null;
+                }
+            } else {
+                return null;
+            }
+
+            NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
+            nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
+            status = nhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
         } catch (InterruptedException | IOException e) {
             LOG.error("error occurred while get sync status ", e);
         } catch (NocalhostExecuteCmdException e) {
@@ -135,10 +154,27 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
                     Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
-                    NhctlSyncResumeOptions options = new NhctlSyncResumeOptions(kubeConfigPath, devModeService.getNamespace());
-                    options.setDeployment(devModeService.getServiceName());
                     try {
-                        nhctlCommand.syncResume(devModeService.getApplicationName(), options);
+                        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
+                                devModeService.getNamespace());
+                        nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
+                        nhctlDescribeOptions.setType(devModeService.getServiceType());
+                        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                                devModeService.getApplicationName(),
+                                nhctlDescribeOptions,
+                                NhctlDescribeService.class
+                        );
+                        if (nhctlDescribeService.isDeveloping()) {
+                            if (!nhctlDescribeService.isPossess()) {
+                                return null;
+                            }
+                        } else {
+                            return null;
+                        }
+
+                        NhctlSyncResumeOptions nhctlSyncResumeOptions = new NhctlSyncResumeOptions(kubeConfigPath, devModeService.getNamespace());
+                        nhctlSyncResumeOptions.setDeployment(devModeService.getServiceName());
+                        nhctlCommand.syncResume(devModeService.getApplicationName(), nhctlSyncResumeOptions);
                     } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
                         LOG.error("error occurred while sync resume ", e);
                     }
@@ -164,10 +200,27 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
                     Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
-                    NhctlSyncStatusOptions options = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
-                    options.setDeployment(devModeService.getServiceName());
                     try {
-                        nhctlCommand.syncStatusOverride(devModeService.getApplicationName(), options);
+                        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
+                                devModeService.getNamespace());
+                        nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
+                        nhctlDescribeOptions.setType(devModeService.getServiceType());
+                        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                                devModeService.getApplicationName(),
+                                nhctlDescribeOptions,
+                                NhctlDescribeService.class
+                        );
+                        if (nhctlDescribeService.isDeveloping()) {
+                            if (!nhctlDescribeService.isPossess()) {
+                                return null;
+                            }
+                        } else {
+                            return null;
+                        }
+
+                        NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
+                        nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
+                        nhctlCommand.syncStatusOverride(devModeService.getApplicationName(), nhctlSyncStatusOptions);
                     } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
                         LOG.error("error occurred while sync status override ", e);
                     }
