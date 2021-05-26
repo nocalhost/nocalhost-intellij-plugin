@@ -100,7 +100,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
 
         NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
         List<NhctlPortForward> nhctlPortForwards = Lists.newArrayList();
-        if (nhctlDescribeService != null && nhctlDescribeService.getDevPortForwardList() != null) {
+        if (nhctlDescribeService.getDevPortForwardList() != null) {
             nhctlPortForwards = nhctlDescribeService
                     .getDevPortForwardList()
                     .stream()
@@ -111,15 +111,25 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         ServiceStatus status = getServiceStatus(node);
         switch (status) {
             case DEVELOPING:
-                if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlPortForwards)) {
-                    return NocalhostIcons.Status.DevPortForwarding;
+                if (nhctlDescribeService.isPossess()) {
+                    if (CollectionUtils.isNotEmpty(nhctlPortForwards)) {
+                        return NocalhostIcons.Status.DevPortForwarding;
+                    } else {
+                        return NocalhostIcons.Status.DevStart;
+                    }
+                } else {
+                    if (CollectionUtils.isNotEmpty(nhctlPortForwards)) {
+                        return NocalhostIcons.Status.DevPortForwardingOther;
+                    } else {
+                        return NocalhostIcons.Status.DevOther;
+                    }
                 }
-                return NocalhostIcons.Status.DevStart;
             case RUNNING:
-                if (nhctlDescribeService != null && CollectionUtils.isNotEmpty(nhctlPortForwards)) {
+                if (CollectionUtils.isNotEmpty(nhctlPortForwards)) {
                     return NocalhostIcons.Status.NormalPortForwarding;
+                } else {
+                    return NocalhostIcons.Status.Running;
                 }
-                return NocalhostIcons.Status.Running;
             case STARTING:
                 return NocalhostIcons.Status.Loading;
             default:
@@ -129,8 +139,8 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
 
     private ServiceStatus getServiceStatus(ResourceNode node) {
         ServiceStatus status = ServiceStatus.UNKNOWN;
-        final NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
-        if (nhctlDescribeService != null && nhctlDescribeService.isDeveloping()) {
+        NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
+        if (nhctlDescribeService.isDeveloping()) {
             return ServiceStatus.DEVELOPING;
         }
         boolean available = false;

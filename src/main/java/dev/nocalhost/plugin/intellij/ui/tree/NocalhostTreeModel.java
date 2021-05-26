@@ -10,7 +10,6 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.ui.LoadingNode;
 import com.intellij.ui.treeStructure.Tree;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -29,7 +28,6 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeConfig;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeAllService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
@@ -50,8 +48,6 @@ import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
-import static dev.nocalhost.plugin.intellij.utils.Constants.HELM_ANNOTATION_NAME;
-import static dev.nocalhost.plugin.intellij.utils.Constants.NOCALHOST_ANNOTATION_NAME;
 
 public class NocalhostTreeModel extends NocalhostTreeModelBase {
     private static final Logger LOG = Logger.getInstance(NocalhostTreeModel.class);
@@ -460,8 +456,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
 
     private List<ResourceNode> fetchResourcesData(ResourceTypeNode resourceTypeNode)
             throws InterruptedException, NocalhostExecuteCmdException, IOException {
-
-
         ApplicationNode applicationNode = resourceTypeNode.getApplicationNode();
         String applicationName = applicationNode.getName();
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(applicationNode.getClusterNode().getRawKubeConfig());
@@ -471,21 +465,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 .replaceAll(" ", "");
         KubeResourceList kubeResourceList = kubectlCommand.getResourceList(kubeResourceType, null,
                 kubeConfigPath, namespace);
-
-        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
-                namespace);
-        NhctlDescribeAllService nhctlDescribeAllService = null;
-        try {
-            nhctlDescribeAllService = nhctlCommand.describe(applicationName, nhctlDescribeOptions,
-                    NhctlDescribeAllService.class);
-        } catch (NocalhostExecuteCmdException e) {
-            if (StringUtils.contains(e.getMessage(), "Application not found")) {
-                return null;
-            }
-            throw e;
-        }
-
-        List<NhctlDescribeService> nhctlDescribeServices = nhctlDescribeAllService.getSvcProfile();
 
         List<KubeResource> kubeResources = kubeResourceList.getItems();
         if (!StringUtils.equals(resourceTypeNode.getApplicationNode().getName(), DEFAULT_APPLICATION_NAME)) {
@@ -497,31 +476,14 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
 
         List<ResourceNode> resources = Lists.newArrayList();
         for (KubeResource kubeResource : kubeResources) {
-            final Optional<NhctlDescribeService> nhctlDescribeService =
-                    nhctlDescribeServices.isEmpty()
-                            ? Optional.empty()
-                            : nhctlDescribeServices.stream()
-                            .filter(svc -> StringUtils.equals(svc.getRawConfig().getName(), kubeResource.getMetadata().getName()))
-                            .findFirst();
-            if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "Deployment")
-                    && nhctlDescribeService.isPresent()) {
-                NhctlDescribeService nhctlDescribe = nhctlDescribeService.get();
-                resources.add(new ResourceNode(kubeResource, nhctlDescribe));
-            } else if (StringUtils.equalsIgnoreCase(kubeResource.getKind(), "StatefulSet")) {
-                String metadataName = kubeResource.getMetadata().getName();
-                KubeResource statefulsetKubeResource = kubectlCommand.getResource("" +
-                        "StatefulSet/" + metadataName, "", kubeConfigPath, namespace);
-                if (nhctlDescribeService.isPresent()) {
-                    resources.add(new ResourceNode(
-                            statefulsetKubeResource,
-                            nhctlDescribeService.get()
-                    ));
-                } else {
-                    resources.add(new ResourceNode(statefulsetKubeResource));
-                }
-            } else {
-                resources.add(new ResourceNode(kubeResource));
-            }
+            NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+            opts.setDeployment(kubeResource.getMetadata().getName());
+            opts.setType(kubeResource.getKind());
+
+            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                    applicationName, opts, NhctlDescribeService.class);
+
+            resources.add(new ResourceNode(kubeResource, nhctlDescribeService));
         }
 
         return resources;

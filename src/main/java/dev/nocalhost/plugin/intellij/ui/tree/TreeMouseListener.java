@@ -171,14 +171,10 @@ public class TreeMouseListener extends MouseAdapter {
             case Deployment:
             case Statefulset:
                 NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
-                if (nhctlDescribeService != null) {
-                    if (!nhctlDescribeService.isDeveloping()) {
-                        actionGroup.add(new StartDevelopAction(project, resourceNode));
-                    } else {
-                        actionGroup.add(new EndDevelopAction(project, resourceNode));
-                    }
-                } else {
+                if (!nhctlDescribeService.isDeveloping()) {
                     actionGroup.add(new StartDevelopAction(project, resourceNode));
+                } else {
+                    actionGroup.add(new EndDevelopAction(project, resourceNode));
                 }
 
                 actionGroup.add(new ConfigAction(project, resourceNode));

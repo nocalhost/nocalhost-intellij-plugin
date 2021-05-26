@@ -20,7 +20,9 @@ public interface NocalhostIcons {
         Icon Loading = IconLoader.getIcon("/icons/loading.svg", NocalhostIcons.class);
         Icon DevStart = IconLoader.getIcon("/icons/dev-start.svg", NocalhostIcons.class);
         Icon DevEnd = IconLoader.getIcon("/icons/dev-end.svg", NocalhostIcons.class);
+        Icon DevOther = IconLoader.getIcon("/icons/dev-other.svg", NocalhostIcons.class);
         Icon DevPortForwarding = IconLoader.getIcon("/icons/dev-port-forwarding.svg", NocalhostIcons.class);
+        Icon DevPortForwardingOther = IconLoader.getIcon("/icons/dev-port-forwarding-other.svg", NocalhostIcons.class);
         Icon NormalPortForwarding = IconLoader.getIcon("/icons/normal-port-forwarding.svg", NocalhostIcons.class);
     }
 }
