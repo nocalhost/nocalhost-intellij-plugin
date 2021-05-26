@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -75,6 +76,14 @@ public class TerminalAction extends DumbAwareAction {
                 List<KubeResource> pods = podList.getItems().stream()
                         .filter(KubeResource::canSelector)
                         .collect(Collectors.toList());
+
+                if (pods.size() == 0) {
+                    ApplicationManager.getApplication().invokeLater(() ->
+                            Messages.showMessageDialog("Pods are not ready. Please try later.",
+                                    "Open Terminal", null));
+                    return;
+                }
+
                 if (pods.size() > 1) {
                     selectPod(pods);
                     return;
@@ -88,26 +97,25 @@ public class TerminalAction extends DumbAwareAction {
     }
 
     private void openDevTerminal() {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            NocalhostConsoleManager.openTerminalWindow(
-                    project,
-                    String.format(
-                            "%s/%s:terminal",
-                            node.applicationName(),
-                            node.resourceName()
-                    ),
-                    new GeneralCommandLine(Lists.newArrayList(
-                            NhctlUtil.binaryPath(),
-                            "dev",
-                            "terminal", node.applicationName(),
-                            "--deployment", node.resourceName(),
-                            "--kubeconfig", kubeConfigPath.toString(),
-                            "--namespace", namespace,
-                            "--controller-type", node.getKubeResource().getKind(),
-                            "--container", "nocalhost-dev"
-                    ))
-            );
-        });
+        ApplicationManager.getApplication().invokeLater(() ->
+                NocalhostConsoleManager.openTerminalWindow(
+                        project,
+                        String.format(
+                                "%s/%s:terminal",
+                                node.applicationName(),
+                                node.resourceName()
+                        ),
+                        new GeneralCommandLine(Lists.newArrayList(
+                                NhctlUtil.binaryPath(),
+                                "dev",
+                                "terminal", node.applicationName(),
+                                "--deployment", node.resourceName(),
+                                "--kubeconfig", kubeConfigPath.toString(),
+                                "--namespace", namespace,
+                                "--controller-type", node.getKubeResource().getKind(),
+                                "--container", "nocalhost-dev"
+                        ))
+                ));
     }
 
     private void selectPod(List<KubeResource> pods) {
@@ -154,27 +162,26 @@ public class TerminalAction extends DumbAwareAction {
     }
 
     private void openTerminal(String podName, String containerName) {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            NocalhostConsoleManager.openTerminalWindow(
-                    project,
-                    String.format(
-                            "%s/%s:terminal",
-                            podName,
-                            containerName
-                    ),
-                    new GeneralCommandLine(Lists.newArrayList(
-                            "kubectl",
-                            "exec",
-                            podName,
-                            "--stdin",
-                            "--tty",
-                            "--container", containerName,
-                            "--kubeconfig", kubeConfigPath.toString(),
-                            "--namespace", namespace,
-                            "--", "sh", "-c", "clear; (zsh || bash || ash || sh)"
-                    ))
-            );
-        });
+        ApplicationManager.getApplication().invokeLater(() ->
+                NocalhostConsoleManager.openTerminalWindow(
+                        project,
+                        String.format(
+                                "%s/%s:terminal",
+                                podName,
+                                containerName
+                        ),
+                        new GeneralCommandLine(Lists.newArrayList(
+                                "kubectl",
+                                "exec",
+                                podName,
+                                "--stdin",
+                                "--tty",
+                                "--container", containerName,
+                                "--kubeconfig", kubeConfigPath.toString(),
+                                "--namespace", namespace,
+                                "--", "sh", "-c", "clear; (zsh || bash || ash || sh)"
+                        ))
+                ));
     }
 
 }
