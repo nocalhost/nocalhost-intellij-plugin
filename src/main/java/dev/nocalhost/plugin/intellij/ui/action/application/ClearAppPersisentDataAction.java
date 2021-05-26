@@ -24,7 +24,7 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 public class ClearAppPersisentDataAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(ClearAppPersisentDataAction.class);
 
-    final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
     private final Project project;
     private final Path kubeConfigPath;
@@ -42,13 +42,18 @@ public class ClearAppPersisentDataAction extends DumbAwareAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            NhctlListPVCOptions opts = new NhctlListPVCOptions(kubeConfigPath, namespace);
-            opts.setApp(applicationName);
             try {
+                NhctlListPVCOptions opts = new NhctlListPVCOptions(kubeConfigPath, namespace);
+                opts.setApp(applicationName);
                 List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems, true)
-                            .showAndGet();
+                    new ClearPersistentDataDialog(
+                            project,
+                            kubeConfigPath,
+                            namespace,
+                            nhctlPVCItems,
+                            true
+                    ).showAndGet();
                 });
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                 LOG.error("error occurred while listing pvc items", e);

@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class NhctlCleanPVCOptions extends NhctlGlobalOptions {
     private String app;
-    private String svc;
+    private String controller;
     private String name;
 
     public NhctlCleanPVCOptions(Path kubeConfigPath, String namespace) {

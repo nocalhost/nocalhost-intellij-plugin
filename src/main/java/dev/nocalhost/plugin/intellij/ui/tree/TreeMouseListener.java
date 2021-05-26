@@ -29,6 +29,7 @@ import dev.nocalhost.plugin.intellij.ui.action.application.UninstallAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.UpgradeAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.RemoveClusterAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.ViewClusterKubeConfigAction;
+import dev.nocalhost.plugin.intellij.ui.action.namespace.CleanDevSpacePersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallApplicationAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.ResetDevSpaceAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryAction;
@@ -132,6 +133,9 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new InstallApplicationAction(project, namespaceNode));
 
         if (namespaceNode.getClusterNode().getServiceAccount() != null) {
+            actionGroup.add(new Separator());
+            actionGroup.add(new CleanDevSpacePersistentDataAction(project, namespaceNode));
+            actionGroup.add(new Separator());
             actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
         }
 

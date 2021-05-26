@@ -1,6 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui.dialog;
 
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -19,7 +18,7 @@ import java.util.stream.IntStream;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -27,6 +26,9 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 
 public class ClearPersistentDataDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(ClearPersistentDataDialog.class);
+
+    private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
+
     private final Project project;
     private final Path kubeConfigPath;
     private final String namespace;
@@ -47,6 +49,8 @@ public class ClearPersistentDataDialog extends DialogWrapper {
         this.kubeConfigPath = kubeConfigPath;
         this.namespace = namespace;
         this.showSvcNames = showSvcNames;
+
+        outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
         this.setOKActionEnabled(false);
 
@@ -101,8 +105,6 @@ public class ClearPersistentDataDialog extends DialogWrapper {
         ProgressManager.getInstance().run(new Task.Modal(null, "Clearing persistent data", true) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-
                 indicator.setIndeterminate(false);
 
                 List<NhctlPVCItem> nhctlPVCItems = pvcList.getSelectedValuesList();
@@ -118,10 +120,10 @@ public class ClearPersistentDataDialog extends DialogWrapper {
 
                     NhctlCleanPVCOptions opts = new NhctlCleanPVCOptions(kubeConfigPath, namespace);
                     opts.setApp(item.getAppName());
-                    opts.setSvc(item.getServiceName());
+                    opts.setController(item.getServiceName());
                     opts.setName(item.getName());
                     try {
-                        nhctlCommand.cleanPVC(opts);
+                        outputCapturedNhctlCommand.cleanPVC(opts);
                     } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                         LOG.error("error occurred while clearing persistent data", e);
                         NocalhostNotifier.getInstance(project).notifyError("Nocalhost clear persistent data error", "Error occurred while clearing persistent data", e.getMessage());
