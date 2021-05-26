@@ -104,18 +104,12 @@ tasks {
         )
         changeNotes(
             """
-          Fix: Get unnamed container error. <br />
-          Port forwarding after installing devspace. <br />
-          Support port forwarding on privileged ports. <br />
-          Support statefulset port forwarding. <br />
-          Support app upgrade. <br />
-          Add support for installing local application. <br />
-          Add synchronization status in the status bar. <br />
-          Support for applying kubernetes configuration from local files or directories. <br />
-          Fix: Port forwarding error occurs when deploying more pods.<br />
-          Fix: On MacOS nhctl not found <br />
-          Support nocalhost v0.2.x. <br />
-          First Upload. <br />
+          Support nhctl auto-upgrade. <br />
+          Support StatefulSets dev-mode. <br />
+          Support multi-person collaboration mode. <br />
+          Forbid editing config while local config loaded. <br />
+          Fix: Set git url to profile after specifying. <br />
+          Fix: Show messages while pods are not ready instead of throwing exceptions. <br />
           """
         )
     }
