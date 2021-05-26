@@ -17,4 +17,5 @@ public class NhctlDescribeService {
     private String associate;
     private boolean developing;
     private boolean possess;
+    private boolean localconfigloaded;
 }
