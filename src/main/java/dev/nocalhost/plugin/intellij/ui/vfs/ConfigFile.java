@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.vfs;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
@@ -7,6 +8,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.NlsSafe;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileSystem;
@@ -25,23 +27,44 @@ import java.util.Base64;
 import java.util.Date;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 
-@AllArgsConstructor
 public class ConfigFile extends VirtualFile {
     private static final Logger LOG = Logger.getInstance(ConfigFile.class);
 
-    private String name;
-    private String path;
-    private String content;
-    private Project project;
-    private ResourceNode node;
+    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
+
+    private final String name;
+    private final String path;
+    private final String content;
+    private final Project project;
+    private final ResourceNode node;
+
+    private final Path kubeConfigPath;
+    private final String namespace;
+
+    public ConfigFile(String name, String path, String content, Project project, ResourceNode node) {
+        this.name = name;
+        this.path = path;
+        this.content = content;
+        this.project = project;
+        this.node = node;
+
+        outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
+
+        kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        namespace = node.getNamespaceNode().getName();
+    }
 
     @Override
     public @NotNull @NlsSafe String getName() {
@@ -61,6 +84,10 @@ public class ConfigFile extends VirtualFile {
 
     @Override
     public boolean isWritable() {
+        if (node.getNhctlDescribeService() != null) {
+            NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
+            return !nhctlDescribeService.isLocalconfigloaded();
+        }
         return true;
     }
 
@@ -94,31 +121,47 @@ public class ConfigFile extends VirtualFile {
     }
 
     protected void saveContent(String newContent) {
-        Object yml = DataUtils.YAML.load(newContent);
-        String json = DataUtils.GSON.toJson(yml);
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Saving " + name, false) {
-            private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                nhctlDescribeOptions.setDeployment(node.resourceName());
+                nhctlDescribeOptions.setType(node.getKubeResource().getKind());
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(node.applicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
 
-            @Override
-            public void onSuccess() {
-                NocalhostNotifier.getInstance(project).notifySuccess(name + " saved", "");
-            }
+                if (nhctlDescribeService.isLocalconfigloaded()) {
+                    Messages.showMessageDialog("Config cannot be modified.", "Modify Config", null);
+                    return;
+                }
 
-            @Override
-            public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while saving config file", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost save config error", "Error occurred while saving config file", e.getMessage());
-            }
+                Object yml = DataUtils.YAML.load(newContent);
+                String json = DataUtils.GSON.toJson(yml);
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    ProgressManager.getInstance().run(new Task.Backgroundable(null, "Saving " + name, false) {
+                        @Override
+                        public void onSuccess() {
+                            NocalhostNotifier.getInstance(project).notifySuccess(name + " saved", "");
+                        }
 
-            @SneakyThrows
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, node.getNamespaceNode().getName());
-                nhctlConfigOptions.setDeployment(node.resourceName());
-                nhctlConfigOptions.setControllerType(node.getKubeResource().getKind());
-                nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
-                nhctlCommand.editConfig(node.applicationName(), nhctlConfigOptions);
+                        @Override
+                        public void onThrowable(@NotNull Throwable e) {
+                            LOG.error("error occurred while saving config file", e);
+                            NocalhostNotifier.getInstance(project).notifyError("Nocalhost save config error", "Error occurred while saving config file", e.getMessage());
+                        }
+
+                        @SneakyThrows
+                        @Override
+                        public void run(@NotNull ProgressIndicator indicator) {
+                            NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, node.getNamespaceNode().getName());
+                            nhctlConfigOptions.setDeployment(node.resourceName());
+                            nhctlConfigOptions.setControllerType(node.getKubeResource().getKind());
+                            nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
+                            outputCapturedNhctlCommand.editConfig(node.applicationName(), nhctlConfigOptions);
+                        }
+                    });
+                });
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Loading service status error",
+                        "Error occurs while loading service status", e);
             }
         });
     }
