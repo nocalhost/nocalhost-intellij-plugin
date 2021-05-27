@@ -47,13 +47,7 @@ public class ClearAppPersisentDataAction extends DumbAwareAction {
                 opts.setApp(applicationName);
                 List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    new ClearPersistentDataDialog(
-                            project,
-                            kubeConfigPath,
-                            namespace,
-                            nhctlPVCItems,
-                            true
-                    ).showAndGet();
+                    new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems).showAndGet();
                 });
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                 LOG.error("error occurred while listing pvc items", e);
