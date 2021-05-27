@@ -27,7 +27,7 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncResumeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -81,6 +81,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
             NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
             nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
+            nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
             status = nhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
         } catch (InterruptedException | IOException e) {
             LOG.error("error occurred while get sync status ", e);
@@ -172,9 +173,12 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                             return null;
                         }
 
-                        NhctlSyncResumeOptions nhctlSyncResumeOptions = new NhctlSyncResumeOptions(kubeConfigPath, devModeService.getNamespace());
-                        nhctlSyncResumeOptions.setDeployment(devModeService.getServiceName());
-                        nhctlCommand.syncResume(devModeService.getApplicationName(), nhctlSyncResumeOptions);
+                        NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(kubeConfigPath, devModeService.getNamespace());
+                        nhctlSyncOptions.setDeployment(devModeService.getServiceName());
+                        nhctlSyncOptions.setControllerType(devModeService.getServiceType());
+                        nhctlSyncOptions.setContainer(devModeService.getContainerName());
+                        nhctlSyncOptions.setResume(true);
+                        nhctlCommand.sync(devModeService.getApplicationName(), nhctlSyncOptions);
                     } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
                         LOG.error("error occurred while sync resume ", e);
                     }
@@ -220,7 +224,9 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
                         NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
                         nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
-                        nhctlCommand.syncStatusOverride(devModeService.getApplicationName(), nhctlSyncStatusOptions);
+                        nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
+                        nhctlSyncStatusOptions.setOverride(true);
+                        nhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
                     } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
                         LOG.error("error occurred while sync status override ", e);
                     }
