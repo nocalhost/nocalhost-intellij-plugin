@@ -41,13 +41,7 @@ public class CleanDevSpacePersistentDataAction extends DumbAwareAction {
                 List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
                 ApplicationManager.getApplication().invokeLater(() -> {
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        new ClearPersistentDataDialog(
-                                project,
-                                kubeConfigPath,
-                                namespace,
-                                nhctlPVCItems,
-                                true
-                        ).showAndGet();
+                        new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems).showAndGet();
                     });
                 });
             } catch (Exception e) {

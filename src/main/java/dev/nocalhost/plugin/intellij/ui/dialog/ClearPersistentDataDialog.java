@@ -38,9 +38,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
     private JButton clearAllButton;
     private JList<NhctlPVCItem> pvcList;
 
-    private boolean showSvcNames;
-
-    public ClearPersistentDataDialog(Project project, Path kubeConfigPath, String namespace, List<NhctlPVCItem> nhctlPVCItems, boolean showSvcNames) {
+    public ClearPersistentDataDialog(Project project, Path kubeConfigPath, String namespace, List<NhctlPVCItem> nhctlPVCItems) {
         super(true);
         init();
         setTitle("Clear Persistent Data");
@@ -48,7 +46,6 @@ public class ClearPersistentDataDialog extends DialogWrapper {
         this.project = project;
         this.kubeConfigPath = kubeConfigPath;
         this.namespace = namespace;
-        this.showSvcNames = showSvcNames;
 
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
@@ -112,11 +109,8 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                     NhctlPVCItem item = nhctlPVCItems.get(i);
 
                     indicator.setFraction((i + 1.0) / nhctlPVCItems.size());
-                    if (showSvcNames) {
-                        indicator.setText(String.format("Clearing %s-%s:%s", item.getAppName(), item.getServiceName(), item.getMountPath()));
-                    } else {
-                        indicator.setText(item.getMountPath());
-                    }
+                    indicator.setText(String.format("Clearing [name: %s, storage_class: %s, status: %s, capacity: %s]",
+                            item.getName(), item.getStorageClass(), item.getStatus(), item.getCapacity()));
 
                     NhctlCleanPVCOptions opts = new NhctlCleanPVCOptions(kubeConfigPath, namespace);
                     opts.setApp(item.getAppName());
@@ -148,11 +142,8 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                 boolean isSelected,
                 boolean cellHasFocus
         ) {
-            if (showSvcNames) {
-                this.setText(String.format("%s-%s:%s", value.getAppName(), value.getServiceName(), value.getMountPath()));
-            } else {
-                this.setText(value.getMountPath());
-            }
+            this.setText(String.format("name: %s, storage_class: %s, status: %s, capacity: %s",
+                    value.getName(), value.getStorageClass(), value.getStatus(), value.getCapacity()));
             //setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
             setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
             this.setSelected(isSelected);

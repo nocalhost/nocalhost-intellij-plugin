@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
@@ -49,13 +48,7 @@ public class ClearPersistentDataAction extends DumbAwareAction {
                 opts.setController(node.getNhctlDescribeService().getRawConfig().getName());
                 List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    new ClearPersistentDataDialog(
-                            project,
-                            kubeConfigPath,
-                            namespace,
-                            nhctlPVCItems,
-                            false
-                    ).showAndGet();
+                    new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems).showAndGet();
                 });
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                 LOG.error("error occurred while listing pvc", e);
