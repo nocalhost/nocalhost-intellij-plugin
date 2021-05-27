@@ -28,6 +28,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeConfig;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeAllService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
@@ -474,16 +475,22 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     .collect(Collectors.toList());
         }
 
+        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, namespace);
+        NhctlDescribeAllService nhctlDescribeAllService = nhctlCommand.describe(applicationName, nhctlDescribeOptions, NhctlDescribeAllService.class);
+
         List<ResourceNode> resources = Lists.newArrayList();
         for (KubeResource kubeResource : kubeResources) {
-            NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
-            opts.setDeployment(kubeResource.getMetadata().getName());
-            opts.setType(kubeResource.getKind());
+            Optional<NhctlDescribeService> nhctlDescribeServiceOptional = nhctlDescribeAllService
+                    .getSvcProfile()
+                    .stream()
+                    .filter(e -> StringUtils.equals(e.getRawConfig().getName(), kubeResource.getMetadata().getName()))
+                    .findFirst();
 
-            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                    applicationName, opts, NhctlDescribeService.class);
-
-            resources.add(new ResourceNode(kubeResource, nhctlDescribeService));
+            if (nhctlDescribeServiceOptional.isPresent()) {
+                resources.add(new ResourceNode(kubeResource, nhctlDescribeServiceOptional.get()));
+            } else {
+                resources.add(new ResourceNode(kubeResource, new NhctlDescribeService()));
+            }
         }
 
         return resources;
