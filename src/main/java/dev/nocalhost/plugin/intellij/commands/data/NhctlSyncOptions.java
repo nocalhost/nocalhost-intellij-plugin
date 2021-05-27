@@ -9,10 +9,13 @@ import lombok.Setter;
 @Getter
 @Setter
 public class NhctlSyncOptions extends NhctlGlobalOptions {
-    private boolean daemon;
     private String deployment;
-    private boolean doubleSideSync;
+    private String controllerType;
     private String container;
+    private boolean doubleSide;
+    private boolean overwrite;
+    private boolean resume;
+    private boolean stop;
     private List<String> ignoredPatterns;
     private List<String> syncedPatterns;
 

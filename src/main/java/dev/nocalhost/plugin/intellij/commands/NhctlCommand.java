@@ -39,7 +39,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetServiceOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncResumeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlTerminalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
@@ -208,20 +207,29 @@ public class NhctlCommand {
 
     public void sync(String name, NhctlSyncOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "sync", name);
-        if (opts.isDaemon()) {
-            args.add("--daemon");
-        }
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
-        if (opts.isDoubleSideSync()) {
-            args.add("--double");
+        if (StringUtils.isNotEmpty(opts.getControllerType())) {
+            args.add("--controller-type");
+            args.add(opts.getControllerType());
         }
-
         if (StringUtils.isNotEmpty(opts.getContainer())) {
             args.add("--container");
             args.add(opts.getContainer());
+        }
+        if (opts.isDoubleSide()) {
+            args.add("--double");
+        }
+        if (opts.isOverwrite()) {
+            args.add("--overwrite");
+        }
+        if (opts.isResume()) {
+            args.add("--resume");
+        }
+        if (opts.isStop()) {
+            args.add("--stop");
         }
         if (opts.getIgnoredPatterns() != null) {
             for (String pattern : opts.getIgnoredPatterns()) {
@@ -239,14 +247,21 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void syncResume(String name, NhctlSyncResumeOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "sync", name);
+    public String syncStatus(String name, NhctlSyncStatusOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "sync-status", name);
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
-        args.add("--resume");
-        execute(args, opts);
+        if (StringUtils.isNotEmpty(opts.getControllerType())) {
+            args.add("--controller-type");
+            args.add(opts.getControllerType());
+        }
+        if (opts.isOverride()) {
+            args.add("--override");
+        }
+
+        return execute(args, opts);
     }
 
     public void startPortForward(String name, NhctlPortForwardStartOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
@@ -449,16 +464,6 @@ public class NhctlCommand {
             args.add("--name");
             args.add(opts.getName());
         }
-        execute(args, opts);
-    }
-
-    public String syncStatus(String name, NhctlSyncStatusOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "sync-status", name, "--deployment", opts.getDeployment());
-        return execute(args, opts);
-    }
-
-    public void syncStatusOverride(String name, NhctlSyncStatusOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "sync-status", name, "--deployment", opts.getDeployment(), "--override");
         execute(args, opts);
     }
 
