@@ -185,6 +185,9 @@ public class NhctlCommand {
             args.add("--controller-type");
             args.add(opts.getControllerType());
         }
+        if (opts.isWithoutTerminal()) {
+            args.add("--without-terminal");
+        }
 
         return execute(args, opts);
     }

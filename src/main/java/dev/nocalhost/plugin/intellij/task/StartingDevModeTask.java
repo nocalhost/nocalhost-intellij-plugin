@@ -46,6 +46,8 @@ public class StartingDevModeTask extends Task.Backgroundable {
             NocalhostSettings.class);
     private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
 
+    private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
+
     private final Project project;
     private final ServiceProjectPath serviceProjectPath;
     private final Path kubeConfigPath;
@@ -55,6 +57,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         this.project = project;
         this.serviceProjectPath = serviceProjectPath;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
+        outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
 
     @Override
@@ -123,8 +126,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
         nhctlDevStartOptions.setContainer(serviceProjectPath.getContainerName());
         nhctlDevStartOptions.setStorageClass(storageClass);
-        final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project
-                .getService(OutputCapturedNhctlCommand.class);
+        nhctlDevStartOptions.setWithoutTerminal(true);
         outputCapturedNhctlCommand.devStart(serviceProjectPath.getApplicationName(),
                 nhctlDevStartOptions);
     }
