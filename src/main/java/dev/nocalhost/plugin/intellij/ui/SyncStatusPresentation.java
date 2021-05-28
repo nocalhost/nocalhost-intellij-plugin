@@ -25,8 +25,6 @@ import java.nio.file.Path;
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
@@ -62,23 +60,6 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
         String status = null;
         try {
-            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
-                    devModeService.getNamespace());
-            nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
-            nhctlDescribeOptions.setType(devModeService.getServiceType());
-            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                    devModeService.getApplicationName(),
-                    nhctlDescribeOptions,
-                    NhctlDescribeService.class
-            );
-            if (nhctlDescribeService.isDeveloping()) {
-                if (!nhctlDescribeService.isPossess()) {
-                    return null;
-                }
-            } else {
-                return null;
-            }
-
             NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
             nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
             nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
@@ -156,23 +137,6 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                     Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
                     try {
-                        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
-                                devModeService.getNamespace());
-                        nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
-                        nhctlDescribeOptions.setType(devModeService.getServiceType());
-                        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                                devModeService.getApplicationName(),
-                                nhctlDescribeOptions,
-                                NhctlDescribeService.class
-                        );
-                        if (nhctlDescribeService.isDeveloping()) {
-                            if (!nhctlDescribeService.isPossess()) {
-                                return null;
-                            }
-                        } else {
-                            return null;
-                        }
-
                         NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(kubeConfigPath, devModeService.getNamespace());
                         nhctlSyncOptions.setDeployment(devModeService.getServiceName());
                         nhctlSyncOptions.setControllerType(devModeService.getServiceType());
@@ -205,23 +169,6 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                     Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
                     try {
-                        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
-                                devModeService.getNamespace());
-                        nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
-                        nhctlDescribeOptions.setType(devModeService.getServiceType());
-                        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                                devModeService.getApplicationName(),
-                                nhctlDescribeOptions,
-                                NhctlDescribeService.class
-                        );
-                        if (nhctlDescribeService.isDeveloping()) {
-                            if (!nhctlDescribeService.isPossess()) {
-                                return null;
-                            }
-                        } else {
-                            return null;
-                        }
-
                         NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
                         nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
                         nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
