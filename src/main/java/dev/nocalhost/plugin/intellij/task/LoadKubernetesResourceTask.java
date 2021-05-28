@@ -1,5 +1,8 @@
 package dev.nocalhost.plugin.intellij.task;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -9,21 +12,24 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.KubeConfigFile;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class LoadKubernetesResourceTask extends Task.Backgroundable {
     private static final Logger LOG = Logger.getInstance(LoadKubernetesResourceTask.class);
 
-    private final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
     private final ResourceNode node;
     private final Path kubeConfigPath;
@@ -52,11 +58,25 @@ public class LoadKubernetesResourceTask extends Task.Backgroundable {
     @SneakyThrows
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        String content = kubectlCommand.getResourceYaml(
-                node.getKubeResource().getKind(),
-                node.getKubeResource().getMetadata().getName(),
-                kubeConfigPath,
-                namespace);
+        NhctlGetOptions opts = new NhctlGetOptions(kubeConfigPath, namespace);
+        String output = nhctlCommand.get(node.getKubeResource().getKind(), opts);
+        JsonElement resources = DataUtils.GSON.fromJson(output, JsonElement.class);
+        JsonObject selectedResource = null;
+        for (JsonElement resource : resources.getAsJsonArray()) {
+            String name = resource.getAsJsonObject()
+                    .get("info").getAsJsonObject()
+                    .get("metadata").getAsJsonObject()
+                    .get("name").getAsString();
+            if (StringUtils.equals(name, node.resourceName())) {
+                selectedResource = resource.getAsJsonObject().get("info").getAsJsonObject();
+                break;
+            }
+        }
+        if (selectedResource == null) {
+            throw new RuntimeException("Resource not found");
+        }
+
+        String content = DataUtils.toYaml(selectedResource);
         virtualFile = new KubeConfigFile(
                 node.resourceName() + ".yaml",
                 node.resourceName() + ".yaml",

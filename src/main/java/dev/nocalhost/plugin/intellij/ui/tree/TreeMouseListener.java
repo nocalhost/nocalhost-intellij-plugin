@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Locale;
 
 import javax.swing.tree.TreePath;
 
@@ -169,7 +170,7 @@ public class TreeMouseListener extends MouseAdapter {
     private void renderWorkloadAction(MouseEvent event, ResourceNode resourceNode) {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
-        String kind = resourceNode.getKubeResource().getKind().toLowerCase();
+        String kind = resourceNode.getKubeResource().getKind();
         KubeResourceType type = EnumUtils.getEnumIgnoreCase(KubeResourceType.class, kind);
         switch (type) {
             case Deployment:

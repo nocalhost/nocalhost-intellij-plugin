@@ -20,15 +20,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
@@ -44,7 +44,6 @@ import icons.NocalhostIcons;
 
 public class StartDevelopAction extends DumbAwareAction {
     private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-    private final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
     private final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
 
     private final OutputCapturedGitCommand outputCapturedGitCommand;
@@ -95,17 +94,11 @@ public class StartDevelopAction extends DumbAwareAction {
     private void getPods() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                KubeResource deployment = kubectlCommand.getResource(
-                        node.getKubeResource().getKind(),
-                        node.resourceName(),
-                        kubeConfigPath,
-                        namespace);
-                KubeResourceList podList = kubectlCommand.getResourceList(
-                        "pods",
-                        deployment.getSpec().getSelector().getMatchLabels(),
-                        kubeConfigPath,
-                        namespace);
-                List<KubeResource> pods = podList.getItems().stream()
+                NhctlGetOptions opts = new NhctlGetOptions(kubeConfigPath, namespace);
+                List<NhctlGetResource> podList = nhctlCommand.getResources("Pods", opts,
+                        node.getKubeResource().getSpec().getSelector().getMatchLabels());
+                List<KubeResource> pods = podList.stream()
+                        .map(NhctlGetResource::getKubeResource)
                         .filter(KubeResource::canSelector)
                         .collect(Collectors.toList());
 

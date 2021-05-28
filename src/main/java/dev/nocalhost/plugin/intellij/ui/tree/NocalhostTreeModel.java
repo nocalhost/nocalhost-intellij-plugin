@@ -23,15 +23,10 @@ import javax.swing.tree.TreePath;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeConfig;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeAllService;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
@@ -44,11 +39,8 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
-import dev.nocalhost.plugin.intellij.utils.Constants;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-
-import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
 
 public class NocalhostTreeModel extends NocalhostTreeModelBase {
     private static final Logger LOG = Logger.getInstance(NocalhostTreeModel.class);
@@ -86,7 +78,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             ServiceManager.getService(NocalhostSettings.class);
     private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
     private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-    private final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
 
     private final Project project;
     private final Tree tree;
@@ -188,14 +179,13 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 List<NamespaceNode> namespaceNodes;
+                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(clusterNode.getRawKubeConfig());
+                NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, "");
                 if (clusterNode.getServiceAccount() != null) {
                     if (clusterNode.getServiceAccount().isPrivilege()) {
-                        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(
-                                clusterNode.getRawKubeConfig());
-                        KubeResourceList namespaceList = kubectlCommand.getNamespaceList(
-                                kubeConfigPath);
-                        namespaceNodes = namespaceList.getItems().stream()
-                                .map(e -> new NamespaceNode(e.getMetadata().getName()))
+                        namespaceNodes = nhctlCommand.getResources("namespaces", nhctlGetOptions)
+                                .stream()
+                                .map(e -> new NamespaceNode(e.getKubeResource().getMetadata().getName()))
                                 .collect(Collectors.toList());
                     } else {
                         if (clusterNode.getServiceAccount().getNamespaces() != null) {
@@ -208,21 +198,13 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         }
                     }
                 } else {
-                    Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(
-                            clusterNode.getRawKubeConfig());
-                    try {
-                        KubeResourceList namespaceList = kubectlCommand.getNamespaceList(
-                                kubeConfigPath);
-                        namespaceNodes = namespaceList.getItems().stream()
-                                .map(e -> new NamespaceNode(e.getMetadata().getName()))
+                    List<NhctlGetResource> nhctlGetResources = nhctlCommand.getResources("namespaces", nhctlGetOptions);
+                    if (nhctlGetResources == null || nhctlGetResources.isEmpty()) {
+                        namespaceNodes = Lists.newArrayList(new NamespaceNode(clusterNode.getKubeConfig().getContexts().get(0).getContext().getNamespace()));
+                    } else {
+                        namespaceNodes = nhctlGetResources.stream()
+                                .map(e -> new NamespaceNode(e.getKubeResource().getMetadata().getName()))
                                 .collect(Collectors.toList());
-                    } catch (NocalhostExecuteCmdException nece) {
-                        if (StringUtils.contains(nece.getMessage(), "namespaces is forbidden")
-                                && StringUtils.isNotEmpty(clusterNode.getKubeConfig().getContexts().get(0).getContext().getNamespace())) {
-                            namespaceNodes = Lists.newArrayList(new NamespaceNode(clusterNode.getKubeConfig().getContexts().get(0).getContext().getNamespace()));
-                        } else {
-                            throw nece;
-                        }
                     }
                 }
 
@@ -293,11 +275,9 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             try {
                 Path path = KubeConfigUtil.kubeConfigPath(
                         clusterNode.getRawKubeConfig());
-                NhctlListApplicationOptions opts = new NhctlListApplicationOptions(path,
-                        namespaceNode.getName());
-                List<ApplicationNode> applicationNodes = nhctlCommand.listApplication(opts)
-                        .get(0)
-                        .getApplication()
+                NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(path, namespaceNode.getName());
+                List<ApplicationNode> applicationNodes = nhctlCommand
+                        .getApplications(nhctlGetOptions).get(0).getApplication()
                         .stream()
                         .map(e -> new ApplicationNode(e.getName()))
                         .collect(Collectors.toList());
@@ -397,7 +377,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshResourceNodes(resourceTypeNode, resources);
                 });
-            } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
+            } catch (Exception e) {
+                if (StringUtils.contains(e.getMessage(), "Application not found")) {
+                    // Ignore
+                }
                 if (e instanceof NocalhostExecuteCmdException) {
                     NocalhostNotifier.getInstance(project).notifyError(
                             "Loading resources error",
@@ -462,38 +445,18 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(applicationNode.getClusterNode().getRawKubeConfig());
         String namespace = applicationNode.getNamespaceNode().getName();
 
-        String kubeResourceType = resourceTypeNode.getName().toLowerCase()
-                .replaceAll(" ", "");
-        KubeResourceList kubeResourceList = kubectlCommand.getResourceList(kubeResourceType, null,
-                kubeConfigPath, namespace);
+        String kubeResourceType = resourceTypeNode.getName().replaceAll(" ", "");
 
-        List<KubeResource> kubeResources = kubeResourceList.getItems();
-        if (!StringUtils.equals(resourceTypeNode.getApplicationNode().getName(), DEFAULT_APPLICATION_NAME)) {
-            kubeResources = kubeResourceList.getItems().stream()
-                    .filter(e -> StringUtils.equals(e.getMetadata().getAnnotations().get(Constants.NOCALHOST_ANNOTATION_NAME), applicationName)
-                            || StringUtils.equals(e.getMetadata().getAnnotations().get(Constants.HELM_ANNOTATION_NAME), applicationName))
-                    .collect(Collectors.toList());
+        NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, namespace);
+        nhctlGetOptions.setApplication(applicationName);
+        List<NhctlGetResource> nhctlGetResources = nhctlCommand.getResources(kubeResourceType,
+                nhctlGetOptions);
+        if (nhctlGetResources == null) {
+            return Lists.newArrayList();
         }
-
-        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, namespace);
-        NhctlDescribeAllService nhctlDescribeAllService = nhctlCommand.describe(applicationName, nhctlDescribeOptions, NhctlDescribeAllService.class);
-
-        List<ResourceNode> resources = Lists.newArrayList();
-        for (KubeResource kubeResource : kubeResources) {
-            Optional<NhctlDescribeService> nhctlDescribeServiceOptional = nhctlDescribeAllService
-                    .getSvcProfile()
-                    .stream()
-                    .filter(e -> StringUtils.equals(e.getRawConfig().getName(), kubeResource.getMetadata().getName()))
-                    .findFirst();
-
-            if (nhctlDescribeServiceOptional.isPresent()) {
-                resources.add(new ResourceNode(kubeResource, nhctlDescribeServiceOptional.get()));
-            } else {
-                resources.add(new ResourceNode(kubeResource, new NhctlDescribeService()));
-            }
-        }
-
-        return resources;
+        return nhctlGetResources.stream()
+                .map(e -> new ResourceNode(e.getKubeResource(), e.getNhctlDescribeService()))
+                .collect(Collectors.toList());
     }
 
     void insertLoadingNode(MutableTreeNode parent) {

@@ -18,13 +18,14 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
@@ -135,30 +136,32 @@ public class NocalhostProfileState extends CommandLineState {
 
     private String startDebugPortForward(ServiceProjectPath devModeService, String remotePort) throws ExecutionException {
         NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
         try {
-            KubeResource deployment = kubectlCommand.getResource("deployment", devModeService.getServiceName(), kubeConfigPath, devModeService.getNamespace());
-            List<KubeResource> pods = kubectlCommand.getResourceList("pods", deployment.getSpec().getSelector().getMatchLabels(), kubeConfigPath, devModeService.getNamespace()).getItems();
-            KubeResource selectedPod = null;
-            for (KubeResource pod : pods) {
-                for (KubeResource.Spec.Container container : pod.getSpec().getContainers()) {
-                    if (StringUtils.equals(container.getName(), "nocalhost-dev")) {
-                        selectedPod = pod;
-                        break;
-                    }
-                }
+            NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, devModeService.getNamespace());
+            List<NhctlGetResource> deployments = nhctlCommand.getResources(devModeService.getServiceType(), nhctlGetOptions);
+            Optional<NhctlGetResource> deploymentOptional = deployments.stream()
+                    .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), devModeService.getServiceName()))
+                    .findFirst();
+            if (deploymentOptional.isEmpty()) {
+                throw new ExecutionException("Service not found");
             }
-            if (selectedPod == null) {
+
+            List<NhctlGetResource> pods = nhctlCommand.getResources("Pods", nhctlGetOptions,
+                    deploymentOptional.get().getKubeResource().getSpec().getSelector().getMatchLabels());
+
+            Optional<NhctlGetResource> podOptional = pods.stream().filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev"))).findFirst();
+            if (podOptional.isEmpty()) {
                 throw new ExecutionException("Pod not found");
             }
+            String podName = podOptional.get().getKubeResource().getMetadata().getName();
 
             NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(kubeConfigPath, devModeService.getNamespace());
             nhctlPortForwardStartOptions.setDevPorts(List.of(":" + remotePort));
             nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
             nhctlPortForwardStartOptions.setDeployment(devModeService.getServiceName());
-            nhctlPortForwardStartOptions.setPod(selectedPod.getMetadata().getName());
+            nhctlPortForwardStartOptions.setPod(podName);
             nhctlCommand.startPortForward(devModeService.getApplicationName(), nhctlPortForwardStartOptions);
 
             NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, devModeService.getNamespace());

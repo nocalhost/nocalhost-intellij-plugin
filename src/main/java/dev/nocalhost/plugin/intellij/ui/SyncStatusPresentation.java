@@ -192,7 +192,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     public @Nullable String getSelectedValue() {
         nhctlSyncStatus = getNhctlSyncStatus();
         if (nhctlSyncStatus != null) {
-            return "Nocalhost Sync Status: " + getNhctlSyncStatus().getMsg();
+            return "Nocalhost Sync Status: " + nhctlSyncStatus.getMsg();
         }
         return "";
     }
