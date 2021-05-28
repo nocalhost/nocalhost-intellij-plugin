@@ -20,8 +20,6 @@
                 serviceImplementation="dev.nocalhost.plugin.intellij.commands.GitCommand"/>
         <applicationService
                 serviceImplementation="dev.nocalhost.plugin.intellij.commands.NhctlCommand"/>
-        <applicationService
-                serviceImplementation="dev.nocalhost.plugin.intellij.commands.KubectlCommand"/>
         <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.api.NocalhostApi"/>
         <applicationService
                 serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostSettings"/>

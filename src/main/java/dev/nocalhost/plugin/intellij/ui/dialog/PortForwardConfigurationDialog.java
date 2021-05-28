@@ -41,13 +41,13 @@ import java.util.stream.Collectors;
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
@@ -180,22 +180,24 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         startButton.addActionListener(event -> {
             Set<String> portForwardsToBeStarted = Arrays.stream(startTextField.getText().split(",")).map(String::trim).collect(Collectors.toSet());
 
-            final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
             String container = null;
-            KubeResourceList pods = null;
+            List<KubeResource> pods = null;
             try {
-                pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), kubeConfigPath, namespace);
+                NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, namespace);
+                List<NhctlGetResource> podList = nhctlCommand.getResources("Pods", nhctlGetOptions,
+                        node.getKubeResource().getSpec().getSelector().getMatchLabels());
+                pods = podList.stream()
+                        .map(NhctlGetResource::getKubeResource)
+                        .filter(KubeResource::canSelector)
+                        .collect(Collectors.toList());
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "List Resource error while starting port forward", e.getMessage());
             }
-            if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
-                final List<KubeResource> running = pods
-                        .getItems()
-                        .stream()
-                        .filter(KubeResource::canSelector)
-                        .collect(Collectors.toList());
-                if (running.size() > 0) {
-                    List<String> containers = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(pods)) {
+                if (pods.size() > 0) {
+                    List<String> containers = pods.stream()
+                            .map(r -> r.getMetadata().getName())
+                            .collect(Collectors.toList());
                     container = selectContainer(containers);
                 }
             }

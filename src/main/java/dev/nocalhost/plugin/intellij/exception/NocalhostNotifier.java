@@ -75,14 +75,6 @@ public class NocalhostNotifier {
         });
     }
 
-    public void notifyNhctlNotFound() {
-        notifyBinaryNotFound("nhctl");
-    }
-
-    public void notifyKubectlNotFound() {
-        notifyBinaryNotFound("kubectl");
-    }
-
     public void notifyBinaryNotFound(String binary) {
         String content = String.format("<html>%s binary not found. <a href=\"nocalhost.setting\">Setting</a></html>", binary);
         notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new NotificationListener.Adapter() {

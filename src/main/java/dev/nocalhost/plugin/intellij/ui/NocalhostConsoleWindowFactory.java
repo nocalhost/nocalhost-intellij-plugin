@@ -13,12 +13,9 @@ import com.intellij.ui.content.ContentManagerListener;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.nio.file.Path;
-
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
-import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleTerminalNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.Action;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleWindow;
@@ -26,7 +23,6 @@ import dev.nocalhost.plugin.intellij.ui.console.NocalhostErrorWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostLogWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostOutputWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostTerminal;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostTerminalWindow;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAware {
@@ -57,10 +53,6 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
                 this::updateTab
         );
         project.getMessageBus().connect().subscribe(
-                NocalhostConsoleTerminalNotifier.NOCALHOST_CONSOLE_TERMINAL_NOTIFIER_TOPIC,
-                this::newTerminal
-        );
-        project.getMessageBus().connect().subscribe(
                 NocalhostExceptionPrintNotifier.NOCALHOST_EXCEPTION_PRINT_NOTIFIER_TOPIC,
                 this::errorPrint
         );
@@ -84,25 +76,12 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
         contentManager.setSelectedContent(content);
     }
 
-    private void newTerminal(Path kubeConfigPath,
-                             String namespace,
-                             String applicationName,
-                             String deploymentName) {
-        NocalhostConsoleWindow nocalhostConsoleWindow = new NocalhostTerminalWindow(project,
-                kubeConfigPath, namespace, applicationName, deploymentName);
-        addContent(nocalhostConsoleWindow);
-        toolWindow.show();
-    }
-
     private void updateTab(ResourceNode node, Action action) {
         toolWindow.show();
         NocalhostConsoleWindow nocalhostConsoleWindow;
         switch (action) {
             case LOGS:
                 nocalhostConsoleWindow = new NocalhostLogWindow(project, node);
-                break;
-            case TERMINAL:
-                nocalhostConsoleWindow = new NocalhostTerminalWindow(project, node);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + action);

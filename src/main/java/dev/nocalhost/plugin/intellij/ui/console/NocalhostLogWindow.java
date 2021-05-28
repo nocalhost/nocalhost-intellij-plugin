@@ -1,8 +1,12 @@
 package dev.nocalhost.plugin.intellij.ui.console;
 
+import com.google.common.collect.Lists;
+
 import com.intellij.execution.ExecutionException;
+import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.process.ProcessHandler;
+import com.intellij.execution.process.ProcessHandlerFactory;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.icons.AllIcons;
@@ -27,24 +31,27 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.commands.KubectlCommand;
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceList;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class NocalhostLogWindow extends NocalhostConsoleWindow {
     private static final Logger LOG = Logger.getInstance(NocalhostLogWindow.class);
 
-    private final KubectlCommand kubectlCommand = ServiceManager.getService(KubectlCommand.class);
+    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
     private final Project project;
     private final ResourceNode node;
@@ -76,9 +83,11 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
             case Deployment:
             case Statefulset:
                 containerName = node.getKubeResource().getSpec().getSelector().getMatchLabels().get("app");
-                KubeResourceList pods = null;
+                List<NhctlGetResource> podList = null;
                 try {
-                    pods = kubectlCommand.getResourceList("pods", node.getKubeResource().getSpec().getSelector().getMatchLabels(), kubeConfigPath, namespace);
+                    NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, namespace);
+                    podList = nhctlCommand.getResources("Pods", nhctlGetOptions,
+                            node.getKubeResource().getSpec().getSelector().getMatchLabels());
                 } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
                     LOG.error("error occurred while getting workload pods", e);
                     NocalhostNotifier.getInstance(project).notifyError(
@@ -87,22 +96,47 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
                             e.getMessage());
                     return;
                 }
-                if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
-                    final List<KubeResource> running = pods
-                            .getItems()
-                            .stream()
+                if (CollectionUtils.isNotEmpty(podList)) {
+                    final List<KubeResource> pods = podList.stream()
+                            .map(NhctlGetResource::getKubeResource)
                             .filter(KubeResource::canSelector)
                             .collect(Collectors.toList());
-                    if (running.size() > 0) {
-                        List<String> containersName = pods.getItems().stream().flatMap(r -> r.getSpec().getContainers().stream().map(KubeResource.Spec.Container::getName)).collect(Collectors.toList());
-                        containerName = selectContainer(containersName);
+                    if (pods.size() > 0) {
+                        List<String> podNames = pods.stream()
+                                .map(e -> e.getMetadata().getName())
+                                .collect(Collectors.toList());
+                        if (podNames.size() > 1) {
+                            podName = selectPod(podNames);
+                        } else {
+                            podName = podNames.get(0);
+                        }
+                        if (!StringUtils.isNotEmpty(podName)) {
+                            return;
+                        }
+
+                        Optional<KubeResource> podOptional = pods.stream()
+                                .filter(e -> StringUtils.equals(e.getMetadata().getName(), podName))
+                                .findFirst();
+                        if (podOptional.isEmpty()) {
+                            return;
+                        }
+
+                        List<String> containerNames = podOptional.get()
+                                .getSpec()
+                                .getContainers()
+                                .stream()
+                                .map(KubeResource.Spec.Container::getName)
+                                .collect(Collectors.toList());
+                        if (containerNames.size() > 1) {
+                            containerName = selectContainer(containerNames);
+                        } else {
+                            containerName = containerNames.get(0);
+                        }
                         if (!StringUtils.isNotEmpty(containerName)) {
                             return;
                         }
-                        List<String> podsName = pods.getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toList());
-                        podName = selectContainer(podsName);
                     }
-                    if (StringUtils.isBlank(podName)) {
+                    if (!StringUtils.isNotEmpty(podName)) {
                         return;
                     }
                 }
@@ -164,16 +198,21 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
         }
     }
 
-    private String selectContainer(List<String> containers) {
-        if (containers.size() > 1) {
-            ListChooseDialog dialog = new ListChooseDialog(project, "Select Container", containers);
-            if (dialog.showAndGet()) {
-                return dialog.getSelectedValue();
-            } else {
-                return null;
-            }
+    private String selectPod(List<String> pods) {
+        ListChooseDialog dialog = new ListChooseDialog(project, "Select Pod", pods);
+        if (dialog.showAndGet()) {
+            return dialog.getSelectedValue();
         } else {
-            return containers.get(0);
+            return null;
+        }
+    }
+
+    private String selectContainer(List<String> containers) {
+        ListChooseDialog dialog = new ListChooseDialog(project, "Select Container", containers);
+        if (dialog.showAndGet()) {
+            return dialog.getSelectedValue();
+        } else {
+            return null;
         }
     }
 
@@ -232,7 +271,16 @@ public class NocalhostLogWindow extends NocalhostConsoleWindow {
             return;
         }
         try {
-            logsProcessHandler = kubectlCommand.getLogsProcessHandler(podName, containerName, kubeConfigPath, namespace);
+            GeneralCommandLine commandLine = new GeneralCommandLine(Lists.newArrayList(
+                    NhctlUtil.binaryPath(), "k", "logs", podName,
+                    "--container", containerName,
+                    "--tail", "200",
+                    "--follow",
+                    "--kubeconfig", kubeConfigPath.toString(),
+                    "--namespace", namespace)
+            );
+
+            logsProcessHandler = ProcessHandlerFactory.getInstance().createProcessHandler(commandLine);
             logsProcessHandler.startNotify();
             consoleView.attachToProcess(logsProcessHandler);
             consoleView.print(

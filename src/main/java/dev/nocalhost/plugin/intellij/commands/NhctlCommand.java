@@ -27,6 +27,8 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlExecOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
@@ -586,6 +588,43 @@ public class NhctlCommand {
             args.add(opts.getValue());
         }
         execute(args, opts);
+    }
+
+    public String get(String resourceType, NhctlGetOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "get", resourceType);
+        if (StringUtils.isNotEmpty(opts.getApplication())) {
+            args.add("--application");
+            args.add(opts.getApplication());
+        }
+        args.add("--outputType");
+        args.add("json");
+        return execute(args, opts);
+    }
+
+    public List<NhctlListApplication> getApplications(NhctlGetOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        String output = get("application", opts);
+        return DataUtils.GSON.fromJson(output, TypeToken.getParameterized(List.class, NhctlListApplication.class).getType());
+    }
+
+    public List<NhctlGetResource> getResources(String resourceType, NhctlGetOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        String output = get(resourceType, opts);
+        return DataUtils.GSON.fromJson(output, TypeToken.getParameterized(List.class, NhctlGetResource.class).getType());
+    }
+
+    public List<NhctlGetResource> getResources(String resourceType, NhctlGetOptions opts, Map<String, String> matchedLabels) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<NhctlGetResource> nhctlGetResources = getResources(resourceType, opts);
+        if (nhctlGetResources == null) {
+            return nhctlGetResources;
+        }
+        return nhctlGetResources.stream().filter(e -> {
+            Map<String, String> labels = e.getKubeResource().getMetadata().getLabels();
+            for (Map.Entry<String, String> matchedLabel : matchedLabels.entrySet()) {
+                if (!StringUtils.equals(labels.get(matchedLabel.getKey()), matchedLabel.getValue())) {
+                    return false;
+                }
+            }
+            return true;
+        }).collect(Collectors.toList());
     }
 
     protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
