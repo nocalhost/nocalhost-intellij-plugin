@@ -25,6 +25,7 @@ import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.KubeConfig;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
@@ -455,7 +456,13 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             return Lists.newArrayList();
         }
         return nhctlGetResources.stream()
-                .map(e -> new ResourceNode(e.getKubeResource(), e.getNhctlDescribeService()))
+                .map(e -> {
+                    NhctlDescribeService nhctlDescribeService = e.getNhctlDescribeService();
+                    if (nhctlDescribeService == null) {
+                        nhctlDescribeService = new NhctlDescribeService();
+                    }
+                    return new ResourceNode(e.getKubeResource(), nhctlDescribeService);
+                })
                 .collect(Collectors.toList());
     }
 
