@@ -380,7 +380,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 });
             } catch (Exception e) {
                 if (StringUtils.contains(e.getMessage(), "Application not found")) {
-                    // Ignore
+                    return;
                 }
                 if (e instanceof NocalhostExecuteCmdException) {
                     NocalhostNotifier.getInstance(project).notifyError(
