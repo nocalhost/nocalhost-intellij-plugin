@@ -35,7 +35,7 @@ public class LoadResourceAction extends DumbAwareAction {
         super("Load Resource");
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-        this.namespace = node.getNamespaceNode().getName();
+        this.namespace = node.getNamespaceNode().getNamespace();
         this.applicationName = node.getName();
     }
 

@@ -238,7 +238,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     NamespaceNode namespaceNode = (NamespaceNode) getChild(parent, i);
                     Optional<NamespaceNode> pendingNamespaceNodeOptional = pendingNamespaceNodes
                             .stream()
-                            .filter(e -> StringUtils.equals(e.getName(), namespaceNode.getName()))
+                            .filter(e -> StringUtils.equals(e.getNamespace(), namespaceNode.getNamespace()))
                             .findFirst();
                     if (pendingNamespaceNodeOptional.isPresent()) {
                         updateApplications(namespaceNode);
@@ -253,8 +253,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 for (int i = 0; i < getChildCount(parent); i++) {
                     NamespaceNode namespaceNode = (NamespaceNode) getChild(parent, i);
                     if (StringUtils.equals(
-                            pendingNamespaceNode.getName(),
-                            namespaceNode.getName()
+                            pendingNamespaceNode.getNamespace(),
+                            namespaceNode.getNamespace()
                     )) {
                         existed = true;
                         break;
@@ -276,7 +276,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             try {
                 Path path = KubeConfigUtil.kubeConfigPath(
                         clusterNode.getRawKubeConfig());
-                NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(path, namespaceNode.getName());
+                NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(path, namespaceNode.getNamespace());
                 List<ApplicationNode> applicationNodes = nhctlCommand
                         .getApplications(nhctlGetOptions).get(0).getApplication()
                         .stream()
@@ -444,7 +444,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ApplicationNode applicationNode = resourceTypeNode.getApplicationNode();
         String applicationName = applicationNode.getName();
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(applicationNode.getClusterNode().getRawKubeConfig());
-        String namespace = applicationNode.getNamespaceNode().getName();
+        String namespace = applicationNode.getNamespaceNode().getNamespace();
 
         String kubeResourceType = resourceTypeNode.getName().replaceAll(" ", "");
 

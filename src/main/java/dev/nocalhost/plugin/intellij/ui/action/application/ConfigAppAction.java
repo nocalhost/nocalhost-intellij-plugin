@@ -62,7 +62,7 @@ public class ConfigAppAction extends DumbAwareAction {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
                 Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-                String namespace = node.getNamespaceNode().getName();
+                String namespace = node.getNamespaceNode().getNamespace();
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, namespace);
                 nhctlConfigOptions.setAppConfig(true);
                 config = nhctlCommand.getConfig(node.getName(), nhctlConfigOptions);

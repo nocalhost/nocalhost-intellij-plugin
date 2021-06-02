@@ -33,7 +33,7 @@ public class ApplyAction extends DumbAwareAction {
         super("Apply");
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-        this.namespace = node.getNamespaceNode().getName();
+        this.namespace = node.getNamespaceNode().getNamespace();
         this.applicationName = node.getName();
     }
 

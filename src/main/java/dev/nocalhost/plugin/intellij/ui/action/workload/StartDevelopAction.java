@@ -62,7 +62,7 @@ public class StartDevelopAction extends DumbAwareAction {
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-        this.namespace = node.getNamespaceNode().getName();
+        this.namespace = node.getNamespaceNode().getNamespace();
         outputCapturedGitCommand = project.getService(OutputCapturedGitCommand.class);
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
@@ -369,7 +369,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     .username(node.getClusterNode().getNocalhostAccount().getUsername())
                     .clusterId(node.getClusterNode().getServiceAccount().getClusterId())
                     .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
-                    .namespace(node.getNamespaceNode().getName())
+                    .namespace(node.getNamespaceNode().getNamespace())
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
@@ -379,7 +379,7 @@ public class StartDevelopAction extends DumbAwareAction {
         } else {
             serviceProjectPath = ServiceProjectPath.builder()
                     .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
-                    .namespace(node.getNamespaceNode().getName())
+                    .namespace(node.getNamespaceNode().getNamespace())
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())

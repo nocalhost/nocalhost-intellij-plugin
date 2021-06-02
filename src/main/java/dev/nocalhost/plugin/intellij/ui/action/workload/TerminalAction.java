@@ -45,7 +45,7 @@ public class TerminalAction extends DumbAwareAction {
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-        this.namespace = node.getNamespaceNode().getName();
+        this.namespace = node.getNamespaceNode().getNamespace();
     }
 
     @Override

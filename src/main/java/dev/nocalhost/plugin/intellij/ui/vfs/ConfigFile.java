@@ -63,7 +63,7 @@ public class ConfigFile extends VirtualFile {
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
         kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-        namespace = node.getNamespaceNode().getName();
+        namespace = node.getNamespaceNode().getNamespace();
     }
 
     @Override
@@ -151,7 +151,7 @@ public class ConfigFile extends VirtualFile {
                         @SneakyThrows
                         @Override
                         public void run(@NotNull ProgressIndicator indicator) {
-                            NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, node.getNamespaceNode().getName());
+                            NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, node.getNamespaceNode().getNamespace());
                             nhctlConfigOptions.setDeployment(node.resourceName());
                             nhctlConfigOptions.setControllerType(node.getKubeResource().getKind());
                             nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));

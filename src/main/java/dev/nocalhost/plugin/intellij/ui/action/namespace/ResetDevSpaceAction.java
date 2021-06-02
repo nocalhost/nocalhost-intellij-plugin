@@ -11,7 +11,6 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageDialogBuilder;
 
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -41,13 +40,13 @@ public class ResetDevSpaceAction extends DumbAwareAction {
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-        this.namespace = node.getName();
+        this.namespace = node.getNamespace();
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        final String name = StringUtils.isNotEmpty(node.getSpaceName()) ? node.getSpaceName() : node.getName();
+        final String name = node.getName();
 
         if (!MessageDialogBuilder.yesNo("Reset DevSpace", "Reset " + name + "?").guessWindowAndAsk()) {
             return;
