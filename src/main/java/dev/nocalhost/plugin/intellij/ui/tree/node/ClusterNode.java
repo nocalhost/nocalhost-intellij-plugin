@@ -32,7 +32,7 @@ public class ClusterNode extends DefaultMutableTreeNode {
         if (serviceAccount != null && StringUtils.isNotEmpty(serviceAccount.getClusterName())) {
             return serviceAccount.getClusterName();
         }
-        return kubeConfig.getContexts().get(0).getName();
+        return kubeConfig.getClusters().get(0).getName();
     }
 
     public void updateFrom(ClusterNode o) {
