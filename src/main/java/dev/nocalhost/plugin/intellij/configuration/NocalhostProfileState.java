@@ -161,11 +161,13 @@ public class NocalhostProfileState extends CommandLineState {
             nhctlPortForwardStartOptions.setDevPorts(List.of(":" + remotePort));
             nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
             nhctlPortForwardStartOptions.setDeployment(devModeService.getServiceName());
+            nhctlPortForwardStartOptions.setType(devModeService.getServiceType());
             nhctlPortForwardStartOptions.setPod(podName);
             nhctlCommand.startPortForward(devModeService.getApplicationName(), nhctlPortForwardStartOptions);
 
             NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, devModeService.getNamespace());
             nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
+            nhctlDescribeOptions.setType(devModeService.getServiceType());
             NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(devModeService.getApplicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
 
             for (NhctlPortForward pf : nhctlDescribeService.getDevPortForwardList()) {
@@ -196,6 +198,7 @@ public class NocalhostProfileState extends CommandLineState {
                 NhctlPortForwardEndOptions nhctlPortForwardEndOptions = new NhctlPortForwardEndOptions(kubeConfigPath, devModeService.getNamespace());
                 nhctlPortForwardEndOptions.setPort(debug.getLocalPort() + ":" + debug.getRemotePort());
                 nhctlPortForwardEndOptions.setDeployment(devModeService.getServiceName());
+                nhctlPortForwardEndOptions.setType(devModeService.getServiceType());
 
                 nhctlCommand.endPortForward(devModeService.getApplicationName(), nhctlPortForwardEndOptions);
             } catch (Exception e) {
@@ -216,6 +219,7 @@ public class NocalhostProfileState extends CommandLineState {
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
         NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, serviceProjectPath.getNamespace());
         opts.setDeployment(serviceProjectPath.getServiceName());
+        opts.setType(serviceProjectPath.getServiceType());
         return nhctlCommand.describe(
                 serviceProjectPath.getApplicationName(),
                 opts,
