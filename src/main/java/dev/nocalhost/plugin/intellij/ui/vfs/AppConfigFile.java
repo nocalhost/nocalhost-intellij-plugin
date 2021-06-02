@@ -112,7 +112,7 @@ public class AppConfigFile extends VirtualFile {
             public void run(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
                 Path path = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-                String namespace = node.getNamespaceNode().getName();
+                String namespace = node.getNamespaceNode().getNamespace();
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(path, namespace);
                 nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
                 nhctlConfigOptions.setAppConfig(true);

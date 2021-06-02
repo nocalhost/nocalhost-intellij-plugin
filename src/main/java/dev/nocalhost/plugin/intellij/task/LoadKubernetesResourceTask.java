@@ -41,7 +41,7 @@ public class LoadKubernetesResourceTask extends Task.Backgroundable {
         super(project, "Loading kubernetes resource");
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-        this.namespace = node.getNamespaceNode().getName();
+        this.namespace = node.getNamespaceNode().getNamespace();
     }
 
     @Override
@@ -85,6 +85,6 @@ public class LoadKubernetesResourceTask extends Task.Backgroundable {
                 getProject(),
                 node.applicationName(),
                 kubeConfigPath,
-                node.getNamespaceNode().getName());
+                node.getNamespaceNode().getNamespace());
     }
 }

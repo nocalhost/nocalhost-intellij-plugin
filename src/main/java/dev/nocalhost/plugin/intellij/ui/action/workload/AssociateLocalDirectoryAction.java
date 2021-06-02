@@ -33,7 +33,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
         this.project = project;
         this.node = resourceNode;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-        this.namespace = node.getNamespaceNode().getName();
+        this.namespace = node.getNamespaceNode().getNamespace();
 
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }

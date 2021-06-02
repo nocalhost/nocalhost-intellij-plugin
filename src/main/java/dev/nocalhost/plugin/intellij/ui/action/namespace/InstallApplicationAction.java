@@ -63,7 +63,7 @@ public class InstallApplicationAction extends DumbAwareAction {
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-        this.namespace = node.getName();
+        this.namespace = node.getNamespace();
     }
 
     @Override

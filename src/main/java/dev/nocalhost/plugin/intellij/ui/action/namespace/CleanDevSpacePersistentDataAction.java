@@ -30,7 +30,7 @@ public class CleanDevSpacePersistentDataAction extends DumbAwareAction {
         super("Clear Persistent Data");
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
-        this.namespace = node.getName();
+        this.namespace = node.getNamespace();
     }
 
     @Override
