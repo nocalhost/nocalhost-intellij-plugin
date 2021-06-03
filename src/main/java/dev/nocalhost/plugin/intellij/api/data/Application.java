@@ -16,6 +16,8 @@ public class Application {
     @SerializedName("context")
     private String contextStr;
     private transient Context context;
+    @SerializedName("application_type")
+    private String applicationType;
 
     @Data
     public static class Context {

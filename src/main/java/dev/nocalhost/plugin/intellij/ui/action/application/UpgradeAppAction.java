@@ -26,11 +26,13 @@ import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.Application;
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeApplication;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
@@ -39,6 +41,7 @@ import dev.nocalhost.plugin.intellij.ui.dialog.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.HelmValuesChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.KustomizePathDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
@@ -48,6 +51,7 @@ public class UpgradeAppAction extends DumbAwareAction {
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
     private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
     private final Project project;
     private final ApplicationNode node;
@@ -68,7 +72,7 @@ public class UpgradeAppAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                if (!NhctlHelper.isApplicationInstalled(kubeConfigPath, namespace, applicationName)) {
+                if (!isApplicationInstalled()) {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         Messages.showMessageDialog(
                                 "Application has not been installed.",
@@ -85,11 +89,11 @@ public class UpgradeAppAction extends DumbAwareAction {
                         nocalhostAccount.getUserInfo().getId()
                 );
                 Optional<Application> applicationOptional = nocalhostApplications.stream()
-                                                                                 .filter(e -> StringUtils.equals(
-                                                                                         applicationName,
-                                                                                         e.getContext().getApplicationName()
-                                                                                 ))
-                                                                                 .findFirst();
+                        .filter(e -> StringUtils.equals(
+                                applicationName,
+                                e.getContext().getApplicationName()
+                        ))
+                        .findFirst();
                 if (applicationOptional.isPresent()) {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         try {
@@ -106,15 +110,16 @@ public class UpgradeAppAction extends DumbAwareAction {
                 }
 
 
-            } catch (IOException | InterruptedException | NocalhostApiException e) {
-                LOG.error("error occurred while checking application status", e);
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Loading application status error",
+                        "Error occurs while loading application status", e);
             }
         });
     }
 
     private void upgradeApp(Application application) throws IOException {
         final Application.Context context = application.getContext();
-        final String installType = NhctlHelper.generateInstallType(application.getContext());
+        final String installType = application.getApplicationType();
 
         final NhctlUpgradeOptions opts = new NhctlUpgradeOptions(kubeConfigPath, namespace);
         List<String> resourceDirs = Lists.newArrayList(context.getResourceDir());
@@ -260,9 +265,24 @@ public class UpgradeAppAction extends DumbAwareAction {
         }
 
         return Files.list(localPath)
-                    .filter(Files::isRegularFile)
-                    .filter(e -> CONFIG_FILE_EXTENSIONS.contains(com.google.common.io.Files.getFileExtension(e.getFileName().toString())))
-                    .map(Path::toAbsolutePath)
-                    .collect(Collectors.toList());
+                .filter(Files::isRegularFile)
+                .filter(e -> CONFIG_FILE_EXTENSIONS.contains(com.google.common.io.Files.getFileExtension(e.getFileName().toString())))
+                .map(Path::toAbsolutePath)
+                .collect(Collectors.toList());
+    }
+
+    private boolean isApplicationInstalled()
+            throws IOException, InterruptedException, NocalhostExecuteCmdException {
+        try {
+            NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+            NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(
+                    applicationName, opts, NhctlDescribeApplication.class);
+            return nhctlDescribeApplication.isInstalled();
+        } catch (Exception e) {
+            if (StringUtils.contains(e.getMessage(), "Application not found")) {
+                return false;
+            }
+            throw e;
+        }
     }
 }
