@@ -22,7 +22,7 @@ public class InstallApplicationChooseDialog extends DialogWrapper {
 
     public InstallApplicationChooseDialog(List<String> apps) {
         super(true);
-        setTitle("Select Application");
+        setTitle("Choose Application");
         scrollPane.setBorder(new LineBorder(new JBColor(0xD5D5D5, 0x323232), 1));
 
         applicationList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
