@@ -49,6 +49,41 @@ public final class NocalhostConsoleManager {
         });
     }
 
+    public static void openLogsWindow(Project project, String title, GeneralCommandLine command) {
+        if (project.isDisposed()) {
+            return;
+        }
+
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                ToolWindow toolWindow = ToolWindowManager.getInstance(project)
+                        .getToolWindow("Nocalhost Console");
+                if (toolWindow == null) {
+                    return;
+                }
+
+                ContentManager manager = toolWindow.getContentManager();
+
+                NocalhostLogs logs = createLogs(project, command);
+
+                toolWindow.activate(() -> {
+                    Content content = manager.findContent(title);
+                    if (content != null) {
+                        manager.removeContent(content, true);
+                    }
+
+                    content = ContentFactory.SERVICE.getInstance().createContent(logs, title, false);
+
+                    manager.addContent(content);
+                    manager.setSelectedContent(content);
+                });
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Opening logs window error",
+                        "Error occurs while opening logs window", e);
+            }
+        });
+    }
+
     public static void openTerminalWindow(Project project,
                                           String title,
                                           GeneralCommandLine command) {
@@ -86,6 +121,13 @@ public final class NocalhostConsoleManager {
             }
         });
 
+    }
+
+    private static NocalhostLogs createLogs(Project project, GeneralCommandLine command)
+            throws com.intellij.execution.ExecutionException {
+        NocalhostLogs nocalhostLogs = new NocalhostLogs(project);
+        nocalhostLogs.executeCommand(command);
+        return nocalhostLogs;
     }
 
     private static NocalhostTerminal createTerminal(Project project,
