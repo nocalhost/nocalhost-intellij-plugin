@@ -10,20 +10,13 @@ import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.ui.content.ContentManagerListener;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
-
-import dev.nocalhost.plugin.intellij.topic.NocalhostConsoleExecuteNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
-import dev.nocalhost.plugin.intellij.ui.console.Action;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostErrorWindow;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostLogWindow;
+import dev.nocalhost.plugin.intellij.ui.console.NocalhostLogs;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostOutputWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostTerminal;
-import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAware {
 
@@ -43,15 +36,15 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
                     NocalhostTerminal nocalhostTerminal = (NocalhostTerminal) component;
                     nocalhostTerminal.terminateProcess();
                 }
+                if (component instanceof NocalhostLogs) {
+                    NocalhostLogs nocalhostLogs = (NocalhostLogs) component;
+                    nocalhostLogs.terminateProcess();
+                }
             }
         });
 
         createOutputWindow();
 
-        project.getMessageBus().connect().subscribe(
-                NocalhostConsoleExecuteNotifier.NOCALHOST_CONSOLE_EXECUTE_NOTIFIER_TOPIC,
-                this::updateTab
-        );
         project.getMessageBus().connect().subscribe(
                 NocalhostExceptionPrintNotifier.NOCALHOST_EXCEPTION_PRINT_NOTIFIER_TOPIC,
                 this::errorPrint
@@ -72,44 +65,6 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
         ContentManager contentManager = toolWindow.getContentManager();
         Content content = ContentFactory.SERVICE.getInstance().createContent(nocalhostOutputWindow.getPanel(), "OUTPUT", false);
         content.setCloseable(false);
-        contentManager.addContent(content);
-        contentManager.setSelectedContent(content);
-    }
-
-    private void updateTab(ResourceNode node, Action action) {
-        toolWindow.show();
-        NocalhostConsoleWindow nocalhostConsoleWindow;
-        switch (action) {
-            case LOGS:
-                nocalhostConsoleWindow = new NocalhostLogWindow(project, node);
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value: " + action);
-        }
-        addContent(nocalhostConsoleWindow);
-        toolWindow.show();
-    }
-
-    private void addContent(final NocalhostConsoleWindow nocalhostConsoleWindow) {
-        JComponent panel = nocalhostConsoleWindow.getPanel();
-        String title = nocalhostConsoleWindow.getTitle();
-        if (panel == null || StringUtils.isBlank(title)) {
-            return;
-        }
-        ContentManager contentManager = toolWindow.getContentManager();
-        Content content = contentManager.findContent(title);
-        if (content != null) {
-            contentManager.removeContent(content, true);
-        }
-        content = ContentFactory.SERVICE.getInstance().createContent(panel, title, false);
-        contentManager.addContentManagerListener(new ContentManagerListener() {
-            @Override
-            public void contentRemoved(@NotNull ContentManagerEvent event) {
-                if (nocalhostConsoleWindow instanceof NocalhostLogWindow) {
-                    ((NocalhostLogWindow) nocalhostConsoleWindow).stopProcess();
-                }
-            }
-        });
         contentManager.addContent(content);
         contentManager.setSelectedContent(content);
     }
