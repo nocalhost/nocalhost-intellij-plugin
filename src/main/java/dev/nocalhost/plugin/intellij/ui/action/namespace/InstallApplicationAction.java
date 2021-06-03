@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -98,15 +99,15 @@ public class InstallApplicationAction extends DumbAwareAction {
     private void install(List<Application> applications,
                          List<NhctlListApplication> nhctlListApplications) {
         final Set<String> apps = applications.stream()
-                                             .map(a -> a.getContext().getApplicationName())
-                                             .collect(Collectors.toSet());
+                .map(a -> a.getContext().getApplicationName())
+                .collect(Collectors.toSet());
         final Optional<NhctlListApplication> currentDevspacesApp = nhctlListApplications.stream()
-                                                                                        .filter(d -> d.getNamespace().equals(namespace)).findFirst();
+                .filter(d -> d.getNamespace().equals(namespace)).findFirst();
         List<String> installed = null;
         if (currentDevspacesApp.isPresent()) {
             installed = currentDevspacesApp.get().getApplication().stream()
-                                           .map(NhctlListApplication.Application::getName)
-                                           .collect(Collectors.toList());
+                    .map(NhctlListApplication.Application::getName)
+                    .collect(Collectors.toList());
         }
         if (CollectionUtils.isNotEmpty(installed)) {
             for (String installedApp : installed) {
@@ -118,40 +119,43 @@ public class InstallApplicationAction extends DumbAwareAction {
             return;
         }
 
+        List<String> applicationsToBeInstalled = Lists.newArrayList(apps);
+        Collections.sort(applicationsToBeInstalled);
+
         InstallApplicationChooseDialog dialog = new InstallApplicationChooseDialog(
-                Lists.newArrayList(apps));
+                applicationsToBeInstalled);
         if (dialog.showAndGet()) {
             final Optional<Application> app = applications.stream()
-                                                          .filter(a ->
-                                                                  StringUtils.equals(
-                                                                          dialog.getSelected(),
-                                                                          a.getContext().getApplicationName()
-                                                                  )
-                                                          )
-                                                          .findFirst();
+                    .filter(a ->
+                            StringUtils.equals(
+                                    dialog.getSelected(),
+                                    a.getContext().getApplicationName()
+                            )
+                    )
+                    .findFirst();
             app.ifPresent(application -> ApplicationManager.getApplication()
-                                                           .executeOnPooledThread(() -> {
-                                                               try {
-                                                                   if (NhctlHelper.isApplicationInstalled(kubeConfigPath, namespace,
-                                                                           application.getContext().getApplicationName())) {
-                                                                       ApplicationManager.getApplication().invokeLater(() -> {
-                                                                           Messages.showMessageDialog("Application has been installed.",
-                                                                                   "Install Application", null);
-                                                                       });
-                                                                       return;
-                                                                   }
-                                                                   ApplicationManager.getApplication().invokeLater(() -> {
-                                                                       try {
-                                                                           installApp(application);
-                                                                       } catch (IOException e) {
-                                                                           LOG.error("error occurred while installing application", e);
-                                                                       }
-                                                                   });
-                                                               } catch (IOException | InterruptedException e) {
-                                                                   LOG.error("error occurred while checking if application was installed",
-                                                                           e);
-                                                               }
-                                                           }));
+                    .executeOnPooledThread(() -> {
+                        try {
+                            if (NhctlHelper.isApplicationInstalled(kubeConfigPath, namespace,
+                                    application.getContext().getApplicationName())) {
+                                ApplicationManager.getApplication().invokeLater(() -> {
+                                    Messages.showMessageDialog("Application has been installed.",
+                                            "Install Application", null);
+                                });
+                                return;
+                            }
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                try {
+                                    installApp(application);
+                                } catch (IOException e) {
+                                    LOG.error("error occurred while installing application", e);
+                                }
+                            });
+                        } catch (IOException | InterruptedException e) {
+                            LOG.error("error occurred while checking if application was installed",
+                                    e);
+                        }
+                    }));
 
         }
     }
@@ -294,14 +298,14 @@ public class InstallApplicationAction extends DumbAwareAction {
         }
 
         return Files.list(localPath)
-                    .filter(Files::isRegularFile)
-                    .filter(e ->
-                            CONFIG_FILE_EXTENSIONS.contains(
-                                    com.google.common.io.Files.getFileExtension(
-                                            e.getFileName().toString())
-                            )
-                    )
-                    .map(Path::toAbsolutePath)
-                    .collect(Collectors.toList());
+                .filter(Files::isRegularFile)
+                .filter(e ->
+                        CONFIG_FILE_EXTENSIONS.contains(
+                                com.google.common.io.Files.getFileExtension(
+                                        e.getFileName().toString())
+                        )
+                )
+                .map(Path::toAbsolutePath)
+                .collect(Collectors.toList());
     }
 }
