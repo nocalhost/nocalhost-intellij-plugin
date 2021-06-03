@@ -28,12 +28,13 @@ import java.util.stream.Collectors;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeApplication;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.helpers.NhctlHelper;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.task.InstallApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
@@ -43,6 +44,7 @@ import dev.nocalhost.plugin.intellij.ui.dialog.HelmValuesChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.InstallApplicationChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.KustomizePathDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -136,8 +138,7 @@ public class InstallApplicationAction extends DumbAwareAction {
             app.ifPresent(application -> ApplicationManager.getApplication()
                     .executeOnPooledThread(() -> {
                         try {
-                            if (NhctlHelper.isApplicationInstalled(kubeConfigPath, namespace,
-                                    application.getContext().getApplicationName())) {
+                            if (isApplicationInstalled(application.getContext().getApplicationName())) {
                                 ApplicationManager.getApplication().invokeLater(() -> {
                                     Messages.showMessageDialog("Application has been installed.",
                                             "Install Application", null);
@@ -151,9 +152,9 @@ public class InstallApplicationAction extends DumbAwareAction {
                                     LOG.error("error occurred while installing application", e);
                                 }
                             });
-                        } catch (IOException | InterruptedException e) {
-                            LOG.error("error occurred while checking if application was installed",
-                                    e);
+                        } catch (Exception e) {
+                            ErrorUtil.dealWith(project, "Loading application status error",
+                                    "Error occurs while loading application status", e);
                         }
                     }));
 
@@ -162,7 +163,7 @@ public class InstallApplicationAction extends DumbAwareAction {
 
     private void installApp(Application app) throws IOException {
         final Application.Context context = app.getContext();
-        final String installType = NhctlHelper.generateInstallType(context);
+        final String installType = app.getApplicationType();
 
         final NhctlInstallOptions opts = new NhctlInstallOptions(kubeConfigPath, namespace);
         opts.setType(installType);
@@ -307,5 +308,20 @@ public class InstallApplicationAction extends DumbAwareAction {
                 )
                 .map(Path::toAbsolutePath)
                 .collect(Collectors.toList());
+    }
+
+    private boolean isApplicationInstalled(String applicationName)
+            throws IOException, InterruptedException, NocalhostExecuteCmdException {
+        try {
+            NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+            NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(
+                    applicationName, opts, NhctlDescribeApplication.class);
+            return nhctlDescribeApplication.isInstalled();
+        } catch (Exception e) {
+            if (StringUtils.contains(e.getMessage(), "Application not found")) {
+                return false;
+            }
+            throw e;
+        }
     }
 }
