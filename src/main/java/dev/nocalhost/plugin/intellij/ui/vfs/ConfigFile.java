@@ -86,7 +86,7 @@ public class ConfigFile extends VirtualFile {
     public boolean isWritable() {
         if (node.getNhctlDescribeService() != null) {
             NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
-            return !nhctlDescribeService.isLocalconfigloaded();
+            return !(nhctlDescribeService.isCmconfigloaded() || nhctlDescribeService.isLocalconfigloaded());
         }
         return true;
     }
@@ -128,7 +128,7 @@ public class ConfigFile extends VirtualFile {
                 nhctlDescribeOptions.setType(node.getKubeResource().getKind());
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(node.applicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
 
-                if (nhctlDescribeService.isLocalconfigloaded()) {
+                if (nhctlDescribeService.isCmconfigloaded() || nhctlDescribeService.isLocalconfigloaded()) {
                     Messages.showMessageDialog("Config cannot be modified.", "Modify Config", null);
                     return;
                 }

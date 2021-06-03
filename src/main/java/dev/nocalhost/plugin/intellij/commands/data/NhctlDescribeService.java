@@ -18,4 +18,5 @@ public class NhctlDescribeService {
     private boolean developing;
     private boolean possess;
     private boolean localconfigloaded;
+    private boolean cmconfigloaded;
 }
