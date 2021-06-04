@@ -11,9 +11,11 @@ import org.jetbrains.annotations.Nullable;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import lombok.Getter;
+import lombok.Setter;
 
 @State(name = "NocalhostProjectSettings", storages = @Storage("nocalhost.xml"))
 @Getter
+@Setter
 public class NocalhostProjectSettings implements PersistentStateComponent<NocalhostProjectSettings> {
     private String serviceProjectPathJson;
 
