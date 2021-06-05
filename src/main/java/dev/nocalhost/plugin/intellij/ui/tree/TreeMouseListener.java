@@ -38,6 +38,7 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataActio
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.EndDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.LogsAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.OpenProjectAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.PortForwardAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ResetAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.StartDevelopAction;
@@ -46,6 +47,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
 
@@ -179,6 +181,9 @@ public class TreeMouseListener extends MouseAdapter {
                 if (!nhctlDescribeService.isDeveloping()) {
                     actionGroup.add(new StartDevelopAction(project, resourceNode));
                 } else {
+                    if (!PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
+                        actionGroup.add(new OpenProjectAction(project, resourceNode));
+                    }
                     actionGroup.add(new EndDevelopAction(project, resourceNode));
                 }
 
