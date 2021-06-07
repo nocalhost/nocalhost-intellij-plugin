@@ -15,7 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Locale;
 
 import javax.swing.tree.TreePath;
 
@@ -177,6 +176,7 @@ public class TreeMouseListener extends MouseAdapter {
         switch (type) {
             case Deployment:
             case Statefulset:
+            case Daemonset:
                 NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
                 if (!nhctlDescribeService.isDeveloping()) {
                     actionGroup.add(new StartDevelopAction(project, resourceNode));
@@ -197,7 +197,6 @@ public class TreeMouseListener extends MouseAdapter {
                 actionGroup.add(new ResetAction(project, resourceNode));
                 actionGroup.add(new TerminalAction(project, resourceNode));
                 break;
-            case Daemonset:
             case Job:
             case CronJobs:
                 break;
