@@ -2,6 +2,8 @@ package dev.nocalhost.plugin.intellij.utils;
 
 import com.google.common.collect.Maps;
 
+import com.intellij.openapi.util.SystemInfo;
+
 import org.apache.commons.codec.binary.StringUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -41,7 +43,9 @@ public class KubeConfigUtil {
                 Path path = kubeConfigPathMap.get(kubeConfig);
                 if (!Files.exists(path)) {
                     Files.createDirectories(path.getParent());
-                    Files.createFile(path, FILE_MODE);
+                    if (!SystemInfo.isWindows) {
+                        Files.createFile(path, FILE_MODE);
+                    }
                     Files.write(path, kubeConfig.getBytes(StandardCharsets.UTF_8));
                     path.toFile().deleteOnExit();
                 } else {
