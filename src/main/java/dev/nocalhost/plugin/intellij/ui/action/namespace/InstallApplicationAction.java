@@ -35,6 +35,8 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.exception.NocalhostServerVersionOutDatedException;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.task.InstallApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
@@ -86,6 +88,11 @@ public class InstallApplicationAction extends DumbAwareAction {
                     install(applications, nhctlListApplications);
                 });
 
+            } catch (NocalhostServerVersionOutDatedException e) {
+                NocalhostNotifier.getInstance(project).notifyError(
+                        "Nocalhost server version out dated",
+                        "Nocalhost server version is lower than required minimal version.",
+                        e.getMessage());
             } catch (IOException
                     | NocalhostApiException
                     | InterruptedException

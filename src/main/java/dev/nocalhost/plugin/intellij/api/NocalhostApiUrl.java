@@ -5,6 +5,7 @@ public class NocalhostApiUrl {
 
     private static final String LOGIN_URL = "/login";
     private static final String ME_URL = "/me";
+    private static final String VERSION_URL = "/version";
     @Deprecated
     private static final String DEV_SPACE_URL = "/plugin/dev_space";
     @Deprecated
@@ -49,5 +50,9 @@ public class NocalhostApiUrl {
 
     public static String serviceAccounts(String host) {
         return String.format("%s%s%s", host, API_V1_SUFFIX, SERVICE_ACCOUNTS);
+    }
+
+    public static String version(String host) {
+        return String.format("%s%s%s", host, API_V1_SUFFIX, VERSION_URL);
     }
 }
