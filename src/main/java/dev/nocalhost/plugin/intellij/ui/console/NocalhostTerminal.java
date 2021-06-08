@@ -32,12 +32,15 @@ public class NocalhostTerminal extends ShellTerminalWidget {
                 getTtyConnector());
         if (processTtyConnector != null) {
             Process process = processTtyConnector.getProcess();
-            OutputStream outputStream = process.getOutputStream();
-            try {
-                outputStream.write(3);
-                outputStream.flush();
-            } catch (IOException e) {
-                LOG.warn("Fail to send ctrl+c to remote process", e);
+            if (process.isAlive()) {
+                OutputStream outputStream = process.getOutputStream();
+                try {
+                    outputStream.write(3);
+                    outputStream.flush();
+                } catch (IOException e) {
+                    LOG.warn("Fail to send ctrl+c to remote process", e);
+                }
+                process.destroy();
             }
         }
         super.terminateProcess();

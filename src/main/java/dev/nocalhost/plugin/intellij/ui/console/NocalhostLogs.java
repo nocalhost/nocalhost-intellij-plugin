@@ -39,6 +39,9 @@ public class NocalhostLogs extends LogsToolWindowPanel {
     }
 
     public void terminateProcess() {
+        if (processHandler.isProcessTerminated()) {
+            return;
+        }
         OutputStream outputStream = processHandler.getProcessInput();
         try {
             outputStream.write(3);
