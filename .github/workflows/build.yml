@@ -2,9 +2,9 @@ name: build
 
 on:
   push:
-    branches: [ main, dev, 203 ]
+    branches: [ 203 ]
   pull_request:
-    branches: [ main, dev, 203 ]
+    branches: [ 203 ]
   workflow_dispatch:
 
 jobs:
@@ -26,21 +26,7 @@ jobs:
         ./gradlew buildPlugin
 
     - name: Push to Coding Artifacts
-      if: ${{ github.ref == 'refs/heads/main'}}
       run: |
         cd build/distributions/
         PLUGIN_ZIP=$(ls | grep nocalhost-intellij-plugin-)
-        curl -T ${PLUGIN_ZIP} -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=main"
-
-    - name: Push to Coding Artifacts
-      if: ${{ github.ref == 'refs/heads/dev'}}
-      run: |
-        cd build/distributions/
-        PLUGIN_ZIP=$(ls | grep nocalhost-intellij-plugin-)
-        curl -T ${PLUGIN_ZIP} -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=dev"
-
-    - name: Push to Coding Artifacts
-      run: |
-        cd build/distributions/
-        PLUGIN_ZIP=$(ls | grep nocalhost-intellij-plugin-)
-        curl -T ${PLUGIN_ZIP} -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${GITHUB_SHA}"
+        curl -T ${PLUGIN_ZIP} -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${GITHUB_SHA}-2020.3"
