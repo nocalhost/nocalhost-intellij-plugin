@@ -10,6 +10,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
 import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowId;
+import com.intellij.openapi.wm.ToolWindowManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +43,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import icons.NocalhostIcons;
 
 public class StartDevelopAction extends DumbAwareAction {
@@ -362,6 +366,7 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     private void startDevelop() {
+        projectPath = Paths.get(projectPath).toString();
         ServiceProjectPath serviceProjectPath;
         if (node.getClusterNode().getNocalhostAccount() != null) {
             serviceProjectPath = ServiceProjectPath.builder()
@@ -389,10 +394,24 @@ public class StartDevelopAction extends DumbAwareAction {
         }
 
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (StringUtils.equals(projectPath, project.getBasePath())) {
+            if (PathsUtil.isSame(projectPath, project.getBasePath())) {
                 ProgressManager.getInstance().run(
                         new StartingDevModeTask(project, serviceProjectPath));
             } else {
+                Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
+                for (Project openProject : openProjects) {
+                    if (PathsUtil.isSame(projectPath, openProject.getBasePath())) {
+                        ToolWindow toolWindow = ToolWindowManager.getInstance(openProject)
+                                .getToolWindow(ToolWindowId.PROJECT_VIEW);
+                        if (toolWindow != null) {
+                            toolWindow.activate(() -> {
+                                ProgressManager.getInstance().run(
+                                        new StartingDevModeTask(openProject, serviceProjectPath));
+                            });
+                            return;
+                        }
+                    }
+                }
                 nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
                 ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPath),
                         new OpenProjectTask());
