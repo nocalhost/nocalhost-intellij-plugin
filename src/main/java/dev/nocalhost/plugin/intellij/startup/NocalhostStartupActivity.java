@@ -8,6 +8,8 @@ import com.intellij.openapi.startup.StartupActivity;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Paths;
+
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
@@ -25,7 +27,7 @@ public final class NocalhostStartupActivity implements StartupActivity {
         final NocalhostSettings nocalhostSettings = ServiceManager
                 .getService(NocalhostSettings.class);
         ServiceProjectPath serviceProjectPath = nocalhostSettings
-                .getDevModeServiceByProjectPath(project.getBasePath());
+                .getDevModeServiceByProjectPath(Paths.get(project.getBasePath()).toString());
         if (serviceProjectPath != null) {
             try {
                 ProgressManager.getInstance().run(new StartingDevModeTask(project,

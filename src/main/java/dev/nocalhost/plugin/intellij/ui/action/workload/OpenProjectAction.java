@@ -12,13 +12,10 @@ import com.intellij.openapi.wm.ToolWindowManager;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
-import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
+import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 
 public class OpenProjectAction extends DumbAwareAction {
     private final Project project;
@@ -32,23 +29,18 @@ public class OpenProjectAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        try {
-            Path projectPathToBeOpen = Paths.get(node.getNhctlDescribeService().getAssociate());
-            Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
-            for (Project openProject : openProjects) {
-                if (Files.isSameFile(projectPathToBeOpen, Paths.get(openProject.getBasePath()))) {
-                    ToolWindow toolWindow = ToolWindowManager.getInstance(openProject)
-                            .getToolWindow(ToolWindowId.PROJECT_VIEW);
-                    if (toolWindow != null) {
-                        toolWindow.activate(null);
-                        return;
-                    }
+        String projectPath = node.getNhctlDescribeService().getAssociate();
+        Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
+        for (Project openProject : openProjects) {
+            if (PathsUtil.isSame(projectPath, openProject.getBasePath())) {
+                ToolWindow toolWindow = ToolWindowManager.getInstance(openProject)
+                        .getToolWindow(ToolWindowId.PROJECT_VIEW);
+                if (toolWindow != null) {
+                    toolWindow.activate(null);
+                    return;
                 }
             }
-            ProjectManagerEx.getInstanceEx().openProject(projectPathToBeOpen, new OpenProjectTask());
-        } catch (IOException e) {
-            ErrorUtil.dealWith(project, "Checking project path error",
-                    "Error occurs while checking project path", e);
         }
+        ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPath), new OpenProjectTask());
     }
 }
