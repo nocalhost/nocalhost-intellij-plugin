@@ -104,12 +104,7 @@ tasks {
         )
         changeNotes(
             """
-          Support nhctl auto-upgrade. <br />
-          Support StatefulSets dev-mode. <br />
-          Support multi-person collaboration mode. <br />
-          Forbid editing config while local config loaded. <br />
-          Fix: Set git url to profile after specifying. <br />
-          Fix: Show messages while pods are not ready instead of throwing exceptions. <br />
+          <a href="https://github.com/nocalhost/nocalhost/tree/main/CHANGELOG">https://github.com/nocalhost/nocalhost/tree/main/CHANGELOG</a>
           """
         )
     }
