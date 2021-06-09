@@ -26,8 +26,9 @@ public final class NocalhostStartupActivity implements StartupActivity {
     private void devStart(Project project) {
         final NocalhostSettings nocalhostSettings = ServiceManager
                 .getService(NocalhostSettings.class);
+        String projectPath = Paths.get(project.getBasePath()).toString();
         ServiceProjectPath serviceProjectPath = nocalhostSettings
-                .getDevModeServiceByProjectPath(Paths.get(project.getBasePath()).toString());
+                .getDevModeServiceByProjectPath(projectPath);
         if (serviceProjectPath != null) {
             try {
                 ProgressManager.getInstance().run(new StartingDevModeTask(project,
@@ -39,7 +40,7 @@ public final class NocalhostStartupActivity implements StartupActivity {
                         "Error occurred while starting dev mode",
                         e.getMessage());
             } finally {
-                nocalhostSettings.removeDevModeServiceByProjectPath(project.getBasePath());
+                nocalhostSettings.removeDevModeServiceByProjectPath(projectPath);
             }
         }
     }
