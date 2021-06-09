@@ -137,7 +137,7 @@ public final class NocalhostConsoleManager {
             throws ExecutionException, IOException {
         LocalTerminalDirectRunner localTerminalDirectRunner = LocalTerminalDirectRunner
                 .createTerminalRunner(project);
-        TerminalProcessOptions options = new TerminalProcessOptions(project.getBasePath(), 0, 0);
+        TerminalProcessOptions options = new TerminalProcessOptions(project.getBasePath(), 80, 25);
         JBTerminalSystemSettingsProvider settingsProvider = new JBTerminalSystemSettingsProvider();
         JBTerminalWidget widget = new JBTerminalWidget(project, settingsProvider, parent);
         PtyProcess ptyProcess = localTerminalDirectRunner.createProcess(options, widget);
