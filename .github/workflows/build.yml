@@ -2,9 +2,9 @@ name: build
 
 on:
   push:
-    branches: [ 211 ]
+    branches: [ 211, 211-dev ]
   pull_request:
-    branches: [ 211 ]
+    branches: [ 211, 211-dev ]
   workflow_dispatch:
 
 jobs:
