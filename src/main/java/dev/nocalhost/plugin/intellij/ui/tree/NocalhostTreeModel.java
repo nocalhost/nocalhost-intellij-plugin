@@ -99,7 +99,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 List<ClusterNode> clusterNodes = Lists.newArrayList();
 
                 for (StandaloneCluster standaloneCluster : nocalhostSettings.getStandaloneClusters()) {
-                    KubeConfig kubeConfig = DataUtils.YAML.loadAs(
+                    KubeConfig kubeConfig = DataUtils.fromYaml(
                             standaloneCluster.getRawKubeConfig(), KubeConfig.class);
                     clusterNodes.add(new ClusterNode(standaloneCluster.getRawKubeConfig(),
                             kubeConfig));
@@ -109,7 +109,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     List<ServiceAccount> serviceAccounts = nocalhostApi.listServiceAccount(
                             nocalhostAccount.getServer(), nocalhostAccount.getJwt());
                     for (ServiceAccount serviceAccount : serviceAccounts) {
-                        KubeConfig kubeConfig = DataUtils.YAML.loadAs(
+                        KubeConfig kubeConfig = DataUtils.fromYaml(
                                 serviceAccount.getKubeConfig(), KubeConfig.class);
                         clusterNodes.add(new ClusterNode(nocalhostAccount, serviceAccount,
                                 serviceAccount.getKubeConfig(), kubeConfig));
