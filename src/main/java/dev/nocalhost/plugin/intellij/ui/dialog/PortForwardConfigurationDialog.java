@@ -30,6 +30,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -300,6 +301,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
     private void createList(List<NhctlPortForward> portForwards) {
         final List<NhctlPortForward> ports = portForwards.stream()
                 .filter(pf -> !StringUtils.equalsIgnoreCase(pf.getRole(), "SYNC"))
+                .sorted(Comparator.comparing(NhctlPortForward::portForwardStr))
                 .collect(Collectors.toList());
         List<JPanel> items = Lists.newArrayList();
 
