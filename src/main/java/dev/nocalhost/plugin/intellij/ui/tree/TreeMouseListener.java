@@ -21,6 +21,7 @@ import javax.swing.tree.TreePath;
 import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.task.LoadKubernetesResourceTask;
+import dev.nocalhost.plugin.intellij.ui.action.application.AppPortForwardAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.ApplyAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.ClearAppPersisentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.ConfigAppAction;
@@ -164,6 +165,9 @@ public class TreeMouseListener extends MouseAdapter {
 
         actionGroup.add(new Separator());
         actionGroup.add(new LoadResourceAction(project, applicationNode));
+
+        actionGroup.add(new Separator());
+        actionGroup.add(new AppPortForwardAction(project, applicationNode));
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Application.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
