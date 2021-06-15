@@ -13,6 +13,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
@@ -88,10 +90,8 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     }
 
     private Icon getWorkloadIcon(ResourceNode node) {
-        String workloadType = node.getKubeResource().getKind();
-        if (!StringUtils.equalsIgnoreCase(workloadType, "Deployment")
-                && !StringUtils.equalsIgnoreCase(workloadType, "StatefulSet")
-                && !StringUtils.equalsIgnoreCase(workloadType, "DaemonSet")) {
+        String workloadType = node.getKubeResource().getKind().toLowerCase();
+        if (!Set.of("deployment", "statefulset" ,"daemonset", "job").contains(workloadType)) {
             return null;
         }
 
