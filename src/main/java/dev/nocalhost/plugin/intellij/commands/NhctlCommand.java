@@ -649,7 +649,6 @@ public class NhctlCommand {
 
         GeneralCommandLine commandLine = getCommandline(args);
         String cmd = commandLine.getCommandLineString();
-        System.out.println("Execute command: " + cmd);
 
         Process process;
         try {

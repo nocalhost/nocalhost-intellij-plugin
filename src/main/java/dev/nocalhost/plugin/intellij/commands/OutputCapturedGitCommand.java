@@ -45,17 +45,18 @@ public class OutputCapturedGitCommand extends GitCommand {
         }
 
         StringBuilder sb = new StringBuilder();
-        BufferedReader br = new BufferedReader(new InputStreamReader(
-                process.getInputStream(), Charsets.UTF_8));
-        String line;
-        String previousLine = "";
-        while ((line = br.readLine()) != null) {
-            if (StringUtils.equals(line, previousLine)) {
-                continue;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(
+                process.getInputStream(), Charsets.UTF_8))) {
+            String line;
+            String previousLine = "";
+            while ((line = br.readLine()) != null) {
+                if (StringUtils.equals(line, previousLine)) {
+                    continue;
+                }
+                publisher.action(line + System.lineSeparator());
+                sb.append(line).append(System.lineSeparator());
+                previousLine = line;
             }
-            publisher.action(line + System.lineSeparator());
-            sb.append(line).append(System.lineSeparator());
-            previousLine = line;
         }
 
         int exitCode = process.waitFor();
