@@ -182,6 +182,7 @@ public class TreeMouseListener extends MouseAdapter {
             case Deployment:
             case Statefulset:
             case Daemonset:
+            case Job:
                 NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
                 if (!nhctlDescribeService.isDeveloping()) {
                     actionGroup.add(new StartDevelopAction(project, resourceNode));
@@ -203,7 +204,6 @@ public class TreeMouseListener extends MouseAdapter {
                 actionGroup.add(new ResetAction(project, resourceNode));
                 actionGroup.add(new TerminalAction(project, resourceNode));
                 break;
-            case Job:
             case CronJobs:
                 break;
             case Pod:
