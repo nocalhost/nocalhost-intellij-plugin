@@ -21,11 +21,11 @@ import java.util.Map;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 
 public class GitCommand {
-    private static final String GIT_COMMANd = "git";
+    private static final String GIT_COMMAND = "git";
 
     public void clone(Path parentDir, String url, String dir) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<String> args = Lists.newArrayList(
-                GIT_COMMANd,
+                GIT_COMMAND,
                 "clone",
                 url,
                 parentDir.resolve(dir).toAbsolutePath().toString());
@@ -57,8 +57,8 @@ public class GitCommand {
         environment.put("DISABLE_SPINNER", "true");
         if (SystemInfo.isMac || SystemInfo.isLinux) {
             String path = environment.get("PATH");
-            if (StringUtils.contains(GIT_COMMANd, "/")) {
-                path = GIT_COMMANd.substring(0, GIT_COMMANd.lastIndexOf("/")) + ":" + path;
+            if (StringUtils.contains(GIT_COMMAND, "/")) {
+                path = GIT_COMMAND.substring(0, GIT_COMMAND.lastIndexOf("/")) + ":" + path;
                 environment.put("PATH", path);
             }
         }
