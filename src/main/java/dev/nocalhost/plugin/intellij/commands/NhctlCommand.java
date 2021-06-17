@@ -660,14 +660,14 @@ public class NhctlCommand {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
 
-        String output = CharStreams.toString(new InputStreamReader(
-                process.getInputStream(), Charsets.UTF_8));
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            throw new NocalhostExecuteCmdException(cmd, exitCode, output);
+        try (InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8)) {
+            String output = CharStreams.toString(reader);
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new NocalhostExecuteCmdException(cmd, exitCode, output);
+            }
+            return output;
         }
-
-        return output;
     }
 
     protected void addGlobalOptions(List<String> args, NhctlGlobalOptions opts) {
