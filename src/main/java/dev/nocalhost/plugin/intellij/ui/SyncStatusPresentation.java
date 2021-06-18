@@ -6,7 +6,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.ListPopup;
 import com.intellij.openapi.util.Disposer;
@@ -35,6 +34,7 @@ import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.MessageDialogUtil;
 
 public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValuesPresentation, StatusBarWidget.Multiframe {
 
@@ -127,8 +127,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         final NocalhostProjectSettings nocalhostProjectSettings = project.getService(NocalhostProjectSettings.class);
 
         if (nhctlSyncStatus != null && nhctlSyncStatus.getStatus().equalsIgnoreCase("disconnected")) {
-            int exitCode = MessageDialogBuilder.yesNoCancel("Sync resume", "do you want to resume file sync?")
-                    .guessWindowAndAsk();
+            int exitCode = MessageDialogUtil.yesNoCancel(project, "Sync resume", "do you want to resume file sync?");
             switch (exitCode) {
                 case Messages.YES: {
                     ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
@@ -158,8 +157,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             }
         }
         if (nhctlSyncStatus != null && StringUtils.isNoneBlank(nhctlSyncStatus.getOutOfSync())) {
-            int exitCode = MessageDialogBuilder.yesNoCancel("Sync warning", "Override the remote changes according to the local folders?")
-                    .guessWindowAndAsk();
+            int exitCode = MessageDialogUtil.yesNoCancel(project, "Sync warning", "Override the remote changes according to the local folders?");
             switch (exitCode) {
                 case Messages.YES: {
                     ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
