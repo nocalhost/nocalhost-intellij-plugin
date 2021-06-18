@@ -19,9 +19,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
+import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
+import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -101,7 +102,7 @@ public class LogsAction extends DumbAwareAction {
                 .getSpec()
                 .getContainers()
                 .stream()
-                .map(KubeResource.Spec.Container::getName)
+                .map(Container::getName)
                 .collect(Collectors.toList());
 
         if (containers.size() > 1) {

@@ -13,15 +13,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
+import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Condition;
+import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Status;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
@@ -91,7 +91,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
 
     private Icon getWorkloadIcon(ResourceNode node) {
         String workloadType = node.getKubeResource().getKind().toLowerCase();
-        if (!Set.of("deployment", "statefulset" ,"daemonset", "job").contains(workloadType)) {
+        if (!Set.of("deployment", "statefulset", "daemonset", "job").contains(workloadType)) {
             return null;
         }
 
@@ -142,10 +142,10 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         }
         boolean available = false;
         boolean progressing = false;
-        List<KubeResource.Status.Condition> conditions = node.getKubeResource().getStatus()
+        List<Condition> conditions = node.getKubeResource().getStatus()
                 .getConditions();
         if (conditions != null) {
-            for (KubeResource.Status.Condition condition : conditions) {
+            for (Condition condition : conditions) {
                 if (StringUtils.equals(condition.getType(), "Available")
                         && StringUtils.equals(condition.getStatus(), "True")) {
                     status = ServiceStatus.RUNNING;
@@ -159,7 +159,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                 status = ServiceStatus.STARTING;
             }
         } else {
-            KubeResource.Status kubeStatus = node.getKubeResource().getStatus();
+            Status kubeStatus = node.getKubeResource().getStatus();
             if (kubeStatus.getReplicas() == kubeStatus.getReadyReplicas()) {
                 status = ServiceStatus.RUNNING;
             }

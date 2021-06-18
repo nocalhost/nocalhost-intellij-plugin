@@ -2,6 +2,7 @@ package dev.nocalhost.plugin.intellij.commands.data;
 
 import com.google.gson.annotations.SerializedName;
 
+import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import lombok.Getter;
 import lombok.Setter;
 

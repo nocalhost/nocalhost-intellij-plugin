@@ -2,8 +2,8 @@ package dev.nocalhost.plugin.intellij.ui.tree.node;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import lombok.Getter;
 
 @Getter
