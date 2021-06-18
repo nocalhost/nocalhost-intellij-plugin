@@ -8,7 +8,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.ui.JBColor;
@@ -42,6 +41,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.VerticalFlowLayout;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.MessageDialogUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import lombok.SneakyThrows;
 
@@ -160,7 +160,7 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
 
         JButton button = new StopButton();
         button.addActionListener(event -> {
-            if (!MessageDialogBuilder.yesNo("Port forward", "Stop port forward " + portForward.getPort() + " (" + portForward.getServiceName() + ")?").guessWindowAndAsk()) {
+            if (!MessageDialogUtil.yesNo(project, "Port forward", "Stop port forward " + portForward.getPort() + " (" + portForward.getServiceName() + ")?")) {
                 return;
             }
 

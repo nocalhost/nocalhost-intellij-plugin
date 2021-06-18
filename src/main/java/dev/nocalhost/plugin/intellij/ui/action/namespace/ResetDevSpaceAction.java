@@ -9,7 +9,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -23,6 +22,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.MessageDialogUtil;
 import lombok.SneakyThrows;
 
 public class ResetDevSpaceAction extends DumbAwareAction {
@@ -48,7 +48,7 @@ public class ResetDevSpaceAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         final String name = node.getName();
 
-        if (!MessageDialogBuilder.yesNo("Reset DevSpace", "Reset " + name + "?").guessWindowAndAsk()) {
+        if (!MessageDialogUtil.yesNo(project, "Reset DevSpace", "Reset " + name + "?")) {
             return;
         }
 

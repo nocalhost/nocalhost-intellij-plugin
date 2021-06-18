@@ -7,7 +7,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.util.NlsSafe;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileSystem;
@@ -31,6 +30,7 @@ import java.util.Date;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.utils.MessageDialogUtil;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 
@@ -92,7 +92,7 @@ public class KubeConfigFile extends VirtualFile {
     public @NotNull OutputStream getOutputStream(Object requestor, long newModificationStamp, long newTimeStamp) throws IOException {
         String newContent = ((FileDocumentManagerImpl) requestor).getDocument(this).getText();
 
-        boolean exitCode = MessageDialogBuilder.okCancel("Apply this resource?", "").guessWindowAndAsk();
+        boolean exitCode = MessageDialogUtil.okCancel(project, "Apply this resource?", "");
         if (exitCode) {
             saveContent(newContent);
         }

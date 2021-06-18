@@ -10,7 +10,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +29,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.MessageDialogUtil;
 import lombok.SneakyThrows;
 
 public class UninstallAppAction extends DumbAwareAction {
@@ -68,10 +68,11 @@ public class UninstallAppAction extends DumbAwareAction {
                 }
 
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    if (!MessageDialogBuilder.yesNo(
+                    if (!MessageDialogUtil.yesNo(
+                            project,
                             "Uninstall application",
                             "Uninstall application " + applicationName + "?"
-                    ).guessWindowAndAsk()) {
+                    )) {
                         return;
                     }
 
