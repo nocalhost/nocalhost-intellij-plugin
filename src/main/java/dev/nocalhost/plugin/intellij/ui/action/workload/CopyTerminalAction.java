@@ -22,11 +22,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
+import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
+import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -67,9 +68,9 @@ public class CopyTerminalAction extends DumbAwareAction {
                 List<NhctlGetResource> podList = nhctlCommand.getResources("Pods", nhctlGetOptions,
                         node.getKubeResource().getSpec().getSelector().getMatchLabels());
                 List<KubeResource> pods = podList.stream()
-                                                 .map(NhctlGetResource::getKubeResource)
-                                                 .filter(KubeResource::canSelector)
-                                                 .collect(Collectors.toList());
+                        .map(NhctlGetResource::getKubeResource)
+                        .filter(KubeResource::canSelector)
+                        .collect(Collectors.toList());
 
                 if (pods.size() == 0) {
                     ApplicationManager.getApplication().invokeLater(() ->
@@ -109,8 +110,8 @@ public class CopyTerminalAction extends DumbAwareAction {
 
     private void selectPod(List<KubeResource> pods) {
         List<String> podNames = pods.stream()
-                                    .map(e -> e.getMetadata().getName())
-                                    .collect(Collectors.toList());
+                .map(e -> e.getMetadata().getName())
+                .collect(Collectors.toList());
         ApplicationManager.getApplication().invokeLater(() -> {
             ListChooseDialog listChooseDialog = new ListChooseDialog(project, "Select Pod",
                     podNames);
@@ -118,8 +119,8 @@ public class CopyTerminalAction extends DumbAwareAction {
                 return;
             }
             Optional<KubeResource> podOptional = pods.stream()
-                                                     .filter(e -> StringUtils.equals(e.getMetadata().getName(), listChooseDialog.getSelectedValue()))
-                                                     .findFirst();
+                    .filter(e -> StringUtils.equals(e.getMetadata().getName(), listChooseDialog.getSelectedValue()))
+                    .findFirst();
             if (podOptional.isEmpty()) {
                 return;
             }
@@ -132,7 +133,7 @@ public class CopyTerminalAction extends DumbAwareAction {
                 .getSpec()
                 .getContainers()
                 .stream()
-                .map(KubeResource.Spec.Container::getName)
+                .map(Container::getName)
                 .collect(Collectors.toList());
 
         if (containers.size() > 1) {

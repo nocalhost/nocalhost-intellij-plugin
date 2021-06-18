@@ -21,12 +21,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.KubeResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
@@ -34,6 +34,8 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
+import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
+import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
@@ -87,7 +89,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     return;
                 }
 
-                ApplicationManager.getApplication().invokeLater(this::getPods);
+                getContainers();
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading service status error",
                         "Error occurs while loading service status", e);
@@ -95,42 +97,42 @@ public class StartDevelopAction extends DumbAwareAction {
         });
     }
 
-    private void getPods() {
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
-                NhctlGetOptions opts = new NhctlGetOptions(kubeConfigPath, namespace);
-                List<NhctlGetResource> podList = nhctlCommand.getResources("Pods", opts,
-                        node.getKubeResource().getSpec().getSelector().getMatchLabels());
-                List<KubeResource> pods = podList.stream()
-                        .map(NhctlGetResource::getKubeResource)
-                        .filter(KubeResource::canSelector)
-                        .collect(Collectors.toList());
-
-                if (pods.size() == 0) {
-                    ApplicationManager.getApplication().invokeLater(() ->
-                            Messages.showMessageDialog("Pods are not ready. Please try later.",
-                                    "Start Develop", null));
-                    return;
-                }
-
-                List<String> containers = pods.get(0)
-                        .getSpec()
+    private void getContainers() {
+        List<String> containers;
+        switch (node.getKubeResource().getKind().toLowerCase()) {
+            case "deployment":
+            case "daemonset":
+            case "statefuleset":
+            case "job":
+                containers = node.getKubeResource().getSpec().getTemplate().getSpec()
                         .getContainers()
                         .stream()
-                        .map(KubeResource.Spec.Container::getName)
+                        .map(Container::getName)
                         .collect(Collectors.toList());
-
-                if (containers.size() > 1) {
-                    selectContainer(containers);
-                } else {
-                    selectedContainer = containers.get(0);
-                    getAssociate();
-                }
-            } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading containers error",
-                        "Error occurs while loading containers", e);
-            }
-        });
+                break;
+            case "cronjob":
+                containers = node.getKubeResource().getSpec().getJobTemplate().getSpec()
+                        .getContainers()
+                        .stream()
+                        .map(Container::getName)
+                        .collect(Collectors.toList());
+                break;
+            case "pod":
+                containers = node.getKubeResource().getSpec()
+                        .getContainers()
+                        .stream()
+                        .map(Container::getName)
+                        .collect(Collectors.toList());
+                break;
+            default:
+                return;
+        }
+        if (containers.size() > 1) {
+            selectContainer(containers);
+        } else {
+            selectedContainer = containers.get(0);
+            getAssociate();
+        }
     }
 
     private void selectContainer(List<String> containers) {
