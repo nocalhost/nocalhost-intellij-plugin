@@ -21,8 +21,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
@@ -30,12 +28,8 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
-import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
-import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
@@ -45,6 +39,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import icons.NocalhostIcons;
 
@@ -98,38 +93,10 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     private void getContainers() {
-        List<String> containers;
-        switch (node.getKubeResource().getKind().toLowerCase()) {
-            case "deployment":
-            case "daemonset":
-            case "statefuleset":
-            case "job":
-                containers = node.getKubeResource().getSpec().getTemplate().getSpec()
-                        .getContainers()
-                        .stream()
-                        .map(Container::getName)
-                        .collect(Collectors.toList());
-                break;
-            case "cronjob":
-                containers = node.getKubeResource().getSpec().getJobTemplate().getSpec()
-                        .getContainers()
-                        .stream()
-                        .map(Container::getName)
-                        .collect(Collectors.toList());
-                break;
-            case "pod":
-                containers = node.getKubeResource().getSpec()
-                        .getContainers()
-                        .stream()
-                        .map(Container::getName)
-                        .collect(Collectors.toList());
-                break;
-            default:
-                return;
-        }
+        List<String> containers = KubeResourceUtil.resolveContainers(node.getKubeResource());
         if (containers.size() > 1) {
             selectContainer(containers);
-        } else {
+        } else if (containers.size() == 1) {
             selectedContainer = containers.get(0);
             getAssociate();
         }
