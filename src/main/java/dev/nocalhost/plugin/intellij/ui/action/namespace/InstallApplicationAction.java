@@ -17,7 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -46,6 +45,7 @@ import dev.nocalhost.plugin.intellij.ui.dialog.HelmValuesChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.InstallApplicationChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.KustomizePathDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
+import dev.nocalhost.plugin.intellij.utils.ConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
@@ -53,7 +53,6 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class InstallApplicationAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(InstallApplicationAction.class);
-    private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
     private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
     private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
@@ -189,7 +188,7 @@ public class InstallApplicationAction extends DumbAwareAction {
 
             Path configPath = null;
             Path nocalhostConfigPath = localPath.resolve(".nocalhost");
-            List<Path> configs = getAllConfig(nocalhostConfigPath);
+            List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigPath);
             if (configs.size() == 0) {
                 configPath = localPath;
             } else if (configs.size() == 1) {
@@ -199,7 +198,7 @@ public class InstallApplicationAction extends DumbAwareAction {
                         project,
                         "Please select your configuration file",
                         nocalhostConfigPath,
-                        CONFIG_FILE_EXTENSIONS);
+                        configs.stream().map(e -> e.getFileName().toString()).collect(Collectors.toSet()));
             }
             if (configPath == null) {
                 return;
@@ -298,23 +297,6 @@ public class InstallApplicationAction extends DumbAwareAction {
         }
 
         return dialog.getAppInstallOrUpgradeOption();
-    }
-
-    private List<Path> getAllConfig(Path localPath) throws IOException {
-        if (Files.notExists(localPath)) {
-            return Lists.newArrayList();
-        }
-
-        return Files.list(localPath)
-                .filter(Files::isRegularFile)
-                .filter(e ->
-                        CONFIG_FILE_EXTENSIONS.contains(
-                                com.google.common.io.Files.getFileExtension(
-                                        e.getFileName().toString())
-                        )
-                )
-                .map(Path::toAbsolutePath)
-                .collect(Collectors.toList());
     }
 
     private boolean isApplicationInstalled(String applicationName)

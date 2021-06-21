@@ -38,11 +38,11 @@ public final class FileChooseUtil {
         return virtualFile.toNioPath().toAbsolutePath();
     }
 
-    public static Path chooseSingleFile(Project project, String title, Path root, Set<String> extensions) {
+    public static Path chooseSingleFile(Project project, String title, Path root, Set<String> filenames) {
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(true, false, false, false, false, false)
                 .withTitle(title)
                 .withRoots(LocalFileSystem.getInstance().findFileByNioFile(root))
-                .withFileFilter(f -> !f.isDirectory() && extensions.contains(Files.getFileExtension(f.getName())));
+                .withFileFilter(f -> !f.isDirectory() && filenames.contains(f.getName()));
         fileChooserDescriptor.setForcedToUseIdeaFileChooser(true);
         VirtualFile virtualFile = FileChooser.chooseFile(fileChooserDescriptor, project, null);
         if (virtualFile == null) {
