@@ -91,7 +91,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
 
     private Icon getWorkloadIcon(ResourceNode node) {
         String workloadType = node.getKubeResource().getKind().toLowerCase();
-        if (!Set.of("deployment", "statefulset", "daemonset", "job", "cronjob").contains(workloadType)) {
+        if (!Set.of("deployment", "statefulset", "daemonset", "job", "cronjob", "pod").contains(workloadType)) {
             return null;
         }
 
@@ -145,18 +145,33 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         List<Condition> conditions = node.getKubeResource().getStatus()
                 .getConditions();
         if (conditions != null) {
-            for (Condition condition : conditions) {
-                if (StringUtils.equals(condition.getType(), "Available")
-                        && StringUtils.equals(condition.getStatus(), "True")) {
-                    status = ServiceStatus.RUNNING;
-                    available = true;
-                } else if (StringUtils.equals(condition.getType(), "Progressing")
-                        && StringUtils.equals(condition.getStatus(), "True")) {
-                    progressing = true;
-                }
-            }
-            if (progressing && !available) {
-                status = ServiceStatus.STARTING;
+            switch (node.getKubeResource().getKind().toLowerCase()) {
+                case "deployment":
+                    for (Condition condition : conditions) {
+                        if (StringUtils.equals(condition.getType(), "Available")
+                                && StringUtils.equals(condition.getStatus(), "True")) {
+                            status = ServiceStatus.RUNNING;
+                            available = true;
+                        } else if (StringUtils.equals(condition.getType(), "Progressing")
+                                && StringUtils.equals(condition.getStatus(), "True")) {
+                            progressing = true;
+                        }
+                    }
+                    if (progressing && !available) {
+                        status = ServiceStatus.STARTING;
+                    }
+                    break;
+
+                case "pod":
+                    for (Condition condition : conditions) {
+                        if (StringUtils.equals(condition.getType(), "Ready")
+                                && StringUtils.equals(condition.getStatus(), "True")) {
+                            status = ServiceStatus.RUNNING;
+                        }
+                    }
+                    break;
+
+                default:
             }
         } else {
             Status kubeStatus = node.getKubeResource().getStatus();
