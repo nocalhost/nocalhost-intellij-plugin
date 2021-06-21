@@ -1,4 +1,4 @@
-package dev.nocalhost.plugin.intellij.commands.data;
+package dev.nocalhost.plugin.intellij.data.kubeconfig;
 
 import java.util.Map;
 

@@ -16,10 +16,10 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 
-import dev.nocalhost.plugin.intellij.commands.data.KubeCluster;
-import dev.nocalhost.plugin.intellij.commands.data.KubeConfig;
-import dev.nocalhost.plugin.intellij.commands.data.KubeContext;
-import dev.nocalhost.plugin.intellij.commands.data.KubeUser;
+import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeCluster;
+import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
+import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
+import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeUser;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;

@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
-import dev.nocalhost.plugin.intellij.commands.data.KubeConfig;
+import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import lombok.Getter;
 

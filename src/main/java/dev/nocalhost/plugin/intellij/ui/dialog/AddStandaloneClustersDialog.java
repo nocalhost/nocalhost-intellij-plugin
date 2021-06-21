@@ -27,8 +27,8 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 
-import dev.nocalhost.plugin.intellij.commands.data.KubeConfig;
-import dev.nocalhost.plugin.intellij.commands.data.KubeContext;
+import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
+import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.task.AddStandaloneClusterTask;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
