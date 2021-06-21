@@ -5,7 +5,7 @@ public enum KubeResourceType {
     Daemonset("Daemonset"),
     Statefulset("Statefulset"),
     Job("Job"),
-    CronJobs("CronJobs"),
+    CronJob("CronJob"),
     Pod("Pod");
 
     private final String val;

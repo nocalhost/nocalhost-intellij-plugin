@@ -91,7 +91,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
 
     private Icon getWorkloadIcon(ResourceNode node) {
         String workloadType = node.getKubeResource().getKind().toLowerCase();
-        if (!Set.of("deployment", "statefulset", "daemonset", "job").contains(workloadType)) {
+        if (!Set.of("deployment", "statefulset", "daemonset", "job", "cronjob").contains(workloadType)) {
             return null;
         }
 
