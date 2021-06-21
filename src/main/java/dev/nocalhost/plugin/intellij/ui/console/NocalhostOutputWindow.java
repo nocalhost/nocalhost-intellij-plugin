@@ -45,7 +45,7 @@ public class NocalhostOutputWindow {
 
 
     private void appendOutput(String text) {
-        ApplicationManager.getApplication().invokeAndWait(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             consoleView.print(text, ConsoleViewContentType.LOG_INFO_OUTPUT);
         });
     }

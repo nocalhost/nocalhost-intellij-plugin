@@ -28,24 +28,19 @@ public final class NocalhostConsoleManager {
         if (project.isDisposed()) {
             return;
         }
+        ToolWindow toolWindow = ToolWindowManager.getInstance(project)
+                .getToolWindow("Nocalhost Console");
+        if (toolWindow == null) {
+            return;
+        }
         ApplicationManager.getApplication().invokeAndWait(() -> {
-            try {
-                ToolWindow toolWindow = ToolWindowManager.getInstance(project)
-                        .getToolWindow("Nocalhost Console");
-                if (toolWindow == null) {
-                    return;
+            toolWindow.activate(() -> {
+                ContentManager contentManager = toolWindow.getContentManager();
+                Content content = contentManager.getContent(0);
+                if (content != null) {
+                    contentManager.setSelectedContent(content);
                 }
-                toolWindow.activate(() -> {
-                    ContentManager contentManager = toolWindow.getContentManager();
-                    Content content = contentManager.getContent(0);
-                    if (content != null) {
-                        contentManager.setSelectedContent(content);
-                    }
-                });
-            } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Activating output window error",
-                        "Error occurs while activating output window", e);
-            }
+            });
         });
     }
 
@@ -54,18 +49,18 @@ public final class NocalhostConsoleManager {
             return;
         }
 
-        ApplicationManager.getApplication().invokeLater(() -> {
-            try {
-                ToolWindow toolWindow = ToolWindowManager.getInstance(project)
-                        .getToolWindow("Nocalhost Console");
-                if (toolWindow == null) {
-                    return;
-                }
+        try {
+            ToolWindow toolWindow = ToolWindowManager.getInstance(project)
+                    .getToolWindow("Nocalhost Console");
+            if (toolWindow == null) {
+                return;
+            }
 
-                ContentManager manager = toolWindow.getContentManager();
+            ContentManager manager = toolWindow.getContentManager();
 
-                NocalhostLogs logs = createLogs(project, command);
+            NocalhostLogs logs = createLogs(project, command);
 
+            ApplicationManager.getApplication().invokeLater(() -> {
                 toolWindow.activate(() -> {
                     Content content = manager.findContent(title);
                     if (content != null) {
@@ -77,11 +72,11 @@ public final class NocalhostConsoleManager {
                     manager.addContent(content);
                     manager.setSelectedContent(content);
                 });
-            } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Opening logs window error",
-                        "Error occurs while opening logs window", e);
-            }
-        });
+            });
+        } catch (Exception e) {
+            ErrorUtil.dealWith(project, "Opening logs window error",
+                    "Error occurs while opening logs window", e);
+        }
     }
 
     public static void openTerminalWindow(Project project,
@@ -91,18 +86,18 @@ public final class NocalhostConsoleManager {
             return;
         }
 
-        ApplicationManager.getApplication().invokeLater(() -> {
-            try {
-                ToolWindow toolWindow = ToolWindowManager.getInstance(project)
-                        .getToolWindow("Nocalhost Console");
-                if (toolWindow == null) {
-                    return;
-                }
+        try {
+            ToolWindow toolWindow = ToolWindowManager.getInstance(project)
+                    .getToolWindow("Nocalhost Console");
+            if (toolWindow == null) {
+                return;
+            }
 
-                ContentManager manager = toolWindow.getContentManager();
+            ContentManager manager = toolWindow.getContentManager();
 
-                NocalhostTerminal terminal = createTerminal(project, command, manager);
+            NocalhostTerminal terminal = createTerminal(project, command, manager);
 
+            ApplicationManager.getApplication().invokeLater(() -> {
                 toolWindow.activate(() -> {
                     Content content = manager.findContent(title);
                     if (content != null) {
@@ -115,12 +110,11 @@ public final class NocalhostConsoleManager {
                     manager.addContent(content);
                     manager.setSelectedContent(content);
                 });
-            } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Opening terminal window error",
-                        "Error occurs while opening terminal window", e);
-            }
-        });
-
+            });
+        } catch (Exception e) {
+            ErrorUtil.dealWith(project, "Opening terminal window error",
+                    "Error occurs while opening terminal window", e);
+        }
     }
 
     private static NocalhostLogs createLogs(Project project, GeneralCommandLine command)
