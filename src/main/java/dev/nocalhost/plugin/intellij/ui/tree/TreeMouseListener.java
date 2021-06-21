@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.ui.treeStructure.Tree;
 
-import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.awt.event.MouseAdapter;
@@ -19,7 +18,6 @@ import java.util.Set;
 
 import javax.swing.tree.TreePath;
 
-import dev.nocalhost.plugin.intellij.commands.data.KubeResourceType;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.task.LoadKubernetesResourceTask;
 import dev.nocalhost.plugin.intellij.ui.action.application.AppPortForwardAction;
@@ -175,45 +173,33 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     private void renderWorkloadAction(MouseEvent event, ResourceNode resourceNode) {
+        String kind = resourceNode.getKubeResource().getKind().toLowerCase();
+        if (!Set.of("deployment", "statefulset", "daemonset", "job", "cronjob", "pod").contains(kind)) {
+            return;
+        }
+
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
-        String kind = resourceNode.getKubeResource().getKind();
-        KubeResourceType type = EnumUtils.getEnumIgnoreCase(KubeResourceType.class, kind);
-        switch (type) {
-            case Deployment:
-            case Statefulset:
-            case Daemonset:
-            case Job:
-            case CronJob:
-                NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
-                if (!nhctlDescribeService.isDeveloping()) {
-                    actionGroup.add(new StartDevelopAction(project, resourceNode));
-                } else {
-                    if (!PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
-                        actionGroup.add(new OpenProjectAction(project, resourceNode));
-                    }
-                    actionGroup.add(new EndDevelopAction(project, resourceNode));
-                }
-
-                actionGroup.add(new ConfigAction(project, resourceNode));
-                actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
-                actionGroup.add(new CopyTerminalAction(project, resourceNode));
-                actionGroup.add(new Separator());
-                actionGroup.add(new ClearPersistentDataAction(project, resourceNode));
-                actionGroup.add(new Separator());
-                actionGroup.add(new LogsAction(project, resourceNode));
-                actionGroup.add(new PortForwardAction(project, resourceNode));
-                actionGroup.add(new ResetAction(project, resourceNode));
-                actionGroup.add(new TerminalAction(project, resourceNode));
-                break;
-            case Pod:
-                actionGroup.add(new LogsAction(project, resourceNode));
-                actionGroup.add(new PortForwardAction(project, resourceNode));
-                actionGroup.add(new TerminalAction(project, resourceNode));
-                break;
-            default:
-                return;
+        NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
+        if (!nhctlDescribeService.isDeveloping()) {
+            actionGroup.add(new StartDevelopAction(project, resourceNode));
+        } else {
+            if (!PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
+                actionGroup.add(new OpenProjectAction(project, resourceNode));
+            }
+            actionGroup.add(new EndDevelopAction(project, resourceNode));
         }
+
+        actionGroup.add(new ConfigAction(project, resourceNode));
+        actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
+        actionGroup.add(new CopyTerminalAction(project, resourceNode));
+        actionGroup.add(new Separator());
+        actionGroup.add(new ClearPersistentDataAction(project, resourceNode));
+        actionGroup.add(new Separator());
+        actionGroup.add(new LogsAction(project, resourceNode));
+        actionGroup.add(new PortForwardAction(project, resourceNode));
+        actionGroup.add(new ResetAction(project, resourceNode));
+        actionGroup.add(new TerminalAction(project, resourceNode));
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
