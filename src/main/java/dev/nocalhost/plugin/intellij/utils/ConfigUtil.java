@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import dev.nocalhost.plugin.intellij.data.NocalhostConfig;
+import dev.nocalhost.plugin.intellij.data.nocalhostconfig.NocalhostConfig;
 
 public final class ConfigUtil {
     public static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");

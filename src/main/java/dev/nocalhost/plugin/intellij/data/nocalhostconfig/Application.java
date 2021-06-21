@@ -1,11 +1,11 @@
-package dev.nocalhost.plugin.intellij.data;
+package dev.nocalhost.plugin.intellij.data.nocalhostconfig;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class NocalhostApplication {
+public class Application {
     private String name;
     private String manifestType;
 }
