@@ -33,6 +33,16 @@ public class GitCommand {
         execute(args);
     }
 
+    public void checkout(Path gitDir, String ref) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(
+                GIT_COMMAND,
+                "--work-tree", gitDir.toAbsolutePath().toString(),
+                "--git-dir", gitDir.resolve(".git").toAbsolutePath().toString(),
+                "checkout",
+                ref);
+        execute(args);
+    }
+
     protected String execute(List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         GeneralCommandLine commandLine = getCommandline(args);
         String cmd = commandLine.getCommandLineString();

@@ -70,7 +70,7 @@ public class UninstallAppAction extends DumbAwareAction {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     if (!MessageDialogUtil.yesNo(
                             project,
-                            "Uninstall application",
+                            "Uninstall Application",
                             "Uninstall application " + applicationName + "?"
                     )) {
                         return;

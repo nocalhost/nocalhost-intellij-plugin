@@ -31,6 +31,7 @@ import dev.nocalhost.plugin.intellij.ui.action.cluster.RemoveClusterAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.ViewClusterKubeConfigAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.CleanDevSpacePersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallApplicationAction;
+import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallStandaloneApplicationAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.ResetDevSpaceAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
@@ -127,19 +128,19 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     private void renderNamespaceAction(MouseEvent event, NamespaceNode namespaceNode) {
-        if (namespaceNode.getClusterNode().getNocalhostAccount() == null) {
-            return;
-        }
-
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
-        actionGroup.add(new InstallApplicationAction(project, namespaceNode));
+        if (namespaceNode.getClusterNode().getNocalhostAccount() != null) {
+            actionGroup.add(new InstallApplicationAction(project, namespaceNode));
 
-        if (namespaceNode.getClusterNode().getServiceAccount() != null) {
-            actionGroup.add(new Separator());
-            actionGroup.add(new CleanDevSpacePersistentDataAction(project, namespaceNode));
-            actionGroup.add(new Separator());
-            actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
+            if (namespaceNode.getClusterNode().getServiceAccount() != null) {
+                actionGroup.add(new Separator());
+                actionGroup.add(new CleanDevSpacePersistentDataAction(project, namespaceNode));
+                actionGroup.add(new Separator());
+                actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
+            }
+        } else {
+            actionGroup.add(new InstallStandaloneApplicationAction(project, namespaceNode));
         }
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Namespace.Actions", actionGroup);
