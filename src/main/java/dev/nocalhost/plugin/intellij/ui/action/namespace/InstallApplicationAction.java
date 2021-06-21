@@ -51,6 +51,13 @@ import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.HelmNocalhostConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
+import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_HELM_GIT;
+import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_HELM_LOCAL;
+import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_HELM_REPO;
+import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_KUSTOMIZE_GIT;
+import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_KUSTOMIZE_LOCAL;
+import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_RAW_MANIFEST_LOCAL;
+
 public class InstallApplicationAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(InstallApplicationAction.class);
 
@@ -176,24 +183,20 @@ public class InstallApplicationAction extends DumbAwareAction {
 
         List<String> resourceDirs = Lists.newArrayList(context.getResourceDir());
 
-        if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {
-            String message = StringUtils.equals(installType, "rawManifestLocal")
-                    ? "Please choose application manifest root directory"
-                    : "Please choose unpacked application helm chart root directory";
-
-            Path localPath = FileChooseUtil.chooseSingleDirectory(project, "", message);
+        if (Set.of(MANIFEST_TYPE_HELM_LOCAL, MANIFEST_TYPE_RAW_MANIFEST_LOCAL, MANIFEST_TYPE_KUSTOMIZE_LOCAL).contains(installType)) {
+            Path localPath = FileChooseUtil.chooseSingleDirectory(project, "", "Choose local directory");
             if (localPath == null) {
                 return;
             }
 
-            Path configPath = null;
+            Path configPath;
             Path nocalhostConfigPath = localPath.resolve(".nocalhost");
             List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigPath);
             if (configs.size() == 0) {
                 configPath = localPath;
             } else if (configs.size() == 1) {
                 configPath = configs.get(0);
-            } else if (configs.size() > 1) {
+            } else {
                 configPath = FileChooseUtil.chooseSingleFile(
                         project,
                         "Please select your configuration file",
@@ -213,7 +216,7 @@ public class InstallApplicationAction extends DumbAwareAction {
                 return;
             }
 
-            if (StringUtils.equals(installType, "helmRepo")) {
+            if (StringUtils.equals(installType, MANIFEST_TYPE_HELM_REPO)) {
                 opts.setHelmRepoUrl(context.getApplicationUrl());
                 opts.setHelmChartName(context.getApplicationName());
                 opts.setOuterConfig(HelmNocalhostConfigUtil.helmNocalhostConfigPath(app).toString());
@@ -230,11 +233,11 @@ public class InstallApplicationAction extends DumbAwareAction {
         }
 
 
-        if (StringUtils.equalsIgnoreCase(installType, "kustomizeGit")) {
+        if (Set.of(MANIFEST_TYPE_KUSTOMIZE_GIT, MANIFEST_TYPE_KUSTOMIZE_LOCAL).contains(installType)) {
             KustomizePathDialog kustomizePathDialog = new KustomizePathDialog(project);
             if (kustomizePathDialog.showAndGet()) {
                 String specifyPath = kustomizePathDialog.getSpecifyPath();
-                if (StringUtils.isNotBlank(specifyPath)) {
+                if (StringUtils.isNotEmpty(specifyPath)) {
                     resourceDirs.add(specifyPath);
                 }
             } else {
@@ -242,7 +245,7 @@ public class InstallApplicationAction extends DumbAwareAction {
             }
         }
 
-        if (Set.of("helmGit", "helmRepo", "helmLocal").contains(installType)) {
+        if (Set.of(MANIFEST_TYPE_HELM_GIT, MANIFEST_TYPE_HELM_REPO, MANIFEST_TYPE_HELM_LOCAL).contains(installType)) {
             HelmValuesChooseDialog helmValuesChooseDialog = new HelmValuesChooseDialog(project);
             if (helmValuesChooseDialog.showAndGet()) {
                 HelmValuesChooseState helmValuesChooseState = helmValuesChooseDialog
@@ -251,7 +254,7 @@ public class InstallApplicationAction extends DumbAwareAction {
                     opts.setHelmValues(helmValuesChooseState.getValuesYamlPath());
                 }
                 if (helmValuesChooseState.isSpecifyValues()
-                        && Set.of("helmGit", "helmRepo").contains(installType)) {
+                        && Set.of(MANIFEST_TYPE_HELM_GIT, MANIFEST_TYPE_HELM_REPO).contains(installType)) {
                     opts.setValues(helmValuesChooseState.getValues());
                 }
             } else {
@@ -266,7 +269,7 @@ public class InstallApplicationAction extends DumbAwareAction {
     private AppInstallOrUpgradeOption askAndGetInstallOption(String installType, Application app) {
         final String title = "Install DevSpace: " + app.getContext().getApplicationName();
         AppInstallOrUpgradeOptionDialog dialog;
-        if (StringUtils.equals(installType, "helmRepo")) {
+        if (StringUtils.equals(installType, MANIFEST_TYPE_HELM_REPO)) {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,

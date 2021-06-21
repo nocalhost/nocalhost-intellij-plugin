@@ -19,4 +19,8 @@ public final class MessageDialogUtil {
     public static int show(Project project, String title, String message, String... options) {
         return Messages.showIdeaMessageDialog(project, message, title, options, 0, null, null);
     }
+
+    public static void showError(Project project, String title, String message) {
+        Messages.showIdeaMessageDialog(project, message, title, new String[]{Messages.getOkButton()}, 0, Messages.getErrorIcon(), null);
+    }
 }

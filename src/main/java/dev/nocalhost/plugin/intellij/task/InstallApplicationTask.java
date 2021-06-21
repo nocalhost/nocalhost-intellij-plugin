@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -17,7 +16,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
@@ -38,12 +36,12 @@ public class InstallApplicationTask extends Task.Backgroundable {
             "bookinfo"
     );
 
-
     private final Project project;
     private final Application application;
     private final NhctlInstallOptions opts;
 
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
+
     private String productPagePort;
 
     public InstallApplicationTask(@Nullable Project project, Application application, NhctlInstallOptions opts) {
@@ -51,8 +49,9 @@ public class InstallApplicationTask extends Task.Backgroundable {
         this.project = project;
         this.application = application;
         this.opts = opts;
-    }
 
+        outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
+    }
 
     @Override
     public void onSuccess() {
@@ -60,11 +59,15 @@ public class InstallApplicationTask extends Task.Backgroundable {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
-        NocalhostNotifier.getInstance(project).notifySuccess("Application " + application.getContext().getApplicationName() + " installed", "");
+        NocalhostNotifier.getInstance(project).notifySuccess(
+                "Application " + application.getContext().getApplicationName() + " installed",
+                "");
     }
 
     private void bookinfo() {
-        if (BOOKINFO_APP_NAME.contains(application.getContext().getApplicationName()) && BOOKINFO_URLS.contains(application.getContext().getApplicationUrl()) && StringUtils.isNotBlank(productPagePort)) {
+        if (BOOKINFO_APP_NAME.contains(application.getContext().getApplicationName())
+                && BOOKINFO_URLS.contains(application.getContext().getApplicationUrl())
+                && StringUtils.isNotBlank(productPagePort)) {
             BrowserUtil.browse("http://127.0.0.1:" + productPagePort + "/productpage");
         }
     }
@@ -72,13 +75,14 @@ public class InstallApplicationTask extends Task.Backgroundable {
     @Override
     public void onThrowable(@NotNull Throwable e) {
         LOG.error("error occurred while installing application", e);
-        NocalhostNotifier.getInstance(project).notifyError("Nocalhost install devSpace error", "Error occurred while installing application", e.getMessage());
+        NocalhostNotifier.getInstance(project).notifyError(
+                "Nocalhost install devSpace error",
+                "Error occurred while installing application", e.getMessage());
     }
 
     @SneakyThrows
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
         outputCapturedNhctlCommand.install(application.getContext().getApplicationName(), opts);
     }
 }
