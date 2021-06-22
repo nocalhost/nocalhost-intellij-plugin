@@ -63,12 +63,8 @@ public final class NocalhostConsoleManager {
 
             ApplicationManager.getApplication().invokeLater(() -> {
                 toolWindow.activate(() -> {
-                    Content content = manager.findContent(title);
-                    if (content != null) {
-                        manager.removeContent(content, true);
-                    }
-
-                    content = ContentFactory.SERVICE.getInstance().createContent(logs, title, false);
+                    Content content = ContentFactory.SERVICE.getInstance().createContent(logs,
+                            title, false);
 
                     manager.addContent(content);
                     manager.setSelectedContent(content);
@@ -100,13 +96,8 @@ public final class NocalhostConsoleManager {
 
             ApplicationManager.getApplication().invokeLater(() -> {
                 toolWindow.activate(() -> {
-                    Content content = manager.findContent(title);
-                    if (content != null) {
-                        manager.removeContent(content, true);
-                    }
-
-                    content = ContentFactory.SERVICE.getInstance().createContent(terminal, title,
-                            false);
+                    Content content = ContentFactory.SERVICE.getInstance().createContent(terminal,
+                            title, false);
 
                     manager.addContent(content);
                     manager.setSelectedContent(content);
