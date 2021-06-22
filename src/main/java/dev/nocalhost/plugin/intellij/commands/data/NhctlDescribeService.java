@@ -19,4 +19,5 @@ public class NhctlDescribeService {
     private boolean possess;
     private boolean localconfigloaded;
     private boolean cmconfigloaded;
+    private boolean annotationsconfigloaded;
 }
