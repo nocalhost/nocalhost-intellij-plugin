@@ -295,6 +295,19 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
         }
 
         NhctlInstallOptions opts = new NhctlInstallOptions(kubeConfigPath, namespace);
+
+        HelmValuesChooseDialog helmValuesChooseDialog = new HelmValuesChooseDialog(project);
+        if (helmValuesChooseDialog.showAndGet()) {
+            HelmValuesChooseState helmValuesChooseState = helmValuesChooseDialog
+                    .getHelmValuesChooseState();
+            if (helmValuesChooseState.isSpecifyValuesYamlSelected()) {
+                opts.setHelmValues(helmValuesChooseState.getValuesYamlPath());
+            }
+            if (helmValuesChooseState.isSpecifyValues()) {
+                opts.setValues(helmValuesChooseState.getValues());
+            }
+        }
+
         opts.setHelmChartName(dialog.getName());
         opts.setHelmRepoUrl(dialog.getChartUrl());
         opts.setHelmRepoVersion(dialog.getVersion());
