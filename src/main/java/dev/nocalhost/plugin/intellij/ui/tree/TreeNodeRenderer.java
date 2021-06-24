@@ -13,7 +13,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
@@ -29,6 +28,10 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
 import icons.NocalhostIcons;
+
+import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
 
 public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     @Override
@@ -90,8 +93,8 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     }
 
     private Icon getWorkloadIcon(ResourceNode node) {
-        String workloadType = node.getKubeResource().getKind().toLowerCase();
-        if (!Set.of("deployment", "statefulset", "daemonset", "job", "cronjob", "pod").contains(workloadType)) {
+        String resourceType = node.getKubeResource().getKind().toLowerCase();
+        if (!ALL_WORKLOAD_TYPES.contains(resourceType)) {
             return null;
         }
 
@@ -146,7 +149,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                 .getConditions();
         if (conditions != null) {
             switch (node.getKubeResource().getKind().toLowerCase()) {
-                case "deployment":
+                case WORKLOAD_TYPE_DEPLOYMENT:
                     for (Condition condition : conditions) {
                         if (StringUtils.equals(condition.getType(), "Available")
                                 && StringUtils.equals(condition.getStatus(), "True")) {
@@ -162,7 +165,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                     }
                     break;
 
-                case "pod":
+                case WORKLOAD_TYPE_POD:
                     for (Condition condition : conditions) {
                         if (StringUtils.equals(condition.getType(), "Ready")
                                 && StringUtils.equals(condition.getStatus(), "True")) {

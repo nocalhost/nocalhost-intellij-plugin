@@ -14,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Set;
 
 import javax.swing.tree.TreePath;
 
@@ -50,6 +49,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 
+import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
 
 public class TreeMouseListener extends MouseAdapter {
@@ -174,8 +174,8 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     private void renderWorkloadAction(MouseEvent event, ResourceNode resourceNode) {
-        String kind = resourceNode.getKubeResource().getKind().toLowerCase();
-        if (!Set.of("deployment", "statefulset", "daemonset", "job", "cronjob", "pod").contains(kind)) {
+        String resourceType = resourceNode.getKubeResource().getKind().toLowerCase();
+        if (!ALL_WORKLOAD_TYPES.contains(resourceType)) {
             return;
         }
 
