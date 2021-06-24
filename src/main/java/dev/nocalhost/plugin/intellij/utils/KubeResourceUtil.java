@@ -13,7 +13,7 @@ public final class KubeResourceUtil {
         switch (resource.getKind().toLowerCase()) {
             case "deployment":
             case "daemonset":
-            case "statefuleset":
+            case "statefulset":
             case "job":
                 return resource
                         .getSpec()
