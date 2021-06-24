@@ -16,6 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
@@ -56,11 +58,11 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
 
     private final OutputCapturedGitCommand outputCapturedGitCommand;
 
-    private int installTypeSelectedByUser;
-    private String gitUrl;
-    private String gitRef;
-    private Path localPath;
-    private Path configPath;
+    private final AtomicInteger installTypeSelectedByUser = new AtomicInteger();
+    private final AtomicReference<String> gitUrl = new AtomicReference<>();
+    private final AtomicReference<String> gitRef = new AtomicReference<>();
+    private final AtomicReference<Path> localPath = new AtomicReference<>();
+    private final AtomicReference<Path> configPath = new AtomicReference<>();
 
     public InstallStandaloneApplicationAction(Project project, NamespaceNode node) {
         super("Install Application", "", AllIcons.Actions.Install);
@@ -74,7 +76,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        installTypeSelectedByUser = MessageDialogUtil.show(
+        int installTypeSelectedByUser = MessageDialogUtil.show(
                 project,
                 "Install Application",
                 "Please select the application installation source",
@@ -83,6 +85,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                 "Helm Repo",
                 "Cancel"
         );
+        this.installTypeSelectedByUser.set(installTypeSelectedByUser);
         switch (installTypeSelectedByUser) {
             case OPTION_OPEN_LOCAL_DIRECTORY:
                 Path localPath = FileChooseUtil.chooseSingleDirectory(
@@ -92,7 +95,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                 if (localPath == null) {
                     return;
                 }
-                this.localPath = localPath;
+                this.localPath.set(localPath);
                 resolveConfig();
                 break;
 
@@ -113,8 +116,8 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
         if (!dialog.showAndGet()) {
             return;
         }
-        gitUrl = dialog.getGitUrl();
-        gitRef = dialog.getGitRef();
+        gitUrl.set(dialog.getGitUrl());
+        gitRef.set(dialog.getGitRef());
         gitClone();
     }
 
@@ -123,11 +126,11 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
             try {
                 Path tempDir = Files.createTempDirectory("nocalhost-install-standalone-application-");
                 tempDir.toFile().deleteOnExit();
-                outputCapturedGitCommand.clone(tempDir.getParent(), gitUrl, tempDir.getFileName().toString());
-                if (StringUtils.isNotEmpty(gitRef)) {
-                    outputCapturedGitCommand.checkout(tempDir, gitRef);
+                outputCapturedGitCommand.clone(tempDir.getParent(), gitUrl.get(), tempDir.getFileName().toString());
+                if (StringUtils.isNotEmpty(gitRef.get())) {
+                    outputCapturedGitCommand.checkout(tempDir, gitRef.get());
                 }
-                localPath = tempDir;
+                localPath.set(tempDir);
                 resolveConfig();
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Cloning git repository error",
@@ -139,14 +142,14 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
     private void resolveConfig() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                Path nocalhostConfigDirectory = localPath.resolve(".nocalhost");
+                Path nocalhostConfigDirectory = localPath.get().resolve(".nocalhost");
                 List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigDirectory);
                 if (configs.size() == 0) {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         MessageDialogUtil.showError(project, "Install Standalone Application", "No nocalhost config found.");
                     });
                 } else if (configs.size() == 1) {
-                    configPath = configs.get(0);
+                    configPath.set(configs.get(0));
                     checkInstallType();
                 } else {
                     selectConfig(
@@ -162,7 +165,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
 
     private void selectConfig(Path configDirectory, Set<String> files) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            configPath = FileChooseUtil.chooseSingleFile(
+            Path configPath = FileChooseUtil.chooseSingleFile(
                     project,
                     "Please select your configuration file",
                     configDirectory,
@@ -170,6 +173,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
             if (configPath == null) {
                 return;
             }
+            this.configPath.set(configPath);
 
             checkInstallType();
         });
@@ -178,12 +182,12 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
     private void checkInstallType() {
         ApplicationManager.getApplication().invokeLater(() -> {
             try {
-                NocalhostConfig nocalhostConfig = DataUtils.fromYaml(Files.readString(configPath),
+                NocalhostConfig nocalhostConfig = DataUtils.fromYaml(Files.readString(configPath.get()),
                         NocalhostConfig.class);
                 Application application = nocalhostConfig.getApplication();
                 String installType = application.getManifestType();
 
-                switch (installTypeSelectedByUser) {
+                switch (installTypeSelectedByUser.get()) {
                     case OPTION_OPEN_LOCAL_DIRECTORY:
                         if (!Set.of(
                                 MANIFEST_TYPE_RAW_MANIFEST_LOCAL,
@@ -265,18 +269,18 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
             case MANIFEST_TYPE_RAW_MANIFEST_LOCAL:
             case MANIFEST_TYPE_HELM_LOCAL:
             case MANIFEST_TYPE_KUSTOMIZE_LOCAL:
-                opts.setLocalPath(localPath.toString());
-                opts.setOuterConfig(configPath.toString());
+                opts.setLocalPath(localPath.get().toString());
+                opts.setOuterConfig(configPath.get().toString());
                 break;
 
             case MANIFEST_TYPE_RAW_MANIFEST_GIT:
             case MANIFEST_TYPE_HELM_GIT:
             case MANIFEST_TYPE_KUSTOMIZE_GIT:
-                opts.setGitUrl(gitUrl);
-                if (StringUtils.isNotEmpty(gitRef)) {
-                    opts.setGitRef(gitRef);
+                opts.setGitUrl(gitUrl.get());
+                if (StringUtils.isNotEmpty(gitRef.get())) {
+                    opts.setGitRef(gitRef.get());
                 }
-                opts.setConfig(localPath.relativize(configPath).toString());
+                opts.setConfig(localPath.get().relativize(configPath.get()).toString());
                 break;
 
             default:
