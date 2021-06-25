@@ -64,6 +64,7 @@ public final class NocalhostConsoleManager {
                 toolWindow.activate(() -> {
                     Content content = ContentFactory.SERVICE.getInstance().createContent(logs,
                             title, false);
+                    content.setDisposer(logs);
 
                     manager.addContent(content);
                     manager.setSelectedContent(content);

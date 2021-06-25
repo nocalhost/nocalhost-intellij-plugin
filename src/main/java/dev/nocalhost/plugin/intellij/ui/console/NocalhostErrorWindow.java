@@ -1,38 +1,40 @@
 package dev.nocalhost.plugin.intellij.ui.console;
 
-import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 
-import javax.swing.*;
+import lombok.Getter;
 
-public class NocalhostErrorWindow extends NocalhostConsoleWindow {
+public class NocalhostErrorWindow extends LogsToolWindowPanel implements Disposable {
 
-    private final LogPanel panel;
+    @Getter
     private final String title;
 
     public NocalhostErrorWindow(Project project, String title, String content, String eMessage) {
+        super(false);
+
         this.title = title;
 
+        ConsoleView consoleView = new ErrorConsoleView(project);
+        Disposer.register(this, consoleView);
+        add(consoleView.getComponent());
 
-        ConsoleView consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+        consoleView.print(content + "\n" + eMessage, ConsoleViewContentType.LOG_ERROR_OUTPUT);
 
-        panel = new LogPanel(false);
-        consoleView.print(
-                content + "\n" + eMessage,
-                ConsoleViewContentType.LOG_ERROR_OUTPUT);
-
-        panel.add(consoleView.getComponent());
+        DefaultActionGroup actionGroup = new DefaultActionGroup(consoleView.createConsoleActions());
+        ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar(
+                "Nocalhost.Error.Window.Toolbar", actionGroup, false);
+        setToolbar(actionToolbar.getComponent());
     }
 
     @Override
-    public JComponent getPanel() {
-        return panel;
-    }
+    public void dispose() {
 
-    @Override
-    public String getTitle() {
-        return title;
     }
 }

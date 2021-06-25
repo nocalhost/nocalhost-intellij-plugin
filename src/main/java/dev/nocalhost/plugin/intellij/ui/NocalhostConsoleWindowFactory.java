@@ -54,7 +54,8 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
     private void errorPrint(String title, String contentMsg, String eMessage) {
         NocalhostErrorWindow nocalhostErrorWindow = new NocalhostErrorWindow(project, title, contentMsg, eMessage);
         ContentManager contentManager = toolWindow.getContentManager();
-        Content content = ContentFactory.SERVICE.getInstance().createContent(nocalhostErrorWindow.getPanel(), nocalhostErrorWindow.getTitle(), false);
+        Content content = ContentFactory.SERVICE.getInstance().createContent(nocalhostErrorWindow, nocalhostErrorWindow.getTitle(), false);
+        content.setDisposer(nocalhostErrorWindow);
         contentManager.addContent(content);
         contentManager.setSelectedContent(content);
     }
@@ -63,8 +64,9 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
         NocalhostOutputWindow nocalhostOutputWindow = new NocalhostOutputWindow(project);
 
         ContentManager contentManager = toolWindow.getContentManager();
-        Content content = ContentFactory.SERVICE.getInstance().createContent(nocalhostOutputWindow.getPanel(), "OUTPUT", false);
+        Content content = ContentFactory.SERVICE.getInstance().createContent(nocalhostOutputWindow, "OUTPUT", false);
         content.setCloseable(false);
+        content.setDisposer(nocalhostOutputWindow);
         contentManager.addContent(content);
         contentManager.setSelectedContent(content);
     }
