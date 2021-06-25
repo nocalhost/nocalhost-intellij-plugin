@@ -29,10 +29,14 @@ public class ClusterNode extends DefaultMutableTreeNode {
     }
 
     public String getName() {
+        String name = kubeConfig.getClusters().get(0).getName();
         if (serviceAccount != null && StringUtils.isNotEmpty(serviceAccount.getClusterName())) {
-            return serviceAccount.getClusterName();
+            name = serviceAccount.getClusterName();
         }
-        return kubeConfig.getClusters().get(0).getName();
+        if (nocalhostAccount != null) {
+            name += " [" + nocalhostAccount.getUsername() + " on " + nocalhostAccount.getServer() + "]";
+        }
+        return name;
     }
 
     public void updateFrom(ClusterNode o) {
