@@ -26,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -104,8 +106,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     @Override
     protected Action @NotNull [] createActions() {
-        myOKAction.putValue(Action.NAME, "Close");
-        return new Action[]{getOKAction()};
+        myCancelAction.putValue(Action.NAME, "Close");
+        return new Action[]{getCancelAction()};
     }
 
     @Override
@@ -168,6 +170,14 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
             startButton.setEnabled(enabled);
         });
+        startTextField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER && startButton.isEnabled()) {
+                    startPortForwardAction();
+                }
+            }
+        });
         GridConstraints textFieldConstraints = new GridConstraints();
         textFieldConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_WANT_GROW | GridConstraints.SIZEPOLICY_CAN_GROW);
         textFieldConstraints.setVSizePolicy(GridConstraints.SIZEPOLICY_CAN_SHRINK);
@@ -177,89 +187,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         startButton = new StartButton();
         startButton.setEnabled(false);
         startButton.addActionListener(event -> {
-            Set<String> portForwardsToBeStarted = Arrays.stream(startTextField.getText().split(",")).map(String::trim).collect(Collectors.toSet());
-
-            String container = null;
-            List<KubeResource> pods = null;
-            try {
-                NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, namespace);
-                List<NhctlGetResource> podList = nhctlCommand.getResources("Pods", nhctlGetOptions,
-                        node.getKubeResource().getSpec().getSelector().getMatchLabels());
-                pods = podList.stream()
-                        .map(NhctlGetResource::getKubeResource)
-                        .filter(KubeResource::canSelector)
-                        .collect(Collectors.toList());
-            } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "List Resource error while starting port forward", e.getMessage());
-            }
-            if (CollectionUtils.isNotEmpty(pods)) {
-                if (pods.size() > 0) {
-                    List<String> containers = pods.stream()
-                            .map(r -> r.getMetadata().getName())
-                            .collect(Collectors.toList());
-                    container = selectContainer(containers);
-                }
-            }
-            if (StringUtils.isBlank(container)) {
-//                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Resource not found while starting port forward");
-                return;
-            }
-            String finalContainer = container;
-
-            String sudoPassword = null;
-            if (SystemInfo.isLinux && portForwardsToBeStarted.stream().anyMatch(e -> NumberUtils.toInt(e.split(":")[0]) < 1024)) {
-                SudoPasswordDialog sudoPasswordDialog = new SudoPasswordDialog(project, NhctlUtil.binaryPath());
-                if (sudoPasswordDialog.showAndGet()) {
-                    sudoPassword = sudoPasswordDialog.getPassword();
-                } else {
-                    return;
-                }
-            }
-
-            final String finalSudoPassword = sudoPassword;
-            ProgressManager.getInstance().run(new Task.Modal(project, "Starting port forward " + startTextField.getText(), true) {
-                @Override
-                public void onThrowable(@NotNull Throwable throwable) {
-                    LOG.error("error occurred while starting port forward", throwable);
-                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while starting port forward", throwable.getMessage());
-                }
-
-                @Override
-                public void onFinished() {
-                    updatePortForwardList();
-                    startTextField.setText("");
-                    startButton.setEnabled(false);
-                }
-
-                @SneakyThrows
-                @Override
-                public void run(@NotNull ProgressIndicator indicator) {
-                    NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, namespace);
-                    nhctlDescribeOptions.setDeployment(node.resourceName());
-                    nhctlDescribeOptions.setType(node.getKubeResource().getKind());
-                    NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                            node.applicationName(),
-                            nhctlDescribeOptions,
-                            NhctlDescribeService.class);
-                    List<String> existedPortForwards = nhctlDescribeService
-                            .getDevPortForwardList()
-                            .stream()
-                            .map(NhctlPortForward::portForwardStr)
-                            .collect(Collectors.toList());
-
-                    portForwardsToBeStarted.removeAll(existedPortForwards);
-                    if (portForwardsToBeStarted.size() > 0) {
-                        NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(kubeConfigPath, namespace);
-                        nhctlPortForwardStartOptions.setDevPorts(Lists.newArrayList(portForwardsToBeStarted.iterator()));
-                        nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
-                        nhctlPortForwardStartOptions.setDeployment(node.resourceName());
-                        nhctlPortForwardStartOptions.setType(node.getKubeResource().getKind());
-                        nhctlPortForwardStartOptions.setPod(finalContainer);
-
-                        outputCapturedNhctlCommand.startPortForward(node.applicationName(), nhctlPortForwardStartOptions, finalSudoPassword);
-                    }
-                }
-            });
+            startPortForwardAction();
         });
         GridConstraints buttonConstraints = new GridConstraints();
         buttonConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW);
@@ -283,6 +211,92 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         stopPanelConstraints.setVSizePolicy(GridConstraints.SIZEPOLICY_FIXED);
         stopPanelConstraints.setFill(GridConstraints.FILL_BOTH);
         dialogPanel.add(startPanel, BorderLayout.NORTH);
+    }
+
+    private void startPortForwardAction() {
+        Set<String> portForwardsToBeStarted = Arrays.stream(startTextField.getText().split(",")).map(String::trim).collect(Collectors.toSet());
+
+        String container = null;
+        List<KubeResource> pods = null;
+        try {
+            NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, namespace);
+            List<NhctlGetResource> podList = nhctlCommand.getResources("Pods", nhctlGetOptions,
+                    node.getKubeResource().getSpec().getSelector().getMatchLabels());
+            pods = podList.stream()
+                    .map(NhctlGetResource::getKubeResource)
+                    .filter(KubeResource::canSelector)
+                    .collect(Collectors.toList());
+        } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
+            NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "List Resource error while starting port forward", e.getMessage());
+        }
+        if (CollectionUtils.isNotEmpty(pods)) {
+            if (pods.size() > 0) {
+                List<String> containers = pods.stream()
+                        .map(r -> r.getMetadata().getName())
+                        .collect(Collectors.toList());
+                container = selectContainer(containers);
+            }
+        }
+        if (StringUtils.isBlank(container)) {
+//                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Resource not found while starting port forward");
+            return;
+        }
+        String finalContainer = container;
+
+        String sudoPassword = null;
+        if (SystemInfo.isLinux && portForwardsToBeStarted.stream().anyMatch(e -> NumberUtils.toInt(e.split(":")[0]) < 1024)) {
+            SudoPasswordDialog sudoPasswordDialog = new SudoPasswordDialog(project, NhctlUtil.binaryPath());
+            if (sudoPasswordDialog.showAndGet()) {
+                sudoPassword = sudoPasswordDialog.getPassword();
+            } else {
+                return;
+            }
+        }
+
+        final String finalSudoPassword = sudoPassword;
+        ProgressManager.getInstance().run(new Task.Modal(project, "Starting port forward " + startTextField.getText(), true) {
+            @Override
+            public void onThrowable(@NotNull Throwable throwable) {
+                LOG.error("error occurred while starting port forward", throwable);
+                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while starting port forward", throwable.getMessage());
+            }
+
+            @Override
+            public void onFinished() {
+                updatePortForwardList();
+                startTextField.setText("");
+                startButton.setEnabled(false);
+            }
+
+            @SneakyThrows
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                nhctlDescribeOptions.setDeployment(node.resourceName());
+                nhctlDescribeOptions.setType(node.getKubeResource().getKind());
+                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+                        node.applicationName(),
+                        nhctlDescribeOptions,
+                        NhctlDescribeService.class);
+                List<String> existedPortForwards = nhctlDescribeService
+                        .getDevPortForwardList()
+                        .stream()
+                        .map(NhctlPortForward::portForwardStr)
+                        .collect(Collectors.toList());
+
+                portForwardsToBeStarted.removeAll(existedPortForwards);
+                if (portForwardsToBeStarted.size() > 0) {
+                    NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(kubeConfigPath, namespace);
+                    nhctlPortForwardStartOptions.setDevPorts(Lists.newArrayList(portForwardsToBeStarted.iterator()));
+                    nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
+                    nhctlPortForwardStartOptions.setDeployment(node.resourceName());
+                    nhctlPortForwardStartOptions.setType(node.getKubeResource().getKind());
+                    nhctlPortForwardStartOptions.setPod(finalContainer);
+
+                    outputCapturedNhctlCommand.startPortForward(node.applicationName(), nhctlPortForwardStartOptions, finalSudoPassword);
+                }
+            }
+        });
     }
 
     private void setupStopPanel() {

@@ -83,8 +83,8 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
 
     @Override
     protected Action @NotNull [] createActions() {
-        myOKAction.putValue(Action.NAME, "Close");
-        return new Action[]{getOKAction()};
+        myCancelAction.putValue(Action.NAME, "Close");
+        return new Action[]{getCancelAction()};
     }
 
     @Override
