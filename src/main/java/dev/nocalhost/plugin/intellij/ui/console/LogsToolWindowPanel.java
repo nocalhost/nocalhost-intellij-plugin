@@ -26,17 +26,11 @@ public class LogsToolWindowPanel extends JBPanelWithEmptyText implements QuickAc
     private JComponent myToolbar;
     private JComponent myContent;
 
-    private final boolean myBorderless;
     protected boolean myVertical;
     private boolean myProvideQuickActions;
 
     public LogsToolWindowPanel(boolean vertical) {
-        this(vertical, false);
-    }
-
-    public LogsToolWindowPanel(boolean vertical, boolean borderless) {
         setLayout(new BorderLayout(vertical ? 0 : 1, vertical ? 1 : 0));
-        myBorderless = borderless;
         myVertical = vertical;
         setProvideQuickActions(true);
 
@@ -47,9 +41,6 @@ public class LogsToolWindowPanel extends JBPanelWithEmptyText implements QuickAc
 
                 if (child instanceof Container) {
                     ((Container) child).addContainerListener(this);
-                }
-                if (myBorderless) {
-                    UIUtil.removeScrollBorder(LogsToolWindowPanel.this);
                 }
             }
 
@@ -136,10 +127,6 @@ public class LogsToolWindowPanel extends JBPanelWithEmptyText implements QuickAc
 
         myContent = c;
         add(c, BorderLayout.CENTER);
-
-        if (myBorderless) {
-            UIUtil.removeScrollBorder(c);
-        }
 
         revalidate();
         repaint();

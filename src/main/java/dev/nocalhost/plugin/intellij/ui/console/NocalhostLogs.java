@@ -5,16 +5,18 @@ import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessHandlerFactory;
 import com.intellij.execution.ui.ConsoleView;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class NocalhostLogs extends LogsToolWindowPanel {
+public class NocalhostLogs extends LogsToolWindowPanel implements Disposable {
     private static final Logger LOG = Logger.getInstance(NocalhostLogs.class);
 
     private ConsoleView consoleView;
@@ -24,6 +26,7 @@ public class NocalhostLogs extends LogsToolWindowPanel {
         super(false);
 
         consoleView = new ColoredConsoleView(project);
+        Disposer.register(this, consoleView);
         add(consoleView.getComponent());
 
         DefaultActionGroup actionGroup = new DefaultActionGroup(consoleView.createConsoleActions());
@@ -50,5 +53,10 @@ public class NocalhostLogs extends LogsToolWindowPanel {
             LOG.warn("Fail to send ctrl+c to remote process", e);
         }
         processHandler.destroyProcess();
+    }
+
+    @Override
+    public void dispose() {
+
     }
 }
