@@ -12,7 +12,6 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,15 +26,9 @@ import java.util.stream.Collectors;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeApplication;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.exception.NocalhostServerVersionOutDatedException;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.task.InstallApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
@@ -87,91 +80,55 @@ public class InstallApplicationAction extends DumbAwareAction {
                         nocalhostAccount.getJwt(),
                         nocalhostAccount.getUserInfo().getId()
                 );
-                List<NhctlListApplication> nhctlListApplications = nhctlCommand.listApplication(
-                        new NhctlListApplicationOptions(kubeConfigPath, namespace));
 
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    install(applications, nhctlListApplications);
-                });
+                List<NhctlListApplication> installedApplications = nhctlCommand.getApplications(
+                        new NhctlGetOptions(kubeConfigPath, namespace));
 
-            } catch (NocalhostServerVersionOutDatedException e) {
-                NocalhostNotifier.getInstance(project).notifyError(
-                        "Nocalhost server version out dated",
-                        "Nocalhost server version is lower than required minimal version.",
-                        e.getMessage());
-            } catch (IOException
-                    | NocalhostApiException
-                    | InterruptedException
-                    | NocalhostExecuteCmdException e) {
-                LOG.error(
-                        "error occurred while listing necessary data before installing application",
-                        e
-                );
+                List<Application> availableApplications = applications.stream()
+                        .filter(application -> !installedApplications.get(0)
+                                .getApplication()
+                                .stream()
+                                .anyMatch(e -> StringUtils.equals(e.getName(), application.getContext().getApplicationName()))
+                        ).collect(Collectors.toList());
+
+                selectApplication(availableApplications);
+
+            } catch (Exception e) {
+                ErrorUtil.dealWith(project, "Check application status error",
+                        "Error occurs while checking application status", e);
             }
         });
     }
 
-    private void install(List<Application> applications,
-                         List<NhctlListApplication> nhctlListApplications) {
-        final Set<String> apps = applications.stream()
-                .map(a -> a.getContext().getApplicationName())
-                .collect(Collectors.toSet());
-        final Optional<NhctlListApplication> currentDevspacesApp = nhctlListApplications.stream()
-                .filter(d -> d.getNamespace().equals(namespace)).findFirst();
-        List<String> installed = null;
-        if (currentDevspacesApp.isPresent()) {
-            installed = currentDevspacesApp.get().getApplication().stream()
-                    .map(NhctlListApplication.Application::getName)
-                    .collect(Collectors.toList());
-        }
-        if (CollectionUtils.isNotEmpty(installed)) {
-            for (String installedApp : installed) {
-                apps.remove(installedApp);
+    private void selectApplication(List<Application> applications) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            if (applications.isEmpty()) {
+                Messages.showMessageDialog("All applications are installed.", "Install Application", null);
+                return;
             }
-        }
-        if (apps.size() == 0) {
-            Messages.showMessageDialog("All applications are installed.", "Install Application", null);
-            return;
-        }
 
-        List<String> applicationsToBeInstalled = Lists.newArrayList(apps);
-        Collections.sort(applicationsToBeInstalled);
+            List<String> applicationsToBeInstalled = applications.stream()
+                    .map(e -> e.getContext().getApplicationName()).collect(Collectors.toList());
+            Collections.sort(applicationsToBeInstalled);
 
-        InstallApplicationChooseDialog dialog = new InstallApplicationChooseDialog(
-                applicationsToBeInstalled);
-        if (dialog.showAndGet()) {
-            final Optional<Application> app = applications.stream()
-                    .filter(a ->
-                            StringUtils.equals(
-                                    dialog.getSelected(),
-                                    a.getContext().getApplicationName()
-                            )
-                    )
-                    .findFirst();
-            app.ifPresent(application -> ApplicationManager.getApplication()
-                    .executeOnPooledThread(() -> {
-                        try {
-                            if (isApplicationInstalled(application.getContext().getApplicationName())) {
-                                ApplicationManager.getApplication().invokeLater(() -> {
-                                    Messages.showMessageDialog("Application has been installed.",
-                                            "Install Application", null);
-                                });
-                                return;
-                            }
-                            ApplicationManager.getApplication().invokeLater(() -> {
-                                try {
-                                    installApp(application);
-                                } catch (IOException e) {
-                                    LOG.error("error occurred while installing application", e);
-                                }
-                            });
-                        } catch (Exception e) {
-                            ErrorUtil.dealWith(project, "Loading application status error",
-                                    "Error occurs while loading application status", e);
-                        }
-                    }));
-
-        }
+            InstallApplicationChooseDialog dialog = new InstallApplicationChooseDialog(
+                    applicationsToBeInstalled);
+            if (dialog.showAndGet()) {
+                String applicationName = dialog.getSelected();
+                Optional<Application> applicationOptional = applications.stream()
+                        .filter(e -> StringUtils.equals(e.getContext().getApplicationName(), applicationName))
+                        .findFirst();
+                if (applicationOptional.isEmpty()) {
+                    return;
+                }
+                try {
+                    installApp(applicationOptional.get());
+                } catch (Exception e) {
+                    ErrorUtil.dealWith(project, "Install application error",
+                            "Error occurs while installing application", e);
+                }
+            }
+        });
     }
 
     private void installApp(Application app) throws IOException {
@@ -300,20 +257,5 @@ public class InstallApplicationAction extends DumbAwareAction {
         }
 
         return dialog.getAppInstallOrUpgradeOption();
-    }
-
-    private boolean isApplicationInstalled(String applicationName)
-            throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        try {
-            NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
-            NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(
-                    applicationName, opts, NhctlDescribeApplication.class);
-            return nhctlDescribeApplication.isInstalled();
-        } catch (Exception e) {
-            if (StringUtils.contains(e.getMessage(), "Application not found")) {
-                return false;
-            }
-            throw e;
-        }
     }
 }
