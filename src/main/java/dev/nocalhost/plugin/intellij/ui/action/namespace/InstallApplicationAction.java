@@ -85,10 +85,10 @@ public class InstallApplicationAction extends DumbAwareAction {
                         new NhctlGetOptions(kubeConfigPath, namespace));
 
                 List<Application> availableApplications = applications.stream()
-                        .filter(application -> !installedApplications.get(0)
+                        .filter(application -> installedApplications.get(0)
                                 .getApplication()
                                 .stream()
-                                .anyMatch(e -> StringUtils.equals(e.getName(), application.getContext().getApplicationName()))
+                                .noneMatch(e -> StringUtils.equals(e.getName(), application.getContext().getApplicationName()))
                         ).collect(Collectors.toList());
 
                 selectApplication(availableApplications);
@@ -108,8 +108,9 @@ public class InstallApplicationAction extends DumbAwareAction {
             }
 
             List<String> applicationsToBeInstalled = applications.stream()
-                    .map(e -> e.getContext().getApplicationName()).collect(Collectors.toList());
-            Collections.sort(applicationsToBeInstalled);
+                    .map(e -> e.getContext().getApplicationName())
+                    .sorted()
+                    .collect(Collectors.toList());
 
             InstallApplicationChooseDialog dialog = new InstallApplicationChooseDialog(
                     applicationsToBeInstalled);
