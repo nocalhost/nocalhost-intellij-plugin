@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
@@ -55,8 +56,8 @@ public class StartDevelopAction extends DumbAwareAction {
     private final Path kubeConfigPath;
     private final String namespace;
 
-    private String projectPath;
-    private String selectedContainer;
+    private final AtomicReference<String> projectPath = new AtomicReference<>();
+    private final AtomicReference<String> selectedContainer = new AtomicReference<>();
 
     public StartDevelopAction(Project project, ResourceNode node) {
         super("Start Develop", "", NocalhostIcons.Status.DevStart);
@@ -97,7 +98,7 @@ public class StartDevelopAction extends DumbAwareAction {
         if (containers.size() > 1) {
             selectContainer(containers);
         } else if (containers.size() == 1) {
-            selectedContainer = containers.get(0);
+            selectedContainer.set(containers.get(0));
             getAssociate();
         }
     }
@@ -107,7 +108,7 @@ public class StartDevelopAction extends DumbAwareAction {
             ListChooseDialog listChooseDialog = new ListChooseDialog(project, "Select Container",
                     containers);
             if (listChooseDialog.showAndGet()) {
-                selectedContainer = listChooseDialog.getSelectedValue();
+                selectedContainer.set(listChooseDialog.getSelectedValue());
                 getAssociate();
             }
         });
@@ -123,7 +124,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         node.applicationName(), opts, NhctlDescribeService.class);
 
                 if (StringUtils.isNotEmpty(nhctlDescribeService.getAssociate())) {
-                    projectPath = nhctlDescribeService.getAssociate();
+                    projectPath.set(nhctlDescribeService.getAssociate());
                     getImage();
                 } else {
                     selectCodeSource();
@@ -171,7 +172,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         .getRawConfig()
                         .getContainers()
                         .stream()
-                        .filter(e -> StringUtils.equals(e.getName(), selectedContainer))
+                        .filter(e -> StringUtils.equals(e.getName(), selectedContainer.get()))
                         .findFirst();
                 if (serviceContainerOptional.isPresent()) {
                     ServiceContainer serviceContainer = serviceContainerOptional.get();
@@ -220,7 +221,7 @@ public class StartDevelopAction extends DumbAwareAction {
                                 NhctlProfileSetOptions opts = new NhctlProfileSetOptions(kubeConfigPath, namespace);
                                 opts.setDeployment(node.resourceName());
                                 opts.setType(node.getKubeResource().getKind());
-                                opts.setContainer(selectedContainer);
+                                opts.setContainer(selectedContainer.get());
                                 opts.setKey("gitUrl");
                                 opts.setValue(finalGitUrl);
                                 outputCapturedNhctlCommand.profileSet(node.applicationName(), opts);
@@ -249,7 +250,7 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     private void setAssociate(String path) {
-        projectPath = path;
+        projectPath.set(path);
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(
@@ -280,7 +281,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         .getRawConfig()
                         .getContainers()
                         .stream()
-                        .filter(e -> StringUtils.equals(e.getName(), selectedContainer))
+                        .filter(e -> StringUtils.equals(e.getName(), selectedContainer.get()))
                         .findFirst();
                 if (serviceContainerOptional.isPresent()) {
                     ServiceContainer serviceContainer = serviceContainerOptional.get();
@@ -319,7 +320,7 @@ public class StartDevelopAction extends DumbAwareAction {
                                 namespace);
                         opts.setDeployment(node.resourceName());
                         opts.setType(node.getKubeResource().getKind());
-                        opts.setContainer(selectedContainer);
+                        opts.setContainer(selectedContainer.get());
                         opts.setKey("image");
                         opts.setValue(imageChooseDialog.getSelectedImage());
                         outputCapturedNhctlCommand.profileSet(node.applicationName(), opts);
@@ -335,7 +336,7 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     private void startDevelop() {
-        projectPath = Paths.get(projectPath).toString();
+        projectPath.set(Paths.get(projectPath.get()).toString());
         ServiceProjectPath serviceProjectPath;
         if (node.getClusterNode().getNocalhostAccount() != null) {
             serviceProjectPath = ServiceProjectPath.builder()
@@ -347,8 +348,8 @@ public class StartDevelopAction extends DumbAwareAction {
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
-                    .containerName(selectedContainer)
-                    .projectPath(projectPath)
+                    .containerName(selectedContainer.get())
+                    .projectPath(projectPath.get())
                     .build();
         } else {
             serviceProjectPath = ServiceProjectPath.builder()
@@ -357,19 +358,19 @@ public class StartDevelopAction extends DumbAwareAction {
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
-                    .containerName(selectedContainer)
-                    .projectPath(projectPath)
+                    .containerName(selectedContainer.get())
+                    .projectPath(projectPath.get())
                     .build();
         }
 
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (PathsUtil.isSame(projectPath, project.getBasePath())) {
+            if (PathsUtil.isSame(projectPath.get(), project.getBasePath())) {
                 ProgressManager.getInstance().run(
                         new StartingDevModeTask(project, serviceProjectPath));
             } else {
                 Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
                 for (Project openProject : openProjects) {
-                    if (PathsUtil.isSame(projectPath, openProject.getBasePath())) {
+                    if (PathsUtil.isSame(projectPath.get(), openProject.getBasePath())) {
                         ToolWindow toolWindow = ToolWindowManager.getInstance(openProject)
                                 .getToolWindow(ToolWindowId.PROJECT_VIEW);
                         if (toolWindow != null) {
@@ -382,7 +383,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     }
                 }
                 nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
-                ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPath),
+                ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPath.get()),
                         new OpenProjectTask());
             }
         });
