@@ -4,6 +4,8 @@ import com.google.gson.reflect.TypeToken;
 
 import com.github.zafarkhaja.semver.Version;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -160,11 +162,17 @@ public class NocalhostApi {
             if (resp.getCode() != 0) {
                 throw new NocalhostApiException(url, "get server version", response.code(), resp.getMessage());
             }
-            Version currentServerVersion = Version.valueOf(resp.getData().getVersion().substring(1));
 
             InputStream configInputStream = NocalhostBinService.class.getClassLoader().getResourceAsStream("config.properties");
             Properties properties = new Properties();
             properties.load(configInputStream);
+
+            String serverVersion = resp.getData().getVersion();
+            if (!StringUtils.isNotEmpty(serverVersion)) {
+                return;
+            }
+
+            Version currentServerVersion = Version.valueOf(serverVersion.substring(1));
             Version requiredMinimalServerVersion = Version.valueOf(properties.getProperty("serverVersion"));
 
             if (currentServerVersion.lessThan(requiredMinimalServerVersion)) {
