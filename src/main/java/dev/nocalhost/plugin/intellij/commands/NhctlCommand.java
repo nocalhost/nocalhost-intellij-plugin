@@ -33,7 +33,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplicationOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
@@ -53,14 +52,6 @@ import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 
 public class NhctlCommand {
-    public List<NhctlListApplication> listApplication(NhctlListApplicationOptions opts)
-            throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "list", "--json");
-        String result = execute(args, opts);
-        return DataUtils.GSON.fromJson(result,
-                TypeToken.getParameterized(List.class, NhctlListApplication.class).getType());
-    }
-
     public void install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "install", name);
         if (StringUtils.isNotEmpty(opts.getConfig())) {
