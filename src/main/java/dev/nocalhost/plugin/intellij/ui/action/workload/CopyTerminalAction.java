@@ -28,6 +28,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -165,6 +166,9 @@ public class CopyTerminalAction extends DumbAwareAction {
         StringSelection stringSelection = new StringSelection(commandLine.getCommandLineString());
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
+
+        NocalhostNotifier.getInstance(project).notifySuccess("Terminal command copied",
+                "Please open terminal and paste command to open new shell.");
     }
 
 }
