@@ -45,6 +45,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (value instanceof LoadingNode) {
             if (!selected) setForeground(UIUtil.getInactiveTextColor());
             setIcon(JBUIScale.scaleIcon(EmptyIcon.create(8, 16)));
+            setToolTipText("loading...");
             return;
         }
 
@@ -52,27 +53,37 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             ClusterNode node = (ClusterNode) value;
             append(node.getName());
             setIcon(AllIcons.Webreferences.Server);
+            String accountInfo = node.getAccountInfo();
+            if (StringUtils.isNotEmpty(accountInfo)) {
+                setToolTipText(node.getName() + " [" + accountInfo + "]");
+            } else {
+                setToolTipText(node.getName());
+            }
         }
 
         if (value instanceof NamespaceNode) {
             NamespaceNode node = (NamespaceNode) value;
             append(node.getName());
+            setToolTipText(node.getName());
         }
 
         if (value instanceof ApplicationNode) {
             ApplicationNode node = (ApplicationNode) value;
             append(node.getName());
             setIcon(NocalhostIcons.App.Connected);
+            setToolTipText(node.getName());
         }
 
         if (value instanceof ResourceGroupNode) {
             ResourceGroupNode node = (ResourceGroupNode) value;
             append(node.getName());
+            setToolTipText(node.getName());
         }
 
         if (value instanceof ResourceTypeNode) {
             ResourceTypeNode node = (ResourceTypeNode) value;
             append(node.getName());
+            setToolTipText(node.getName());
         }
 
         if (value instanceof ResourceNode) {
@@ -83,6 +94,8 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             if (icon != null) {
                 setIcon(icon);
             }
+
+            setToolTipText(node.getKubeResource().getMetadata().getName());
         }
     }
 
