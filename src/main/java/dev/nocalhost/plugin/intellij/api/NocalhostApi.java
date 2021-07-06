@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.api;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
 import com.google.gson.reflect.TypeToken;
 
 import com.github.zafarkhaja.semver.Version;
@@ -8,6 +10,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -45,7 +48,8 @@ public class NocalhostApi {
             if (!response.isSuccessful()) {
                 throw new NocalhostApiException(url, "login", response.code(), "");
             }
-            NocalhostApiResponse<LoginResponse> resp = DataUtils.GSON.fromJson(response.body().charStream(),
+            String body = CharStreams.toString(new InputStreamReader(response.body().byteStream(), Charsets.UTF_8));
+            NocalhostApiResponse<LoginResponse> resp = DataUtils.GSON.fromJson(body,
                     TypeToken.getParameterized(NocalhostApiResponse.class, LoginResponse.class).getType());
             if (resp.getCode() != 0) {
                 throw new NocalhostApiException(url, "login", response.code(), resp.getMessage());
@@ -66,7 +70,7 @@ public class NocalhostApi {
             if (!response.isSuccessful()) {
                 throw new NocalhostApiException(url, "get user info", response.code(), "");
             }
-            String body = response.body().string();
+            String body = CharStreams.toString(new InputStreamReader(response.body().byteStream(), Charsets.UTF_8));
             NocalhostApiResponse<UserInfo> resp = DataUtils.GSON.fromJson(body,
                     TypeToken.getParameterized(NocalhostApiResponse.class, UserInfo.class).getType());
             if (resp.getCode() != 0) {
@@ -89,7 +93,7 @@ public class NocalhostApi {
             if (!response.isSuccessful()) {
                 throw new NocalhostApiException(url, "list serviceAccounts", response.code(), "");
             }
-            String body = response.body().string();
+            String body = CharStreams.toString(new InputStreamReader(response.body().byteStream(), Charsets.UTF_8));
             NocalhostApiResponse<List<ServiceAccount>> resp = DataUtils.GSON.fromJson(body,
                     TypeToken.getParameterized(
                             NocalhostApiResponse.class,
@@ -117,7 +121,7 @@ public class NocalhostApi {
             if (!response.isSuccessful()) {
                 throw new NocalhostApiException(url, "list applications", response.code(), "");
             }
-            String body = response.body().string();
+            String body = CharStreams.toString(new InputStreamReader(response.body().byteStream(), Charsets.UTF_8));
             NocalhostApiResponse<List<Application>> resp = DataUtils.GSON.fromJson(body,
                     TypeToken.getParameterized(
                             NocalhostApiResponse.class,
@@ -142,7 +146,8 @@ public class NocalhostApi {
             if (!response.isSuccessful()) {
                 throw new NocalhostApiException(url, "reset application", response.code(), "");
             }
-            NocalhostApiResponse<Object> resp = DataUtils.GSON.fromJson(response.body().charStream(),
+            String body = CharStreams.toString(new InputStreamReader(response.body().byteStream(), Charsets.UTF_8));
+            NocalhostApiResponse<Object> resp = DataUtils.GSON.fromJson(body,
                     TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType());
             if (resp.getCode() != 0) {
                 throw new NocalhostApiException(url, "reset application", response.code(), resp.getMessage());
@@ -157,7 +162,8 @@ public class NocalhostApi {
             if (!response.isSuccessful()) {
                 throw new NocalhostApiException(url, "get server version", response.code(), "");
             }
-            NocalhostApiResponse<ServerVersion> resp = DataUtils.GSON.fromJson(response.body().charStream(),
+            String body = CharStreams.toString(new InputStreamReader(response.body().byteStream(), Charsets.UTF_8));
+            NocalhostApiResponse<ServerVersion> resp = DataUtils.GSON.fromJson(body,
                     TypeToken.getParameterized(NocalhostApiResponse.class, ServerVersion.class).getType());
             if (resp.getCode() != 0) {
                 throw new NocalhostApiException(url, "get server version", response.code(), resp.getMessage());
