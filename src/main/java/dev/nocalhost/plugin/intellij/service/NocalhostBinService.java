@@ -175,8 +175,17 @@ public class NocalhostBinService {
             }
         }
         Path destPath = Paths.get(NhctlUtil.binaryPath());
-        Files.deleteIfExists(destPath);
-        Files.move(downloadingPath, destPath);
+        if (SystemInfo.isWindows) {
+            Path tempPath = Paths.get(NhctlUtil.binaryPath() + ".temp");
+            if (Files.exists(destPath)) {
+                Files.move(destPath, tempPath);
+            }
+            Files.move(downloadingPath, destPath);
+            Files.deleteIfExists(tempPath);
+        } else {
+            Files.deleteIfExists(destPath);
+            Files.move(downloadingPath, destPath);
+        }
     }
 
     private String getDownloadingTempFilename() {
