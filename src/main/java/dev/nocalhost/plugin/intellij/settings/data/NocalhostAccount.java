@@ -11,8 +11,9 @@ import lombok.Getter;
 public class NocalhostAccount {
     private final String server;
     private final String username;
-    private String jwt;
-    private UserInfo userInfo;
+    private final String jwt;
+    private final String refreshToken;
+    private final UserInfo userInfo;
 
     @Override
     public boolean equals(Object o) {
