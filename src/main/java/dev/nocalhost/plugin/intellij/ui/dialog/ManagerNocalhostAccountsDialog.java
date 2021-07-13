@@ -32,6 +32,7 @@ public class ManagerNocalhostAccountsDialog extends DialogWrapper {
         this.project = project;
 
         setOKButtonText("Logout");
+        setOKActionEnabled(false);
 
         accountList.setCellRenderer(new ListItemCheckBox());
         accountList.setVisibleRowCount(20);
@@ -47,6 +48,8 @@ public class ManagerNocalhostAccountsDialog extends DialogWrapper {
         });
         accountList.setListData(nocalhostSettings.getNocalhostAccounts().toArray(
                 new NocalhostAccount[0]));
+        accountList.addListSelectionListener(e ->
+                ManagerNocalhostAccountsDialog.this.setOKActionEnabled(!accountList.isSelectionEmpty()));
 
         init();
     }
