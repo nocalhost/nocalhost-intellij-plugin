@@ -94,24 +94,48 @@ tasks {
             """
             <html>
                 <p>
-                    Nocalhost Intellij Plugin
+                    Nocalhost for VS Code brings the power and convenience of IDEs to cloud-native Kubernetes application development. It helps you to increase agility and speed to develop cloud-native applications on Kubernetes.
                 </p>
-    
+
+                <h3>
+                    Key Features
+                </h3>
+
                 <p>
-                    Nocalhost is Cloud Native Development Environment.
-                </p>
-    
-                <p>
-                    Features:
                     <ul>
-                        <li>Login to nocalhost API Server and list the DevSpaces</li>
-                        <li>Install and Uninstall DevSpaces</li>
-                        <li>Start DevMode to develop services</li>
+                        <li>
+                            <b>Start cloud-native application development in one click</b> - Nocalhost helps you spend less time on environment configuration, you can easily connect to any Kubernetes environment in one click, and focus on developing your app. 
+                        </li>
+                        <li>
+                            <b>Fast deployment</b> - You can deploy any Manifest Yaml, Helm and Kustomize applications by just few clicks.
+                        </li>
+                        <li>
+                            <b>See code change under a second</b> - Automatically synchronize the code to container every time you make a change. Nocalhost eliminate the submit, building and pushing cycles,  significantly speed up the feedback loop of development, so you see change in under a second.
+                        </li>
+                        <li>
+                            <b>Easy debugging in remote Kubernetes</b> - Nocalhost provides the same debugging experience you've used in the IDE even when debugging in remote Kubernetes cluster.
+                        </li>
                     </ul>
                 </p>
-    
+
+                <h3>
+                    Resources
+                </h3>
                 <p>
-                Refer to <a href="https://nocalhost.dev/">nocalhost.dev</a> for more Nocalhost information.
+                    <ul>
+                        <li>
+                            <a href="https://nocalhost.dev/eng/getting-started/"><b>Quick start</b></a> - Follow our quick start to enjoy the faster and easier cloud-native application.
+                        </li>
+                        <li>
+                            <a href="https://nocalhost.dev/"><b>Documentation</b></a> - We have a lot of features to explore. Head over our documentation to discover more.
+                        </li>
+                        <li>
+                            <a href="https://nocalhost.slack.com/"><b>Talk to us</b></a> - Connect to the Nocalhost development team by joining our Slack channel. 
+                        </li>
+                        <li>
+                            <a href="https://github.com/nocalhost/nocalhost/issues"><b>File a issue</b></a> - If you discover any issue, file a bug and will fix it as soon as possible.
+                        </li>
+                    </ul>
                 </p>
             </html>
             """.trimIndent()
