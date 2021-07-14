@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui;
 
+import com.google.gson.JsonSyntaxException;
+
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
@@ -60,20 +62,21 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
-        String status = null;
         try {
             NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
             nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
             nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
-            status = nhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
+            String status = nhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
+            nhctlSyncStatus = DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
         } catch (InterruptedException | IOException e) {
             LOG.error("error occurred while get sync status ", e);
         } catch (NocalhostExecuteCmdException e) {
             if (!StringUtils.contains(e.getMessage(), "not found")) {
                 LOG.error("Fail to get sync status", e);
             }
+        } catch (JsonSyntaxException ignored) {
         }
-        nhctlSyncStatus = DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
+
         return nhctlSyncStatus;
     }
 
