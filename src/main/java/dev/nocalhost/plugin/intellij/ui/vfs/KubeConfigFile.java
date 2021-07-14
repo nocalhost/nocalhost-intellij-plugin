@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.vfs;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
@@ -7,6 +8,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.util.NlsSafe;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileSystem;
@@ -30,7 +32,6 @@ import java.util.Date;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.utils.MessageDialogUtil;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 
@@ -91,43 +92,45 @@ public class KubeConfigFile extends VirtualFile {
     @Override
     public @NotNull OutputStream getOutputStream(Object requestor, long newModificationStamp, long newTimeStamp) throws IOException {
         String newContent = ((FileDocumentManagerImpl) requestor).getDocument(this).getText();
-
-        boolean exitCode = MessageDialogUtil.okCancel(project, "Apply this resource?", "");
-        if (exitCode) {
-            saveContent(newContent);
-        }
+        saveContent(newContent);
         OutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(newContent.getBytes());
         return outputStream;
     }
 
     private void saveContent(String newContent) {
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Applying " + name, false) {
-
-            String result = "";
-
-            @Override
-            public void onSuccess() {
-                NocalhostNotifier.getInstance(project).notifySuccess(name + " applied", result);
+        ApplicationManager.getApplication().invokeLater(() -> {
+            boolean exitCode = MessageDialogBuilder.yesNo("Apply this resource?", "").ask(project);
+            if (!exitCode) {
+                return;
             }
+            ProgressManager.getInstance().run(new Task.Backgroundable(null, "Applying " + name, false) {
 
-            @Override
-            public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while apply config file", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost apply error", "Error occurred while applying file", e.getMessage());
-            }
+                String result = "";
 
-            @SneakyThrows
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                File tempFile = File.createTempFile(resourceName, ".yaml");
-                FileOutputStream outputStream = new FileOutputStream(tempFile);
-                IOUtils.write(newContent, outputStream, StandardCharsets.UTF_8);
-                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace);
-                nhctlApplyOptions.setFile(tempFile.getAbsolutePath());
-                result = nhctlCommand.apply(appName, nhctlApplyOptions);
-            }
+                @Override
+                public void onSuccess() {
+                    NocalhostNotifier.getInstance(project).notifySuccess(name + " applied", result);
+                }
+
+                @Override
+                public void onThrowable(@NotNull Throwable e) {
+                    LOG.error("error occurred while apply config file", e);
+                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost apply error", "Error occurred while applying file", e.getMessage());
+                }
+
+                @SneakyThrows
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    File tempFile = File.createTempFile(resourceName, ".yaml");
+                    FileOutputStream outputStream = new FileOutputStream(tempFile);
+                    IOUtils.write(newContent, outputStream, StandardCharsets.UTF_8);
+                    final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                    NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace);
+                    nhctlApplyOptions.setFile(tempFile.getAbsolutePath());
+                    result = nhctlCommand.apply(appName, nhctlApplyOptions);
+                }
+            });
         });
     }
 
