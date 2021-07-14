@@ -3,6 +3,7 @@ plugins {
     java
     kotlin("jvm") version "1.4.21"
     id("io.franzbecker.gradle-lombok") version "2.1"
+    id("net.saliman.properties") version "1.5.1"
 }
 
 java {
@@ -11,9 +12,6 @@ java {
 }
 
 group = "dev.nocalhost"
-
-val git4idea = "git4idea"
-val terminal = "terminal"
 
 repositories {
     mavenCentral()
@@ -48,23 +46,43 @@ var baseIDE = "IC"
 if (project.hasProperty("baseIDE")) {
     baseIDE = project.property("baseIDE") as String
 }
+val platformVersion = prop("platformVersion").toInt()
+val ideaVersion = prop("ideaVersion")
+val nocalhostVersion = prop("version")
+
+val git4ideaPlugin = "git4idea"
+val terminalPlugin = "terminal"
+val javaPlugin = "com.intellij.java"
+val goPlugin = "org.jetbrains.plugins.go:" + when (platformVersion) {
+    203 -> "203.5981.114"
+    211 -> "211.6693.111"
+    else -> error("Unexpected platform version: `$platformVersion`")
+}
+
+version = "$nocalhostVersion-" + when (platformVersion) {
+    203 -> "2020.3"
+    211 -> "2021.1"
+    else -> error("Unexpected platform version: `$platformVersion`")
+}
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    type = "IC"
-    if (baseIDE == "GO") {
-        type = "IU"
-    }
-    version = project.property("ideaVersion") as String
+    version = ideaVersion
     val plugins = mutableListOf(
-        git4idea,
-        terminal,
-        "com.intellij.java",
-        "org.jetbrains.plugins.go:211.6693.111"
+        git4ideaPlugin,
+        terminalPlugin,
+        javaPlugin,
+        goPlugin
     )
     setPlugins(*plugins.toTypedArray())
     pluginName = "nocalhost-intellij-plugin"
-    updateSinceUntilBuild = false
+    updateSinceUntilBuild = true
+}
+
+sourceSets {
+    main {
+        java.srcDirs("src/$platformVersion/main/java")
+    }
 }
 
 tasks.runIde {
@@ -117,3 +135,7 @@ tasks {
         enabled = false
     }
 }
+
+fun prop(name: String): String =
+    extra.properties[name] as? String
+        ?: error("Property `$name` is not defined in gradle.properties")

@@ -2,15 +2,20 @@ name: build
 
 on:
   push:
-    branches: [ 211, 211-dev ]
+    branches: [ dev ]
   pull_request:
-    branches: [ 211, 211-dev ]
+    branches: [ dev ]
   workflow_dispatch:
 
 jobs:
   build:
     name: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform-version: [ 203, 211 ]
+    env:
+      ORG_GRADLE_PROJECT_platformVersion: ${{ matrix.platform-version }}
 
     steps:
     - uses: actions/checkout@v2
@@ -23,10 +28,11 @@ jobs:
     - name: Build
       run: |
         sed -i "s/sentryDsn=/sentryDsn=${{secrets.INTELLIJ_PLUGIN_SENTRY_DSN}}/g" src/main/resources/config.properties
-        ./gradlew buildPlugin
+        ./gradlew clean buildPlugin
 
     - name: Push to Coding Artifacts
       run: |
         cd build/distributions/
         PLUGIN_ZIP=$(ls | grep nocalhost-intellij-plugin-)
-        curl -T ${PLUGIN_ZIP} -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${GITHUB_SHA}-2021.1"
+        PLUGIN_VERSION="$(git rev-parse --short HEAD)-${{ matrix.platform-version }}"
+        curl -T ${PLUGIN_ZIP} -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${PLUGIN_VERSION}"
