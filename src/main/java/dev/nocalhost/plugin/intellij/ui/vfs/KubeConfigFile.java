@@ -100,8 +100,7 @@ public class KubeConfigFile extends VirtualFile {
 
     private void saveContent(String newContent) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            boolean exitCode = MessageDialogBuilder.yesNo("Apply this resource?", "").ask(project);
-            if (!exitCode) {
+            if (!MessageDialogBuilder.yesNo("Apply this resource?", "").ask(project)) {
                 return;
             }
             ProgressManager.getInstance().run(new Task.Backgroundable(null, "Applying " + name, false) {

@@ -8,7 +8,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.popup.ListPopup;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.StatusBar;
@@ -36,7 +36,6 @@ import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.MessageDialogUtil;
 
 public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValuesPresentation, StatusBarWidget.Multiframe {
 
@@ -130,63 +129,48 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         final NocalhostProjectSettings nocalhostProjectSettings = project.getService(NocalhostProjectSettings.class);
 
         if (nhctlSyncStatus != null && nhctlSyncStatus.getStatus().equalsIgnoreCase("disconnected")) {
-            int exitCode = MessageDialogUtil.yesNoCancel(project, "Sync resume", "do you want to resume file sync?");
-            switch (exitCode) {
-                case Messages.YES: {
-                    ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
-                    if (devModeService == null || devModeService.getRawKubeConfig() == null) {
-                        return null;
+            if (MessageDialogBuilder.yesNo("Sync Resume", "do you want to resume file sync?").ask(project)) {
+                ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
+                if (devModeService == null || devModeService.getRawKubeConfig() == null) {
+                    return null;
+                }
+
+                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
+
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    try {
+                        NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(kubeConfigPath, devModeService.getNamespace());
+                        nhctlSyncOptions.setDeployment(devModeService.getServiceName());
+                        nhctlSyncOptions.setControllerType(devModeService.getServiceType());
+                        nhctlSyncOptions.setContainer(devModeService.getContainerName());
+                        nhctlSyncOptions.setResume(true);
+                        outputCapturedNhctlCommand.sync(devModeService.getApplicationName(), nhctlSyncOptions);
+                    } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
+                        LOG.error("error occurred while sync resume ", e);
                     }
-
-                    Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
-
-                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                        try {
-                            NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(kubeConfigPath, devModeService.getNamespace());
-                            nhctlSyncOptions.setDeployment(devModeService.getServiceName());
-                            nhctlSyncOptions.setControllerType(devModeService.getServiceType());
-                            nhctlSyncOptions.setContainer(devModeService.getContainerName());
-                            nhctlSyncOptions.setResume(true);
-                            outputCapturedNhctlCommand.sync(devModeService.getApplicationName(), nhctlSyncOptions);
-                        } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
-                            LOG.error("error occurred while sync resume ", e);
-                        }
-                    });
-                }
-                case Messages.NO: {
-                    break;
-                }
-                default:
+                });
             }
         }
         if (nhctlSyncStatus != null && StringUtils.isNoneBlank(nhctlSyncStatus.getOutOfSync())) {
-            int exitCode = MessageDialogUtil.yesNoCancel(project, "Sync warning", "Override the remote changes according to the local folders?");
-            switch (exitCode) {
-                case Messages.YES: {
-                    ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
-                    if (devModeService == null || devModeService.getRawKubeConfig() == null) {
-                        return null;
+            if (MessageDialogBuilder.yesNo("Sync Override", "Override the remote changes according to the local folders?").ask(project)) {
+                ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
+                if (devModeService == null || devModeService.getRawKubeConfig() == null) {
+                    return null;
+                }
+
+                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
+
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    try {
+                        NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
+                        nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
+                        nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
+                        nhctlSyncStatusOptions.setOverride(true);
+                        outputCapturedNhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
+                    } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
+                        LOG.error("error occurred while sync status override ", e);
                     }
-
-                    Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
-
-                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                        try {
-                            NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
-                            nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
-                            nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
-                            nhctlSyncStatusOptions.setOverride(true);
-                            outputCapturedNhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
-                        } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
-                            LOG.error("error occurred while sync status override ", e);
-                        }
-                    });
-                    break;
-                }
-                case Messages.NO: {
-                    break;
-                }
-                default:
+                });
             }
         }
         return null;
