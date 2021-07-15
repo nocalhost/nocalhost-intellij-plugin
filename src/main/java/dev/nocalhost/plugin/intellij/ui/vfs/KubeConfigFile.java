@@ -37,14 +37,14 @@ import lombok.SneakyThrows;
 public class KubeConfigFile extends VirtualFile {
     private static final Logger LOG = Logger.getInstance(KubeConfigFile.class);
 
-    private String name;
-    private String path;
-    private String resourceName;
+    private final String name;
+    private final String path;
+    private final String resourceName;
     private String content;
-    private Project project;
-    private String appName;
-    private Path kubeConfigPath;
-    private String namespace;
+    private final Project project;
+    private final String appName;
+    private final Path kubeConfigPath;
+    private final String namespace;
 
     @Override
     public @NotNull @NlsSafe String getName() {
@@ -90,6 +90,7 @@ public class KubeConfigFile extends VirtualFile {
     @Override
     public @NotNull OutputStream getOutputStream(Object requestor, long newModificationStamp, long newTimeStamp) throws IOException {
         String newContent = ((FileDocumentManagerImpl) requestor).getDocument(this).getText();
+        content = newContent;
         saveContent(newContent);
         OutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(newContent.getBytes());
