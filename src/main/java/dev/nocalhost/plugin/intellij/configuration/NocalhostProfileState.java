@@ -8,6 +8,7 @@ import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.execution.runners.ProgramRunner;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -30,6 +31,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
+import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpDebugRunner;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
@@ -107,12 +109,16 @@ public class NocalhostProfileState extends CommandLineState {
                     throw new ExecutionException("Debug command not configured");
                 }
 
-                String remotePort = resolveDebugPort(serviceContainer);
-                if (!StringUtils.isNotEmpty(remotePort)) {
-                    throw new ExecutionException("Remote debug port not configured.");
+                // PHP remote debugging use SSH tunnel
+                ProgramRunner runner = getEnvironment().getRunner();
+                if ( ! (runner instanceof NocalhostPhpDebugRunner)) {
+                    String remotePort = resolveDebugPort(serviceContainer);
+                    if (!StringUtils.isNotEmpty(remotePort)) {
+                        throw new ExecutionException("Remote debug port not configured.");
+                    }
+                    String localPort = startDebugPortForward(devModeService, remotePort);
+                    debug = new NocalhostDevInfo.Debug(remotePort, localPort);
                 }
-                String localPort = startDebugPortForward(devModeService, remotePort);
-                debug = new NocalhostDevInfo.Debug(remotePort, localPort);
             } else {
                 if (!StringUtils.isNotEmpty(command.getRun())) {
                     throw new ExecutionException("Run command not configured");

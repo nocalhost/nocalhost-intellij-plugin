@@ -55,11 +55,15 @@ intellij {
     if (baseIDE == "GO") {
         type = "IU"
     }
+    if (baseIDE == "PHP") {
+        type = "IU"
+    }
     version = project.property("ideaVersion") as String
     val plugins = mutableListOf(
         git4idea,
         terminal,
         "com.intellij.java",
+        "com.jetbrains.php:211.6693.111",
         "org.jetbrains.plugins.go:211.6693.111"
     )
     setPlugins(*plugins.toTypedArray())
@@ -70,6 +74,9 @@ intellij {
 tasks.runIde {
     if (baseIDE == "GO") {
         ideDirectory("/Applications/GoLand.app/Contents")
+    }
+    if (baseIDE == "PHP") {
+        ideDirectory("/Applications/PhpStorm.app/Contents")
     }
 }
 
@@ -115,5 +122,9 @@ tasks {
 
     buildSearchableOptions {
         enabled = false
+    }
+
+    buildPlugin {
+
     }
 }
