@@ -13,19 +13,17 @@ import com.intellij.openapi.util.NlsSafe;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileSystem;
 
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 
@@ -121,12 +119,11 @@ public class KubeConfigFile extends VirtualFile {
                 @SneakyThrows
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
-                    File tempFile = File.createTempFile(resourceName, ".yaml");
-                    FileOutputStream outputStream = new FileOutputStream(tempFile);
-                    IOUtils.write(newContent, outputStream, StandardCharsets.UTF_8);
+                    Path tempFile = Files.createTempFile(resourceName, ".yaml");
+                    Files.write(tempFile, newContent.getBytes(StandardCharsets.UTF_8));
                     final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
                     NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace);
-                    nhctlApplyOptions.setFile(tempFile.getAbsolutePath());
+                    nhctlApplyOptions.setFile(tempFile.toAbsolutePath().toString());
                     result = nhctlCommand.apply(appName, nhctlApplyOptions);
                 }
             });
