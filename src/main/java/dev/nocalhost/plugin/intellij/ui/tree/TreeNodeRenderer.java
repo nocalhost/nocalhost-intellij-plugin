@@ -31,6 +31,7 @@ import icons.NocalhostIcons;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_JOB;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
 
 public class TreeNodeRenderer extends ColoredTreeCellRenderer {
@@ -95,7 +96,11 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                 setIcon(icon);
             }
 
-            setToolTipText(node.getKubeResource().getMetadata().getName());
+            String tips = node.getKubeResource().getMetadata().getName();
+            if (StringUtils.equals(node.getKubeResource().getKind().toLowerCase(), WORKLOAD_TYPE_JOB)) {
+                tips += "(" + getJobStatus(node) + ")";
+            }
+            setToolTipText(tips);
         }
     }
 
@@ -139,8 +144,22 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                 }
             case STARTING:
                 return NocalhostIcons.Status.Loading;
+            case FAILED:
+                return NocalhostIcons.Status.Failed;
             default:
                 return NocalhostIcons.Status.Unknown;
+        }
+    }
+
+    private String getJobStatus(ResourceNode node) {
+        ServiceStatus status = getServiceStatus(node);
+        switch (status) {
+            case RUNNING:
+                return "complete";
+            case FAILED:
+                return "failed";
+            default:
+                return "unknown";
         }
     }
 
@@ -169,6 +188,18 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                     }
                     if (progressing && !available) {
                         status = ServiceStatus.STARTING;
+                    }
+                    break;
+
+                case WORKLOAD_TYPE_JOB:
+                    for (Condition condition : conditions) {
+                        if (StringUtils.equals(condition.getType(), "Complete")
+                                && StringUtils.equals(condition.getStatus(), "True")) {
+                            status = ServiceStatus.RUNNING;
+                        } else if (StringUtils.equals(condition.getType(), "Failed")
+                                && StringUtils.equals(condition.getStatus(), "True")) {
+                            status = ServiceStatus.FAILED;
+                        }
                     }
                     break;
 
