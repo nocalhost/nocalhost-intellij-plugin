@@ -101,7 +101,7 @@ tasks {
                     Nocalhost for JetBrains brings the power and convenience of IDEs to cloud-native Kubernetes application development. It helps you to increase agility and speed to develop cloud-native applications on Kubernetes.
                 </p>
 
-                <h3>
+                <h3 style>
                     Key Features
                 </h3>
 
