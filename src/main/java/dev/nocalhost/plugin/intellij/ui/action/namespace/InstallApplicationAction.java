@@ -28,6 +28,8 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.exception.NocalhostServerVersionOutDatedException;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.task.InstallApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
@@ -92,6 +94,8 @@ public class InstallApplicationAction extends DumbAwareAction {
 
                 selectApplication(availableApplications);
 
+            } catch (NocalhostServerVersionOutDatedException e) {
+                NocalhostNotifier.getInstance(project).notifyError("Server version out-dated", e.getMessage());
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Check application status error",
                         "Error occurs while checking application status", e);
