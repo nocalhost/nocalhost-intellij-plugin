@@ -50,7 +50,6 @@ val platformVersion = prop("platformVersion").toInt()
 val ideaVersion = prop("ideaVersion")
 val nocalhostVersion = prop("version")
 
-val git4ideaPlugin = "git4idea"
 val terminalPlugin = "terminal"
 val javaPlugin = "com.intellij.java"
 val goPlugin = "org.jetbrains.plugins.go:" + prop("goPluginVersion")
@@ -61,7 +60,6 @@ version = "$nocalhostVersion-$platformVersion"
 intellij {
     version = ideaVersion
     val plugins = mutableListOf(
-        git4ideaPlugin,
         terminalPlugin,
         javaPlugin,
         goPlugin
