@@ -111,7 +111,7 @@ public class NocalhostProfileState extends CommandLineState {
 
                 // PHP remote debugging use SSH tunnel
                 ProgramRunner runner = getEnvironment().getRunner();
-                if ( ! (runner instanceof NocalhostPhpDebugRunner)) {
+                if (runner.getRunnerId() != NocalhostPhpDebugRunner.RUNNER_ID) {
                     String remotePort = resolveDebugPort(serviceContainer);
                     if (!StringUtils.isNotEmpty(remotePort)) {
                         throw new ExecutionException("Remote debug port not configured.");

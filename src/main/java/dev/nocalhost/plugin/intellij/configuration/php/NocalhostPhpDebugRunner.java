@@ -9,6 +9,7 @@ import com.intellij.execution.runners.ProgramRunner;
 import com.intellij.execution.ui.RunContentDescriptor;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.NotificationListener;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.text.StringUtil;
@@ -40,13 +41,15 @@ import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostRunner;
 
 public class NocalhostPhpDebugRunner extends PhpDebugRunner<NocalhostPhpConfiguration> {
+    public static final String RUNNER_ID = "NocalhostPhpDebugRunner";
+
     public NocalhostPhpDebugRunner() {
         super(NocalhostPhpConfiguration.class);
     }
 
     @NotNull
     public String getRunnerId() {
-        return "NocalhostPhpDebugRunner";
+        return RUNNER_ID;
     }
 
     protected RunContentDescriptor doExecute(@NotNull RunProfileState state, @NotNull ExecutionEnvironment environment) throws ExecutionException {
@@ -70,6 +73,12 @@ public class NocalhostPhpDebugRunner extends PhpDebugRunner<NocalhostPhpConfigur
                         }
                     }
                 };
+
+                ((NocalhostProfileState) state).prepareDevInfo();
+                FileDocumentManager.getInstance().saveAllDocuments();
+                NocalhostRunner runner = Objects.requireNonNull(ProgramRunner.PROGRAM_RUNNER_EP.findExtension(NocalhostRunner.class));
+                state.execute(environment.getExecutor(), runner);
+
                 boolean isStarted = PhpDebugExternalConnectionsAccepter.getInstance(project).isStarted();
                 String title;
                 String message;
@@ -78,10 +87,6 @@ public class NocalhostPhpDebugRunner extends PhpDebugRunner<NocalhostPhpConfigur
                     message = PhpBundle.message("PhpRemoteDebugRunConfigurationEditor.zero.configuration.is.already.used", new Object[0]);
                     PhpDebugUtil.showInformationBalloon(project, title, message, listener);
                 } else {
-                    ((NocalhostProfileState)state).prepareDevInfo();
-                    NocalhostRunner runner = Objects.requireNonNull(ProgramRunner.PROGRAM_RUNNER_EP.findExtension(NocalhostRunner.class));
-                    state.execute(environment.getExecutor(), runner);
-
                     PhpDebugExternalConnectionsAccepter.getInstance(project).doSwitch();
                     title = PhpBundle.message("PhpRemoteDebugRunConfigurationEditor.zero.configuration.used.title", new Object[0]);
                     message = PhpBundle.message("PhpRemoteDebugRunConfigurationEditor.zero.configuration.used", new Object[]{configuration.getName()});
