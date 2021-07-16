@@ -53,11 +53,7 @@ val nocalhostVersion = prop("version")
 val git4ideaPlugin = "git4idea"
 val terminalPlugin = "terminal"
 val javaPlugin = "com.intellij.java"
-val goPlugin = "org.jetbrains.plugins.go:" + when (platformVersion) {
-    203 -> "203.5981.114"
-    211 -> "211.6693.111"
-    else -> error("Unexpected platform version: `$platformVersion`")
-}
+val goPlugin = "org.jetbrains.plugins.go:" + prop("goPluginVersion")
 
 version = "$nocalhostVersion-$platformVersion"
 
