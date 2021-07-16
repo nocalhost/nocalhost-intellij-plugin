@@ -1,6 +1,8 @@
 package dev.nocalhost.plugin.intellij.startup;
 
 import com.intellij.ide.AppLifecycleListener;
+import com.intellij.notification.NotificationGroupManager;
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -18,6 +20,8 @@ import dev.nocalhost.plugin.intellij.api.data.UserInfo;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.utils.TokenUtil;
+
+import static dev.nocalhost.plugin.intellij.exception.NocalhostNotifier.NOCALHOST_ERROR_NOTIFICATION_ID;
 
 public class NocalhostTokenRefreshListener implements AppLifecycleListener {
     private static final Logger LOG = Logger.getInstance(NocalhostTokenRefreshListener.class);
@@ -54,6 +58,13 @@ public class NocalhostTokenRefreshListener implements AppLifecycleListener {
 
         for (NocalhostAccount nocalhostAccount : nocalhostAccounts) {
             if (!TokenUtil.needRefresh(nocalhostAccount.getJwt())) {
+                continue;
+            }
+
+            if (!TokenUtil.isValid(nocalhostAccount.getRefreshToken())) {
+                String message = "Token of " + nocalhostAccount.getUsername() + " @ " + nocalhostAccount.getServer() + " expired.";
+                NotificationGroupManager.getInstance().getNotificationGroup(NOCALHOST_ERROR_NOTIFICATION_ID)
+                        .createNotification(message, NotificationType.ERROR).notify();
                 continue;
             }
 
