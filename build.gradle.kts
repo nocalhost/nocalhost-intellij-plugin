@@ -146,7 +146,30 @@ tasks {
         )
         changeNotes(
             """
-          <a href="https://github.com/nocalhost/nocalhost/tree/main/CHANGELOG">https://github.com/nocalhost/nocalhost/tree/main/CHANGELOG</a>
+            <h2>Version 0.4.14</h2>
+            
+            <h3>New Features</h3>
+            
+            <ul>
+                <li>
+                    Supports automatically refresh Nocalhost Server side token
+                </li>
+            </ul>
+
+            <h3>Bug Fixes</h3>
+
+            <ul>
+                <li>
+                    Fixed the "unable to save configuration" issue
+                </li>
+            </ul>
+
+
+            <h2>Previous Changelogs</h2>
+            
+            <p>
+                <a href="https://github.com/nocalhost/nocalhost/tree/main/CHANGELOG">https://github.com/nocalhost/nocalhost/tree/main/CHANGELOG</a>
+            </p>
           """
         )
     }
