@@ -37,10 +37,10 @@ import lombok.SneakyThrows;
 public class AppConfigFile extends VirtualFile {
     private static final Logger LOG = Logger.getInstance(AppConfigFile.class);
 
-    private String name;
+    private final String name;
     private String content;
-    private Project project;
-    private ApplicationNode node;
+    private final Project project;
+    private final ApplicationNode node;
 
     @Override
     public @NotNull @NlsSafe String getName() {
@@ -86,6 +86,7 @@ public class AppConfigFile extends VirtualFile {
     @Override
     public @NotNull OutputStream getOutputStream(Object requestor, long newModificationStamp, long newTimeStamp) throws IOException {
         String newContent = ((FileDocumentManagerImpl) requestor).getDocument(this).getText();
+        content = newContent;
         saveContent(newContent);
         OutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(newContent.getBytes());

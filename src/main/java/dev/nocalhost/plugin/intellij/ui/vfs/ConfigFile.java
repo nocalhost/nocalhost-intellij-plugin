@@ -46,7 +46,7 @@ public class ConfigFile extends VirtualFile {
 
     private final String name;
     private final String path;
-    private final String content;
+    private String content;
     private final Project project;
     private final ResourceNode node;
 
@@ -110,6 +110,7 @@ public class ConfigFile extends VirtualFile {
     @Override
     public @NotNull OutputStream getOutputStream(Object requestor, long newModificationStamp, long newTimeStamp) throws IOException {
         String newContent = ((FileDocumentManagerImpl) requestor).getDocument(this).getText();
+        content = newContent;
         saveContent(newContent);
         OutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(newContent.getBytes());

@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +37,6 @@ import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.MessageDialogUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_HELM_GIT;
 import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_HELM_LOCAL;
@@ -76,15 +76,17 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        int installTypeSelectedByUser = MessageDialogUtil.show(
+        int installTypeSelectedByUser = Messages.showDialog(
                 project,
-                "Install Application",
                 "Please select the application installation source",
-                "Open Local Directory",
-                "Clone from Git",
-                "Helm Repo",
-                "Cancel"
-        );
+                "Install Application",
+                new String[]{
+                        "Open Local Directory",
+                        "Clone from Git",
+                        "Helm Repo",
+                        "Cancel"},
+                0,
+                null);
         this.installTypeSelectedByUser.set(installTypeSelectedByUser);
         switch (installTypeSelectedByUser) {
             case OPTION_OPEN_LOCAL_DIRECTORY:
@@ -145,9 +147,8 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                 Path nocalhostConfigDirectory = localPath.get().resolve(".nocalhost");
                 List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigDirectory);
                 if (configs.size() == 0) {
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        MessageDialogUtil.showError(project, "Install Standalone Application", "No nocalhost config found.");
-                    });
+                    ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(
+                            project, "No nocalhost config found.", "Install Standalone Application"));
                 } else if (configs.size() == 1) {
                     configPath.set(configs.get(0));
                     checkInstallType();
@@ -194,8 +195,10 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                                 MANIFEST_TYPE_HELM_LOCAL,
                                 MANIFEST_TYPE_KUSTOMIZE_LOCAL
                         ).contains(installType)) {
-                            MessageDialogUtil.showError(project, "Install Standalone Application",
-                                    "Manifest type " + installType + " is not supported.");
+                            Messages.showErrorDialog(
+                                    project,
+                                    "Manifest type " + installType + " is not supported.",
+                                    "Install Standalone Application");
                             return;
                         }
                         break;
@@ -206,15 +209,19 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                                 MANIFEST_TYPE_HELM_GIT,
                                 MANIFEST_TYPE_KUSTOMIZE_GIT
                         ).contains(installType)) {
-                            MessageDialogUtil.showError(project, "Install Standalone Application",
-                                    "Manifest type " + installType + " is not supported.");
+                            Messages.showErrorDialog(
+                                    project,
+                                    "Manifest type " + installType + " is not supported.",
+                                    "Install Standalone Application");
                             return;
                         }
                         break;
 
                     default:
-                        MessageDialogUtil.showError(project, "Install Standalone Application",
-                                "Manifest type " + installType + " is not supported.");
+                        Messages.showErrorDialog(
+                                project,
+                                "Manifest type " + installType + " is not supported.",
+                                "Install Standalone Application");
                         return;
                 }
 

@@ -59,11 +59,7 @@ val goPlugin = "org.jetbrains.plugins.go:" + when (platformVersion) {
     else -> error("Unexpected platform version: `$platformVersion`")
 }
 
-version = "$nocalhostVersion-" + when (platformVersion) {
-    203 -> "2020.3"
-    211 -> "2021.1"
-    else -> error("Unexpected platform version: `$platformVersion`")
-}
+version = "$nocalhostVersion-$platformVersion"
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {

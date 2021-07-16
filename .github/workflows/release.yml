@@ -61,7 +61,7 @@ jobs:
     - name: Rename package
       run: |
         PLUGIN_ZIP=$(ls build/distributions | grep nocalhost-intellij-plugin-)
-        cp build/distributions/${PLUGIN_ZIP} build/distributions/nocalhost-intellij-plugin-${{ env.RELEASE_VERSION }}-${{ matrix.platform-version }}.zip
+        cp build/distributions/${PLUGIN_ZIP} build/distributions/nocalhost-intellij-plugin.zip
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
@@ -69,7 +69,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.create-release.outputs.gh_release_upload_url }}
-        asset_path: build/distributions/nocalhost-intellij-plugin-${{ env.RELEASE_VERSION }}-${{ matrix.platform-version }}.zip
+        asset_path: build/distributions/nocalhost-intellij-plugin.zip
         asset_name: nocalhost-intellij-plugin-${{ env.RELEASE_VERSION }}-${{ matrix.platform-version }}.zip
         asset_content_type: application/octet-stream
 
