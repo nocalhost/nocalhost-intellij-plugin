@@ -162,8 +162,10 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new ApplyAction(project, applicationNode));
         actionGroup.add(new ConfigAppAction(project, applicationNode));
         actionGroup.add(new ClearAppPersisentDataAction(project, applicationNode));
-        actionGroup.add(new Separator());
-        actionGroup.add(new UpgradeAppAction(project, applicationNode));
+        if (applicationNode.getNamespaceNode().getClusterNode().getServiceAccount() != null) {
+            actionGroup.add(new Separator());
+            actionGroup.add(new UpgradeAppAction(project, applicationNode));
+        }
 
         actionGroup.add(new Separator());
         actionGroup.add(new LoadResourceAction(project, applicationNode));
