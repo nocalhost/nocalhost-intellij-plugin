@@ -145,6 +145,10 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 Path nocalhostConfigDirectory = localPath.get().resolve(".nocalhost");
+                if (!Files.exists(nocalhostConfigDirectory)) {
+                    ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(
+                            project, ".nocalhost directory not found.", "Install Standalone Application"));
+                }
                 List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigDirectory);
                 if (configs.size() == 0) {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(

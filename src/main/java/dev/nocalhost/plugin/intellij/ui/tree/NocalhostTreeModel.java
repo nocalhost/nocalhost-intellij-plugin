@@ -27,6 +27,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -148,8 +149,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 for (int i = getChildCount(parent) - 1; i >= 0; i--) {
                     ClusterNode clusterNode = (ClusterNode) getChild(parent, i);
                     Optional<ClusterNode> pendingClusterNodeOptional = pendingClusterNodes.stream()
-                                                                                          .filter(e -> clusterNodeEquals(e, clusterNode))
-                                                                                          .findFirst();
+                            .filter(e -> clusterNodeEquals(e, clusterNode))
+                            .findFirst();
                     if (pendingClusterNodeOptional.isPresent()) {
                         clusterNode.updateFrom(pendingClusterNodeOptional.get());
                         nodeChanged(clusterNode);
@@ -189,15 +190,15 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 if (clusterNode.getServiceAccount() != null) {
                     if (clusterNode.getServiceAccount().isPrivilege()) {
                         namespaceNodes = nhctlCommand.getResources("namespaces", nhctlGetOptions)
-                                                     .stream()
-                                                     .map(e -> new NamespaceNode(e.getKubeResource().getMetadata().getName()))
-                                                     .collect(Collectors.toList());
+                                .stream()
+                                .map(e -> new NamespaceNode(e.getKubeResource().getMetadata().getName()))
+                                .collect(Collectors.toList());
                     } else {
                         if (clusterNode.getServiceAccount().getNamespaces() != null) {
                             namespaceNodes = clusterNode.getServiceAccount().getNamespaces()
-                                                        .stream()
-                                                        .map(e -> new NamespaceNode(e.getNamespace(), e.getSpaceName(), e.getSpaceId()))
-                                                        .collect(Collectors.toList());
+                                    .stream()
+                                    .map(e -> new NamespaceNode(e.getNamespace(), e.getSpaceName(), e.getSpaceId()))
+                                    .collect(Collectors.toList());
                         } else {
                             namespaceNodes = Lists.newArrayList();
                         }
@@ -208,8 +209,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         namespaceNodes = Lists.newArrayList(new NamespaceNode(clusterNode.getKubeConfig().getContexts().get(0).getContext().getNamespace()));
                     } else {
                         namespaceNodes = nhctlGetResources.stream()
-                                                          .map(e -> new NamespaceNode(e.getKubeResource().getMetadata().getName()))
-                                                          .collect(Collectors.toList());
+                                .map(e -> new NamespaceNode(e.getKubeResource().getMetadata().getName()))
+                                .collect(Collectors.toList());
                     }
                 }
 
@@ -281,14 +282,20 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 Path path = KubeConfigUtil.kubeConfigPath(
                         clusterNode.getRawKubeConfig());
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(path, namespaceNode.getNamespace());
-                List<ApplicationNode> applicationNodes = nhctlCommand
-                        .getApplications(nhctlGetOptions).get(0).getApplication()
-                        .stream()
-                        .map(e -> new ApplicationNode(e.getName()))
-                        .collect(Collectors.toList());
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    refreshApplicationNodes(namespaceNode, applicationNodes);
-                });
+                List<ApplicationNode> applicationNodes = Lists.newArrayList();
+                List<NhctlListApplication> nhctlListApplications = nhctlCommand.getApplications(nhctlGetOptions);
+                if (nhctlListApplications != null
+                        && !nhctlListApplications.isEmpty()
+                        && nhctlListApplications.get(0) != null
+                        && nhctlListApplications.get(0).getApplication() != null) {
+                    applicationNodes = nhctlListApplications.get(0).getApplication()
+                            .stream()
+                            .map(e -> new ApplicationNode(e.getName()))
+                            .collect(Collectors.toList());
+                }
+                final List<ApplicationNode> finalApplicationNodes = applicationNodes;
+                ApplicationManager.getApplication().invokeLater(() ->
+                        refreshApplicationNodes(namespaceNode, finalApplicationNodes));
             } catch (Exception e) {
                 if (e instanceof NocalhostExecuteCmdException) {
                     ApplicationManager.getApplication().invokeLater(() -> {
@@ -460,14 +467,14 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             return Lists.newArrayList();
         }
         return nhctlGetResources.stream()
-                                .map(e -> {
-                                    NhctlDescribeService nhctlDescribeService = e.getNhctlDescribeService();
-                                    if (nhctlDescribeService == null) {
-                                        nhctlDescribeService = new NhctlDescribeService();
-                                    }
-                                    return new ResourceNode(e.getKubeResource(), nhctlDescribeService);
-                                })
-                                .collect(Collectors.toList());
+                .map(e -> {
+                    NhctlDescribeService nhctlDescribeService = e.getNhctlDescribeService();
+                    if (nhctlDescribeService == null) {
+                        nhctlDescribeService = new NhctlDescribeService();
+                    }
+                    return new ResourceNode(e.getKubeResource(), nhctlDescribeService);
+                })
+                .collect(Collectors.toList());
     }
 
     void insertLoadingNode(MutableTreeNode parent) {
