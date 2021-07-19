@@ -26,12 +26,8 @@ import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.Application;
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeApplication;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.exception.NocalhostServerVersionOutDatedException;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
@@ -52,7 +48,6 @@ public class UpgradeAppAction extends DumbAwareAction {
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
     private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
 
     private final Project project;
     private final ApplicationNode node;
@@ -73,16 +68,6 @@ public class UpgradeAppAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                if (!isApplicationInstalled()) {
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        Messages.showMessageDialog(
-                                "Application has not been installed.",
-                                "Upgrade Application",
-                                null);
-                    });
-                    return;
-                }
-
                 NocalhostAccount nocalhostAccount = node.getClusterNode().getNocalhostAccount();
                 List<Application> nocalhostApplications = nocalhostApi.listApplications(
                         nocalhostAccount.getServer(),
@@ -273,18 +258,4 @@ public class UpgradeAppAction extends DumbAwareAction {
                 .collect(Collectors.toList());
     }
 
-    private boolean isApplicationInstalled()
-            throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        try {
-            NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
-            NhctlDescribeApplication nhctlDescribeApplication = nhctlCommand.describe(
-                    applicationName, opts, NhctlDescribeApplication.class);
-            return nhctlDescribeApplication.isInstalled();
-        } catch (Exception e) {
-            if (StringUtils.contains(e.getMessage(), "Application not found")) {
-                return false;
-            }
-            throw e;
-        }
-    }
 }

@@ -290,7 +290,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         && nhctlListApplications.get(0).getApplication() != null) {
                     applicationNodes = nhctlListApplications.get(0).getApplication()
                             .stream()
-                            .map(e -> new ApplicationNode(e.getName()))
+                            .map(ApplicationNode::new)
                             .collect(Collectors.toList());
                 }
                 final List<ApplicationNode> finalApplicationNodes = applicationNodes;
