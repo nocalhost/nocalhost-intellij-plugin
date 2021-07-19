@@ -1,11 +1,9 @@
 package dev.nocalhost.plugin.intellij.ui.tree;
 
-
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPopupMenu;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Separator;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.ui.treeStructure.Tree;
@@ -18,7 +16,6 @@ import java.awt.event.MouseEvent;
 import javax.swing.tree.TreePath;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.task.LoadKubernetesResourceTask;
 import dev.nocalhost.plugin.intellij.ui.action.application.AppPortForwardAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.ApplyAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.ClearAppPersisentDataAction;
@@ -38,6 +35,7 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryA
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.CopyTerminalAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.EditManifestAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.EndDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.LogsAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.OpenProjectAction;
@@ -61,24 +59,6 @@ public class TreeMouseListener extends MouseAdapter {
     public TreeMouseListener(Tree tree, Project project) {
         this.tree = tree;
         this.project = project;
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent event) {
-        if (event.getClickCount() == 2 && event.getButton() == MouseEvent.BUTTON1) {
-            TreePath treePath = tree.getClosestPathForLocation(event.getX(), event.getY());
-            if (treePath == null) {
-                return;
-            }
-            Object object = treePath.getLastPathComponent();
-
-            if (object instanceof ResourceNode) {
-                ResourceNode resourceNode = (ResourceNode) object;
-
-                ProgressManager.getInstance().run(new LoadKubernetesResourceTask(project, resourceNode));
-                return;
-            }
-        }
     }
 
     @Override
@@ -198,6 +178,9 @@ public class TreeMouseListener extends MouseAdapter {
             actionGroup.add(new EndDevelopAction(project, resourceNode));
         }
 
+        actionGroup.add(new Separator());
+        actionGroup.add(new EditManifestAction(project, resourceNode));
+        actionGroup.add(new Separator());
         actionGroup.add(new ConfigAction(project, resourceNode));
         actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
         actionGroup.add(new CopyTerminalAction(project, resourceNode));
