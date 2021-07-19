@@ -27,7 +27,7 @@ public class GitCloneStandabloneApplicationDialog extends DialogWrapper {
 
     public GitCloneStandabloneApplicationDialog(Project project) {
         super(project, true);
-        setTitle("Install Standalone Helm Repo Application");
+        setTitle("Config Standalone Application via Git Repository");
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(defaultBranchRadioButton);

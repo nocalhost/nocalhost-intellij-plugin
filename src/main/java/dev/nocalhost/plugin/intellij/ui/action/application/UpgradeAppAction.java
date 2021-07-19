@@ -56,7 +56,7 @@ public class UpgradeAppAction extends DumbAwareAction {
     private final String applicationName;
 
     public UpgradeAppAction(Project project, ApplicationNode node) {
-        super("Upgrade App");
+        super("Upgrade Application");
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());

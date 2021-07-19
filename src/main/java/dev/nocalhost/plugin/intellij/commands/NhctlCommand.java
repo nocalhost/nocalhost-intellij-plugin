@@ -518,6 +518,10 @@ public class NhctlCommand {
                 args.add(values);
             }
         }
+        if (StringUtils.isNotEmpty(opts.getOuterConfig())) {
+            args.add("--outer-config");
+            args.add(opts.getOuterConfig());
+        }
         execute(args, opts);
     }
 
