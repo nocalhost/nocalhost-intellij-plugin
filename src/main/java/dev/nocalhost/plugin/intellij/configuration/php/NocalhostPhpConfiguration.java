@@ -20,12 +20,11 @@ import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostSettingsEditor;
 
 public class NocalhostPhpConfiguration
-//        extends LocatableConfigurationBase<NocalhostPhpConfiguration>
-        extends PhpRemoteDebugRunConfiguration
+        extends LocatableConfigurationBase<NocalhostPhpConfiguration>
         implements NocalhostConfiguration {
     protected NocalhostPhpConfiguration(@NotNull Project project,
                                        @NotNull ConfigurationFactory factory) {
-        super(project, factory, "");
+        super(project, factory);
     }
 
     @Override
