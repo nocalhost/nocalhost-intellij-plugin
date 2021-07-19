@@ -21,6 +21,7 @@ public class NhctlUpgradeOptions extends NhctlGlobalOptions {
     private Map<String, String> values;
     private String localPath;
     private List<String> resourcesPath;
+    private String outerConfig;
 
     public NhctlUpgradeOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);

@@ -13,7 +13,7 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.Getter;
 
-public class InstallStandaloneHelmRepoApplicationDialog extends DialogWrapper {
+public class ConfigStandaloneHelmRepoApplicationDialog extends DialogWrapper {
     private JPanel contentPane;
     private JRadioButton defaultVersionRadioButton;
     private JRadioButton inputTheVersionOfRadioButton;
@@ -28,9 +28,10 @@ public class InstallStandaloneHelmRepoApplicationDialog extends DialogWrapper {
     @Getter
     private String version;
 
-    public InstallStandaloneHelmRepoApplicationDialog(Project project) {
+    public ConfigStandaloneHelmRepoApplicationDialog(Project project) {
         super(project, true);
-        setTitle("Install Standalone Helm Repo Application");
+
+        setTitle("Config Standalone Helm Repo Application");
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(defaultVersionRadioButton);

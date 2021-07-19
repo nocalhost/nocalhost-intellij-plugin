@@ -8,22 +8,22 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import lombok.SneakyThrows;
 
-public class InstallStandaloneApplicationTask extends Task.Backgroundable {
+public class UpgradeStandaloneApplicationTask extends Task.Backgroundable {
     private final Project project;
     private final String applicationName;
-    private final NhctlInstallOptions opts;
+    private final NhctlUpgradeOptions opts;
 
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
-    public InstallStandaloneApplicationTask(Project project,
+    public UpgradeStandaloneApplicationTask(Project project,
                                             String applicationName,
-                                            NhctlInstallOptions opts) {
-        super(project, "Install Application: " + applicationName);
+                                            NhctlUpgradeOptions opts) {
+        super(project, "Upgrade Application: " + applicationName);
 
         this.project = project;
         this.applicationName = applicationName;
@@ -35,8 +35,9 @@ public class InstallStandaloneApplicationTask extends Task.Backgroundable {
     @SneakyThrows
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        outputCapturedNhctlCommand.install(applicationName, opts);
+        outputCapturedNhctlCommand.upgrade(applicationName, opts);
     }
+
 
     @Override
     public void onSuccess() {
@@ -44,15 +45,17 @@ public class InstallStandaloneApplicationTask extends Task.Backgroundable {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
         NocalhostNotifier.getInstance(project).notifySuccess(
-                "Application " + applicationName + " installed",
+                "Application " + applicationName + " upgraded",
                 "");
     }
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
         NocalhostNotifier.getInstance(project).notifyError(
-                "Application install error",
-                "Error occurred while installing application " + applicationName,
+                "Application upgrade error",
+                "Error occurred while upgrading application " + applicationName,
                 e.getMessage());
     }
+
+
 }
