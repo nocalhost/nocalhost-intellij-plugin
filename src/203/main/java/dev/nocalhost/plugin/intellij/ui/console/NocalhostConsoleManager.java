@@ -76,37 +76,38 @@ public final class NocalhostConsoleManager {
         }
     }
 
-    public static void openTerminalWindow(Project project,
-                                          String title,
-                                          GeneralCommandLine command) {
+    public static Content openTerminalWindow(Project project,
+                                             String title,
+                                             GeneralCommandLine command) {
         if (project.isDisposed()) {
-            return;
+            return null;
         }
 
         try {
             ToolWindow toolWindow = ToolWindowManager.getInstance(project)
-                    .getToolWindow("Nocalhost Console");
+                                                     .getToolWindow("Nocalhost Console");
             if (toolWindow == null) {
-                return;
+                return null;
             }
 
             ContentManager manager = toolWindow.getContentManager();
 
             NocalhostTerminal terminal = createTerminal(project, command, manager);
+            Content content = ContentFactory.SERVICE.getInstance().createContent(terminal,
+                    title, false);
 
             ApplicationManager.getApplication().invokeLater(() -> {
                 toolWindow.activate(() -> {
-                    Content content = ContentFactory.SERVICE.getInstance().createContent(terminal,
-                            title, false);
-
                     manager.addContent(content);
                     manager.setSelectedContent(content);
                 });
             });
+            return content;
         } catch (Exception e) {
             ErrorUtil.dealWith(project, "Opening terminal window error",
                     "Error occurs while opening terminal window", e);
         }
+        return null;
     }
 
     private static NocalhostLogs createLogs(Project project, GeneralCommandLine command)

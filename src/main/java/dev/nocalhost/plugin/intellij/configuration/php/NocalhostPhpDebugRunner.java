@@ -9,17 +9,14 @@ import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ProgramRunner;
 import com.intellij.execution.runners.RunContentBuilder;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
-import dev.nocalhost.plugin.intellij.ui.SyncStatusPresentation;
 
 public class NocalhostPhpDebugRunner implements ProgramRunner<RunnerSettings> {
     public static final String RUNNER_ID = "NocalhostPhpDebugRunner";
-    private static final Logger LOG = Logger.getInstance(SyncStatusPresentation.class);
 
     @NotNull
     public String getRunnerId() {

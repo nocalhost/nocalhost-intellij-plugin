@@ -8,7 +8,7 @@ import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
-import com.intellij.execution.runners.ProgramRunner;
+import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
@@ -41,7 +40,6 @@ import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpDebugRunner;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
@@ -117,8 +115,8 @@ public class NocalhostProfileState extends CommandLineState {
                     throw new ExecutionException("Debug command not configured");
                 }
 
-                ProgramRunner runner = getEnvironment().getRunner();
-                if (runner.getRunnerId() == NocalhostPhpDebugRunner.RUNNER_ID) {
+                String runnerId = getEnvironment().getRunner().getRunnerId();
+                if (NocalhostPhpDebugRunner.RUNNER_ID.equals(runnerId)) {
                     // PHP remote debugging use SSH tunnel
                     doCreateSshTunnel(serviceContainer);
                 } else {
@@ -149,15 +147,11 @@ public class NocalhostProfileState extends CommandLineState {
     public void doRemoveSshTunnel() {
         Content content = refContent.get();
         Project project = getEnvironment().getProject();
-        if (content != null) {
-            ToolWindow window = ToolWindowManager.getInstance(project)
-                                                 .getToolWindow("Nocalhost Console");
-            if (window != null) {
-                ContentManager manager = window.getContentManager();
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    manager.removeContent(content, true);
-                });
-            }
+        ToolWindow window = ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console");
+
+        if (content != null && window != null) {
+            ContentManager manager = window.getContentManager();
+            ApplicationManager.getApplication().invokeLater(() -> manager.removeContent(content, true));
         }
     }
 
@@ -174,7 +168,7 @@ public class NocalhostProfileState extends CommandLineState {
         try {
             String pod = getDevPodName();
             ApplicationManager.getApplication().invokeLater(() -> {
-                Content content = NocalhostConsoleManager.showTerminalWindow(
+                Content content = NocalhostConsoleManager.openTerminalWindow(
                     project,
                     String.format(
                         "%s:SSH",

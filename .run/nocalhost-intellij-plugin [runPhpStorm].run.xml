@@ -1,21 +1,28 @@
 <component name="ProjectRunConfigurationManager">
-    <configuration default="false" name="RunPhpStorm" type="GradleRunConfiguration" factoryName="Gradle" singleton="true">
-        <ExternalSystemSettings>
-            <option name="executionName" />
-            <option name="externalProjectPath" value="$PROJECT_DIR$" />
-            <option name="externalSystemIdString" value="GRADLE" />
-            <option name="scriptParameters" value="-PbaseIDE=PHP" />
-            <option name="taskDescriptions">
-                <list />
-            </option>
-            <option name="taskNames">
-                <list>
-                    <option value=":runIde" />
-                </list>
-            </option>
-            <option name="vmOptions" value="" />
-        </ExternalSystemSettings>
-        <GradleScriptDebugEnabled>false</GradleScriptDebugEnabled>
-        <method v="2" />
-    </configuration>
+  <configuration default="false" name="RunPhpStorm" type="GradleRunConfiguration" factoryName="Gradle" singleton="true">
+    <ExternalSystemSettings>
+      <option name="env">
+        <map>
+          <entry key="ORG_GRADLE_PROJECT_platformVersion" value="211" />
+        </map>
+      </option>
+      <option name="executionName" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$" />
+      <option name="externalSystemIdString" value="GRADLE" />
+      <option name="scriptParameters" value="-PbaseIDE=PHP --debug" />
+      <option name="taskDescriptions">
+        <list />
+      </option>
+      <option name="taskNames">
+        <list>
+          <option value=":runIde" />
+        </list>
+      </option>
+      <option name="vmOptions" value="" />
+    </ExternalSystemSettings>
+    <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+    <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+    <DebugAllEnabled>false</DebugAllEnabled>
+    <method v="2" />
+  </configuration>
 </component>
