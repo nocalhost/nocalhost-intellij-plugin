@@ -4,6 +4,7 @@ public class NocalhostApiUrl {
     private static final String API_V1_SUFFIX = "/v1";
 
     private static final String LOGIN_URL = "/login";
+    private static final String TOKEN_REFRESH_URL = "/token/refresh";
     private static final String ME_URL = "/me";
     private static final String VERSION_URL = "/version";
     @Deprecated
@@ -54,5 +55,9 @@ public class NocalhostApiUrl {
 
     public static String version(String host) {
         return String.format("%s%s%s", host, API_V1_SUFFIX, VERSION_URL);
+    }
+
+    public static String tokenRefresh(String host) {
+        return String.format("%s%s%s", host, API_V1_SUFFIX, TOKEN_REFRESH_URL);
     }
 }

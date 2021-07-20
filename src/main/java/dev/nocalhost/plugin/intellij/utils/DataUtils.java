@@ -36,8 +36,7 @@ public class DataUtils {
                 // if value of property is null, ignore it.
                 if (propertyValue == null) {
                     return null;
-                }
-                else {
+                } else {
                     return super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
                 }
             }
@@ -45,7 +44,7 @@ public class DataUtils {
             //Don't print the class definition
             @Override
             protected MappingNode representJavaBean(Set<Property> properties, Object javaBean) {
-                if (!classTags.containsKey(javaBean.getClass())){
+                if (!classTags.containsKey(javaBean.getClass())) {
                     addClassTag(javaBean.getClass(), Tag.MAP);
                 }
 
@@ -66,7 +65,7 @@ public class DataUtils {
         ).withEnvironment(EnvironmentUtil.getEnvironmentMap()).withRedirectErrorStream(true);
         Process process = commandLine.createProcess();
 
-        PrintWriter out = new PrintWriter(process.getOutputStream());
+        PrintWriter out = new PrintWriter(process.getOutputStream(), false, Charsets.UTF_8);
         out.write(yaml);
         out.flush();
         out.close();
@@ -87,7 +86,7 @@ public class DataUtils {
         ).withEnvironment(EnvironmentUtil.getEnvironmentMap()).withRedirectErrorStream(true);
         Process process = commandLine.createProcess();
 
-        PrintWriter out = new PrintWriter(process.getOutputStream());
+        PrintWriter out = new PrintWriter(process.getOutputStream(), false, Charsets.UTF_8);
         out.write(GSON.toJson(src));
         out.flush();
         out.close();

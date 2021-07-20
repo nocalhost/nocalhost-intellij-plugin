@@ -7,7 +7,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
-import com.intellij.util.system.CpuArch;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -176,8 +175,17 @@ public class NocalhostBinService {
             }
         }
         Path destPath = Paths.get(NhctlUtil.binaryPath());
-        Files.deleteIfExists(destPath);
-        Files.move(downloadingPath, destPath);
+        if (SystemInfo.isWindows) {
+            Path tempPath = Paths.get(NhctlUtil.binaryPath() + ".temp");
+            if (Files.exists(destPath)) {
+                Files.move(destPath, tempPath);
+            }
+            Files.move(downloadingPath, destPath);
+            Files.deleteIfExists(tempPath);
+        } else {
+            Files.deleteIfExists(destPath);
+            Files.move(downloadingPath, destPath);
+        }
     }
 
     private String getDownloadingTempFilename() {
@@ -206,12 +214,11 @@ public class NocalhostBinService {
     }
 
     private String arch() {
-        switch (CpuArch.CURRENT) {
-            case ARM64:
-                return "arm64";
-            case X86_64:
-                return "amd64";
-            default:
+        if (SystemInfo.isArm64) {
+            return "arm64";
+        }
+        if (SystemInfo.isIntel64) {
+            return "amd64";
         }
         throw new NocalhostUnsupportedCpuArchitectureException(SystemInfo.OS_ARCH);
     }

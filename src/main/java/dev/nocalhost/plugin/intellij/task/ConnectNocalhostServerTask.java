@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
+import dev.nocalhost.plugin.intellij.api.data.TokenResponse;
 import dev.nocalhost.plugin.intellij.api.data.UserInfo;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
@@ -38,10 +39,10 @@ public class ConnectNocalhostServerTask extends Task.Backgroundable {
     @SneakyThrows
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        String jwt = nocalhostApi.login(server, username, password);
-        UserInfo userInfo = nocalhostApi.getUserInfo(server, jwt);
-        nocalhostSettings.updateNocalhostAccount(
-                new NocalhostAccount(server, username, jwt, userInfo));
+        TokenResponse resp = nocalhostApi.login(server, username, password);
+        UserInfo userInfo = nocalhostApi.getUserInfo(server, resp.getToken());
+        nocalhostSettings.updateNocalhostAccount(new NocalhostAccount(
+                server, username, resp.getToken(), resp.getRefreshToken(), userInfo));
     }
 
     @Override

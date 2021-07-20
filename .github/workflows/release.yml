@@ -6,9 +6,32 @@ on:
     - "v*"
 
 jobs:
+  create-release:
+    name: create plugin release
+    runs-on: ubuntu-latest
+    outputs:
+      gh_release_upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+    - name: Create plugin Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
   release-plugin:
     name: build
     runs-on: ubuntu-latest
+    needs: create-release
+    strategy:
+      matrix:
+        platform-version: [ 203, 211 ]
+    env:
+      ORG_GRADLE_PROJECT_platformVersion: ${{ matrix.platform-version }}
 
     steps:
     - uses: actions/checkout@v2
@@ -22,8 +45,8 @@ jobs:
       run: |
         echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
         echo "PLUGIN_VERSION=${GITHUB_REF#refs/*/}" | sed -E 's/v//g' >> $GITHUB_ENV
-        echo "NHCTL_VERSION=${GITHUB_REF#refs/*/}" | sed 's/v//g' | sed -E 's/-202.+//g' >> $GITHUB_ENV
-        echo "SERVER_VERSION=${GITHUB_REF#refs/*/}" | sed 's/v//g' | sed -E 's/-202.+//g' >> $GITHUB_ENV
+        echo "NHCTL_VERSION=${GITHUB_REF#refs/*/}" | sed 's/v//g' >> $GITHUB_ENV
+        echo "SERVER_VERSION=${GITHUB_REF#refs/*/}" | sed 's/v//g' >> $GITHUB_ENV
 
     - name: Build
       env:
@@ -33,34 +56,23 @@ jobs:
         sed -i -E "s/nhctlVersion=(.+)/nhctlVersion=${{ env.NHCTL_VERSION }}/g" src/main/resources/config.properties
         sed -i -E "s/serverVersion=(.+)/serverVersion=${{ env.SERVER_VERSION }}/g" src/main/resources/config.properties
         sed -i -E "s/version=(.+)/version=${{ env.PLUGIN_VERSION }}/g" gradle.properties
-        ./gradlew publishPlugin
+        ./gradlew clean publishPlugin
 
     - name: Rename package
       run: |
         PLUGIN_ZIP=$(ls build/distributions | grep nocalhost-intellij-plugin-)
         cp build/distributions/${PLUGIN_ZIP} build/distributions/nocalhost-intellij-plugin.zip
 
-    - name: Create plugin Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ needs.create-release.outputs.gh_release_upload_url }}
         asset_path: build/distributions/nocalhost-intellij-plugin.zip
-        asset_name: nocalhost-intellij-plugin.zip
+        asset_name: nocalhost-intellij-plugin-${{ env.RELEASE_VERSION }}-${{ matrix.platform-version }}.zip
         asset_content_type: application/octet-stream
 
     - name: Push to Coding Artifacts
       run: |
-        curl -T build/distributions/nocalhost-intellij-plugin.zip -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${{ env.RELEASE_VERSION }}"
+        curl -T build/distributions/nocalhost-intellij-plugin.zip -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${{ env.RELEASE_VERSION }}-${{ matrix.platform-version }}"

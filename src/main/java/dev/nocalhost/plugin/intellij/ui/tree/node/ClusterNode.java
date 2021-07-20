@@ -33,10 +33,14 @@ public class ClusterNode extends DefaultMutableTreeNode {
         if (serviceAccount != null && StringUtils.isNotEmpty(serviceAccount.getClusterName())) {
             name = serviceAccount.getClusterName();
         }
-        if (nocalhostAccount != null) {
-            name += " [" + nocalhostAccount.getUsername() + " on " + nocalhostAccount.getServer() + "]";
-        }
         return name;
+    }
+
+    public String getAccountInfo() {
+        if (nocalhostAccount != null) {
+            return nocalhostAccount.getUsername() + " on " + nocalhostAccount.getServer();
+        }
+        return null;
     }
 
     public void updateFrom(ClusterNode o) {

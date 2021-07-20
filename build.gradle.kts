@@ -3,6 +3,7 @@ plugins {
     java
     kotlin("jvm") version "1.4.21"
     id("io.franzbecker.gradle-lombok") version "2.1"
+    id("net.saliman.properties") version "1.5.1"
 }
 
 java {
@@ -11,9 +12,6 @@ java {
 }
 
 group = "dev.nocalhost"
-
-val git4idea = "git4idea"
-val terminal = "terminal"
 
 repositories {
     mavenCentral()
@@ -48,27 +46,35 @@ var baseIDE = "IC"
 if (project.hasProperty("baseIDE")) {
     baseIDE = project.property("baseIDE") as String
 }
+val platformVersion = prop("platformVersion").toInt()
+val ideaVersion = prop("ideaVersion")
+val nocalhostVersion = prop("version")
+
+val terminalPlugin = "terminal"
+val javaPlugin = "com.intellij.java"
+val phpPlugin = "com.jetbrains.php:" + prop("phpPluginVersion")
+val goPlugin = "org.jetbrains.plugins.go:" + prop("goPluginVersion")
+
+version = "$nocalhostVersion-$platformVersion"
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    type = "IC"
-    if (baseIDE == "GO") {
-        type = "IU"
-    }
-    if (baseIDE == "PHP") {
-        type = "IU"
-    }
-    version = project.property("ideaVersion") as String
+    version = ideaVersion
     val plugins = mutableListOf(
-        git4idea,
-        terminal,
-        "com.intellij.java",
-        "com.jetbrains.php:211.6693.111",
-        "org.jetbrains.plugins.go:211.6693.111"
+        terminalPlugin,
+        javaPlugin,
+        phpPlugin,
+        goPlugin
     )
     setPlugins(*plugins.toTypedArray())
     pluginName = "nocalhost-intellij-plugin"
-    updateSinceUntilBuild = false
+    updateSinceUntilBuild = true
+}
+
+sourceSets {
+    main {
+        java.srcDirs("src/$platformVersion/main/java")
+    }
 }
 
 tasks.runIde {
@@ -87,31 +93,78 @@ tasks {
             """
             <html>
                 <p>
-                    Nocalhost Intellij Plugin
+                    Nocalhost for JetBrains brings the power and convenience of IDEs to cloud-native Kubernetes application development. It helps you to increase agility and speed to develop cloud-native applications on Kubernetes.
                 </p>
-    
+
+                <h3>
+                    Key Features
+                </h3>
+
                 <p>
-                    Nocalhost is Cloud Native Development Environment.
-                </p>
-    
-                <p>
-                    Features:
                     <ul>
-                        <li>Login to nocalhost API Server and list the DevSpaces</li>
-                        <li>Install and Uninstall DevSpaces</li>
-                        <li>Start DevMode to develop services</li>
+                        <li>
+                            <b>Start cloud-native application development in one click</b> - Nocalhost helps you spend less time on environment configuration, you can easily connect to any Kubernetes environment in one click, and focus on developing your app. 
+                        </li>
+                        <li>
+                            <b>Fast deployment</b> - You can deploy any Manifest Yaml, Helm and Kustomize applications by just few clicks.
+                        </li>
+                        <li>
+                            <b>See code change under a second</b> - Automatically synchronize the code to container every time you make a change. Nocalhost eliminate the submit, building and pushing cycles,  significantly speed up the feedback loop of development, so you see change in under a second.
+                        </li>
+                        <li>
+                            <b>Easy debugging in remote Kubernetes</b> - Nocalhost provides the same debugging experience you've used in the IDE even when debugging in remote Kubernetes cluster.
+                        </li>
                     </ul>
                 </p>
-    
+
+                <h3>
+                    Resources
+                </h3>
                 <p>
-                Refer to <a href="https://nocalhost.dev/">nocalhost.dev</a> for more Nocalhost information.
+                    <ul>
+                        <li>
+                            <a href="https://nocalhost.dev/eng/getting-started/"><b>Quick start</b></a> - Follow our quick start to enjoy the faster and easier cloud-native application.
+                        </li>
+                        <li>
+                            <a href="https://nocalhost.dev/"><b>Documentation</b></a> - We have a lot of features to explore. Head over our documentation to discover more.
+                        </li>
+                        <li>
+                            <a href="https://nocalhost.slack.com/"><b>Talk to us</b></a> - Connect to the Nocalhost development team by joining our Slack channel. 
+                        </li>
+                        <li>
+                            <a href="https://github.com/nocalhost/nocalhost/issues"><b>File a issue</b></a> - If you discover any issue, file a bug and will fix it as soon as possible.
+                        </li>
+                    </ul>
                 </p>
             </html>
             """.trimIndent()
         )
         changeNotes(
             """
-          <a href="https://github.com/nocalhost/nocalhost/tree/main/CHANGELOG">https://github.com/nocalhost/nocalhost/tree/main/CHANGELOG</a>
+            <h2>Version 0.4.14</h2>
+            
+            <h3>New Features</h3>
+            
+            <ul>
+                <li>
+                    Supports automatically refresh Nocalhost Server side token
+                </li>
+            </ul>
+
+            <h3>Bug Fixes</h3>
+
+            <ul>
+                <li>
+                    Fixed the "unable to save configuration" issue
+                </li>
+            </ul>
+
+
+            <h2>Previous Changelogs</h2>
+            
+            <p>
+                <a href="https://github.com/nocalhost/nocalhost/tree/main/CHANGELOG">https://github.com/nocalhost/nocalhost/tree/main/CHANGELOG</a>
+            </p>
           """
         )
     }
@@ -123,8 +176,16 @@ tasks {
     buildSearchableOptions {
         enabled = false
     }
+<<<<<<< HEAD
 
     buildPlugin {
 
     }
 }
+=======
+}
+
+fun prop(name: String): String =
+    extra.properties[name] as? String
+        ?: error("Property `$name` is not defined in gradle.properties")
+>>>>>>> main

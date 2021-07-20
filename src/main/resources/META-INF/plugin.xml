@@ -2,13 +2,9 @@
     <name>Nocalhost</name>
     <vendor url="https://nocalhost.dev/">Nocalhost</vendor>
 
-    <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
-    <idea-version since-build="211.0" until-build="211.*" />
-
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
-    <depends>Git4Idea</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
     <depends optional="true" config-file="java-only.xml">com.intellij.java</depends>
     <depends optional="true" config-file="php-only.xml">com.jetbrains.php</depends>
@@ -64,6 +60,9 @@
 
     <applicationListeners>
         <listener class="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"
+                  topic="com.intellij.ide.AppLifecycleListener"
+                  activeInHeadlessMode="false" activeInTestMode="false"/>
+        <listener class="dev.nocalhost.plugin.intellij.startup.NocalhostTokenRefreshListener"
                   topic="com.intellij.ide.AppLifecycleListener"
                   activeInHeadlessMode="false" activeInTestMode="false"/>
     </applicationListeners>
