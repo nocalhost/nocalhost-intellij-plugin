@@ -10,16 +10,22 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.JBColor;
+import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.ui.StatusText;
 
 import javax.swing.*;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 
 import dev.nocalhost.plugin.intellij.service.NocalhostBinService;
 import dev.nocalhost.plugin.intellij.ui.action.AddStandaloneClustersAction;
 import dev.nocalhost.plugin.intellij.ui.action.ConnectNocalhostApiServerAction;
 import dev.nocalhost.plugin.intellij.ui.action.ManageNocalhostAccountsAction;
 import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
+import dev.nocalhost.plugin.intellij.ui.dialog.AddStandaloneClustersDialog;
+import dev.nocalhost.plugin.intellij.ui.dialog.ConnectNocalhostServerDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 
 public class NocalhostWindow implements Disposable {
@@ -51,6 +57,13 @@ public class NocalhostWindow implements Disposable {
         new TreeSpeedSearch(tree);
         Disposer.register(this, tree);
         tree.updateDevSpaces();
+        StatusText emptyText = tree.getEmptyText();
+        emptyText.setCenterAlignText(false);
+        emptyText.appendLine("Get started with Nocalhost by connecting to a Kubernetes cluster.");
+        emptyText.appendLine("Connect to a standalone cluster", SimpleTextAttributes.LINK_ATTRIBUTES,
+                event -> new AddStandaloneClustersDialog(project).showAndGet());
+        emptyText.appendLine("Connect to Nocalhost server", SimpleTextAttributes.LINK_ATTRIBUTES,
+                event -> new ConnectNocalhostServerDialog(project).showAndGet());
         JBScrollPane scrollPane = new JBScrollPane(tree);
         scrollPane.setBorder(new TopLineBorder(new JBColor(0xD5D5D5, 0x323232), 1));
         panel.add(scrollPane);
