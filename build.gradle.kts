@@ -176,16 +176,8 @@ tasks {
     buildSearchableOptions {
         enabled = false
     }
-<<<<<<< HEAD
-
-    buildPlugin {
-
-    }
-}
-=======
 }
 
 fun prop(name: String): String =
     extra.properties[name] as? String
         ?: error("Property `$name` is not defined in gradle.properties")
->>>>>>> main
