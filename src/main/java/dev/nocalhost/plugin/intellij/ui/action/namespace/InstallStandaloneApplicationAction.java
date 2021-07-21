@@ -25,6 +25,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.data.nocalhostconfig.Application;
 import dev.nocalhost.plugin.intellij.data.nocalhostconfig.NocalhostConfig;
+import dev.nocalhost.plugin.intellij.task.InstallQuickDemoTask;
 import dev.nocalhost.plugin.intellij.task.InstallStandaloneApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.dialog.ConfigStandaloneHelmRepoApplicationDialog;
@@ -50,9 +51,9 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
     private static final int OPTION_OPEN_LOCAL_DIRECTORY = 0;
     private static final int OPTION_CLONE_FROM_GIT = 1;
     private static final int OPTION_HELM_REPO = 2;
+    private static final int OPTION_INSTALL_QUICK_DEMO = 3;
 
     private final Project project;
-    private final NamespaceNode node;
     private final Path kubeConfigPath;
     private final String namespace;
 
@@ -67,7 +68,6 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
     public InstallStandaloneApplicationAction(Project project, NamespaceNode node) {
         super("Install Application", "", AllIcons.Actions.Install);
         this.project = project;
-        this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespace();
 
@@ -84,6 +84,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                         "Open Local Directory",
                         "Clone from Git",
                         "Helm Repo",
+                        "Install Quick Demo",
                         "Cancel"},
                 0,
                 null);
@@ -107,6 +108,11 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
 
             case OPTION_HELM_REPO:
                 configHelmRepo();
+                break;
+
+            case OPTION_INSTALL_QUICK_DEMO:
+                ProgressManager.getInstance().run(new InstallQuickDemoTask(project, kubeConfigPath,
+                        namespace));
                 break;
 
             default:
