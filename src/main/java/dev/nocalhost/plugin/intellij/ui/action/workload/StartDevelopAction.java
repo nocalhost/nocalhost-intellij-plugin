@@ -215,7 +215,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     String finalGitUrl = gitUrl;
                     ApplicationManager.getApplication().executeOnPooledThread(() -> {
                         try {
-                            outputCapturedGitCommand.clone(gitParent, finalGitUrl, node.resourceName());
+                            outputCapturedGitCommand.clone(gitParent.resolve(node.resourceName()), finalGitUrl);
 
                             if (!StringUtils.equals(url, finalGitUrl)) {
                                 NhctlProfileSetOptions opts = new NhctlProfileSetOptions(kubeConfigPath, namespace);

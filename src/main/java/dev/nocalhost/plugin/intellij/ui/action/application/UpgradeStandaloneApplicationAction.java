@@ -119,10 +119,7 @@ public class UpgradeStandaloneApplicationAction extends DumbAwareAction {
             try {
                 Path tempDir = Files.createTempDirectory("nocalhost-upgrade-standalone-application-");
                 tempDir.toFile().deleteOnExit();
-                outputCapturedGitCommand.clone(tempDir.getParent(), gitUrl.get(), tempDir.getFileName().toString());
-                if (StringUtils.isNotEmpty(gitRef.get())) {
-                    outputCapturedGitCommand.checkout(tempDir, gitRef.get());
-                }
+                outputCapturedGitCommand.clone(tempDir, gitUrl.get(), gitRef.get());
                 localPath.set(tempDir);
                 resolveConfig();
             } catch (Exception e) {
