@@ -36,6 +36,7 @@ public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
         this.addProcessListener(new ProcessAdapter() {
             @Override
             public void processTerminated(@NotNull ProcessEvent event) {
+                NocalhostDevProcessHandler.this.nocalhostProfileState.doRemoveSshTunnel();
                 NocalhostDevProcessHandler.this.nocalhostProfileState.stopDebugPortForward();
             }
         });

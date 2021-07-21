@@ -157,6 +157,7 @@ public class TerminalAction extends DumbAwareAction {
 
     private void openTerminal(String podName, String containerName) {
         ApplicationManager.getApplication().invokeLater(() ->
+
                 NocalhostConsoleManager.openTerminalWindow(
                         project,
                         String.format(
