@@ -8,7 +8,6 @@ import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -28,6 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
@@ -35,11 +35,13 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpDebugRunner;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
@@ -94,7 +96,8 @@ public class NocalhostProfileState extends CommandLineState {
                 throw new ExecutionException("Service is not in dev mode.");
             }
 
-            List<ServiceContainer> containers = nhctlDescribeService.getRawConfig().getContainers();
+            NhctlRawConfig nhctlRawConfig = getNhctlConfig(devModeService);
+            List<ServiceContainer> containers = nhctlRawConfig.getContainers();
             ServiceContainer serviceContainer = containers.isEmpty() ? null : containers.get(0);
             if (StringUtils.isNotEmpty(devModeService.getContainerName())) {
                 for (ServiceContainer c : containers) {
@@ -169,20 +172,20 @@ public class NocalhostProfileState extends CommandLineState {
             String pod = getDevPodName();
             ApplicationManager.getApplication().invokeLater(() -> {
                 Content content = NocalhostConsoleManager.openTerminalWindow(
-                    project,
-                    String.format(
-                        "%s:SSH",
-                        pod
-                    ),
-                    new GeneralCommandLine(Lists.newArrayList(
-                        NhctlUtil.binaryPath(), "ssh", "reverse",
-                        "--pod", pod,
-                        "--local", debugPort,
-                        "--remote", debugPort,
-                        "--sshport", "50022",
-                        "--namespace", service.getNamespace(),
-                        "--kubeconfig", kubeConfigPath.toString()
-                    ))
+                        project,
+                        String.format(
+                                "%s:SSH",
+                                pod
+                        ),
+                        new GeneralCommandLine(Lists.newArrayList(
+                                NhctlUtil.binaryPath(), "ssh", "reverse",
+                                "--pod", pod,
+                                "--local", debugPort,
+                                "--remote", debugPort,
+                                "--sshport", "50022",
+                                "--namespace", service.getNamespace(),
+                                "--kubeconfig", kubeConfigPath.toString()
+                        ))
                 );
                 refContent.set(content);
             });
@@ -275,17 +278,18 @@ public class NocalhostProfileState extends CommandLineState {
 
         NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, service.getNamespace());
         Optional<NhctlGetResource> deployments = command.getResources(service.getServiceType(), nhctlGetOptions)
-                                                        .stream()
-                                                        .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), service.getServiceName()))
-                                                        .findFirst();
+                .stream()
+                .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), service.getServiceName()))
+                .findFirst();
         if (deployments.isEmpty()) {
             throw new ExecutionException("Service not found");
         }
 
         Optional<NhctlGetResource> pods = command.getResources("Pods", nhctlGetOptions, deployments.get().getKubeResource().getSpec().getSelector().getMatchLabels())
-                                                 .stream()
-                                                 .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
-                                                 .findFirst();;
+                .stream()
+                .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
+                .findFirst();
+        ;
         if (pods.isEmpty()) {
             throw new ExecutionException("Pod not found");
         }
@@ -310,6 +314,16 @@ public class NocalhostProfileState extends CommandLineState {
                 serviceProjectPath.getApplicationName(),
                 opts,
                 NhctlDescribeService.class);
+    }
+
+    private NhctlRawConfig getNhctlConfig(ServiceProjectPath serviceProjectPath)
+            throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
+        NhctlConfigOptions opts = new NhctlConfigOptions(kubeConfigPath, serviceProjectPath.getNamespace());
+        opts.setDeployment(serviceProjectPath.getServiceName());
+        opts.setControllerType(serviceProjectPath.getServiceType());
+        return nhctlCommand.getConfig(serviceProjectPath.getApplicationName(), opts, NhctlRawConfig.class);
     }
 
     private boolean projectPathMatched(NhctlDescribeService nhctlDescribeService) {
