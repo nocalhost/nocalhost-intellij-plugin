@@ -141,6 +141,45 @@ tasks {
         )
         changeNotes(
             """
+            <h2>Version 0.4.15 (23-07-2021)</h2>
+            
+            <h3>New Features</h3>
+
+            <ul>
+                <li>
+                    Supports PHP remote debugging
+                </li>
+                <li>
+                    Supports application upgrade
+                </li>
+                <li>
+                    Skip SSH host key checking on git clone
+                </li>
+            </ul>
+
+            <h3>Refactor & Improvement</h3>
+
+            <ul>
+                <li>
+                    Move edit manifest action to context menu
+                </li>
+                <li>
+                    A more friendly notification for "Server version outdate"
+                </li>
+            </ul>
+
+            <h3>Bug Fixes</h3>
+
+            <ul>
+                <li>
+                    NPEs
+                </li>
+                <li>
+                    Fixed "get config by nhctl" issue in run and debug mode
+                </li>
+            </ul>
+
+
             <h2>Version 0.4.14</h2>
             
             <h3>New Features</h3>
