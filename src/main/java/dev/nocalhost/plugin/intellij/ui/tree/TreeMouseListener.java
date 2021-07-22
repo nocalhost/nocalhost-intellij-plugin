@@ -115,16 +115,13 @@ public class TreeMouseListener extends MouseAdapter {
 
         if (namespaceNode.getClusterNode().getNocalhostAccount() != null) {
             actionGroup.add(new InstallApplicationAction(project, namespaceNode));
-
-            if (namespaceNode.getClusterNode().getServiceAccount() != null) {
-                actionGroup.add(new Separator());
-                actionGroup.add(new CleanDevSpacePersistentDataAction(project, namespaceNode));
-                actionGroup.add(new Separator());
-                actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
-            }
+            actionGroup.add(new Separator());
+            actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
         } else {
             actionGroup.add(new InstallStandaloneApplicationAction(project, namespaceNode));
         }
+        actionGroup.add(new Separator());
+        actionGroup.add(new CleanDevSpacePersistentDataAction(project, namespaceNode));
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Namespace.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
