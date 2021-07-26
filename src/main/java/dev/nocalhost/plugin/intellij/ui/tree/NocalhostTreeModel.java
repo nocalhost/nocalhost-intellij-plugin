@@ -24,6 +24,8 @@ import javax.swing.tree.TreePath;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.ClusterStatus;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlCheckClusterOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
@@ -121,6 +123,17 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     }
                 }
 
+                for (ClusterNode clusterNode : clusterNodes) {
+                    try {
+                        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(clusterNode.getRawKubeConfig());
+                        NhctlCheckClusterOptions opts = new NhctlCheckClusterOptions(kubeConfigPath);
+                        ClusterStatus clusterStatus = nhctlCommand.checkCluster(opts);
+                        clusterNode.setActive(clusterStatus.getCode() == 200);
+                        clusterNode.setInfo(clusterStatus.getInfo());
+                    } catch (Exception ignored) {
+                    }
+                }
+
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshClusterNodes((MutableTreeNode) root, clusterNodes);
                 });
@@ -153,9 +166,13 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                             .findFirst();
                     if (pendingClusterNodeOptional.isPresent()) {
                         clusterNode.updateFrom(pendingClusterNodeOptional.get());
-                        nodeChanged(clusterNode);
-
-                        updateNamespaces(clusterNode);
+                        if (clusterNode.isActive()) {
+                            nodeChanged(clusterNode);
+                            updateNamespaces(clusterNode);
+                        } else {
+                            nodeChanged(clusterNode);
+                            removeAllChildren(clusterNode);
+                        }
                     } else {
                         removeNode(clusterNode);
                     }
