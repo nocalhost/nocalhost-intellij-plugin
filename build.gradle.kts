@@ -11,11 +11,14 @@ java {
     targetCompatibility = JavaVersion.VERSION_11
 }
 
-group = "dev.nocalhost"
-
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+    }
 }
+
+val remoteRobotVersion = "0.11.6"
 
 dependencies {
     implementation(kotlin("stdlib"))
@@ -39,7 +42,11 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.16")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.16")
 
-    testImplementation("junit", "junit", "4.12")
+    testImplementation("com.intellij.remoterobot:remote-robot:$remoteRobotVersion")
+    testImplementation("com.intellij.remoterobot:remote-fixtures:$remoteRobotVersion")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.2")
+    testImplementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.2")
 }
 
 var baseIDE = "IC"
@@ -56,6 +63,7 @@ val phpPlugin = "com.jetbrains.php:" + prop("phpPluginVersion")
 val goPlugin = "org.jetbrains.plugins.go:" + prop("goPluginVersion")
 var pythonPlugin = "Pythonid:" + prop("pythonPluginVersion")
 
+group = "dev.nocalhost"
 version = "$nocalhostVersion-$platformVersion"
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
@@ -266,6 +274,23 @@ tasks {
 tasks.withType(JavaCompile::class) {
     options.compilerArgs.add("-Xlint:unchecked")
     options.compilerArgs.add("-Xlint:deprecation")
+}
+
+tasks.runIdeForUiTests {
+    systemProperty("robot-server.port", "8082")
+    systemProperty("ide.mac.message.dialogs.as.sheets", "false")
+    systemProperty("jb.privacy.policy.text", "<!--999.999-->")
+    systemProperty("jb.consents.confirmation.enabled", "false")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class).all {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
 
 fun prop(name: String): String =
