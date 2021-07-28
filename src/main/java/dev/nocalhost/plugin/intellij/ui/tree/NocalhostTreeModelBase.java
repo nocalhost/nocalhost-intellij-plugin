@@ -60,4 +60,13 @@ public class NocalhostTreeModelBase extends DefaultTreeModel {
             super.removeNodeFromParent(node);
         }
     }
+
+    public void removeAllChildren(MutableTreeNode node) {
+        synchronized (this) {
+            int count = getChildCount(node);
+            for (int i = count - 1; i >= 0; i--) {
+                super.removeNodeFromParent((MutableTreeNode) getChild(node, i));
+            }
+        }
+    }
 }

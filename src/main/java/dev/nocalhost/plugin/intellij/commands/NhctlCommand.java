@@ -19,8 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import dev.nocalhost.plugin.intellij.commands.data.ClusterStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlAppPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlCheckClusterOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
@@ -629,6 +631,12 @@ public class NhctlCommand {
         args.add("--json");
         String output = execute(args, opts);
         return DataUtils.GSON.fromJson(output, TypeToken.getParameterized(List.class, NhctlAppPortForward.class).getType());
+    }
+
+    public ClusterStatus checkCluster(NhctlCheckClusterOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "check" ,"cluster");
+        String output = execute(args, opts);
+        return DataUtils.GSON.fromJson(output, ClusterStatus.class);
     }
 
     protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {

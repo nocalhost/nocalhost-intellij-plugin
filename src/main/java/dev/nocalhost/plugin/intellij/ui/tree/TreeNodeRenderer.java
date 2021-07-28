@@ -3,6 +3,7 @@ package dev.nocalhost.plugin.intellij.ui.tree;
 import com.intellij.icons.AllIcons;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.LoadingNode;
+import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.EmptyIcon;
 import com.intellij.util.ui.UIUtil;
@@ -53,12 +54,20 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (value instanceof ClusterNode) {
             ClusterNode node = (ClusterNode) value;
             append(node.getName());
-            setIcon(AllIcons.Webreferences.Server);
-            String accountInfo = node.getAccountInfo();
-            if (StringUtils.isNotEmpty(accountInfo)) {
-                setToolTipText(node.getName() + " [" + accountInfo + "]");
+            append("  ");
+            if (node.isActive()) {
+                append("ACTIVE", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
+                setIcon(AllIcons.Webreferences.Server);
+                String accountInfo = node.getAccountInfo();
+                if (StringUtils.isNotEmpty(accountInfo)) {
+                    setToolTipText(node.getName() + " [" + accountInfo + "]");
+                } else {
+                    setToolTipText(node.getName());
+                }
             } else {
-                setToolTipText(node.getName());
+                append("Unable to Connect", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
+                setIcon(AllIcons.General.BalloonError);
+                setToolTipText(node.getInfo());
             }
         }
 

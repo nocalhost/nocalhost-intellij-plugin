@@ -8,6 +8,7 @@ import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public class ClusterNode extends DefaultMutableTreeNode {
@@ -15,6 +16,11 @@ public class ClusterNode extends DefaultMutableTreeNode {
     private ServiceAccount serviceAccount;
     private String rawKubeConfig;
     private KubeConfig kubeConfig;
+
+    @Setter
+    private boolean active;
+    @Setter
+    private String info;
 
     public ClusterNode(String rawKubeConfig, KubeConfig kubeConfig) {
         this.rawKubeConfig = rawKubeConfig;
@@ -48,10 +54,12 @@ public class ClusterNode extends DefaultMutableTreeNode {
         this.serviceAccount = o.serviceAccount;
         this.rawKubeConfig = o.rawKubeConfig;
         this.kubeConfig = o.kubeConfig;
+        this.active = o.active;
+        this.info = o.info;
     }
 
     @Override
     public boolean isLeaf() {
-        return false;
+        return !active;
     }
 }
