@@ -14,12 +14,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.SystemInfo;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManager;
-import com.intellij.util.EnvironmentUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -28,9 +22,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -44,14 +36,12 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlSshReverseOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpDebugRunner;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
@@ -172,10 +162,9 @@ public class NocalhostProfileState extends CommandLineState {
             throw new ExecutionException("Remote debug port not configured.");
         }
 
-        String pod = getDevPodName();
         GeneralCommandLine cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(), "ssh", "reverse",
-                "--pod", pod,
+                "--pod", getDevPodName(),
                 "--local", debugPort,
                 "--remote", debugPort,
                 "--sshport", "50022",
@@ -300,19 +289,21 @@ public class NocalhostProfileState extends CommandLineState {
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
         NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, service.getNamespace());
 
-        Optional<NhctlGetResource> deployments = command.getResources(service.getServiceType(), nhctlGetOptions)
-                             .stream()
-                             .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), service.getServiceName()))
-                             .findFirst();
-        if (deployments != null && deployments.isEmpty()) {
+        Optional<NhctlGetResource> deployments = command
+                .getResources(service.getServiceType(), nhctlGetOptions)
+                .stream()
+                .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), service.getServiceName()))
+                .findFirst();
+        if (deployments.isEmpty()) {
             throw new ExecutionException("Service not found");
         }
 
-        Optional<NhctlGetResource> pods = command.getResources("Pods", nhctlGetOptions, deployments.get().getKubeResource().getSpec().getSelector().getMatchLabels())
-                                                        .stream()
-                                                        .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
-                                                        .findFirst();
-        if (pods != null && pods.isEmpty()) {
+        Optional<NhctlGetResource> pods = command
+                .getResources("Pods", nhctlGetOptions, deployments.get().getKubeResource().getSpec().getSelector().getMatchLabels())
+                .stream()
+                .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
+                .findFirst();
+        if (pods.isEmpty()) {
             throw new ExecutionException("Pod not found");
         }
 

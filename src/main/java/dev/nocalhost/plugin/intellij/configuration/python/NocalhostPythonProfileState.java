@@ -18,7 +18,6 @@ import com.jetbrains.python.debugger.remote.PyRemoteDebugCommandLineState;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -35,7 +34,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlSshReverseOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostDevInfo;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -201,26 +199,13 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         }
 
         // SSH tunnel
-        NhctlSshReverseOptions options = new NhctlSshReverseOptions(kubeConfigPath, devService.getNamespace());
-        options.setPod(getDevPodName());
-        options.setPort("50022");
-        options.setLocal(port);
-        options.setRemote(port);
-
-        ApplicationManager.getApplication().executeOnPooledThread(()->{
-            try {
-                disposables.add(createTunnel(options));
-            } catch (Exception ex) {
-                LOG.error(ex);
-            }
-        });
-
+        createTunnel(container);
         // Wait for SSH tunnel to be created
         Thread.sleep(2000);
         Disposable disposable = NocalhostConsoleManager.openTerminalWindow(
-                getEnvironment().getProject(),
-                "debug",
-                new GeneralCommandLine(lines)
+            getEnvironment().getProject(),
+            "debug",
+            new GeneralCommandLine(lines)
         );
         if (disposable != null) {
             disposables.add(disposable);
@@ -229,6 +214,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
 
     public void doDestroyDebug() {
         disposables.forEach(it -> it.dispose());
+        disposables.clear();
     }
 
     private String getDevPodName() throws IOException, InterruptedException, ExecutionException, NocalhostExecuteCmdException {
@@ -264,46 +250,34 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         return serviceContainer.getDev().getDebug().getRemoteDebugPort();
     }
 
-    private Disposable createTunnel(NhctlSshReverseOptions opts) throws NocalhostExecuteCmdException {
-        List<String> args = Lists.newArrayList(NhctlUtil.binaryPath(), "ssh", "reverse");
-        if (StringUtils.isNotEmpty(opts.getKubeconfig())) {
-            args.add("--kubeconfig");
-            args.add(opts.getKubeconfig());
-        }
-        if (StringUtils.isNotEmpty(opts.getNamespace())) {
-            args.add("--namespace");
-            args.add(opts.getNamespace());
-        }
-        if (StringUtils.isNotEmpty(opts.getPod())) {
-            args.add("--pod");
-            args.add(opts.getPod());
-        }
-        if (StringUtils.isNotEmpty(opts.getPort())) {
-            args.add("--sshport");
-            args.add(opts.getPort());
-        }
-        if (StringUtils.isNotEmpty(opts.getLocal())) {
-            args.add("--local");
-            args.add(opts.getLocal());
-        }
-        if (StringUtils.isNotEmpty(opts.getRemote())) {
-            args.add("--remote");
-            args.add(opts.getRemote());
-        }
+    private void createTunnel(ServiceContainer container) throws ExecutionException, NocalhostExecuteCmdException, IOException, InterruptedException {
+        String port = resolveDebugPort(container);
+        Project project = getEnvironment().getProject();
+        ServiceProjectPath service = getDevModeService();
+        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
+
+        GeneralCommandLine cmd = new GeneralCommandLine(Lists.newArrayList(
+                NhctlUtil.binaryPath(), "ssh", "reverse",
+                "--pod", getDevPodName(),
+                "--local", port,
+                "--remote", port,
+                "--sshport", "50022",
+                "--namespace", service.getNamespace(),
+                "--kubeconfig", kubeConfigPath.toString()
+        ));
 
         Process process;
-        GeneralCommandLine command = createCommandLine(args);
-        String cmd = command.getCommandLineString();
 
         try {
-            process = command.createProcess();
+            process = cmd.createProcess();
         } catch (ExecutionException ex) {
-            throw new NocalhostExecuteCmdException(cmd, -1, ex.getMessage());
+            throw new NocalhostExecuteCmdException(cmd.getCommandLineString(), -1, ex.getMessage());
         }
 
-        NocalhostOutputAppendNotifier bus = getEnvironment().getProject().getMessageBus()
+        NocalhostOutputAppendNotifier bus = project
+                .getMessageBus()
                 .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC);
-        bus.action("[cmd] " + cmd + System.lineSeparator());
+        bus.action("[cmd] " + cmd.getCommandLineString() + System.lineSeparator());
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             StringBuilder sb = new StringBuilder();
@@ -323,20 +297,6 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             }
         });
 
-        return () -> process.destroy();
-    }
-
-    protected GeneralCommandLine createCommandLine(List<String> args) {
-        final Map<String, String> environment = new HashMap<>(EnvironmentUtil.getEnvironmentMap());
-        environment.put("DISABLE_SPINNER", "true");
-        if (SystemInfo.isMac || SystemInfo.isLinux) {
-            String src = NhctlUtil.binaryPath();
-            String path = environment.get("PATH");
-            if (StringUtils.contains(src, "/")) {
-                path = src.substring(0, src.lastIndexOf("/")) + ":" + path;
-                environment.put("PATH", path);
-            }
-        }
-        return new GeneralCommandLine(args).withEnvironment(environment).withRedirectErrorStream(true);
+        disposables.add(() -> process.destroy());
     }
 }
