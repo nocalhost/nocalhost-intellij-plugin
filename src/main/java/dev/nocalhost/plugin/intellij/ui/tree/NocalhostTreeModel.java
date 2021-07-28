@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.ui.tree;
 import com.google.common.collect.Lists;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
@@ -80,9 +79,9 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     );
 
     private final NocalhostSettings nocalhostSettings =
-            ServiceManager.getService(NocalhostSettings.class);
-    private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+            ApplicationManager.getApplication().getService(NocalhostSettings.class);
+    private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final Project project;
     private final Tree tree;

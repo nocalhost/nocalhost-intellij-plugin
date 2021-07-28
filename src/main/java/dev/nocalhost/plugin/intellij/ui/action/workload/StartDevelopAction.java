@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.ui.action.workload;
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
@@ -46,8 +45,8 @@ import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import icons.NocalhostIcons;
 
 public class StartDevelopAction extends DumbAwareAction {
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-    private final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
 
     private final OutputCapturedGitCommand outputCapturedGitCommand;
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;

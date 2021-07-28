@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.ui.action.cluster;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -18,7 +17,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 
 public class RemoveClusterAction extends DumbAwareAction {
-    private final NocalhostSettings nocalhostSettings = ServiceManager.getService(
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
             NocalhostSettings.class);
 
     private final Project project;

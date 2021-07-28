@@ -217,6 +217,11 @@ tasks {
     }
 }
 
+tasks.withType(JavaCompile::class) {
+    options.compilerArgs.add("-Xlint:unchecked")
+    options.compilerArgs.add("-Xlint:deprecation")
+}
+
 fun prop(name: String): String =
     extra.properties[name] as? String
         ?: error("Property `$name` is not defined in gradle.properties")

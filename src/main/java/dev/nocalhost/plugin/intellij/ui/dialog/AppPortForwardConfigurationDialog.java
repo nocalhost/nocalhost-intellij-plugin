@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.dialog;
 
 import com.intellij.ide.plugins.newui.ColorButton;
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -49,7 +49,7 @@ import lombok.SneakyThrows;
 public class AppPortForwardConfigurationDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(AppPortForwardConfigurationDialog.class);
 
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
 

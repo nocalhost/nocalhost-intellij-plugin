@@ -1,6 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.vfs;
 
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -111,7 +111,7 @@ public class AppConfigFile extends VirtualFile {
             @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
                 Path path = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
                 String namespace = node.getNamespaceNode().getNamespace();
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(path, namespace);

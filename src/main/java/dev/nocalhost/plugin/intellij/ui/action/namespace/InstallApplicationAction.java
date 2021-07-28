@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
@@ -38,6 +37,7 @@ import dev.nocalhost.plugin.intellij.ui.dialog.AppInstallOrUpgradeOptionDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.HelmValuesChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.InstallApplicationChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.KustomizePathDialog;
+import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.utils.ConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -55,8 +55,8 @@ import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_RAW_MA
 public class InstallApplicationAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(InstallApplicationAction.class);
 
-    private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final Project project;
     private final NamespaceNode node;
@@ -158,9 +158,7 @@ public class InstallApplicationAction extends DumbAwareAction {
             } else if (configs.size() == 1) {
                 configPath = configs.get(0);
             } else {
-                configPath = FileChooseUtil.chooseSingleFile(
-                        project,
-                        "Please select your configuration file",
+                configPath = selectConfig(
                         nocalhostConfigPath,
                         configs.stream().map(e -> e.getFileName().toString()).collect(Collectors.toSet()));
             }
@@ -261,5 +259,16 @@ public class InstallApplicationAction extends DumbAwareAction {
         }
 
         return dialog.getAppInstallOrUpgradeOption();
+    }
+
+    private Path selectConfig(Path configDirectory, Set<String> files) {
+        ListChooseDialog dialog = new ListChooseDialog(project, "Please select your configuration file",
+                Lists.newArrayList(files));
+        dialog.showAndGet();
+        String configFile = dialog.getSelectedValue();
+        if (!StringUtils.isNotEmpty(configFile)) {
+            return null;
+        }
+        return configDirectory.resolve(configFile);
     }
 }

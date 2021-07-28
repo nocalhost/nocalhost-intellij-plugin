@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.task;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
@@ -15,7 +14,7 @@ import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 
 public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
-    private final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
 
     private final List<NocalhostAccount> nocalhostAccounts;
 

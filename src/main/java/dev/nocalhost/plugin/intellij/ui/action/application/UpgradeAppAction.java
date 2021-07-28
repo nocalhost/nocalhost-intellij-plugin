@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -48,7 +47,7 @@ public class UpgradeAppAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(UpgradeAppAction.class);
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
-    private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+    private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
 
     private final Project project;
     private final ApplicationNode node;

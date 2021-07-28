@@ -6,7 +6,7 @@ import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
@@ -80,7 +80,7 @@ public class NocalhostNotifier {
         notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new NotificationListener.Adapter() {
             @Override
             protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
-                ShowSettingsUtil showSettingsUtil = ServiceManager.getService(ShowSettingsUtil.class);
+                ShowSettingsUtil showSettingsUtil = ApplicationManager.getApplication().getService(ShowSettingsUtil.class);
                 showSettingsUtil.showSettingsDialog(project, "Nocalhost");
             }
         });

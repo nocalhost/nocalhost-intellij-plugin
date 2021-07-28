@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.service;
 
 import com.github.zafarkhaja.semver.Version;
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -40,7 +40,7 @@ public class NocalhostBinService {
     private static final Pattern NHCTL_VERSION_PATTERN = Pattern.compile("Version\\:\\sv(.+)");
 
     private final AtomicBoolean nocalhostBinaryDownloading = new AtomicBoolean(false);
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final Project project;
     private final String nhctlVersion;

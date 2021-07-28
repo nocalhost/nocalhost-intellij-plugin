@@ -32,6 +32,7 @@ public class NocalhostLogs extends LogsToolWindowPanel implements Disposable {
         DefaultActionGroup actionGroup = new DefaultActionGroup(consoleView.createConsoleActions());
         ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar(
                 "Nocalhost.Log.Window.Toolbar", actionGroup, false);
+        actionToolbar.setTargetComponent(this);
         setToolbar(actionToolbar.getComponent());
     }
 
@@ -41,7 +42,7 @@ public class NocalhostLogs extends LogsToolWindowPanel implements Disposable {
         consoleView.attachToProcess(processHandler);
     }
 
-    public void terminateProcess() {
+    public void terminateCommandProcess() {
         if (processHandler.isProcessTerminated()) {
             return;
         }

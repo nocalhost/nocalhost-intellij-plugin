@@ -3,7 +3,7 @@ package dev.nocalhost.plugin.intellij.task;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
@@ -30,7 +30,7 @@ import lombok.SneakyThrows;
 public class LoadKubernetesResourceTask extends Task.Backgroundable {
     private static final Logger LOG = Logger.getInstance(LoadKubernetesResourceTask.class);
 
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final ResourceNode node;
     private final Path kubeConfigPath;

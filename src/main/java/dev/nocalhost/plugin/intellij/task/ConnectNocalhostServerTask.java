@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.task;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
@@ -18,8 +17,8 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import lombok.SneakyThrows;
 
 public class ConnectNocalhostServerTask extends Task.Backgroundable {
-    private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
-    private final NocalhostSettings nocalhostSettings = ServiceManager.getService(
+    private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
             NocalhostSettings.class);
 
     private final String server;

@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.task;
 
 import com.intellij.ide.BrowserUtil;
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
@@ -25,7 +25,7 @@ import dev.nocalhost.plugin.intellij.utils.Constants;
 import lombok.SneakyThrows;
 
 public class BrowseQuickDemoTask extends Task.Backgroundable {
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final Project project;
     private final Path kubeConfigPath;
