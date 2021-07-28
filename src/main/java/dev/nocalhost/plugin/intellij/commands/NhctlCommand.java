@@ -7,6 +7,8 @@ import com.google.gson.reflect.TypeToken;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.EnvironmentUtil;
 
@@ -17,6 +19,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.commands.data.ClusterStatus;
@@ -634,7 +637,7 @@ public class NhctlCommand {
     }
 
     public ClusterStatus checkCluster(NhctlCheckClusterOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "check" ,"cluster");
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "check", "cluster");
         String output = execute(args, opts);
         return DataUtils.GSON.fromJson(output, ClusterStatus.class);
     }
@@ -663,11 +666,23 @@ public class NhctlCommand {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
 
+        final AtomicReference<String> errorOutput = new AtomicReference<>();
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            InputStreamReader reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
+            try {
+                errorOutput.set(CharStreams.toString(reader));
+            } catch (Exception ignored) {
+            }
+        });
+
         try (InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8)) {
             String output = CharStreams.toString(reader);
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                throw new NocalhostExecuteCmdException(cmd, exitCode, output);
+                output += errorOutput.toString();
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    Messages.showErrorDialog(errorOutput.get(), "Nhctl Command Error");
+                });
             }
             return output;
         }
@@ -705,6 +720,6 @@ public class NhctlCommand {
                 environment.put("PATH", path);
             }
         }
-        return new GeneralCommandLine(args).withEnvironment(environment).withRedirectErrorStream(true);
+        return new GeneralCommandLine(args).withEnvironment(environment);
     }
 }
