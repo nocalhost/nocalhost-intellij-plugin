@@ -6,6 +6,7 @@
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
+    <depends optional="true" config-file="python-only.xml">Pythonid</depends>
     <depends optional="true" config-file="java-only.xml">com.intellij.java</depends>
     <depends optional="true" config-file="php-only.xml">com.jetbrains.php</depends>
     <depends optional="true" config-file="go-only.xml">org.jetbrains.plugins.go</depends>

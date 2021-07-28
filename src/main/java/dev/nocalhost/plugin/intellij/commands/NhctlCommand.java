@@ -43,6 +43,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetServiceOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSshReverseOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlTerminalOptions;
@@ -445,6 +446,27 @@ public class NhctlCommand {
         args.add("--json");
         String output = execute(args, opts);
         return DataUtils.GSON.fromJson(output, TypeToken.getParameterized(List.class, NhctlPVCItem.class).getType());
+    }
+
+    public void createTunnel(NhctlSshReverseOptions opts) throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "ssh", "reverse");
+        if (StringUtils.isNotEmpty(opts.getPod())) {
+            args.add("--pod");
+            args.add(opts.getPod());
+        }
+        if (StringUtils.isNotEmpty(opts.getPort())) {
+            args.add("--sshport");
+            args.add(opts.getPort());
+        }
+        if (StringUtils.isNotEmpty(opts.getLocal())) {
+            args.add("--local");
+            args.add(opts.getLocal());
+        }
+        if (StringUtils.isNotEmpty(opts.getRemote())) {
+            args.add("--remote");
+            args.add(opts.getRemote());
+        }
+        execute(args, opts);
     }
 
     public void cleanPVC(NhctlCleanPVCOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
