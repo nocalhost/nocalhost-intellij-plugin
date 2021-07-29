@@ -1,11 +1,14 @@
 package dev.nocalhost.plugin.intellij.commands;
 
 import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -13,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -58,6 +62,15 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
 
+        final AtomicReference<String> errorOutput = new AtomicReference<>();
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            InputStreamReader reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
+            try {
+                errorOutput.set(CharStreams.toString(reader));
+            } catch (Exception ignored) {
+            }
+        });
+
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(
                 process.getInputStream(), Charsets.UTF_8))) {
@@ -75,7 +88,11 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
 
         int exitCode = process.waitFor();
         if (exitCode != 0) {
-            throw new NocalhostExecuteCmdException(cmd, exitCode, sb.toString());
+            publisher.action(errorOutput.get() + System.lineSeparator());
+            sb.append(errorOutput.get()).append(System.lineSeparator());
+            ApplicationManager.getApplication().invokeLater(() -> {
+                Messages.showErrorDialog(errorOutput.get(), "Nhctl Command Error");
+            });
         }
 
         return sb.toString();
