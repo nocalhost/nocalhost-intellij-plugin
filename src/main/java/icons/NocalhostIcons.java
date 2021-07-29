@@ -26,4 +26,6 @@ public interface NocalhostIcons {
         Icon DevPortForwardingOther = IconLoader.getIcon("/icons/dev-port-forwarding-other.svg", NocalhostIcons.class);
         Icon NormalPortForwarding = IconLoader.getIcon("/icons/normal-port-forwarding.svg", NocalhostIcons.class);
     }
+
+    Icon Kubernetes = IconLoader.getIcon("/icons/kubernetes.svg", NocalhostIcons.class);
 }
