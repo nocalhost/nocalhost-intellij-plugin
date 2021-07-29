@@ -11,7 +11,6 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
-import dev.nocalhost.plugin.intellij.utils.InstallApplicationUtil;
 import lombok.SneakyThrows;
 
 public class InstallStandaloneApplicationTask extends Task.Backgroundable {
@@ -20,8 +19,6 @@ public class InstallStandaloneApplicationTask extends Task.Backgroundable {
     private final NhctlInstallOptions opts;
 
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
-
-    private String installCommandOutput;
 
     public InstallStandaloneApplicationTask(Project project,
                                             String applicationName,
@@ -38,7 +35,7 @@ public class InstallStandaloneApplicationTask extends Task.Backgroundable {
     @SneakyThrows
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        installCommandOutput = outputCapturedNhctlCommand.install(applicationName, opts);
+        outputCapturedNhctlCommand.install(applicationName, opts);
     }
 
     @Override
@@ -49,8 +46,6 @@ public class InstallStandaloneApplicationTask extends Task.Backgroundable {
         NocalhostNotifier.getInstance(project).notifySuccess(
                 "Application " + applicationName + " installed",
                 "");
-
-        InstallApplicationUtil.showMessageByCommandOutput(project, installCommandOutput);
     }
 
     @Override
@@ -59,5 +54,6 @@ public class InstallStandaloneApplicationTask extends Task.Backgroundable {
                 "Application install error",
                 "Error occurred while installing application " + applicationName,
                 e.getMessage());
+
     }
 }
