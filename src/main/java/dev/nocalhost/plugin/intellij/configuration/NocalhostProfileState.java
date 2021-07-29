@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.configuration;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 
 import com.intellij.execution.ExecutionException;
@@ -8,19 +9,18 @@ import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +41,7 @@ import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpDebugRunner;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
+import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
@@ -50,8 +50,8 @@ public class NocalhostProfileState extends CommandLineState {
 
     private static final String DEFAULT_SHELL = "sh";
 
+    private final List<Disposable> disposables = Lists.newArrayList();
     private final AtomicReference<NocalhostDevInfo> devInfoHolder = new AtomicReference<>(null);
-    private final AtomicReference<Content> refContent = new AtomicReference<>(null);
 
     public NocalhostProfileState(ExecutionEnvironment environment) {
         super(environment);
@@ -121,7 +121,7 @@ public class NocalhostProfileState extends CommandLineState {
                 String runnerId = getEnvironment().getRunner().getRunnerId();
                 if (NocalhostPhpDebugRunner.RUNNER_ID.equals(runnerId)) {
                     // PHP remote debugging use SSH tunnel
-                    doCreateSshTunnel(serviceContainer);
+                    doCreateTunnel(serviceContainer);
                 } else {
                     String remotePort = resolveDebugPort(serviceContainer);
                     if (!StringUtils.isNotEmpty(remotePort)) {
@@ -147,18 +147,12 @@ public class NocalhostProfileState extends CommandLineState {
         }
     }
 
-    public void doRemoveSshTunnel() {
-        Content content = refContent.get();
-        Project project = getEnvironment().getProject();
-        ToolWindow window = ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console");
-
-        if (content != null && window != null) {
-            ContentManager manager = window.getContentManager();
-            ApplicationManager.getApplication().invokeLater(() -> manager.removeContent(content, true));
-        }
+    public void doRemoveTunnel() {
+        disposables.forEach(x -> x.dispose());
+        disposables.clear();
     }
 
-    private void doCreateSshTunnel(ServiceContainer container) throws ExecutionException {
+    private void doCreateTunnel(ServiceContainer container) throws ExecutionException, NocalhostExecuteCmdException, IOException, InterruptedException {
         Project project = getEnvironment().getProject();
         String debugPort = resolveDebugPort(container);
         ServiceProjectPath service = getDevModeService();
@@ -168,30 +162,49 @@ public class NocalhostProfileState extends CommandLineState {
             throw new ExecutionException("Remote debug port not configured.");
         }
 
+        String pod = getDevPodName();
+        GeneralCommandLine cmd = new GeneralCommandLine(Lists.newArrayList(
+                NhctlUtil.binaryPath(), "ssh", "reverse",
+                "--pod", pod,
+                "--local", debugPort,
+                "--remote", debugPort,
+                "--sshport", "50022",
+                "--namespace", service.getNamespace(),
+                "--kubeconfig", kubeConfigPath.toString()
+        ));
+
+        Process process;
+
         try {
-            String pod = getDevPodName();
-            ApplicationManager.getApplication().invokeLater(() -> {
-                Content content = NocalhostConsoleManager.openTerminalWindow(
-                        project,
-                        String.format(
-                                "%s:SSH",
-                                pod
-                        ),
-                        new GeneralCommandLine(Lists.newArrayList(
-                                NhctlUtil.binaryPath(), "ssh", "reverse",
-                                "--pod", pod,
-                                "--local", debugPort,
-                                "--remote", debugPort,
-                                "--sshport", "50022",
-                                "--namespace", service.getNamespace(),
-                                "--kubeconfig", kubeConfigPath.toString()
-                        ))
-                );
-                refContent.set(content);
-            });
-        } catch (Exception ex) {
-            LOG.error("error occurred while ssh reverse", ex);
+            process = cmd.createProcess();
+        } catch (ExecutionException ex) {
+            throw new NocalhostExecuteCmdException(cmd.getCommandLineString(), -1, ex.getMessage());
         }
+
+        NocalhostOutputAppendNotifier bus = project
+                .getMessageBus()
+                .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC);
+        bus.action("[cmd] " + cmd + System.lineSeparator());
+
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            StringBuilder sb = new StringBuilder();
+            InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);
+            try (BufferedReader br = new BufferedReader(reader)) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    bus.action(line + System.lineSeparator());
+                    sb.append(line).append(System.lineSeparator());
+                }
+                int code = process.waitFor();;
+                if (code != 0) {
+                    bus.action("Process finished with exit code " + code + System.lineSeparator());
+                }
+            } catch (Exception ex) {
+                LOG.error(ex);
+            }
+        });
+
+        disposables.add(() -> process.destroy());
     }
 
     private boolean isDebugExecutor() {
@@ -271,13 +284,14 @@ public class NocalhostProfileState extends CommandLineState {
         });
     }
 
-    private String getDevPodName() throws IOException, InterruptedException, ExecutionException, NocalhostExecuteCmdException {
+    private String getDevPodName() throws ExecutionException, IOException, NocalhostExecuteCmdException, InterruptedException {
         ServiceProjectPath service = getDevModeService();
         NhctlCommand command = ServiceManager.getService(NhctlCommand.class);
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
-
         NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, service.getNamespace());
-        Optional<NhctlGetResource> deployments = command.getResources(service.getServiceType(), nhctlGetOptions)
+
+        Optional<NhctlGetResource> deployments = command
+                .getResources(service.getServiceType(), nhctlGetOptions)
                 .stream()
                 .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), service.getServiceName()))
                 .findFirst();
@@ -285,11 +299,11 @@ public class NocalhostProfileState extends CommandLineState {
             throw new ExecutionException("Service not found");
         }
 
-        Optional<NhctlGetResource> pods = command.getResources("Pods", nhctlGetOptions, deployments.get().getKubeResource().getSpec().getSelector().getMatchLabels())
+        Optional<NhctlGetResource> pods = command
+                .getResources("Pods", nhctlGetOptions, deployments.get().getKubeResource().getSpec().getSelector().getMatchLabels())
                 .stream()
                 .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
                 .findFirst();
-        ;
         if (pods.isEmpty()) {
             throw new ExecutionException("Pod not found");
         }
