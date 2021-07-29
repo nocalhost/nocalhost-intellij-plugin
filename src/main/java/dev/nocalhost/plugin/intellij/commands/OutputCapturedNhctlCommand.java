@@ -22,6 +22,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
+import dev.nocalhost.plugin.intellij.utils.NhctlOutputUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 
 public final class OutputCapturedNhctlCommand extends NhctlCommand {
@@ -82,6 +83,7 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
                 }
                 publisher.action(line + System.lineSeparator());
                 sb.append(line).append(System.lineSeparator());
+                NhctlOutputUtil.showMessageByCommandOutput(project, line);
                 previousLine = line;
             }
         }
@@ -93,6 +95,7 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
             ApplicationManager.getApplication().invokeLater(() -> {
                 Messages.showErrorDialog(errorOutput.get(), "Nhctl Command Error");
             });
+            throw new NocalhostExecuteCmdException(cmd, exitCode, sb.toString());
         }
 
         return sb.toString();

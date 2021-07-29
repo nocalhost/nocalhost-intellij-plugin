@@ -683,6 +683,7 @@ public class NhctlCommand {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     Messages.showErrorDialog(errorOutput.get(), "Nhctl Command Error");
                 });
+                throw new NocalhostExecuteCmdException(cmd, exitCode, output);
             }
             return output;
         }

@@ -15,7 +15,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.Constants;
-import dev.nocalhost.plugin.intellij.utils.InstallApplicationUtil;
 import lombok.SneakyThrows;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_RAW_MANIFEST;
@@ -27,8 +26,6 @@ public class InstallQuickDemoTask extends Task.Backgroundable {
     private final Path kubeConfigPath;
     private final String namespace;
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
-
-    private String installCommandOutput;
 
     public InstallQuickDemoTask(Project project, Path kubeConfigPath, String namespace) {
         super(project, "Install quick demo", false);
@@ -45,8 +42,6 @@ public class InstallQuickDemoTask extends Task.Backgroundable {
 
         NocalhostNotifier.getInstance(project).notifySuccess("Quick demo installed", "");
 
-        InstallApplicationUtil.showMessageByCommandOutput(project, installCommandOutput);
-
         ApplicationManager.getApplication().invokeLater(() -> {
             ProgressManager.getInstance().run(new BrowseQuickDemoTask(project, kubeConfigPath, namespace));
         });
@@ -56,6 +51,7 @@ public class InstallQuickDemoTask extends Task.Backgroundable {
     public void onThrowable(@NotNull Throwable e) {
         NocalhostNotifier.getInstance(project).notifyError("Quick demo install error",
                 "Error occurred while installing quick demo", e.getMessage());
+
     }
 
     @SneakyThrows
@@ -64,6 +60,6 @@ public class InstallQuickDemoTask extends Task.Backgroundable {
         NhctlInstallOptions nhctlInstallOptions = new NhctlInstallOptions(kubeConfigPath, namespace);
         nhctlInstallOptions.setGitUrl(DEMO_GIT_URL);
         nhctlInstallOptions.setType(MANIFEST_TYPE_RAW_MANIFEST);
-        installCommandOutput = outputCapturedNhctlCommand.install(Constants.DEMO_NAME, nhctlInstallOptions);
+        outputCapturedNhctlCommand.install(Constants.DEMO_NAME, nhctlInstallOptions);
     }
 }
