@@ -11,7 +11,6 @@ import org.apache.commons.lang.StringUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -161,7 +160,7 @@ public class NocalhostApi {
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("authorization", "Bearer " + jwt)
-                .addHeader("Reraeb", refreshToken)
+                .addHeader("Reraeb", refreshToken == null ? "" : refreshToken)
                 .post(RequestBody.create("".getBytes()))
                 .build();
         try (Response response = client.newCall(request).execute()) {
