@@ -57,7 +57,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             append("  ");
             if (node.isActive()) {
                 append("ACTIVE", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
-                setIcon(AllIcons.Webreferences.Server);
+                setIcon(NocalhostIcons.Kubernetes);
                 String accountInfo = node.getAccountInfo();
                 if (StringUtils.isNotEmpty(accountInfo)) {
                     setToolTipText(node.getName() + " [" + accountInfo + "]");
