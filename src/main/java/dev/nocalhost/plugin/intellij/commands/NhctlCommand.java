@@ -54,7 +54,7 @@ import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 
 public class NhctlCommand {
-    public void install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    public String install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "install", name);
         if (StringUtils.isNotEmpty(opts.getConfig())) {
             args.add("--config");
@@ -125,7 +125,7 @@ public class NhctlCommand {
             args.add(opts.getLocalPath());
         }
 
-        execute(args, opts);
+        return execute(args, opts);
     }
 
     public void uninstall(

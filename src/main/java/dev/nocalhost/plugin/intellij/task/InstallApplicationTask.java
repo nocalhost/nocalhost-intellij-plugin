@@ -20,6 +20,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
+import dev.nocalhost.plugin.intellij.utils.InstallApplicationUtil;
 import lombok.SneakyThrows;
 
 public class InstallApplicationTask extends Task.Backgroundable {
@@ -44,6 +45,8 @@ public class InstallApplicationTask extends Task.Backgroundable {
 
     private String productPagePort;
 
+    private String installCommandOutput;
+
     public InstallApplicationTask(@Nullable Project project, Application application, NhctlInstallOptions opts) {
         super(project, "Installing application: " + application.getContext().getApplicationName(), false);
         this.project = project;
@@ -62,6 +65,8 @@ public class InstallApplicationTask extends Task.Backgroundable {
         NocalhostNotifier.getInstance(project).notifySuccess(
                 "Application " + application.getContext().getApplicationName() + " installed",
                 "");
+
+        InstallApplicationUtil.showMessageByCommandOutput(project, installCommandOutput);
     }
 
     private void bookinfo() {
@@ -83,6 +88,7 @@ public class InstallApplicationTask extends Task.Backgroundable {
     @SneakyThrows
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        outputCapturedNhctlCommand.install(application.getContext().getApplicationName(), opts);
+        installCommandOutput = outputCapturedNhctlCommand.install(
+                application.getContext().getApplicationName(), opts);
     }
 }
