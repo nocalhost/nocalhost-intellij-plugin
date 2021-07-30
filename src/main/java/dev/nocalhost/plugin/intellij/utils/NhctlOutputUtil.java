@@ -17,7 +17,7 @@ public final class NhctlOutputUtil {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (StringUtils.startsWith(line, MESSAGE_TAG_WARNING)) {
                 String message = line.substring(MESSAGE_TAG_WARNING.length()).trim();
-                Messages.showMessageDialog(message, "", Messages.getWarningIcon());
+                Messages.showMessageDialog(message, "Nhctl Command Warning", Messages.getWarningIcon());
             }
             if (StringUtils.startsWith(line, MESSAGE_TAG_INFO)) {
                 String message = line.substring(MESSAGE_TAG_INFO.length()).trim();
