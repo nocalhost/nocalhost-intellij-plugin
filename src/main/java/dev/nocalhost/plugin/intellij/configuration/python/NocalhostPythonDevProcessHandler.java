@@ -29,7 +29,7 @@ public class NocalhostPythonDevProcessHandler extends PyRemoteDebugCommandLineSt
         this.addProcessListener(new ProcessAdapter() {
             @SneakyThrows
             @Override
-            public void startNotified(@NotNull final ProcessEvent event) {
+            public void startNotified(@NotNull ProcessEvent event) {
                 state.doStartupDebug();
             }
             @Override

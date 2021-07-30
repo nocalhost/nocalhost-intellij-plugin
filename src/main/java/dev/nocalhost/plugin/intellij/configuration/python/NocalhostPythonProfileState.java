@@ -223,21 +223,24 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
 
         NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, service.getNamespace());
-        Optional<NhctlGetResource> deployments = command.getResources(service.getServiceType(), nhctlGetOptions)
-                                                        .stream()
-                                                        .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), service.getServiceName()))
-                                                        .findFirst();
+        Optional<NhctlGetResource> deployments = command
+                .getResources(service.getServiceType(), nhctlGetOptions)
+                .stream()
+                .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), service.getServiceName()))
+                .findFirst();
         if (deployments.isEmpty()) {
             throw new ExecutionException("Service not found");
         }
 
-        Optional<NhctlGetResource> pods = command.getResources("Pods", nhctlGetOptions, deployments.get().getKubeResource().getSpec().getSelector().getMatchLabels())
-                                                 .stream()
-                                                 .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
-                                                 .findFirst();;
+        Optional<NhctlGetResource> pods = command
+                .getResources("Pods", nhctlGetOptions, deployments.get().getKubeResource().getSpec().getSelector().getMatchLabels())
+                .stream()
+                .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
+                .findFirst();
         if (pods.isEmpty()) {
             throw new ExecutionException("Pod not found");
         }
+
         return pods.get().getKubeResource().getMetadata().getName();
     }
 
