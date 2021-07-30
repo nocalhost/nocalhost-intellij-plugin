@@ -28,6 +28,7 @@ import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.exception.NocalhostServerVersionOutDatedException;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
@@ -197,6 +198,9 @@ public class UpgradeAppAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 LOG.error("error occurred while upgrading application", e);
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost upgrade application error", "Error occurred while upgrading application", e.getMessage());
             }

@@ -15,6 +15,7 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
@@ -49,6 +50,9 @@ public class ApplyAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 LOG.error("error occurred while apply kubernetes config file", e);
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost apply error", "Error occurred while applying kubernetes file", e.getMessage());
             }

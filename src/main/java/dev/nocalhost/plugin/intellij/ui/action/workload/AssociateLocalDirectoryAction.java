@@ -13,6 +13,7 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
@@ -50,6 +51,9 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 ErrorUtil.dealWith(project, "Associating project path error",
                         "Error occurs while associating project path", e);
             }

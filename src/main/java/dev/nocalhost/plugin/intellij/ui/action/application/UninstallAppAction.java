@@ -17,6 +17,7 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
@@ -64,6 +65,9 @@ public class UninstallAppAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 LOG.error("error occurred while uninstalling application", e);
             }
 

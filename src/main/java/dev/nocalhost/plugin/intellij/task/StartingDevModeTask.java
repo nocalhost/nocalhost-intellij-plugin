@@ -27,6 +27,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
@@ -93,6 +94,9 @@ public class StartingDevModeTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
+        if (e instanceof NocalhostExecuteCmdException) {
+            return;
+        }
         LOG.error("error occurred while starting dev mode", e);
         NocalhostNotifier.getInstance(project).notifyError(
                 "Nocalhost starting dev mode error",

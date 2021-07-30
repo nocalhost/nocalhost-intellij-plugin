@@ -19,6 +19,7 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.AppConfigFile;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -53,6 +54,9 @@ public class ConfigAppAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 LOG.error("error occurred while getting application config", e);
             }
 

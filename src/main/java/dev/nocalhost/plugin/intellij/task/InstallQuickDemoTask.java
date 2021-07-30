@@ -12,6 +12,7 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.Constants;
@@ -49,6 +50,9 @@ public class InstallQuickDemoTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
+        if (e instanceof NocalhostExecuteCmdException) {
+            return;
+        }
         NocalhostNotifier.getInstance(project).notifyError("Quick demo install error",
                 "Error occurred while installing quick demo", e.getMessage());
 

@@ -19,6 +19,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardListOptions;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Condition;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.utils.Constants;
 import lombok.SneakyThrows;
@@ -94,6 +95,9 @@ public class BrowseQuickDemoTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
+        if (e instanceof NocalhostExecuteCmdException) {
+            return;
+        }
         NocalhostNotifier.getInstance(project).notifyError("Quick demo browse error",
                 "Error occurred while browsing quick demo", e.getMessage());
     }
