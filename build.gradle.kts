@@ -141,8 +141,49 @@ tasks {
         )
         changeNotes(
             """
-            <h2>Version 0.4.15 (23-07-2021)</h2>
+            <h2>Version 0.4.19</h2>
             
+            <h3>New Features</h3>
+
+            <ul>
+                <li>
+                    Supports JetBrains IDEs 2021.2
+                </li>
+                <li>
+                    Supports namespace PVC clear
+                </li>
+            </ul>
+
+            <h3>Refactor & Improvement</h3>
+
+            <ul>
+                <li>
+                    Host key checking skip for cloning git repository over SSH
+                </li>
+                <li>
+                    A more friendly notification for nhctl command messages
+                </li>
+                <li>
+                    PHP remote debugging experience
+                </li>
+                <li>
+                    Add cluster status display
+                </li>
+                <li>
+                    Add guide message
+                </li>
+            </ul>
+
+            <h3>Bug Fixes</h3>
+
+            <ul>
+                <li>
+                    NPEs
+                </li>
+            </ul>
+
+            <h2>Version 0.4.15</h2>
+
             <h3>New Features</h3>
 
             <ul>
