@@ -127,6 +127,9 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 LOG.error("error occurred while loading port forward list", e);
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while loading port forward list", e.getMessage());
             }
@@ -256,9 +259,12 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         final String finalSudoPassword = sudoPassword;
         ProgressManager.getInstance().run(new Task.Modal(project, "Starting port forward " + startTextField.getText(), true) {
             @Override
-            public void onThrowable(@NotNull Throwable throwable) {
-                LOG.error("error occurred while starting port forward", throwable);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while starting port forward", throwable.getMessage());
+            public void onThrowable(@NotNull Throwable e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
+                LOG.error("error occurred while starting port forward", e);
+                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while starting port forward", e.getMessage());
             }
 
             @Override
@@ -359,9 +365,12 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             final String finalSudoPassword = sudoPassword;
             ProgressManager.getInstance().run(new Task.Modal(project, "Stopping port forward " + portForward, false) {
                 @Override
-                public void onThrowable(@NotNull Throwable throwable) {
-                    LOG.error("error occurred while stopping port forward", throwable);
-                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while stopping port forward", throwable.getMessage());
+                public void onThrowable(@NotNull Throwable e) {
+                    if (e instanceof NocalhostExecuteCmdException) {
+                        return;
+                    }
+                    LOG.error("error occurred while stopping port forward", e);
+                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while stopping port forward", e.getMessage());
                 }
 
                 @Override

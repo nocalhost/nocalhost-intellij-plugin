@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import lombok.SneakyThrows;
@@ -51,6 +52,9 @@ public class UpgradeStandaloneApplicationTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
+        if (e instanceof NocalhostExecuteCmdException) {
+            return;
+        }
         NocalhostNotifier.getInstance(project).notifyError(
                 "Application upgrade error",
                 "Error occurred while upgrading application " + applicationName,

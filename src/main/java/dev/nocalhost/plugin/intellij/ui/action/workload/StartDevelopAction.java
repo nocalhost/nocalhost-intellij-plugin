@@ -31,6 +31,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
@@ -195,6 +196,9 @@ public class StartDevelopAction extends DumbAwareAction {
 
                 cloneGitRepository("");
             } catch (Exception e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 ErrorUtil.dealWith(project, "Loading dev image error",
                         "Error occurs while loading dev image", e);
             }
@@ -304,6 +308,9 @@ public class StartDevelopAction extends DumbAwareAction {
 
                 selectImage();
             } catch (Exception e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 ErrorUtil.dealWith(project, "Loading dev image",
                         "Error occurs while loading dev image", e);
             }
@@ -327,6 +334,9 @@ public class StartDevelopAction extends DumbAwareAction {
 
                         startDevelop();
                     } catch (Exception e) {
+                        if (e instanceof NocalhostExecuteCmdException) {
+                            return;
+                        }
                         ErrorUtil.dealWith(project, "Setting dev image",
                                 "Error occurs while setting dev image", e);
                     }
