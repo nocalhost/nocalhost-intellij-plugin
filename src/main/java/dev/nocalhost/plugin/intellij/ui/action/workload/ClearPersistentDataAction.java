@@ -45,7 +45,7 @@ public class ClearPersistentDataAction extends DumbAwareAction {
             try {
                 NhctlListPVCOptions opts = new NhctlListPVCOptions(kubeConfigPath, namespace);
                 opts.setApp(node.applicationName());
-                opts.setController(node.getNhctlDescribeService().getRawConfig().getName());
+                opts.setSvc(node.getNhctlDescribeService().getRawConfig().getName());
                 List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
                 ApplicationManager.getApplication().invokeLater(() -> {
                     new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems).showAndGet();

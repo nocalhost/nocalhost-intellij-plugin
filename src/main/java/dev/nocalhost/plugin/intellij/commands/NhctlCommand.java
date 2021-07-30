@@ -441,9 +441,9 @@ public class NhctlCommand {
             args.add("--app");
             args.add(opts.getApp());
         }
-        if (StringUtils.isNotEmpty(opts.getController())) {
-            args.add("--controller");
-            args.add(opts.getController());
+        if (StringUtils.isNotEmpty(opts.getSvc())) {
+            args.add("--svc");
+            args.add(opts.getSvc());
         }
         args.add("--json");
         String output = execute(args, opts);
