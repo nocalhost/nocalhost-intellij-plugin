@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.vfs;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -41,7 +40,7 @@ import lombok.SneakyThrows;
 public class ConfigFile extends VirtualFile {
     private static final Logger LOG = Logger.getInstance(ConfigFile.class);
 
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final String name;

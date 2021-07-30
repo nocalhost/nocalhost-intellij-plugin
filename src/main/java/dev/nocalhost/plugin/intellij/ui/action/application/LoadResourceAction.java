@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.application;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
@@ -61,7 +61,7 @@ public class LoadResourceAction extends DumbAwareAction {
             @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
                 NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 String resource = nhctlCommand.describe(applicationName, opts);

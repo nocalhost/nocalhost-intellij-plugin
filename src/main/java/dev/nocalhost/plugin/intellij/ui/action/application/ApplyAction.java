@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.application;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -65,7 +65,7 @@ public class ApplyAction extends DumbAwareAction {
             @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
-                final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
                 NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace);
                 nhctlApplyOptions.setFile(chosenPath.toString());
                 result = nhctlCommand.apply(applicationName, nhctlApplyOptions);

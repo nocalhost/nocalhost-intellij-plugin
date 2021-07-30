@@ -1,6 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.dialog;
 
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -19,7 +19,7 @@ import dev.nocalhost.plugin.intellij.task.LogoutNocalhostAccountsTask;
 import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
 public class ManagerNocalhostAccountsDialog extends DialogWrapper {
-    private final NocalhostSettings nocalhostSettings = ServiceManager.getService(
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
             NocalhostSettings.class);
 
     private final Project project;

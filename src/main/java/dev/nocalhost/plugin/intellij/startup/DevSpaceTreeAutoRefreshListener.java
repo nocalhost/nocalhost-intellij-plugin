@@ -1,42 +1,30 @@
 package dev.nocalhost.plugin.intellij.startup;
 
-import com.intellij.ide.AppLifecycleListener;
+import com.intellij.ide.ApplicationInitializedListener;
+import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.project.Project;
-
-import org.jetbrains.annotations.Nullable;
 
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 
-public class DevSpaceTreeAutoRefreshListener implements AppLifecycleListener {
+public class DevSpaceTreeAutoRefreshListener implements ApplicationInitializedListener {
     private static final long NOCALHOST_TREE_UPDATE_INTERVAL_MILLIS = 10 * 1000;  // 10 seconds
 
-    private Thread updateThread = null;
-    private boolean forceExit = false;
-
     @Override
-    public void appStarting(@Nullable Project projectFromCommandLine) {
-        AppLifecycleListener.super.appStarting(projectFromCommandLine);
-
+    public void componentsInitialized() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            updateThread = Thread.currentThread();
-            while (!forceExit) {
+            while (true) {
                 try {
                     Thread.sleep(NOCALHOST_TREE_UPDATE_INTERVAL_MILLIS);
                 } catch (InterruptedException ignored) {
                 }
-                ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                Application application = ApplicationManager.getApplication();
+                if (application.isDisposed()) {
+                    return;
+                }
+                application.getMessageBus().syncPublisher(
                         NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC
                 ).action();
             }
         });
-    }
-
-    @Override
-    public void appClosing() {
-        forceExit = true;
-        if (updateThread != null && !updateThread.isInterrupted()) {
-            updateThread.interrupt();
-        }
     }
 }

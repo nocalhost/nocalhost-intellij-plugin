@@ -11,7 +11,6 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 
@@ -212,7 +211,7 @@ public class NocalhostProfileState extends CommandLineState {
     }
 
     private String startDebugPortForward(ServiceProjectPath devModeService, String remotePort) throws ExecutionException {
-        NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
         try {
@@ -269,7 +268,7 @@ public class NocalhostProfileState extends CommandLineState {
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
                 Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
                 NhctlPortForwardEndOptions nhctlPortForwardEndOptions = new NhctlPortForwardEndOptions(kubeConfigPath, devModeService.getNamespace());
@@ -286,7 +285,7 @@ public class NocalhostProfileState extends CommandLineState {
 
     private String getDevPodName() throws ExecutionException, IOException, NocalhostExecuteCmdException, InterruptedException {
         ServiceProjectPath service = getDevModeService();
-        NhctlCommand command = ServiceManager.getService(NhctlCommand.class);
+        NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
         NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, service.getNamespace());
 
@@ -319,7 +318,7 @@ public class NocalhostProfileState extends CommandLineState {
 
     private NhctlDescribeService getNhctlDescribeService(ServiceProjectPath serviceProjectPath)
             throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
         NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, serviceProjectPath.getNamespace());
         opts.setDeployment(serviceProjectPath.getServiceName());
@@ -332,7 +331,7 @@ public class NocalhostProfileState extends CommandLineState {
 
     private NhctlRawConfig getNhctlConfig(ServiceProjectPath serviceProjectPath)
             throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
         NhctlConfigOptions opts = new NhctlConfigOptions(kubeConfigPath, serviceProjectPath.getNamespace());
         opts.setDeployment(serviceProjectPath.getServiceName());

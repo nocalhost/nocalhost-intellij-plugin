@@ -34,11 +34,11 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
                 Object component = event.getContent().getComponent();
                 if (component instanceof NocalhostTerminal) {
                     NocalhostTerminal nocalhostTerminal = (NocalhostTerminal) component;
-                    nocalhostTerminal.terminateProcess();
+                    nocalhostTerminal.terminateCommandProcess();
                 }
                 if (component instanceof NocalhostLogs) {
                     NocalhostLogs nocalhostLogs = (NocalhostLogs) component;
-                    nocalhostLogs.terminateProcess();
+                    nocalhostLogs.terminateCommandProcess();
                 }
             }
         });

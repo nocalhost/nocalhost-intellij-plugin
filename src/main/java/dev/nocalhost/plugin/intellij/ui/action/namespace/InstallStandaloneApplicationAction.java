@@ -32,6 +32,7 @@ import dev.nocalhost.plugin.intellij.ui.dialog.ConfigStandaloneHelmRepoApplicati
 import dev.nocalhost.plugin.intellij.ui.dialog.GitCloneStandabloneApplicationDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.HelmValuesChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.KustomizePathDialog;
+import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.utils.ConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
@@ -87,7 +88,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                         "Install Quick Demo",
                         "Cancel"},
                 0,
-                null);
+                Messages.getQuestionIcon());
         this.installTypeSelectedByUser.set(installTypeSelectedByUser);
         switch (installTypeSelectedByUser) {
             case OPTION_OPEN_LOCAL_DIRECTORY:
@@ -173,15 +174,14 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
 
     private void selectConfig(Path configDirectory, Set<String> files) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            Path configPath = FileChooseUtil.chooseSingleFile(
-                    project,
-                    "Please select your configuration file",
-                    configDirectory,
-                    files);
-            if (configPath == null) {
+            ListChooseDialog dialog = new ListChooseDialog(project, "Please select your configuration file",
+                    Lists.newArrayList(files));
+            dialog.showAndGet();
+            String configFile = dialog.getSelectedValue();
+            if (!StringUtils.isNotEmpty(configFile)) {
                 return;
             }
-            this.configPath.set(configPath);
+            this.configPath.set(configDirectory.resolve(configFile));
 
             checkInstallType();
         });

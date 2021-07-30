@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -33,7 +32,7 @@ import lombok.SneakyThrows;
 public class EndDevelopAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(EndDevelopAction.class);
 
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final Project project;

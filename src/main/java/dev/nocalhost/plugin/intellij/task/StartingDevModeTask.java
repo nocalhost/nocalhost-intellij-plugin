@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -42,10 +41,10 @@ import lombok.SneakyThrows;
 public class StartingDevModeTask extends Task.Backgroundable {
     private static final Logger LOG = Logger.getInstance(StartingDevModeTask.class);
 
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-    private final NocalhostSettings nocalhostSettings = ServiceManager.getService(
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
             NocalhostSettings.class);
-    private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+    private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
 
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 

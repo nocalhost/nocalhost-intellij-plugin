@@ -26,7 +26,7 @@ public class NocalhostTerminal extends ShellTerminalWidget {
         super.executeCommand(command.getCommandLineString());
     }
 
-    public void terminateProcess() {
+    public void terminateCommandProcess() {
         ProcessTtyConnector processTtyConnector = ShellTerminalWidget.getProcessTtyConnector(
                 getTtyConnector());
         if (processTtyConnector != null) {
