@@ -6,14 +6,14 @@ import com.google.common.collect.Lists;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.process.ProcessHandler;
+import com.intellij.execution.process.ProcessHandlerFactory;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.SystemInfo;
-import com.intellij.util.EnvironmentUtil;
+import com.intellij.xdebugger.XDebuggerManager;
 import com.jetbrains.python.debugger.remote.PyRemoteDebugCommandLineState;
 
 import org.apache.commons.lang3.StringUtils;
@@ -22,10 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -40,7 +39,6 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
@@ -48,7 +46,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     private static final String DEFAULT_SHELL = "sh";
     private static final Logger LOG = Logger.getInstance(NocalhostPythonProfileState.class);
     private final List<Disposable> disposables = Lists.newArrayList();
-    private final AtomicReference<NocalhostDevInfo> refDevInfo = new AtomicReference<>(null);
+    private final AtomicReference<NocalhostDevInfo> refContext = new AtomicReference<>(null);
 
     public NocalhostPythonProfileState(@NotNull Project project, @NotNull ExecutionEnvironment env) {
         super(project, env);
@@ -93,7 +91,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             throw new ExecutionException("Remote debug port is not configured.");
         }
 
-        refDevInfo.set(new NocalhostDevInfo(
+        refContext.set(new NocalhostDevInfo(
             command,
             null,
             container.getDev().getShell(),
@@ -152,18 +150,18 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     }
 
     public void doStartupDebug() throws ExecutionException, IOException, NocalhostExecuteCmdException, InterruptedException {
-        NocalhostDevInfo info = refDevInfo.get();
-        if (info == null) {
+        NocalhostDevInfo context = refContext.get();
+        if (context == null) {
             throw new ExecutionException("Call prepare() before this method");
         }
-        ServiceProjectPath devService = info.getDevModeService();
-        String shell = StringUtils.isNotEmpty(info.getShell()) ? info.getShell() : DEFAULT_SHELL;
-        String debug = info.getCommand().getDebug();
+        ServiceProjectPath devService = context.getDevModeService();
+        String shell = StringUtils.isNotEmpty(context.getShell()) ? context.getShell() : DEFAULT_SHELL;
+        String debug = context.getCommand().getDebug();
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devService.getRawKubeConfig());
 
         List<String> lines = Lists.newArrayList(
             NhctlUtil.binaryPath(), "exec", devService.getApplicationName(),
-            "--deployment", info.getDevModeService().getServiceName(),
+            "--deployment", context.getDevModeService().getServiceName(),
             "--command", shell, "--command", "-c", "--command", debug,
             "--kubeconfig", kubeConfigPath.toString(),
             "--namespace", devService.getNamespace()
@@ -201,19 +199,32 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         createTunnel(container);
         // Wait for SSH tunnel to be created
         Thread.sleep(2000);
-        Disposable disposable = NocalhostConsoleManager.openTerminalWindow(
-            getEnvironment().getProject(),
-            "debug",
-            new GeneralCommandLine(lines)
-        );
-        if (disposable != null) {
-            disposables.add(disposable);
-        }
+
+        ProcessHandler handler = ProcessHandlerFactory.getInstance().createProcessHandler(new GeneralCommandLine(lines));
+        disposables.add(() -> terminatedProcessHandler(handler));
+
+        XDebuggerManager
+                .getInstance(getEnvironment().getProject())
+                .getCurrentSession()
+                .getConsoleView()
+                .attachToProcess(handler);
     }
 
     public void doDestroyDebug() {
         disposables.forEach(it -> it.dispose());
         disposables.clear();
+    }
+
+    private void terminatedProcessHandler(ProcessHandler handler) {
+        OutputStream output = handler.getProcessInput();
+        try {
+            output.write(3);
+            output.flush();
+        } catch (IOException e) {
+            LOG.warn("Failed to send Ctrl+C to remote process", e);
+        } finally {
+            handler.destroyProcess();
+        }
     }
 
     private String getDevPodName() throws IOException, InterruptedException, ExecutionException, NocalhostExecuteCmdException {
