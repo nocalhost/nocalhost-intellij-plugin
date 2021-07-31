@@ -1,12 +1,9 @@
 package dev.nocalhost.plugin.intellij.startup;
 
-import com.intellij.ide.AppLifecycleListener;
+import com.intellij.ide.ApplicationInitializedListener;
+import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
-
-import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -19,36 +16,31 @@ import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
-public class NocalhostTokenRefreshListener implements AppLifecycleListener {
+public class NocalhostTokenRefreshListener implements ApplicationInitializedListener {
     private static final Logger LOG = Logger.getInstance(NocalhostTokenRefreshListener.class);
 
     private static final long NOCALHOST_TOKEN_REFRESH_INTERVAL_MILLIS = 10 * 1000; // 10 seconds
 
-    private volatile boolean stopped = false;
-
     @Override
-    public void appStarting(@Nullable Project projectFromCommandLine) {
-        AppLifecycleListener.super.appStarting(projectFromCommandLine);
-
+    public void componentsInitialized() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            while (!stopped) {
+            while (true) {
                 checkAndRefreshTokens();
                 try {
                     Thread.sleep(NOCALHOST_TOKEN_REFRESH_INTERVAL_MILLIS);
                 } catch (InterruptedException ignored) {
                 }
+                Application application = ApplicationManager.getApplication();
+                if (application.isDisposed()) {
+                    return;
+                }
             }
         });
     }
 
-    @Override
-    public void appClosing() {
-        stopped = true;
-    }
-
     public void checkAndRefreshTokens() {
-        NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
-        NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+        NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
+        NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
 
         List<NocalhostAccount> nocalhostAccounts = new ArrayList<>(nocalhostSettings.getNocalhostAccounts());
 

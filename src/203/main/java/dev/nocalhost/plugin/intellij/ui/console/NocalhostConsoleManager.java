@@ -102,7 +102,7 @@ public final class NocalhostConsoleManager {
                     manager.setSelectedContent(content);
                 });
             });
-            return () -> terminal.terminateProcess();
+            return () -> terminal.terminateCommandProcess();
         } catch (Exception e) {
             ErrorUtil.dealWith(project, "Opening terminal window error",
                     "Error occurs while opening terminal window", e);

@@ -105,7 +105,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
 
     private NhctlDescribeService getNhctlDescribeService(ServiceProjectPath serviceProjectPath) throws ExecutionException {
         try {
-            NhctlCommand command = ServiceManager.getService(NhctlCommand.class);
+            NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
             Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
             NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, serviceProjectPath.getNamespace());
             opts.setDeployment(serviceProjectPath.getServiceName());
@@ -171,8 +171,8 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         nhctlDescribeOptions.setDeployment(devService.getServiceName());
         nhctlDescribeOptions.setType(devService.getServiceType());
 
-        NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
+        NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
+        NhctlDescribeService nhctlDescribeService = command.describe(
                 devService.getApplicationName(),
                 nhctlDescribeOptions,
                 NhctlDescribeService.class);
@@ -229,7 +229,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
 
     private String getDevPodName() throws IOException, InterruptedException, ExecutionException, NocalhostExecuteCmdException {
         ServiceProjectPath service = getDevModeService();
-        NhctlCommand command = ServiceManager.getService(NhctlCommand.class);
+        NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
 
         NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, service.getNamespace());

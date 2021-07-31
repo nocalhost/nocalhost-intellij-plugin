@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.action.namespace;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 
@@ -14,13 +13,14 @@ import java.util.List;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.dialog.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class CleanDevSpacePersistentDataAction extends DumbAwareAction {
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final Project project;
     private final Path kubeConfigPath;
@@ -45,6 +45,9 @@ public class CleanDevSpacePersistentDataAction extends DumbAwareAction {
                     });
                 });
             } catch (Exception e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 ErrorUtil.dealWith(project, "Loading PVCs error",
                         "Error occurs while loading PVCs", e);
             }

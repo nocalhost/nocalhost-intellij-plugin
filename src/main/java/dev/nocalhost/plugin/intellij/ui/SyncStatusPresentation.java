@@ -5,7 +5,6 @@ import com.google.gson.JsonSyntaxException;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageDialogBuilder;
@@ -51,7 +50,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         if (project == null) {
             return null;
         }
-        final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+        final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
         final NocalhostProjectSettings nocalhostProjectSettings = project.getService(NocalhostProjectSettings.class);
 
         ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();

@@ -33,4 +33,6 @@ public class Constants {
             WORKLOAD_TYPE_POD
     );
 
+    public static final String DEMO_NAME = "bookinfo";
+
 }

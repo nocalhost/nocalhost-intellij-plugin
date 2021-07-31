@@ -78,9 +78,7 @@ public final class NocalhostConsoleManager {
     }
 
 
-    public static Disposable openTerminalWindow(Project project,
-                                          String title,
-                                          GeneralCommandLine command) {
+    public static Disposable openTerminalWindow(Project project, String title, GeneralCommandLine command) {
         if (project.isDisposed()) {
             return null;
         }
@@ -102,7 +100,7 @@ public final class NocalhostConsoleManager {
                     manager.setSelectedContent(content);
                 });
             });
-            return () -> terminal.terminateProcess();
+            return () -> terminal.terminateCommandProcess();
         } catch (Exception e) {
             ErrorUtil.dealWith(project, "Opening terminal window error",
                     "Error occurs while opening terminal window", e);

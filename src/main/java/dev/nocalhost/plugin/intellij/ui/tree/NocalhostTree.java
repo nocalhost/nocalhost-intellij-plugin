@@ -4,6 +4,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.treeStructure.Tree;
+import com.intellij.util.messages.MessageBusConnection;
 
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
@@ -19,6 +20,8 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
 public class NocalhostTree extends Tree implements Disposable {
     private final Project project;
     private final NocalhostTreeModel model;
+
+    private MessageBusConnection messageBusConnection;
 
     public NocalhostTree(Project project) {
         this.project = project;
@@ -80,7 +83,8 @@ public class NocalhostTree extends Tree implements Disposable {
             }
         });
 
-        ApplicationManager.getApplication().getMessageBus().connect(this).subscribe(
+        messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+        messageBusConnection.subscribe(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC,
                 model::update
         );
@@ -94,6 +98,6 @@ public class NocalhostTree extends Tree implements Disposable {
 
     @Override
     public void dispose() {
-
+        messageBusConnection.dispose();
     }
 }

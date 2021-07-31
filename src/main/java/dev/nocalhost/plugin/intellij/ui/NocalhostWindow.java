@@ -16,8 +16,6 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.StatusText;
 
 import javax.swing.*;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
 
 import dev.nocalhost.plugin.intellij.service.NocalhostBinService;
 import dev.nocalhost.plugin.intellij.ui.action.AddStandaloneClustersAction;
@@ -55,7 +53,6 @@ public class NocalhostWindow implements Disposable {
     private void init() {
         tree = new NocalhostTree(project);
         new TreeSpeedSearch(tree);
-        Disposer.register(this, tree);
         tree.updateDevSpaces();
         StatusText emptyText = tree.getEmptyText();
         emptyText.setCenterAlignText(false);
@@ -81,6 +78,7 @@ public class NocalhostWindow implements Disposable {
         actionGroup.add(new RefreshAction());
 
         ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("Nocalhost.Toolbar", actionGroup, true);
+        actionToolbar.setTargetComponent(panel);
         panel.setToolbar(actionToolbar.getComponent());
     }
 
@@ -90,6 +88,6 @@ public class NocalhostWindow implements Disposable {
 
     @Override
     public void dispose() {
-
+        Disposer.dispose(tree);
     }
 }

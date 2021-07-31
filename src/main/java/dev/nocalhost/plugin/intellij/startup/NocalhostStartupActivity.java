@@ -1,6 +1,6 @@
 package dev.nocalhost.plugin.intellij.startup;
 
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -24,8 +24,7 @@ public final class NocalhostStartupActivity implements StartupActivity {
     }
 
     private void devStart(Project project) {
-        final NocalhostSettings nocalhostSettings = ServiceManager
-                .getService(NocalhostSettings.class);
+        final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
         String projectPath = Paths.get(project.getBasePath()).toString();
         ServiceProjectPath serviceProjectPath = nocalhostSettings
                 .getDevModeServiceByProjectPath(projectPath);

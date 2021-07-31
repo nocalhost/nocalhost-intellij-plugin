@@ -30,6 +30,7 @@ public class NocalhostErrorWindow extends LogsToolWindowPanel implements Disposa
         DefaultActionGroup actionGroup = new DefaultActionGroup(consoleView.createConsoleActions());
         ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar(
                 "Nocalhost.Error.Window.Toolbar", actionGroup, false);
+        actionToolbar.setTargetComponent(this);
         setToolbar(actionToolbar.getComponent());
     }
 

@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.dialog;
 
 import com.intellij.ide.plugins.newui.ColorButton;
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -38,6 +38,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlAppPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardListOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.VerticalFlowLayout;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
@@ -48,7 +49,7 @@ import lombok.SneakyThrows;
 public class AppPortForwardConfigurationDialog extends DialogWrapper {
     private static final Logger LOG = Logger.getInstance(AppPortForwardConfigurationDialog.class);
 
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
 
@@ -104,6 +105,9 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 LOG.error("error occurred while loading port forward list", e);
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while loading port forward list", e.getMessage());
             }
@@ -177,9 +181,12 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
             final String finalSudoPassword = sudoPassword;
             ProgressManager.getInstance().run(new Task.Modal(project, "Stopping port forward " + portForward, false) {
                 @Override
-                public void onThrowable(@NotNull Throwable throwable) {
-                    LOG.error("error occurred while stopping port forward", throwable);
-                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while stopping port forward", throwable.getMessage());
+                public void onThrowable(@NotNull Throwable e) {
+                    if (e instanceof NocalhostExecuteCmdException) {
+                        return;
+                    }
+                    LOG.error("error occurred while stopping port forward", e);
+                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while stopping port forward", e.getMessage());
                 }
 
                 @Override

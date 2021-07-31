@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
@@ -24,7 +23,7 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 public class ClearPersistentDataAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(ClearPersistentDataAction.class);
 
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final Project project;
     private final ResourceNode node;
@@ -45,12 +44,15 @@ public class ClearPersistentDataAction extends DumbAwareAction {
             try {
                 NhctlListPVCOptions opts = new NhctlListPVCOptions(kubeConfigPath, namespace);
                 opts.setApp(node.applicationName());
-                opts.setController(node.getNhctlDescribeService().getRawConfig().getName());
+                opts.setSvc(node.getNhctlDescribeService().getRawConfig().getName());
                 List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
                 ApplicationManager.getApplication().invokeLater(() -> {
                     new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems).showAndGet();
                 });
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 LOG.error("error occurred while listing pvc", e);
             }
         });

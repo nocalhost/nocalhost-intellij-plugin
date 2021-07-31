@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.ui.action.workload;
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
@@ -31,6 +30,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
@@ -45,8 +45,8 @@ import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import icons.NocalhostIcons;
 
 public class StartDevelopAction extends DumbAwareAction {
-    private final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
-    private final NocalhostSettings nocalhostSettings = ServiceManager.getService(NocalhostSettings.class);
+    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
 
     private final OutputCapturedGitCommand outputCapturedGitCommand;
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
@@ -195,6 +195,9 @@ public class StartDevelopAction extends DumbAwareAction {
 
                 cloneGitRepository("");
             } catch (Exception e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 ErrorUtil.dealWith(project, "Loading dev image error",
                         "Error occurs while loading dev image", e);
             }
@@ -304,6 +307,9 @@ public class StartDevelopAction extends DumbAwareAction {
 
                 selectImage();
             } catch (Exception e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 ErrorUtil.dealWith(project, "Loading dev image",
                         "Error occurs while loading dev image", e);
             }
@@ -327,6 +333,9 @@ public class StartDevelopAction extends DumbAwareAction {
 
                         startDevelop();
                     } catch (Exception e) {
+                        if (e instanceof NocalhostExecuteCmdException) {
+                            return;
+                        }
                         ErrorUtil.dealWith(project, "Setting dev image",
                                 "Error occurs while setting dev image", e);
                     }

@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.ui.action.namespace;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -18,6 +17,7 @@ import java.nio.file.Path;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
@@ -26,7 +26,7 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ResetDevSpaceAction extends DumbAwareAction {
-    private final NocalhostApi nocalhostApi = ServiceManager.getService(NocalhostApi.class);
+    private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
 
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
@@ -63,6 +63,9 @@ public class ResetDevSpaceAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
+                if (e instanceof NocalhostExecuteCmdException) {
+                    return;
+                }
                 ErrorUtil.dealWith(project, "Resetting dev space error",
                         "Error occurs while resetting dev space", e);
             }

@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.vfs;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -99,7 +98,7 @@ public class KubeConfigFile extends VirtualFile {
 
     private void saveContent(String newContent) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (!MessageDialogBuilder.yesNo("Apply this resource?", "").ask(project)) {
+            if (!MessageDialogBuilder.yesNo("Edit Manifest", "Apply this resource?").ask(project)) {
                 return;
             }
             ProgressManager.getInstance().run(new Task.Backgroundable(null, "Applying " + name, false) {
@@ -122,7 +121,7 @@ public class KubeConfigFile extends VirtualFile {
                 public void run(@NotNull ProgressIndicator indicator) {
                     Path tempFile = Files.createTempFile(resourceName, ".yaml");
                     Files.write(tempFile, newContent.getBytes(StandardCharsets.UTF_8));
-                    final NhctlCommand nhctlCommand = ServiceManager.getService(NhctlCommand.class);
+                    final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
                     NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace);
                     nhctlApplyOptions.setFile(tempFile.toAbsolutePath().toString());
                     result = nhctlCommand.apply(appName, nhctlApplyOptions);

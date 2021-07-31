@@ -29,6 +29,7 @@ public class NocalhostOutputWindow extends LogsToolWindowPanel implements Dispos
         DefaultActionGroup actionGroup = new DefaultActionGroup(consoleView.createConsoleActions());
         ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar(
                 "Nocalhost.Output.Window.Toolbar", actionGroup, false);
+        actionToolbar.setTargetComponent(this);
         setToolbar(actionToolbar.getComponent());
 
         project.getMessageBus().connect().subscribe(

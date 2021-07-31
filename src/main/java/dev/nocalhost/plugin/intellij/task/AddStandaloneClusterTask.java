@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.task;
 import com.google.common.collect.Lists;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
@@ -28,7 +27,7 @@ import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import lombok.SneakyThrows;
 
 public class AddStandaloneClusterTask extends Task.Backgroundable {
-    private final NocalhostSettings nocalhostSettings = ServiceManager.getService(
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
             NocalhostSettings.class);
 
     private final String rawKubeConfig;
