@@ -77,7 +77,6 @@ public final class NocalhostConsoleManager {
         }
     }
 
-
     public static Disposable openTerminalWindow(Project project, String title, GeneralCommandLine command) {
         if (project.isDisposed()) {
             return null;
