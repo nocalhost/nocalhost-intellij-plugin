@@ -5,7 +5,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
-import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.SystemInfo;
 
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedCpuArchitectureException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedOperatingSystemException;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
@@ -36,17 +35,15 @@ import okhttp3.Response;
 
 public class NocalhostBinService {
     private static final HttpUrl NHCTL_BASE_URL = HttpUrl.parse("https://codingcorp-generic.pkg.coding.net/nocalhost/nhctl");
-    private static final Pattern NHCTL_VERSION_PATTERN = Pattern.compile("Version\\:\\sv(.+)");
+    private static final Pattern NHCTL_VERSION_PATTERN = Pattern.compile("Version:\\sv(.+)");
 
     private final AtomicBoolean nocalhostBinaryDownloading = new AtomicBoolean(false);
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
-    private final Project project;
     private final String nhctlVersion;
     private final File nocalhostBin;
 
-    public NocalhostBinService(Project project) {
-        this.project = project;
+    public NocalhostBinService() {
         InputStream in = NocalhostBinService.class.getClassLoader().getResourceAsStream("config.properties");
         Properties properties = new Properties();
         try {
@@ -91,7 +88,7 @@ public class NocalhostBinService {
                 downloadNhctl(nhctlVersion, "Upgrade Nocalhost Command Tool");
             }
         } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
-            NocalhostNotifier.getInstance(project).notifyError("Get nhctl version error", e.getMessage());
+            Messages.showErrorDialog(e.getMessage(), "Get nhctl Version Error");
         }
     }
 
@@ -100,7 +97,7 @@ public class NocalhostBinService {
             return;
         }
 
-        ProgressManager.getInstance().run(new Task.Modal(project, title, false) {
+        ProgressManager.getInstance().run(new Task.Modal(null, title, false) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setIndeterminate(false);
@@ -108,7 +105,7 @@ public class NocalhostBinService {
                     startDownload(version, Paths.get(NhctlUtil.binaryDir()), indicator);
                     nocalhostBin.setExecutable(true);
                 } catch (IOException e) {
-                    NocalhostNotifier.getInstance(project).notifyError("Download nhctl error", e.getMessage());
+                    Messages.showErrorDialog(e.getMessage(), "Download nhctl Error");
                 } finally {
                     nocalhostBinaryDownloading.set(false);
                 }
@@ -214,11 +211,14 @@ public class NocalhostBinService {
     }
 
     private String arch() {
-        if (SystemInfo.isArm64) {
-            return "arm64";
-        }
-        if (SystemInfo.isIntel64) {
-            return "amd64";
+        switch (SystemInfo.OS_ARCH) {
+            case "aarch64":
+            case "arm64":
+                return "arm64";
+            case "x86_64":
+            case "amd64":
+                return "amd64";
+            default:
         }
         throw new NocalhostUnsupportedCpuArchitectureException(SystemInfo.OS_ARCH);
     }

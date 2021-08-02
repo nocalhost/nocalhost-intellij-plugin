@@ -17,7 +17,6 @@ import com.intellij.util.ui.StatusText;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.service.NocalhostBinService;
 import dev.nocalhost.plugin.intellij.ui.action.AddStandaloneClustersAction;
 import dev.nocalhost.plugin.intellij.ui.action.ConnectNocalhostApiServerAction;
 import dev.nocalhost.plugin.intellij.ui.action.ManageNocalhostAccountsAction;
@@ -37,17 +36,9 @@ public class NocalhostWindow implements Disposable {
     public NocalhostWindow(Project project) {
         this.project = project;
 
-        checkNocalhost();
-
         panel = new SimpleToolWindowPanel(true, false);
 
         init();
-    }
-
-    private void checkNocalhost() {
-        NocalhostBinService nocalhostBinService = new NocalhostBinService(project);
-        nocalhostBinService.checkBin();
-        nocalhostBinService.checkVersion();
     }
 
     private void init() {
