@@ -24,5 +24,3 @@ Refer to <a href="https://nocalhost.dev/">nocalhost.dev</a> for more Nocalhost i
 
 Restart IDE.
 
-## IntelliJ Compatibility Range
-Currently, nocalhost-intellij-plugin only supports IntelliJ 203 version. If you install it incorrectly, please update your IntelliJ IDE to version 203.
