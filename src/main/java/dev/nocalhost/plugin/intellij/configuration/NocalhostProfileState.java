@@ -161,10 +161,9 @@ public class NocalhostProfileState extends CommandLineState {
             throw new ExecutionException("Remote debug port not configured.");
         }
 
-        String pod = getDevPodName();
         GeneralCommandLine cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(), "ssh", "reverse",
-                "--pod", pod,
+                "--pod", getDevPodName(),
                 "--local", debugPort,
                 "--remote", debugPort,
                 "--sshport", "50022",

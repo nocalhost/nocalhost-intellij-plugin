@@ -54,6 +54,7 @@ val terminalPlugin = "terminal"
 val javaPlugin = "com.intellij.java"
 val phpPlugin = "com.jetbrains.php:" + prop("phpPluginVersion")
 val goPlugin = "org.jetbrains.plugins.go:" + prop("goPluginVersion")
+var pythonPlugin = "Pythonid:" + prop("pythonPluginVersion")
 
 version = "$nocalhostVersion-$platformVersion"
 
@@ -62,6 +63,7 @@ intellij {
     version = ideaVersion
     val plugins = mutableListOf(
         terminalPlugin,
+        pythonPlugin,
         javaPlugin,
         phpPlugin,
         goPlugin
@@ -80,6 +82,9 @@ sourceSets {
 tasks.runIde {
     if (baseIDE == "GO") {
         ideDirectory("/Applications/GoLand.app/Contents")
+    }
+    if (baseIDE == "Python") {
+        ideDirectory("/Applications/PyCharm.app/Contents")
     }
     if (baseIDE == "PHP") {
         ideDirectory("/Applications/PhpStorm.app/Contents")
