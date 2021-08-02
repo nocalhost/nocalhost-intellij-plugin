@@ -45,8 +45,14 @@
 
         <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostRunner" order="first"/>
 
-        <applicationInitializedListener implementation="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"/>
-        <applicationInitializedListener implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTokenRefreshListener"/>
+        <applicationInitializedListener id="NhctlAutoUpgradeListener"
+                implementation="dev.nocalhost.plugin.intellij.startup.NhctlAutoUpgradeListener"/>
+        <applicationInitializedListener id="NocalhostTokenRefreshListener"
+                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTokenRefreshListener"
+                order="after NhctlAutoUpgradeListener"/>
+        <applicationInitializedListener
+                implementation="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"
+                order="after NocalhostTokenRefreshListener"/>
 
     </extensions>
 
