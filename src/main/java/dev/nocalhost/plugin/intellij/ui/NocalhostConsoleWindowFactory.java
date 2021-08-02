@@ -16,7 +16,6 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostErrorWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostLogs;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostOutputWindow;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostTerminal;
 
 public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAware {
 
@@ -32,10 +31,6 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
             @Override
             public void contentRemoved(@NotNull ContentManagerEvent event) {
                 Object component = event.getContent().getComponent();
-                if (component instanceof NocalhostTerminal) {
-                    NocalhostTerminal nocalhostTerminal = (NocalhostTerminal) component;
-                    nocalhostTerminal.terminateCommandProcess();
-                }
                 if (component instanceof NocalhostLogs) {
                     NocalhostLogs nocalhostLogs = (NocalhostLogs) component;
                     nocalhostLogs.terminateCommandProcess();

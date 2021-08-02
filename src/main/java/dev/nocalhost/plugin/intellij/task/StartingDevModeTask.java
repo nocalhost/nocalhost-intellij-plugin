@@ -33,9 +33,9 @@ import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.TerminalUtil;
 import lombok.SneakyThrows;
 
 public class StartingDevModeTask extends Task.Backgroundable {
@@ -63,7 +63,8 @@ public class StartingDevModeTask extends Task.Backgroundable {
     @Override
     public void onSuccess() {
         super.onSuccess();
-        NocalhostConsoleManager.openTerminalWindow(
+
+        TerminalUtil.openTerminal(
                 project,
                 String.format(
                         "%s/%s:terminal",
