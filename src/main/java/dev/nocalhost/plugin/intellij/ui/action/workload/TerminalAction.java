@@ -26,12 +26,12 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.TerminalUtil;
 
 public class TerminalAction extends DumbAwareAction {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
@@ -95,7 +95,7 @@ public class TerminalAction extends DumbAwareAction {
 
     private void openDevTerminal() {
         ApplicationManager.getApplication().invokeLater(() ->
-                NocalhostConsoleManager.openTerminalWindow(
+                TerminalUtil.openTerminal(
                         project,
                         String.format(
                                 "%s/%s:terminal",
@@ -112,7 +112,8 @@ public class TerminalAction extends DumbAwareAction {
                                 "--controller-type", node.getKubeResource().getKind(),
                                 "--container", "nocalhost-dev"
                         ))
-                ));
+                )
+        );
     }
 
     private void selectPod(List<KubeResource> pods) {
@@ -160,8 +161,7 @@ public class TerminalAction extends DumbAwareAction {
 
     private void openTerminal(String podName, String containerName) {
         ApplicationManager.getApplication().invokeLater(() ->
-
-                NocalhostConsoleManager.openTerminalWindow(
+                TerminalUtil.openTerminal(
                         project,
                         String.format(
                                 "%s/%s:terminal",
