@@ -20,7 +20,7 @@ import lombok.SneakyThrows;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_RAW_MANIFEST;
 
-public class InstallQuickDemoTask extends Task.Backgroundable {
+public class InstallDemoTask extends Task.Backgroundable {
     private static final String DEMO_GIT_URL = "https://github.com/nocalhost/bookinfo.git";
 
     private final Project project;
@@ -28,8 +28,8 @@ public class InstallQuickDemoTask extends Task.Backgroundable {
     private final String namespace;
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
-    public InstallQuickDemoTask(Project project, Path kubeConfigPath, String namespace) {
-        super(project, "Install quick demo", false);
+    public InstallDemoTask(Project project, Path kubeConfigPath, String namespace) {
+        super(project, "Install demo", false);
         this.project = project;
         this.kubeConfigPath = kubeConfigPath;
         this.namespace = namespace;
@@ -41,10 +41,10 @@ public class InstallQuickDemoTask extends Task.Backgroundable {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
-        NocalhostNotifier.getInstance(project).notifySuccess("Quick demo installed", "");
+        NocalhostNotifier.getInstance(project).notifySuccess("Demo installed", "");
 
         ApplicationManager.getApplication().invokeLater(() -> {
-            ProgressManager.getInstance().run(new BrowseQuickDemoTask(project, kubeConfigPath, namespace));
+            ProgressManager.getInstance().run(new BrowseDemoTask(project, kubeConfigPath, namespace));
         });
     }
 
@@ -53,8 +53,8 @@ public class InstallQuickDemoTask extends Task.Backgroundable {
         if (e instanceof NocalhostExecuteCmdException) {
             return;
         }
-        NocalhostNotifier.getInstance(project).notifyError("Quick demo install error",
-                "Error occurred while installing quick demo", e.getMessage());
+        NocalhostNotifier.getInstance(project).notifyError("Demo install error",
+                "Error occurred while installing demo", e.getMessage());
 
     }
 

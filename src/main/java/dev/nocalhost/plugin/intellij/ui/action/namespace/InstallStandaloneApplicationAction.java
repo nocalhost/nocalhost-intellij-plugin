@@ -25,7 +25,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.data.nocalhostconfig.Application;
 import dev.nocalhost.plugin.intellij.data.nocalhostconfig.NocalhostConfig;
-import dev.nocalhost.plugin.intellij.task.InstallQuickDemoTask;
+import dev.nocalhost.plugin.intellij.task.InstallDemoTask;
 import dev.nocalhost.plugin.intellij.task.InstallStandaloneApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.dialog.ConfigStandaloneHelmRepoApplicationDialog;
@@ -52,7 +52,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
     private static final int OPTION_OPEN_LOCAL_DIRECTORY = 0;
     private static final int OPTION_CLONE_FROM_GIT = 1;
     private static final int OPTION_HELM_REPO = 2;
-    private static final int OPTION_INSTALL_QUICK_DEMO = 3;
+    private static final int OPTION_INSTALL_DEMO = 3;
 
     private final Project project;
     private final Path kubeConfigPath;
@@ -85,7 +85,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                         "Open Local Directory",
                         "Clone from Git",
                         "Helm Repo",
-                        "Install Quick Demo",
+                        "Install Demo",
                         "Cancel"},
                 0,
                 Messages.getQuestionIcon());
@@ -111,8 +111,8 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                 configHelmRepo();
                 break;
 
-            case OPTION_INSTALL_QUICK_DEMO:
-                ProgressManager.getInstance().run(new InstallQuickDemoTask(project, kubeConfigPath,
+            case OPTION_INSTALL_DEMO:
+                ProgressManager.getInstance().run(new InstallDemoTask(project, kubeConfigPath,
                         namespace));
                 break;
 
