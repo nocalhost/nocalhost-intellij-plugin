@@ -7,7 +7,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowId;
@@ -16,6 +15,7 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -123,8 +123,10 @@ public class StartDevelopAction extends DumbAwareAction {
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
 
-                if (StringUtils.isNotEmpty(nhctlDescribeService.getAssociate())) {
-                    projectPath.set(nhctlDescribeService.getAssociate());
+                String associatedPath = nhctlDescribeService.getAssociate();
+                if (StringUtils.isNotEmpty(associatedPath)
+                        && Files.exists(Paths.get(associatedPath))) {
+                    projectPath.set(associatedPath);
                     getImage();
                 } else {
                     selectCodeSource();
@@ -138,20 +140,21 @@ public class StartDevelopAction extends DumbAwareAction {
 
     private void selectCodeSource() {
         ApplicationManager.getApplication().invokeLater(() -> {
-            int exitCode = MessageDialogBuilder
-                    .yesNoCancel(
-                            "Start develop",
-                            "To start develop, you must specify source code directory."
-                    )
-                    .yesText("Clone from Git Repo")
-                    .noText("Open local directly")
-                    .guessWindowAndAsk();
-
-            switch (exitCode) {
-                case Messages.YES:
+            int choice = Messages.showDialog(
+                    project,
+                    "To start develop, you must specify source code directory.",
+                    "Start Develop",
+                    new String[]{
+                            "Clone from Git Repo",
+                            "Open Local Directly",
+                            "Cancel"},
+                    0,
+                    Messages.getQuestionIcon());
+            switch (choice) {
+                case 0:
                     getGitUrl();
                     break;
-                case Messages.NO:
+                case 1:
                     selectDirectory();
                     break;
                 default:
