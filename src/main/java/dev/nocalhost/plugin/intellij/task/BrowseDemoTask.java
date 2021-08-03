@@ -24,17 +24,17 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.utils.Constants;
 import lombok.SneakyThrows;
 
-public class BrowseQuickDemoTask extends Task.Backgroundable {
+public class BrowseDemoTask extends Task.Backgroundable {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final Project project;
     private final Path kubeConfigPath;
     private final String namespace;
 
-    private AtomicReference<String> productPagePort = new AtomicReference<>(null);
+    private final AtomicReference<String> productPagePort = new AtomicReference<>(null);
 
-    public BrowseQuickDemoTask(Project project, Path kubeConfigPath, String namespace) {
-        super(project, "Browse quick demo", false);
+    public BrowseDemoTask(Project project, Path kubeConfigPath, String namespace) {
+        super(project, "Browse demo", false);
         this.project = project;
         this.kubeConfigPath = kubeConfigPath;
         this.namespace = namespace;
@@ -98,7 +98,7 @@ public class BrowseQuickDemoTask extends Task.Backgroundable {
         if (e instanceof NocalhostExecuteCmdException) {
             return;
         }
-        NocalhostNotifier.getInstance(project).notifyError("Quick demo browse error",
-                "Error occurred while browsing quick demo", e.getMessage());
+        NocalhostNotifier.getInstance(project).notifyError("Demo browse error",
+                "Error occurred while browsing demo", e.getMessage());
     }
 }
