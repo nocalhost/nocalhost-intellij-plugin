@@ -24,7 +24,7 @@ public class NocalhostTokenRefreshListener implements ApplicationInitializedList
     @Override
     public void componentsInitialized() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            while (true) {
+            while (!ApplicationManager.getApplication().isDisposed()) {
                 checkAndRefreshTokens();
                 try {
                     Thread.sleep(NOCALHOST_TOKEN_REFRESH_INTERVAL_MILLIS);
