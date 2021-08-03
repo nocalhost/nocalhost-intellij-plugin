@@ -22,7 +22,6 @@ import dev.nocalhost.plugin.intellij.ui.action.ConnectNocalhostApiServerAction;
 import dev.nocalhost.plugin.intellij.ui.action.ManageNocalhostAccountsAction;
 import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
 import dev.nocalhost.plugin.intellij.ui.dialog.AddStandaloneClustersDialog;
-import dev.nocalhost.plugin.intellij.ui.dialog.ConnectNocalhostServerDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 
 public class NocalhostWindow implements Disposable {
@@ -48,10 +47,8 @@ public class NocalhostWindow implements Disposable {
         StatusText emptyText = tree.getEmptyText();
         emptyText.setCenterAlignText(false);
         emptyText.appendLine("Get started with Nocalhost by connecting to a Kubernetes cluster.");
-        emptyText.appendLine("Connect to a standalone cluster", SimpleTextAttributes.LINK_ATTRIBUTES,
+        emptyText.appendLine("connect to a cluster", SimpleTextAttributes.LINK_ATTRIBUTES,
                 event -> new AddStandaloneClustersDialog(project).showAndGet());
-        emptyText.appendLine("Connect to Nocalhost server", SimpleTextAttributes.LINK_ATTRIBUTES,
-                event -> new ConnectNocalhostServerDialog(project).showAndGet());
         JBScrollPane scrollPane = new JBScrollPane(tree);
         scrollPane.setBorder(new TopLineBorder(new JBColor(0xD5D5D5, 0x323232), 1));
         panel.add(scrollPane);
