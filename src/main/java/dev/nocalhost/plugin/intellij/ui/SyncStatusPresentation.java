@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.*;
 
@@ -44,7 +45,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     private final Project project;
     private final Disposable widget;
 
-    private NhctlSyncStatus nhctlSyncStatus = getNhctlSyncStatus();
+    private final AtomicReference<NhctlSyncStatus> nhctlSyncStatus = new AtomicReference<>();
 
     private NhctlSyncStatus getNhctlSyncStatus() {
         if (project == null) {
@@ -65,7 +66,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
             nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
             String status = nhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
-            nhctlSyncStatus = DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
+            return DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
         } catch (InterruptedException | IOException e) {
             LOG.error("error occurred while get sync status ", e);
         } catch (NocalhostExecuteCmdException e) {
@@ -74,14 +75,24 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             }
         } catch (JsonSyntaxException ignored) {
         }
-
-        return nhctlSyncStatus;
+        return null;
     }
 
     public SyncStatusPresentation(StatusBar statusBar, Project project, Disposable widget) {
         this.statusBar = statusBar;
         this.project = project;
         this.widget = widget;
+
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                while (!project.isDisposed()) {
+                    nhctlSyncStatus.set(getNhctlSyncStatus());
+                    Thread.sleep(3000);
+                }
+            } catch (Exception e) {
+                LOG.error("Fail to get sync status", e);
+            }
+        });
     }
 
     @Override
@@ -106,11 +117,11 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
     @Override
     public @Nullable String getTooltipText() {
-        if (nhctlSyncStatus != null) {
-            if (StringUtils.isNoneBlank(nhctlSyncStatus.getOutOfSync())) {
-                return nhctlSyncStatus.getOutOfSync();
+        if (nhctlSyncStatus.get() != null) {
+            if (StringUtils.isNoneBlank(nhctlSyncStatus.get().getOutOfSync())) {
+                return nhctlSyncStatus.get().getOutOfSync();
             }
-            return nhctlSyncStatus.getTips();
+            return nhctlSyncStatus.get().getTips();
         }
         return "";
     }
@@ -127,7 +138,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
         final NocalhostProjectSettings nocalhostProjectSettings = project.getService(NocalhostProjectSettings.class);
 
-        if (nhctlSyncStatus != null && nhctlSyncStatus.getStatus().equalsIgnoreCase("disconnected")) {
+        if (nhctlSyncStatus.get() != null && nhctlSyncStatus.get().getStatus().equalsIgnoreCase("disconnected")) {
             if (MessageDialogBuilder.yesNo("Sync Resume", "do you want to resume file sync?").ask(project)) {
                 ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
                 if (devModeService == null || devModeService.getRawKubeConfig() == null) {
@@ -150,7 +161,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                 });
             }
         }
-        if (nhctlSyncStatus != null && StringUtils.isNoneBlank(nhctlSyncStatus.getOutOfSync())) {
+        if (nhctlSyncStatus.get() != null && StringUtils.isNoneBlank(nhctlSyncStatus.get().getOutOfSync())) {
             if (MessageDialogBuilder.yesNo("Sync Override", "Override the remote changes according to the local folders?").ask(project)) {
                 ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
                 if (devModeService == null || devModeService.getRawKubeConfig() == null) {
@@ -177,22 +188,21 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
     @Override
     public @Nullable String getSelectedValue() {
-        nhctlSyncStatus = getNhctlSyncStatus();
-        if (nhctlSyncStatus != null) {
-            return "Nocalhost Sync Status: " + nhctlSyncStatus.getMsg();
+        if (nhctlSyncStatus.get() != null) {
+            return "Nocalhost Sync Status: " + nhctlSyncStatus.get().getMsg();
         }
         return "";
     }
 
     @Override
     public @Nullable Icon getIcon() {
-        if (nhctlSyncStatus == null) {
+        if (nhctlSyncStatus.get() == null) {
             return null;
         }
-        if (StringUtils.isNoneBlank(nhctlSyncStatus.getOutOfSync())) {
+        if (StringUtils.isNoneBlank(nhctlSyncStatus.get().getOutOfSync())) {
             return AllIcons.Toolwindows.ToolWindowProblemsEmpty;
         }
-        String status = nhctlSyncStatus.getStatus();
+        String status = nhctlSyncStatus.get().getStatus();
         switch (status) {
             case "outOfSync":
                 return AllIcons.General.Warning;
