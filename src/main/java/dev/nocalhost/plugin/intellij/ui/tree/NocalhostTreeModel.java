@@ -137,6 +137,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     refreshClusterNodes((MutableTreeNode) root, clusterNodes);
                 });
 
+            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
                 if (e instanceof NocalhostApiException) {
                     ApplicationManager.getApplication().invokeLater(() -> {
@@ -234,17 +235,9 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshNamespaceNodes(clusterNode, pendingNamespaces);
                 });
+            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
-                if (e instanceof NocalhostExecuteCmdException) {
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        NocalhostNotifier.getInstance(project).notifyError(
-                                "Loading namespaces error",
-                                "Error occurs while loading namespaces",
-                                e.getMessage());
-                    });
-                } else {
-                    LOG.error("Loading namespaces error", e);
-                }
+                LOG.error("Loading namespaces error", e);
             }
         });
     }
@@ -312,17 +305,9 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 final List<ApplicationNode> finalApplicationNodes = applicationNodes;
                 ApplicationManager.getApplication().invokeLater(() ->
                         refreshApplicationNodes(namespaceNode, finalApplicationNodes));
+            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
-                if (e instanceof NocalhostExecuteCmdException) {
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        NocalhostNotifier.getInstance(project).notifyError(
-                                "Loading applicatons error",
-                                "Error occurs while loading applicatons",
-                                e.getMessage());
-                    });
-                } else {
-                    LOG.error("Loading applicatons error", e);
-                }
+                LOG.error("Loading applicatons error", e);
             }
         });
     }
@@ -405,18 +390,9 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshResourceNodes(resourceTypeNode, resources);
                 });
+            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
-                if (StringUtils.contains(e.getMessage(), "Application not found")) {
-                    return;
-                }
-                if (e instanceof NocalhostExecuteCmdException) {
-                    NocalhostNotifier.getInstance(project).notifyError(
-                            "Loading resources error",
-                            "Error occurred while loading resources",
-                            e.getMessage());
-                } else {
-                    LOG.error("Loading resources error", e);
-                }
+                LOG.error("Loading resources error", e);
             }
         });
     }
