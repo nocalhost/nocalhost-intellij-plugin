@@ -19,7 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +28,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedCpuArchitectureException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedOperatingSystemException;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import lombok.SneakyThrows;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -37,7 +38,6 @@ public class NocalhostBinService {
     private static final HttpUrl NHCTL_BASE_URL = HttpUrl.parse("https://codingcorp-generic.pkg.coding.net/nocalhost/nhctl");
     private static final Pattern NHCTL_VERSION_PATTERN = Pattern.compile("Version:\\sv(.+)");
 
-    private final AtomicBoolean nocalhostBinaryDownloading = new AtomicBoolean(false);
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final String nhctlVersion;
@@ -93,22 +93,18 @@ public class NocalhostBinService {
     }
 
     private void downloadNhctl(String version, String title) {
-        if (!nocalhostBinaryDownloading.compareAndSet(false, true)) {
-            return;
-        }
-
         ProgressManager.getInstance().run(new Task.Modal(null, title, false) {
+            @Override
+            public void onThrowable(@NotNull Throwable e) {
+                Messages.showErrorDialog(e.getMessage(), "Download nhctl Error");
+            }
+
+            @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setIndeterminate(false);
-                try {
-                    startDownload(version, Paths.get(NhctlUtil.binaryDir()), indicator);
-                    nocalhostBin.setExecutable(true);
-                } catch (IOException e) {
-                    Messages.showErrorDialog(e.getMessage(), "Download nhctl Error");
-                } finally {
-                    nocalhostBinaryDownloading.set(false);
-                }
+                startDownload(version, Paths.get(NhctlUtil.binaryDir()), indicator);
+                nocalhostBin.setExecutable(true);
             }
         });
     }
@@ -123,7 +119,11 @@ public class NocalhostBinService {
         Files.createDirectories(binDir);
 
         Request request = new Request.Builder().url(url).build();
-        OkHttpClient client = new OkHttpClient();
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .build();
         Path downloadingPath = binDir.resolve(getDownloadingTempFilename());
 
         FileOutputStream fos = null;
