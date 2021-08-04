@@ -12,7 +12,7 @@ public class DevSpaceTreeAutoRefreshListener implements ApplicationInitializedLi
     @Override
     public void componentsInitialized() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            while (true) {
+            while (!ApplicationManager.getApplication().isDisposed()) {
                 try {
                     Thread.sleep(NOCALHOST_TREE_UPDATE_INTERVAL_MILLIS);
                 } catch (InterruptedException ignored) {
