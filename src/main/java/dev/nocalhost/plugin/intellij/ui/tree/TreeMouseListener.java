@@ -34,12 +34,14 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryA
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.CopyTerminalAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.DebugAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.EditManifestAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.EndDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.LogsAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.OpenProjectAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.PortForwardAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ResetAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.RunAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.StartDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.TerminalAction;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
@@ -186,6 +188,14 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new PortForwardAction(project, resourceNode));
         actionGroup.add(new ResetAction(project, resourceNode));
         actionGroup.add(new TerminalAction(project, resourceNode));
+
+        // only for IDEA & GoLand
+        DefaultActionGroup cmd = new DefaultActionGroup("Command", true);
+        cmd.add(new RunAction(project, resourceNode));
+        cmd.add(new DebugAction(project, resourceNode));
+
+        actionGroup.add(new Separator());
+        actionGroup.add(cmd);
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
