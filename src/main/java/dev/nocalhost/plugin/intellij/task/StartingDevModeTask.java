@@ -6,6 +6,7 @@ import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
@@ -51,6 +52,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
     private final Project project;
     private final ServiceProjectPath serviceProjectPath;
     private final Path kubeConfigPath;
+    private Runnable onAfter;
 
     public StartingDevModeTask(Project project, ServiceProjectPath serviceProjectPath) {
         super(project, "Starting DevMode", false);
@@ -58,6 +60,11 @@ public class StartingDevModeTask extends Task.Backgroundable {
         this.serviceProjectPath = serviceProjectPath;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
+    }
+
+    public StartingDevModeTask(Project project, ServiceProjectPath serviceProjectPath, Runnable onAfter) {
+        this(project, serviceProjectPath);
+        this.onAfter = onAfter;
     }
 
     @Override
@@ -87,9 +94,11 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
         NocalhostNotifier.getInstance(project).notifySuccess("DevMode started", "");
 
-        final NocalhostProjectSettings nocalhostProjectSettings = project.getService(
-                NocalhostProjectSettings.class);
-        nocalhostProjectSettings.setDevModeService(serviceProjectPath);
+        project.getService(NocalhostProjectSettings.class).setDevModeService(serviceProjectPath);
+
+        if (onAfter != null) {
+            onAfter.run();
+        }
     }
 
     @Override

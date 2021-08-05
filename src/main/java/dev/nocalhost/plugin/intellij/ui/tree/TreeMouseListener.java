@@ -34,13 +34,13 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryA
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.CopyTerminalAction;
-import dev.nocalhost.plugin.intellij.ui.action.workload.DebugAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.EditManifestAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.EndDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.LogsAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.OpenProjectAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.PortForwardAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ResetAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.DebugAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.RunAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.StartDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.TerminalAction;

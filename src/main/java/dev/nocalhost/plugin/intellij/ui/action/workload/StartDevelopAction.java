@@ -15,12 +15,15 @@ import com.intellij.openapi.wm.ToolWindowManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
@@ -59,8 +62,14 @@ public class StartDevelopAction extends DumbAwareAction {
     private final AtomicReference<String> projectPath = new AtomicReference<>();
     private final AtomicReference<String> selectedContainer = new AtomicReference<>();
 
+    protected Runnable onAfter;
+
     public StartDevelopAction(Project project, ResourceNode node) {
-        super("Start Develop", "", NocalhostIcons.Status.DevStart);
+        this("Start Develop", project, node, NocalhostIcons.Status.DevStart);
+    }
+
+    public StartDevelopAction(String title, Project project, ResourceNode node, @Nullable Icon icon) {
+        super(title, "", icon);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
@@ -79,9 +88,13 @@ public class StartDevelopAction extends DumbAwareAction {
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
                 if (nhctlDescribeService.isDeveloping()) {
-                    ApplicationManager.getApplication().invokeLater(() ->
-                            Messages.showMessageDialog("Dev mode has been started.",
-                                    "Start Develop", null));
+                    if (onAfter == null) {
+                        ApplicationManager.getApplication().invokeLater(() ->
+                                Messages.showMessageDialog("Dev mode has been started.",
+                                        "Start Develop", null));
+                    } else {
+                        onAfter.run();
+                    }
                     return;
                 }
 
@@ -375,7 +388,7 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (PathsUtil.isSame(projectPath.get(), project.getBasePath())) {
                 ProgressManager.getInstance().run(
-                        new StartingDevModeTask(project, serviceProjectPath));
+                        new StartingDevModeTask(project, serviceProjectPath, onAfter));
             } else {
                 Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
                 for (Project openProject : openProjects) {
@@ -385,7 +398,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         if (toolWindow != null) {
                             toolWindow.activate(() -> {
                                 ProgressManager.getInstance().run(
-                                        new StartingDevModeTask(openProject, serviceProjectPath));
+                                        new StartingDevModeTask(openProject, serviceProjectPath, onAfter));
                             });
                             return;
                         }
