@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.task;
 
+import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionManager;
 import com.intellij.execution.RunManager;
 import com.intellij.execution.RunnerAndConfigurationSettings;
@@ -8,16 +9,26 @@ import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.executors.DefaultRunExecutor;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
 import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NotNull;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.configuration.go.NocalhostGoConfigurationType;
@@ -25,6 +36,7 @@ import dev.nocalhost.plugin.intellij.configuration.java.NocalhostJavaConfigurati
 import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpConfigurationType;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfiguration;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfigurationType;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
@@ -81,7 +93,7 @@ public class ExecuteTask extends Task.Backgroundable {
                 doRun();
                 break;
             }
-            Thread.sleep(3000);
+            Thread.sleep(5000);
         }
     }
 
@@ -102,28 +114,47 @@ public class ExecuteTask extends Task.Backgroundable {
         }
     }
 
-    private Class<? extends ConfigurationType> getConfType() {
+    private @Nullable Class<? extends ConfigurationType> getConfType() {
         var ide = ApplicationInfo.getInstance().getBuild().getProductCode();
-        // TODO
-        ide = "PY";
         return hash.containsKey(ide) ? hash.get(ide) : null;
     }
 
-    private RunnerAndConfigurationSettings getConf() {
+    private @Nullable String resolveDebugPort(@NotNull ServiceProjectPath service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
+        var cmd = ApplicationManager.getApplication().getService(NhctlCommand.class);
+        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
+        NhctlConfigOptions opts = new NhctlConfigOptions(kubeConfigPath, service.getNamespace());
+        opts.setDeployment(service.getServiceName());
+        opts.setControllerType(service.getServiceType());
+        var config = cmd.getConfig(service.getApplicationName(), opts, NhctlRawConfig.class);
+        var bucket = config.getContainers();
+        var container = bucket.isEmpty() ? null : bucket.get(0);
+        try {
+            return container.getDev().getDebug().getRemoteDebugPort();
+        } catch (Exception ex) {
+            throw new ExecutionException("The configuration of the service container is incorrect.");
+        }
+    }
+
+    @SneakyThrows
+    private @NotNull RunnerAndConfigurationSettings getConf() {
         RunnerAndConfigurationSettings conf;
         var manager = RunManager.getInstance(project);
         var type = getConfType();
         var list = manager.getConfigurationSettingsList(type);
         if (list.isEmpty()) {
-            conf = manager.createConfiguration("demo", type);
+            conf = manager.createConfiguration("Nocalhost", type);
             manager.addConfiguration(conf);
         } else {
             conf = list.get(0);
         }
-        // TODO
         if (conf.getConfiguration() instanceof NocalhostPythonConfiguration) {
-            ((NocalhostPythonConfiguration) conf.getConfiguration()).setPort(9004);
-            ((NocalhostPythonConfiguration) conf.getConfiguration()).setHost("127.0.0.1");
+            var port = resolveDebugPort(service);
+            if (StringUtils.isEmpty(port)) {
+                throw new ExecutionException("The remote debug port is not configured.");
+            }
+            var pyconf = (NocalhostPythonConfiguration) conf.getConfiguration();
+            pyconf.setPort(port);
+            pyconf.setHost("127.0.0.1");
         }
         manager.setSelectedConfiguration(conf);
         return conf;
