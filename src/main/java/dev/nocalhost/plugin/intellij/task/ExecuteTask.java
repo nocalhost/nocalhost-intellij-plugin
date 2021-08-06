@@ -25,7 +25,6 @@ import dev.nocalhost.plugin.intellij.configuration.java.NocalhostJavaConfigurati
 import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpConfigurationType;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfiguration;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfigurationType;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
@@ -48,19 +47,20 @@ public class ExecuteTask extends Task.Backgroundable {
     };
 
     public ExecuteTask(Project project, ServiceProjectPath service, boolean debug) {
-        super(project, String.format("Starting %s", debug ? "Debug" : "Run"), false);
+        super(project, String.format("Starting %s", debug ? "`Debug`" : "`Run`"), false);
         this.debug = debug;
         this.project = project;
         this.service = service;
     }
 
     @Override
-    public void onThrowable(@NotNull Throwable e) {
-        LOG.error("error occurred while starting dev mode", e);
+    public void onThrowable(@NotNull Throwable ex) {
+        LOG.error(String.format("error occurred while starting %s", debug ? "`Debug`" : "`Run`"), ex);
         NocalhostNotifier.getInstance(project).notifyError(
-                "Nocalhost starting dev mode error",
-                "Error occurred while starting dev mode",
-                e.getMessage());
+                "Nocalhost",
+                String.format("error occurred while starting %s", debug ? "`Debug`" : "`Run`"),
+                ex.getMessage()
+        );
     }
 
     @SneakyThrows
@@ -72,13 +72,13 @@ public class ExecuteTask extends Task.Backgroundable {
             opts.setDeployment(service.getServiceName());
             opts.setControllerType(service.getServiceType());
             var cmd = project.getService(OutputCapturedNhctlCommand.class);
-            var resp = cmd.syncStatus(service.getApplicationName(), opts);
-            var json = DataUtils.GSON.fromJson(resp, NhctlSyncStatus.class);
+            var text = cmd.syncStatus(service.getApplicationName(), opts);
+            var json = DataUtils.GSON.fromJson(text, NhctlSyncStatus.class);
 
             // TODO
-            LOG.debug(resp);
+            LOG.debug(text);
             if ("idle".equals(json.getStatus())) {
-                ExecuteTask.this.doRun();
+                doRun();
                 break;
             }
             Thread.sleep(3000);
@@ -109,7 +109,7 @@ public class ExecuteTask extends Task.Backgroundable {
         return hash.containsKey(ide) ? hash.get(ide) : null;
     }
 
-    protected RunnerAndConfigurationSettings getConf() {
+    private RunnerAndConfigurationSettings getConf() {
         RunnerAndConfigurationSettings conf;
         var manager = RunManager.getInstance(project);
         var type = getConfType();
@@ -123,6 +123,7 @@ public class ExecuteTask extends Task.Backgroundable {
         // TODO
         if (conf.getConfiguration() instanceof NocalhostPythonConfiguration) {
             ((NocalhostPythonConfiguration) conf.getConfiguration()).setPort(9004);
+            ((NocalhostPythonConfiguration) conf.getConfiguration()).setHost("127.0.0.1");
         }
         manager.setSelectedConfiguration(conf);
         return conf;
