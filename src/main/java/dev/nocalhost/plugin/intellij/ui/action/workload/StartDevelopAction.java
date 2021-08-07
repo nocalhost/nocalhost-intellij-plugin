@@ -15,15 +15,12 @@ import com.intellij.openapi.wm.ToolWindowManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-
-import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
@@ -34,8 +31,10 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.task.ExecutionTask;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.dialog.ImageChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
@@ -62,16 +61,17 @@ public class StartDevelopAction extends DumbAwareAction {
     private final AtomicReference<String> projectPath = new AtomicReference<>();
     private final AtomicReference<String> selectedContainer = new AtomicReference<>();
 
-    protected Runnable onAfter;
+    private final String command;
 
     public StartDevelopAction(Project project, ResourceNode node) {
-        this("Start Develop", project, node, NocalhostIcons.Status.DevStart);
+        this("Start Develop", project, node, "");
     }
 
-    public StartDevelopAction(String title, Project project, ResourceNode node, @Nullable Icon icon) {
-        super(title, "", icon);
-        this.project = project;
+    public StartDevelopAction(String title, Project project, ResourceNode node, String command) {
+        super(title, "", command == "Debug" ? NocalhostIcons.Status.DevStart : null);
         this.node = node;
+        this.project = project;
+        this.command = command;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
         outputCapturedGitCommand = project.getService(OutputCapturedGitCommand.class);
@@ -88,12 +88,14 @@ public class StartDevelopAction extends DumbAwareAction {
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
                 if (nhctlDescribeService.isDeveloping()) {
-                    if (onAfter == null) {
+                    if (StringUtils.isEmpty(command)) {
                         ApplicationManager.getApplication().invokeLater(() ->
                                 Messages.showMessageDialog("Dev mode has been started.",
                                         "Start Develop", null));
                     } else {
-                        onAfter.run();
+                        ProgressManager
+                                .getInstance()
+                                .run(new ExecutionTask(project, project.getService(NocalhostProjectSettings.class).getDevModeService(), command));
                     }
                     return;
                 }
@@ -388,7 +390,7 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (PathsUtil.isSame(projectPath.get(), project.getBasePath())) {
                 ProgressManager.getInstance().run(
-                        new StartingDevModeTask(project, serviceProjectPath, onAfter));
+                        new StartingDevModeTask(project, serviceProjectPath, command));
             } else {
                 Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
                 for (Project openProject : openProjects) {
@@ -398,13 +400,15 @@ public class StartDevelopAction extends DumbAwareAction {
                         if (toolWindow != null) {
                             toolWindow.activate(() -> {
                                 ProgressManager.getInstance().run(
-                                        new StartingDevModeTask(openProject, serviceProjectPath, onAfter));
+                                        new StartingDevModeTask(openProject, serviceProjectPath, command));
                             });
                             return;
                         }
                     }
                 }
+
                 nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
+                nocalhostSettings.set(serviceProjectPath.getProjectPath() + ":command", command);
                 ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPath.get()),
                         new OpenProjectTask());
             }

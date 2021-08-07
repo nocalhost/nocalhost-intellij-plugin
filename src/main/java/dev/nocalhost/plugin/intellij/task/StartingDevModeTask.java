@@ -49,22 +49,18 @@ public class StartingDevModeTask extends Task.Backgroundable {
 
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
+    private final String command;
     private final Project project;
-    private final ServiceProjectPath serviceProjectPath;
     private final Path kubeConfigPath;
-    private Runnable onAfter;
+    private final ServiceProjectPath serviceProjectPath;
 
-    public StartingDevModeTask(Project project, ServiceProjectPath serviceProjectPath) {
+    public StartingDevModeTask(Project project, ServiceProjectPath serviceProjectPath, String command) {
         super(project, "Starting DevMode", false);
         this.project = project;
+        this.command = command;
         this.serviceProjectPath = serviceProjectPath;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-    }
-
-    public StartingDevModeTask(Project project, ServiceProjectPath serviceProjectPath, Runnable onAfter) {
-        this(project, serviceProjectPath);
-        this.onAfter = onAfter;
     }
 
     @Override
@@ -96,8 +92,10 @@ public class StartingDevModeTask extends Task.Backgroundable {
 
         project.getService(NocalhostProjectSettings.class).setDevModeService(serviceProjectPath);
 
-        if (onAfter != null) {
-            onAfter.run();
+        if (StringUtils.isNotEmpty(command)) {
+            ProgressManager
+                    .getInstance()
+                    .run(new ExecutionTask(project, serviceProjectPath, command));
         }
     }
 

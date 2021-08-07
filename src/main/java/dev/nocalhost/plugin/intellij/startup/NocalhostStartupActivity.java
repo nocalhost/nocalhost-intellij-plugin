@@ -24,14 +24,13 @@ public final class NocalhostStartupActivity implements StartupActivity {
     }
 
     private void devStart(Project project) {
-        final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
+        var settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
         String projectPath = Paths.get(project.getBasePath()).toString();
-        ServiceProjectPath serviceProjectPath = nocalhostSettings
-                .getDevModeServiceByProjectPath(projectPath);
+        ServiceProjectPath serviceProjectPath = settings.getDevModeServiceByProjectPath(projectPath);
         if (serviceProjectPath != null) {
             try {
                 ProgressManager.getInstance().run(new StartingDevModeTask(project,
-                        serviceProjectPath));
+                        serviceProjectPath, settings.get(projectPath + ":command")));
             } catch (Exception e) {
                 LOG.error("error occurred while starting develop", e);
                 NocalhostNotifier.getInstance(project).notifyError(
@@ -39,9 +38,9 @@ public final class NocalhostStartupActivity implements StartupActivity {
                         "Error occurred while starting dev mode",
                         e.getMessage());
             } finally {
-                nocalhostSettings.removeDevModeServiceByProjectPath(projectPath);
+                settings.del(projectPath + ":command");
+                settings.removeDevModeServiceByProjectPath(projectPath);
             }
         }
     }
-
 }

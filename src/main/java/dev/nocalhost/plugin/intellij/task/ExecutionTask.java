@@ -2,6 +2,7 @@ package dev.nocalhost.plugin.intellij.task;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionManager;
+import com.intellij.execution.Executor;
 import com.intellij.execution.RunManager;
 import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.execution.configurations.ConfigurationType;
@@ -43,11 +44,14 @@ import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
-public class ExecuteTask extends Task.Backgroundable {
-    protected final boolean debug;
+public class ExecutionTask extends Task.Backgroundable {
+    public final static String kRun = "run";
+    public final static String kDebug = "debug";
+
+    private final String command;
     protected final Project project;
     protected final ServiceProjectPath service;
-    private static final Logger LOG = Logger.getInstance(ExecuteTask.class);
+    private static final Logger LOG = Logger.getInstance(ExecutionTask.class);
 
     private final Map<String, Class<? extends ConfigurationType>> hash = new HashMap<>() {
         {
@@ -58,19 +62,19 @@ public class ExecuteTask extends Task.Backgroundable {
         }
     };
 
-    public ExecuteTask(Project project, ServiceProjectPath service, boolean debug) {
-        super(project, String.format("Starting %s", debug ? "`Debug`" : "`Run`"), false);
-        this.debug = debug;
+    public ExecutionTask(Project project, ServiceProjectPath service, String command) {
+        super(project, String.format("Starting `%s`", command), false);
         this.project = project;
         this.service = service;
+        this.command = command;
     }
 
     @Override
     public void onThrowable(@NotNull Throwable ex) {
-        LOG.error(String.format("error occurred while starting %s", debug ? "`Debug`" : "`Run`"), ex);
+        LOG.error(String.format("error occurred while starting `%s`", command), ex);
         NocalhostNotifier.getInstance(project).notifyError(
                 "Nocalhost",
-                String.format("error occurred while starting %s", debug ? "`Debug`" : "`Run`"),
+                String.format("error occurred while starting `%s`", command),
                 ex.getMessage()
         );
     }
@@ -97,6 +101,13 @@ public class ExecuteTask extends Task.Backgroundable {
         }
     }
 
+    private Executor getExecutor() {
+        if (command == kDebug) {
+            return DefaultDebugExecutor.getDebugExecutorInstance();
+        }
+        return DefaultRunExecutor.getRunExecutorInstance();
+    }
+
     protected void doRun() throws InterruptedException {
         // kill active session
         var processes = ExecutionManager.getInstance(project).getRunningProcesses();
@@ -104,11 +115,9 @@ public class ExecuteTask extends Task.Backgroundable {
             Arrays.stream(processes).forEach(x -> x.destroyProcess());
             Thread.sleep(1000);
         }
+
         // start new session
-        var executor = debug
-                ? DefaultDebugExecutor.getDebugExecutorInstance()
-                : DefaultRunExecutor.getRunExecutorInstance();
-        var builder = ExecutionEnvironmentBuilder.createOrNull(executor, getConf());
+        var builder = ExecutionEnvironmentBuilder.createOrNull(getExecutor(), getConf());
         if (builder != null) {
             ExecutionManager.getInstance(project).restartRunProfile(builder.build());
         }

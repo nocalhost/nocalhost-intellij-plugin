@@ -36,6 +36,7 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
     private String standaloneClustersJson;
     private String nocalhostAccountsJson;
 
+    private Map<String, String> hash = Maps.newHashMap();
     private Map<String, String> devModeProjectPathServiceMap = Maps.newHashMap();
 
     public synchronized void updateStandaloneCluster(StandaloneCluster standaloneCluster) {
@@ -125,4 +126,15 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         XmlSerializerUtil.copyBean(state, this);
     }
 
+    public synchronized String get(String key) {
+        return hash.get(key);
+    }
+
+    public synchronized void set(String key, String val) {
+        hash.put(key, val);
+    }
+
+    public synchronized void del(String key) {
+        hash.remove(key);
+    }
 }
