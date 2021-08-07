@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,9 +54,9 @@ public class ExecutionTask extends Task.Backgroundable {
 
     private final Map<String, Class<? extends ConfigurationType>> hash = new HashMap<>() {
         {
-            put("IU", NocalhostJavaConfigurationType.class);
             put("GO", NocalhostGoConfigurationType.class);
             put("PS", NocalhostPhpConfigurationType.class);
+            put("IU", NocalhostJavaConfigurationType.class);
             put("PY", NocalhostPythonConfigurationType.class);
         }
     };
@@ -123,27 +122,6 @@ public class ExecutionTask extends Task.Backgroundable {
         }
     }
 
-    private @Nullable Class<? extends ConfigurationType> getConfType() {
-        var ide = ApplicationInfo.getInstance().getBuild().getProductCode();
-        return hash.containsKey(ide) ? hash.get(ide) : null;
-    }
-
-    private @Nullable String resolveDebugPort(@NotNull ServiceProjectPath service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
-        var cmd = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
-        NhctlConfigOptions opts = new NhctlConfigOptions(kubeConfigPath, service.getNamespace());
-        opts.setDeployment(service.getServiceName());
-        opts.setControllerType(service.getServiceType());
-        var config = cmd.getConfig(service.getApplicationName(), opts, NhctlRawConfig.class);
-        var bucket = config.getContainers();
-        var container = bucket.isEmpty() ? null : bucket.get(0);
-        try {
-            return container.getDev().getDebug().getRemoteDebugPort();
-        } catch (Exception ex) {
-            throw new ExecutionException("The configuration of the service container is incorrect.");
-        }
-    }
-
     @SneakyThrows
     private @NotNull RunnerAndConfigurationSettings getConf() {
         RunnerAndConfigurationSettings conf;
@@ -156,8 +134,8 @@ public class ExecutionTask extends Task.Backgroundable {
         } else {
             conf = list.get(0);
         }
-        if (conf.getConfiguration() instanceof NocalhostPythonConfiguration) {
-            var port = resolveDebugPort(service);
+        if (conf.getType() instanceof NocalhostPythonConfigurationType) {
+            var port = getDebugPort(service);
             if (StringUtils.isEmpty(port)) {
                 throw new ExecutionException("The remote debug port is not configured.");
             }
@@ -167,5 +145,26 @@ public class ExecutionTask extends Task.Backgroundable {
         }
         manager.setSelectedConfiguration(conf);
         return conf;
+    }
+
+    private @Nullable Class<? extends ConfigurationType> getConfType() {
+        var ide = ApplicationInfo.getInstance().getBuild().getProductCode();
+        return hash.containsKey(ide) ? hash.get(ide) : null;
+    }
+
+    private @Nullable String getDebugPort(@NotNull ServiceProjectPath service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
+        var cmd = ApplicationManager.getApplication().getService(NhctlCommand.class);
+        var kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
+        var opts = new NhctlConfigOptions(kubeConfigPath, service.getNamespace());
+        opts.setDeployment(service.getServiceName());
+        opts.setControllerType(service.getServiceType());
+        var config = cmd.getConfig(service.getApplicationName(), opts, NhctlRawConfig.class);
+        var bucket = config.getContainers();
+        var container = bucket.isEmpty() ? null : bucket.get(0);
+        try {
+            return container.getDev().getDebug().getRemoteDebugPort();
+        } catch (Exception ex) {
+            throw new ExecutionException("The configuration of the service container is incorrect.");
+        }
     }
 }
