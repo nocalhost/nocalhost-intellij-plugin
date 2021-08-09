@@ -41,7 +41,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
     public ClearPersistentDataDialog(Project project, Path kubeConfigPath, String namespace, List<NhctlPVCItem> nhctlPVCItems) {
         super(true);
         init();
-        setTitle("Clear Persistent Data");
+        setTitle("Clear PVC");
 
         this.project = project;
         this.kubeConfigPath = kubeConfigPath;

@@ -160,28 +160,29 @@ public class TreeMouseListener extends MouseAdapter {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
-        if (!nhctlDescribeService.isDeveloping()) {
-            actionGroup.add(new StartDevelopAction(project, resourceNode));
-        } else {
-            if (!PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
-                actionGroup.add(new OpenProjectAction(project, resourceNode));
-            }
+        if (nhctlDescribeService.isDeveloping()) {
             actionGroup.add(new EndDevelopAction(project, resourceNode));
+        } else {
+            actionGroup.add(new StartDevelopAction(project, resourceNode));
         }
 
         actionGroup.add(new Separator());
-        actionGroup.add(new EditManifestAction(project, resourceNode));
-        actionGroup.add(new Separator());
-        actionGroup.add(new ConfigAction(project, resourceNode));
         actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
-        actionGroup.add(new CopyTerminalAction(project, resourceNode));
+        actionGroup.add(new ConfigAction(project, resourceNode));
+        actionGroup.add(new EditManifestAction(project, resourceNode));
+        actionGroup.add(new PortForwardAction(project, resourceNode));
+        actionGroup.add(new LogsAction(project, resourceNode));
         actionGroup.add(new Separator());
+        actionGroup.add(new ResetAction(project, resourceNode));
         actionGroup.add(new ClearPersistentDataAction(project, resourceNode));
         actionGroup.add(new Separator());
-        actionGroup.add(new LogsAction(project, resourceNode));
-        actionGroup.add(new PortForwardAction(project, resourceNode));
-        actionGroup.add(new ResetAction(project, resourceNode));
         actionGroup.add(new TerminalAction(project, resourceNode));
+        actionGroup.add(new CopyTerminalAction(project, resourceNode));
+
+        if (nhctlDescribeService.isDeveloping() && !PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
+            actionGroup.add(new Separator());
+            actionGroup.add(new OpenProjectAction(project, resourceNode));
+        }
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());

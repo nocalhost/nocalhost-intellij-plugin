@@ -60,7 +60,7 @@ public class StartDevelopAction extends DumbAwareAction {
     private final AtomicReference<String> selectedContainer = new AtomicReference<>();
 
     public StartDevelopAction(Project project, ResourceNode node) {
-        super("Start Develop", "", NocalhostIcons.Status.DevStart);
+        super("Start DevMode", "", NocalhostIcons.Status.DevStart);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
@@ -81,7 +81,7 @@ public class StartDevelopAction extends DumbAwareAction {
                 if (nhctlDescribeService.isDeveloping()) {
                     ApplicationManager.getApplication().invokeLater(() ->
                             Messages.showMessageDialog("Dev mode has been started.",
-                                    "Start Develop", null));
+                                    "Start DevMode", null));
                     return;
                 }
 
@@ -142,8 +142,8 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             int choice = Messages.showDialog(
                     project,
-                    "To start develop, you must specify source code directory.",
-                    "Start Develop",
+                    "To start dev mode, you must specify source code directory.",
+                    "Start DevMode",
                     new String[]{
                             "Clone from Git Repo",
                             "Open Local Directly",
@@ -212,7 +212,7 @@ public class StartDevelopAction extends DumbAwareAction {
             String gitUrl = url;
             if (!StringUtils.isNotEmpty(gitUrl)) {
                 gitUrl = Messages.showInputDialog(
-                        project, "Specify git url.", "Start Develop", null);
+                        project, "Specify git url.", "Start DevMode", null);
             }
             if (StringUtils.isNotEmpty(gitUrl)) {
                 Path gitParent = FileChooseUtil.chooseSingleDirectory(project, "",

@@ -29,7 +29,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
     private final String namespace;
 
     public AssociateLocalDirectoryAction(Project project, ResourceNode resourceNode) {
-        super("Associate Local Directory");
+        super("Associate Local DIR");
 
         this.project = project;
         this.node = resourceNode;

@@ -39,7 +39,7 @@ public class LogsAction extends DumbAwareAction {
     private final String namespace;
 
     public LogsAction(Project project, ResourceNode node) {
-        super("Logs");
+        super("View Logs");
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
