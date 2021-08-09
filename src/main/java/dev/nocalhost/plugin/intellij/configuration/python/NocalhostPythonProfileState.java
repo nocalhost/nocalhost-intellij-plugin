@@ -298,7 +298,12 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             }
         });
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
+            var reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);
+            try (var br = new BufferedReader(reader)) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    bus.action(withNewLine(line));
+                }
                 var code = process.waitFor();
                 if (code != 0) {
                     bus.action(withNewLine("[exec] Process finished with exit code " + code));
