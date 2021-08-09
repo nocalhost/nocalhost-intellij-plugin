@@ -189,7 +189,6 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new ResetAction(project, resourceNode));
         actionGroup.add(new TerminalAction(project, resourceNode));
 
-        // only for IDEA & GoLand
         DefaultActionGroup cmd = new DefaultActionGroup("Command", true);
         cmd.add(new RunAction(project, resourceNode));
         cmd.add(new DebugAction(project, resourceNode));

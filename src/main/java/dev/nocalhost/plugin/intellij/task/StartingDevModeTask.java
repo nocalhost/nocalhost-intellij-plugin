@@ -104,7 +104,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         if (e instanceof NocalhostExecuteCmdException) {
             return;
         }
-        LOG.error("error occurred while starting dev mode", e);
+        LOG.error("Error occurred while starting dev mode", e);
         NocalhostNotifier.getInstance(project).notifyError(
                 "Nocalhost starting dev mode error",
                 "Error occurred while starting dev mode",

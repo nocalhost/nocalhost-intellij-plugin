@@ -46,12 +46,11 @@ import lombok.SneakyThrows;
 public class ExecutionTask extends Task.Backgroundable {
     public final static String kRun = "run";
     public final static String kDebug = "debug";
+    private final static Logger LOG = Logger.getInstance(ExecutionTask.class);
 
     private final String command;
-    protected final Project project;
-    protected final ServiceProjectPath service;
-    private static final Logger LOG = Logger.getInstance(ExecutionTask.class);
-
+    private final Project project;
+    private final ServiceProjectPath service;
     private final Map<String, Class<? extends ConfigurationType>> hash = new HashMap<>() {
         {
             put("GO", NocalhostGoConfigurationType.class);
@@ -70,10 +69,10 @@ public class ExecutionTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable ex) {
-        LOG.error(String.format("error occurred while starting `%s`", command), ex);
+        LOG.error(String.format("Error occurred while starting `%s`", command), ex);
         NocalhostNotifier.getInstance(project).notifyError(
                 "Nocalhost",
-                String.format("error occurred while starting `%s`", command),
+                String.format("Error occurred while starting `%s`", command),
                 ex.getMessage()
         );
     }
@@ -101,13 +100,14 @@ public class ExecutionTask extends Task.Backgroundable {
     }
 
     private Executor getExecutor() {
-        if (command == kDebug) {
+        if (kDebug.equals(command)) {
             return DefaultDebugExecutor.getDebugExecutorInstance();
         }
         return DefaultRunExecutor.getRunExecutorInstance();
     }
 
-    protected void doRun() throws InterruptedException {
+    @SneakyThrows
+    protected void doRun() {
         // kill active session
         var processes = ExecutionManager.getInstance(project).getRunningProcesses();
         if (processes.length > 0) {
@@ -127,6 +127,9 @@ public class ExecutionTask extends Task.Backgroundable {
         RunnerAndConfigurationSettings conf;
         var manager = RunManager.getInstance(project);
         var type = getConfType();
+        if (type == null) {
+            throw new ExecutionException("Cannot find the corresponding `ConfigurationType`.");
+        }
         var list = manager.getConfigurationSettingsList(type);
         if (list.isEmpty()) {
             conf = manager.createConfiguration("Nocalhost", type);
@@ -134,6 +137,7 @@ public class ExecutionTask extends Task.Backgroundable {
         } else {
             conf = list.get(0);
         }
+        // Python
         if (conf.getType() instanceof NocalhostPythonConfigurationType) {
             var port = getDebugPort(service);
             if (StringUtils.isEmpty(port)) {
@@ -154,8 +158,8 @@ public class ExecutionTask extends Task.Backgroundable {
 
     private @Nullable String getDebugPort(@NotNull ServiceProjectPath service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
         var cmd = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        var kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
-        var opts = new NhctlConfigOptions(kubeConfigPath, service.getNamespace());
+        var path = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
+        var opts = new NhctlConfigOptions(path, service.getNamespace());
         opts.setDeployment(service.getServiceName());
         opts.setControllerType(service.getServiceType());
         var config = cmd.getConfig(service.getApplicationName(), opts, NhctlRawConfig.class);
