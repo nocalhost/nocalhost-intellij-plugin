@@ -33,7 +33,7 @@ public class LoadResourceAction extends DumbAwareAction {
     private final String applicationName;
 
     public LoadResourceAction(Project project, ApplicationNode node) {
-        super("Load Resource");
+        super("Nocalhost Profile");
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();

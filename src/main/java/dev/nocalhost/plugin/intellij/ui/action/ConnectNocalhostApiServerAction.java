@@ -13,7 +13,7 @@ public class ConnectNocalhostApiServerAction extends DumbAwareAction {
     private final Project project;
 
     public ConnectNocalhostApiServerAction(Project project) {
-        super("Connect to Nocalhost API Server", "", AllIcons.General.User);
+        super("Connect to Nocalhost Server", "", AllIcons.General.User);
         this.project = project;
     }
 

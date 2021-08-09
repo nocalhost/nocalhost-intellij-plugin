@@ -7,7 +7,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowId;
@@ -16,6 +15,7 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -64,11 +64,11 @@ public class StartDevelopAction extends DumbAwareAction {
     private final String command;
 
     public StartDevelopAction(Project project, ResourceNode node) {
-        this("Start Develop", project, node, "");
+        this("Start DevMode", project, node, "");
     }
 
     public StartDevelopAction(String title, Project project, ResourceNode node, String command) {
-        super(title, "", StringUtils.isEmpty(command) ? NocalhostIcons.Status.DevStart : null);
+        super(title, "", NocalhostIcons.Status.DevStart);
         this.node = node;
         this.project = project;
         this.command = command;
@@ -91,7 +91,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     if (StringUtils.isEmpty(command)) {
                         ApplicationManager.getApplication().invokeLater(() ->
                                 Messages.showMessageDialog("Dev mode has been started.",
-                                        "Start Develop", null));
+                                        "Start DevMode", null));
                     } else {
                         ProgressManager
                                 .getInstance()
@@ -138,8 +138,10 @@ public class StartDevelopAction extends DumbAwareAction {
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
 
-                if (StringUtils.isNotEmpty(nhctlDescribeService.getAssociate())) {
-                    projectPath.set(nhctlDescribeService.getAssociate());
+                String associatedPath = nhctlDescribeService.getAssociate();
+                if (StringUtils.isNotEmpty(associatedPath)
+                        && Files.exists(Paths.get(associatedPath))) {
+                    projectPath.set(associatedPath);
                     getImage();
                 } else {
                     selectCodeSource();
@@ -153,20 +155,21 @@ public class StartDevelopAction extends DumbAwareAction {
 
     private void selectCodeSource() {
         ApplicationManager.getApplication().invokeLater(() -> {
-            int exitCode = MessageDialogBuilder
-                    .yesNoCancel(
-                            "Start develop",
-                            "To start develop, you must specify source code directory."
-                    )
-                    .yesText("Clone from Git Repo")
-                    .noText("Open local directly")
-                    .guessWindowAndAsk();
-
-            switch (exitCode) {
-                case Messages.YES:
+            int choice = Messages.showDialog(
+                    project,
+                    "To start dev mode, you must specify source code directory.",
+                    "Start DevMode",
+                    new String[]{
+                            "Clone from Git Repo",
+                            "Open Local Directly",
+                            "Cancel"},
+                    0,
+                    Messages.getQuestionIcon());
+            switch (choice) {
+                case 0:
                     getGitUrl();
                     break;
-                case Messages.NO:
+                case 1:
                     selectDirectory();
                     break;
                 default:
@@ -224,7 +227,7 @@ public class StartDevelopAction extends DumbAwareAction {
             String gitUrl = url;
             if (!StringUtils.isNotEmpty(gitUrl)) {
                 gitUrl = Messages.showInputDialog(
-                        project, "Specify git url.", "Start Develop", null);
+                        project, "Specify git url.", "Start DevMode", null);
             }
             if (StringUtils.isNotEmpty(gitUrl)) {
                 Path gitParent = FileChooseUtil.chooseSingleDirectory(project, "",

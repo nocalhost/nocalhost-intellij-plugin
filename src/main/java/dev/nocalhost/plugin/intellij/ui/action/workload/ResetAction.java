@@ -32,7 +32,7 @@ public class ResetAction extends DumbAwareAction {
     private final String namespace;
 
     public ResetAction(Project project, ResourceNode node) {
-        super("Reset", "", AllIcons.General.Reset);
+        super("Reset Pod", "", AllIcons.General.Reset);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());

@@ -88,10 +88,10 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         }
 
         refContext.set(new NocalhostDevInfo(
-            command,
-            null,
-            container.getDev().getShell(),
-            devService
+                command,
+                null,
+                container.getDev().getShell(),
+                devService
         ));
     }
 
@@ -314,7 +314,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         });
     }
 
-    private String withNewLine(String text) {
+    private @NotNull String withNewLine(String text) {
         return text + System.lineSeparator();
     }
 }

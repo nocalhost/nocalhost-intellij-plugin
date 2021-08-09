@@ -51,7 +51,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         super(project, true);
         this.project = project;
 
-        setTitle("Add Standalone Clusters");
+        setTitle("Connect to Cluster");
         setOKButtonText("Add");
 
         tabbedPane.addChangeListener(e -> {

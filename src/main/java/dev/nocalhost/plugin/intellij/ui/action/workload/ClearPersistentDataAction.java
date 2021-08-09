@@ -31,7 +31,7 @@ public class ClearPersistentDataAction extends DumbAwareAction {
     private final String namespace;
 
     public ClearPersistentDataAction(Project project, ResourceNode node) {
-        super("Clear Persistent Data");
+        super("Clear PVC");
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());

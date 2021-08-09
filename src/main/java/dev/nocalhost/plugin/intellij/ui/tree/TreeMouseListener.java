@@ -136,22 +136,18 @@ public class TreeMouseListener extends MouseAdapter {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         actionGroup.add(new UninstallAppAction(project, applicationNode));
-
         actionGroup.add(new Separator());
-        actionGroup.add(new ApplyAction(project, applicationNode));
-        actionGroup.add(new ConfigAppAction(project, applicationNode));
+
+        actionGroup.add(new AppPortForwardAction(project, applicationNode));
         actionGroup.add(new ClearAppPersisentDataAction(project, applicationNode));
+        actionGroup.add(new ApplyAction(project, applicationNode));
 
         if (applicationNode.getNamespaceNode().getClusterNode().getServiceAccount() != null) {
-            actionGroup.add(new Separator());
             actionGroup.add(new UpgradeAppAction(project, applicationNode));
         }
 
         actionGroup.add(new Separator());
         actionGroup.add(new LoadResourceAction(project, applicationNode));
-
-        actionGroup.add(new Separator());
-        actionGroup.add(new AppPortForwardAction(project, applicationNode));
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Application.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
@@ -166,28 +162,29 @@ public class TreeMouseListener extends MouseAdapter {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
-        if (!nhctlDescribeService.isDeveloping()) {
-            actionGroup.add(new StartDevelopAction(project, resourceNode));
-        } else {
-            if (!PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
-                actionGroup.add(new OpenProjectAction(project, resourceNode));
-            }
+        if (nhctlDescribeService.isDeveloping()) {
             actionGroup.add(new EndDevelopAction(project, resourceNode));
+        } else {
+            actionGroup.add(new StartDevelopAction(project, resourceNode));
         }
 
         actionGroup.add(new Separator());
-        actionGroup.add(new EditManifestAction(project, resourceNode));
-        actionGroup.add(new Separator());
-        actionGroup.add(new ConfigAction(project, resourceNode));
         actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
-        actionGroup.add(new CopyTerminalAction(project, resourceNode));
+        actionGroup.add(new ConfigAction(project, resourceNode));
+        actionGroup.add(new EditManifestAction(project, resourceNode));
+        actionGroup.add(new PortForwardAction(project, resourceNode));
+        actionGroup.add(new LogsAction(project, resourceNode));
         actionGroup.add(new Separator());
+        actionGroup.add(new ResetAction(project, resourceNode));
         actionGroup.add(new ClearPersistentDataAction(project, resourceNode));
         actionGroup.add(new Separator());
-        actionGroup.add(new LogsAction(project, resourceNode));
-        actionGroup.add(new PortForwardAction(project, resourceNode));
-        actionGroup.add(new ResetAction(project, resourceNode));
         actionGroup.add(new TerminalAction(project, resourceNode));
+        actionGroup.add(new CopyTerminalAction(project, resourceNode));
+
+        if (nhctlDescribeService.isDeveloping() && !PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
+            actionGroup.add(new Separator());
+            actionGroup.add(new OpenProjectAction(project, resourceNode));
+        }
 
         DefaultActionGroup cmd = new DefaultActionGroup("Command", true);
         cmd.add(new RunAction(project, resourceNode));

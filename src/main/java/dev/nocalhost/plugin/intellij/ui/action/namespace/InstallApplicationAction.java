@@ -152,7 +152,7 @@ public class InstallApplicationAction extends DumbAwareAction {
 
             Path configPath;
             Path nocalhostConfigPath = localPath.resolve(".nocalhost");
-            List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigPath);
+            List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigPath, kubeConfigPath, namespace);
             if (configs.size() == 0) {
                 configPath = localPath;
             } else if (configs.size() == 1) {
