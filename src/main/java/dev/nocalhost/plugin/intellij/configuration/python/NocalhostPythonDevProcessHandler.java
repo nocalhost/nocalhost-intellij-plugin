@@ -18,13 +18,11 @@ import lombok.SneakyThrows;
 
 public class NocalhostPythonDevProcessHandler extends PyRemoteDebugCommandLineState.PyRemoteDebugProcessHandler {
     private final ExecutionEnvironment environment;
-    private final NocalhostPythonProfileState state;
 
     public NocalhostPythonDevProcessHandler(
         @NotNull ExecutionEnvironment environment,
         @NotNull NocalhostPythonProfileState state
     ) {
-        this.state = state;
         this.environment = environment;
         this.addProcessListener(new ProcessAdapter() {
             @SneakyThrows
