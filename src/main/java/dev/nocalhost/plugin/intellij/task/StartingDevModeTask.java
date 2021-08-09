@@ -67,7 +67,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         TerminalUtil.openTerminal(
                 project,
                 String.format(
-                        "%s/%s:terminal",
+                        "%s/%s",
                         serviceProjectPath.getApplicationName(),
                         serviceProjectPath.getServiceName()
                 ),

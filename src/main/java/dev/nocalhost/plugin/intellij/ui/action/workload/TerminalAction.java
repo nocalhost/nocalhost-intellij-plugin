@@ -98,7 +98,7 @@ public class TerminalAction extends DumbAwareAction {
                 TerminalUtil.openTerminal(
                         project,
                         String.format(
-                                "%s/%s:terminal",
+                                "%s/%s",
                                 node.applicationName(),
                                 node.resourceName()
                         ),
@@ -164,7 +164,7 @@ public class TerminalAction extends DumbAwareAction {
                 TerminalUtil.openTerminal(
                         project,
                         String.format(
-                                "%s/%s:terminal",
+                                "%s/%s",
                                 podName,
                                 containerName
                         ),
