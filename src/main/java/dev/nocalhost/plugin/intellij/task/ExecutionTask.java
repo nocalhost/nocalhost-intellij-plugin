@@ -61,7 +61,7 @@ public class ExecutionTask extends Task.Backgroundable {
     };
 
     public ExecutionTask(Project project, ServiceProjectPath service, String command) {
-        super(project, String.format("Starting `%s`", command), false);
+        super(project, String.format("Starting `%s`", command), true);
         this.project = project;
         this.service = service;
         this.command = command;
