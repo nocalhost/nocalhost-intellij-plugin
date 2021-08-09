@@ -80,22 +80,16 @@ public class ExecutionTask extends Task.Backgroundable {
     @SneakyThrows
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        while (true) {
-            var path = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
-            var opts = new NhctlSyncStatusOptions(path, service.getNamespace());
-            opts.setDeployment(service.getServiceName());
-            opts.setControllerType(service.getServiceType());
-            var cmd = project.getService(OutputCapturedNhctlCommand.class);
-            var text = cmd.syncStatus(service.getApplicationName(), opts);
-            var json = DataUtils.GSON.fromJson(text, NhctlSyncStatus.class);
-
-            // TODO
-            LOG.debug(text);
-            if ("idle".equals(json.getStatus())) {
-                doRun();
-                break;
-            }
-            Thread.sleep(5000);
+        var path = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
+        var opts = new NhctlSyncStatusOptions(path, service.getNamespace());
+        opts.setWait(true);
+        opts.setDeployment(service.getServiceName());
+        opts.setControllerType(service.getServiceType());
+        var cmd = project.getService(OutputCapturedNhctlCommand.class);
+        var text = cmd.syncStatus(service.getApplicationName(), opts);
+        var json = DataUtils.GSON.fromJson(text, NhctlSyncStatus.class);
+        if ("idle".equals(json.getStatus())) {
+            doRun();
         }
     }
 

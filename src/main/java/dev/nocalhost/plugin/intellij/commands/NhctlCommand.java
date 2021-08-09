@@ -262,6 +262,9 @@ public class NhctlCommand {
         if (opts.isOverride()) {
             args.add("--override");
         }
+        if (opts.isWait()) {
+            args.add("--wait");
+        }
 
         return execute(args, opts);
     }
