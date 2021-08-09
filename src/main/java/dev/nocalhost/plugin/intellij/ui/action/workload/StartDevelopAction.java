@@ -68,7 +68,7 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     public StartDevelopAction(String title, Project project, ResourceNode node, String command) {
-        super(title, "", NocalhostIcons.Status.DevStart);
+        super(title, "", StringUtils.isEmpty(command) ? NocalhostIcons.Status.DevStart : null);
         this.node = node;
         this.project = project;
         this.command = command;
