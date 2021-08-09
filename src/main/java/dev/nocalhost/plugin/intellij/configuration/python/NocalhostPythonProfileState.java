@@ -217,16 +217,17 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             throw new ExecutionException("Service not found");
         }
 
-        Optional<NhctlGetResource> pods = command
+        Optional<NhctlGetResource> pod = command
                 .getResources("Pods", nhctlGetOptions, deployments.get().getKubeResource().getSpec().getSelector().getMatchLabels())
                 .stream()
+                .filter(x -> x.getKubeResource().canSelector())
                 .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
                 .findFirst();
-        if (pods.isEmpty()) {
+        if (pod.isEmpty()) {
             throw new ExecutionException("Pod not found");
         }
 
-        return pods.get().getKubeResource().getMetadata().getName();
+        return pod.get().getKubeResource().getMetadata().getName();
     }
 
     private String resolveDebugPort(ServiceContainer serviceContainer) {
@@ -297,7 +298,12 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             }
         });
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
+            var reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);
+            try (var br = new BufferedReader(reader)) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    bus.action(withNewLine(line));
+                }
                 var code = process.waitFor();
                 if (code != 0) {
                     bus.action(withNewLine("[exec] Process finished with exit code " + code));
