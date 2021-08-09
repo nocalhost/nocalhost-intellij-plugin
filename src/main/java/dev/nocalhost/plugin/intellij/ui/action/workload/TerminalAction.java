@@ -42,7 +42,7 @@ public class TerminalAction extends DumbAwareAction {
     private final String namespace;
 
     public TerminalAction(Project project, ResourceNode node) {
-        super("Terminal", "", AllIcons.Debugger.Console);
+        super("Open Remote Terminal", "", AllIcons.Debugger.Console);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());

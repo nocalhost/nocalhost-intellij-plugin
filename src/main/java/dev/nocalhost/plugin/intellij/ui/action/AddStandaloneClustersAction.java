@@ -13,7 +13,7 @@ public class AddStandaloneClustersAction extends DumbAwareAction {
     private final Project project;
 
     public AddStandaloneClustersAction(Project project) {
-        super("Add Standalone Clusters", "", AllIcons.General.Add);
+        super("Connect to Cluster", "", AllIcons.General.Add);
         this.project = project;
     }
 

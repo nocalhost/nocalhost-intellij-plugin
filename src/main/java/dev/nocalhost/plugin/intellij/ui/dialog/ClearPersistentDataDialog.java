@@ -6,6 +6,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +42,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
     public ClearPersistentDataDialog(Project project, Path kubeConfigPath, String namespace, List<NhctlPVCItem> nhctlPVCItems) {
         super(true);
         init();
-        setTitle("Clear Persistent Data");
+        setTitle("Clear PVC");
 
         this.project = project;
         this.kubeConfigPath = kubeConfigPath;
@@ -99,6 +100,9 @@ public class ClearPersistentDataDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
+        if ( ! MessageDialogBuilder.yesNo("Clear PVC", "This action will permanently delete PVC(s). Do you want to continue?").ask(project)) {
+            return;
+        }
         ProgressManager.getInstance().run(new Task.Modal(null, "Clearing persistent data", true) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {

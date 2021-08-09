@@ -32,7 +32,7 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
         super(true);
         this.project = project;
 
-        setTitle("Connect to Nocalhost API Server");
+        setTitle("Connect to Nocalhost Server");
 
         serverTextField.addFocusListener(new FocusAdapter() {
             @Override

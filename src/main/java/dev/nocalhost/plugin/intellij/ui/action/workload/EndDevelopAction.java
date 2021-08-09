@@ -41,7 +41,7 @@ public class EndDevelopAction extends DumbAwareAction {
     private final String namespace;
 
     public EndDevelopAction(Project project, ResourceNode node) {
-        super("End Develop", "", NocalhostIcons.Status.DevEnd);
+        super("End DevMode", "", NocalhostIcons.Status.DevEnd);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
@@ -60,7 +60,7 @@ public class EndDevelopAction extends DumbAwareAction {
                         node.applicationName(), opts, NhctlDescribeService.class);
                 ApplicationManager.getApplication().invokeLater(() -> {
                     if (!nhctlDescribeService.isDeveloping()) {
-                        Messages.showMessageDialog("Dev mode has been ended.", "End Develop", null);
+                        Messages.showMessageDialog("Dev mode has been ended.", "End DevMode", null);
                         return;
                     }
 
@@ -68,7 +68,7 @@ public class EndDevelopAction extends DumbAwareAction {
                         endDevelop();
                     } else {
                         if (MessageDialogBuilder.yesNo(
-                                "End Develop",
+                                "End DevMode",
                                 "You are not the dev possessor of this service, are you sure to exit the DevMode?"
                         ).ask(project)) {
                             endDevelop();
