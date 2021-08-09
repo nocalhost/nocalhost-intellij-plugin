@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardListOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlRenderOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetServiceOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
@@ -640,6 +642,11 @@ public class NhctlCommand {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "check", "cluster");
         String output = execute(args, opts);
         return DataUtils.GSON.fromJson(output, ClusterStatus.class);
+    }
+
+    public String render(Path path, NhctlRenderOptions opts) throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "render", path.toString());
+        return execute(args, opts);
     }
 
     protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {

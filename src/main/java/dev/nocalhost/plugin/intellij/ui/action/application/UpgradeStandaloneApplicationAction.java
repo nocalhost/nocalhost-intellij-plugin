@@ -137,7 +137,7 @@ public class UpgradeStandaloneApplicationAction extends DumbAwareAction {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(
                             project, ".nocalhost directory not found.", "Upgrade Standalone Application"));
                 }
-                List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigDirectory);
+                List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigDirectory, kubeConfigPath, namespace);
                 if (configs.size() == 0) {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(
                             project, "No nocalhost config found.", "Upgrade Standalone Application"));

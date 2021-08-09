@@ -153,7 +153,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(
                             project, ".nocalhost directory not found.", "Install Standalone Application"));
                 }
-                List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigDirectory);
+                List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigDirectory, kubeConfigPath, namespace);
                 if (configs.size() == 0) {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(
                             project, "No nocalhost config found.", "Install Standalone Application"));
