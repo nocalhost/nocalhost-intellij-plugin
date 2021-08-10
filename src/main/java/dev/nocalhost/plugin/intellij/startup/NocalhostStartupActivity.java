@@ -30,8 +30,11 @@ public final class NocalhostStartupActivity implements StartupActivity {
         ServiceProjectPath serviceProjectPath = settings.getDevModeServiceByProjectPath(projectPath);
         if (serviceProjectPath != null) {
             try {
-                ProgressManager.getInstance().run(new StartingDevModeTask(project,
-                        serviceProjectPath, settings.get(ExecutionTask.asKey(projectPath)));
+                ProgressManager.getInstance().run(new StartingDevModeTask(
+                        project,
+                        serviceProjectPath,
+                        settings.get(ExecutionTask.asKey(projectPath))
+                ));
             } catch (Exception e) {
                 LOG.error("error occurred while starting develop", e);
                 NocalhostNotifier.getInstance(project).notifyError(
