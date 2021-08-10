@@ -245,7 +245,6 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                                                       boolean isSelected,
                                                       boolean cellHasFocus) {
             this.setText(value.getName());
-            setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
             this.setSelected(isSelected);
             return this;
         }

@@ -88,7 +88,6 @@ public class ManagerNocalhostAccountsDialog extends DialogWrapper {
                                                       boolean cellHasFocus) {
             this.setText(value.getUsername() + " on " + value.getServer() + " before "
                     + TokenUtil.expiredAt(value.getJwt()));
-            setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
             this.setSelected(isSelected);
             return this;
         }
