@@ -2,8 +2,6 @@ package dev.nocalhost.plugin.intellij.utils;
 
 import com.google.common.collect.ImmutableSet;
 
-import java.util.Set;
-
 public class Constants {
 
     public static final String DEFAULT_APPLICATION_NAME = "default.application";
@@ -35,4 +33,8 @@ public class Constants {
 
     public static final String DEMO_NAME = "bookinfo";
 
+    public static final String SPACE_OWN_TYPE_VIEWER = "Viewer";
+
+    public static final String PRIVILEGE_TYPE_CLUSTER_ADMIN = "CLUSTER_ADMIN";
+    public static final String PRIVILEGE_TYPE_CLUSTER_VIEWER = "CLUSTER_VIEWER";
 }

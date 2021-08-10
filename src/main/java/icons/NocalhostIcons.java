@@ -28,4 +28,7 @@ public interface NocalhostIcons {
     }
 
     Icon Kubernetes = IconLoader.getIcon("/icons/kubernetes.svg", NocalhostIcons.class);
+
+    Icon Namespace = IconLoader.getIcon("/icons/namespace.svg", NocalhostIcons.class);
+    Icon NamespaceViewer = IconLoader.getIcon("/icons/namespace_viewer.svg", NocalhostIcons.class);
 }
