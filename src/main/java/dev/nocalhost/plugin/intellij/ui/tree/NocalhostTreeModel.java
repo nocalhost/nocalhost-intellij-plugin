@@ -265,6 +265,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                             .filter(e -> StringUtils.equals(e.getNamespace(), namespaceNode.getNamespace()))
                             .findFirst();
                     if (pendingNamespaceNodeOptional.isPresent()) {
+                        namespaceNode.updateFrom(pendingNamespaceNodeOptional.get());
+                        nodeChanged(namespaceNode);
                         updateApplications(namespaceNode);
                     } else {
                         removeNode(namespaceNode);
