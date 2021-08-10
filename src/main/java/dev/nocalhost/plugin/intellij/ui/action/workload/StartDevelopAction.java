@@ -411,7 +411,7 @@ public class StartDevelopAction extends DumbAwareAction {
                 }
 
                 nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
-                nocalhostSettings.set(serviceProjectPath.getProjectPath() + ":command", command);
+                nocalhostSettings.set(ExecutionTask.asKey(serviceProjectPath.getProjectPath()), command);
                 ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPath.get()),
                         new OpenProjectTask());
             }

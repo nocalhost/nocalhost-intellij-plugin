@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.task.ExecutionTask;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 
 public final class NocalhostStartupActivity implements StartupActivity {
@@ -30,7 +31,7 @@ public final class NocalhostStartupActivity implements StartupActivity {
         if (serviceProjectPath != null) {
             try {
                 ProgressManager.getInstance().run(new StartingDevModeTask(project,
-                        serviceProjectPath, settings.get(projectPath + ":command")));
+                        serviceProjectPath, settings.get(ExecutionTask.asKey(projectPath)));
             } catch (Exception e) {
                 LOG.error("error occurred while starting develop", e);
                 NocalhostNotifier.getInstance(project).notifyError(
@@ -38,7 +39,7 @@ public final class NocalhostStartupActivity implements StartupActivity {
                         "Error occurred while starting dev mode",
                         e.getMessage());
             } finally {
-                settings.del(projectPath + ":command");
+                settings.del(ExecutionTask.asKey(projectPath));
                 settings.removeDevModeServiceByProjectPath(projectPath);
             }
         }

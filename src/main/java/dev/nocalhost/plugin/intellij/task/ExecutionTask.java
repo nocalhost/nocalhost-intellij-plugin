@@ -17,8 +17,8 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -164,5 +164,9 @@ public class ExecutionTask extends Task.Backgroundable {
         } catch (Exception ex) {
             throw new ExecutionException("The configuration of the service container is incorrect.");
         }
+    }
+
+    public static @NotNull String asKey(@NotNull String path) {
+        return path + ":command";
     }
 }
