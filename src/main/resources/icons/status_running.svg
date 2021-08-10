@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="16px" height="16px" viewBox="0 0 14 14" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>status-failed_light</title>
+    <title>status_running_light</title>
     <g id="Icon" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="IDEA" transform="translate(-479.000000, -154.000000)" fill="#DB5860">
-            <g id="status-failed备份" transform="translate(479.000000, 154.000000)">
+        <g id="IDEA" transform="translate(-431.000000, -154.000000)" fill="#59A869">
+            <g id="status_running备份" transform="translate(431.000000, 154.000000)">
                 <circle id="椭圆形" cx="7" cy="7" r="2"></circle>
             </g>
         </g>
