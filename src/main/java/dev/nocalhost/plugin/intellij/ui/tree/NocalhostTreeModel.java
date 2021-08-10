@@ -206,18 +206,28 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, "");
                 if (clusterNode.getServiceAccount() != null) {
                     if (clusterNode.getServiceAccount().isPrivilege()) {
-                        namespaceNodes = nhctlCommand.getResources("namespaces", nhctlGetOptions)
+                        List<String> namespaces = nhctlCommand.getResources("namespaces", nhctlGetOptions)
                                 .stream()
-                                .map(e -> new NamespaceNode(e.getKubeResource().getMetadata().getName()))
+                                .map(e -> e.getKubeResource().getMetadata().getName())
                                 .collect(Collectors.toList());
+                        List<ServiceAccount.NamespacePack> namespacePacks = clusterNode.getServiceAccount().getNamespacePacks();
+                        List<String> namespacesInsideNamespacePacks = namespacePacks.stream()
+                                .map(ServiceAccount.NamespacePack::getNamespace)
+                                .collect(Collectors.toList());
+                        namespaceNodes = Lists.newArrayList();
+                        namespaceNodes.addAll(namespaces.stream()
+                                .filter(e -> !namespacesInsideNamespacePacks.contains(e))
+                                .map(NamespaceNode::new)
+                                .collect(Collectors.toList()));
+                        namespaceNodes.addAll(namespacePacks.stream()
+                                .map(NamespaceNode::new)
+                                .collect(Collectors.toList()));
                     } else {
-                        if (clusterNode.getServiceAccount().getNamespaces() != null) {
-                            namespaceNodes = clusterNode.getServiceAccount().getNamespaces()
+                        if (clusterNode.getServiceAccount().getNamespacePacks() != null) {
+                            namespaceNodes = clusterNode.getServiceAccount().getNamespacePacks()
                                     .stream()
-                                    .map(e -> new NamespaceNode(e.getNamespace(), e.getSpaceName(), e.getSpaceId()))
+                                    .map(NamespaceNode::new)
                                     .collect(Collectors.toList());
-                        } else {
-                            namespaceNodes = Lists.newArrayList();
                         }
                     }
                 } else {

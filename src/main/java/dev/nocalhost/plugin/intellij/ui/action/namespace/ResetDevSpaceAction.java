@@ -79,7 +79,7 @@ public class ResetDevSpaceAction extends DumbAwareAction {
                 nocalhostApi.recreate(
                         node.getClusterNode().getNocalhostAccount().getServer(),
                         node.getClusterNode().getNocalhostAccount().getJwt(),
-                        node.getSpaceId());
+                        node.getNamespacePack().getSpaceId());
             }
         });
     }

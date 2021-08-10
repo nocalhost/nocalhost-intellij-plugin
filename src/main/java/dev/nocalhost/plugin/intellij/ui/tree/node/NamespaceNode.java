@@ -1,25 +1,22 @@
 package dev.nocalhost.plugin.intellij.ui.tree.node;
 
-import org.apache.commons.lang3.StringUtils;
-
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
 import lombok.Getter;
 
 @Getter
 public class NamespaceNode extends DefaultMutableTreeNode {
     private String namespace;
-    private String spaceName;
-    private long spaceId;
+    private ServiceAccount.NamespacePack namespacePack;
 
     public NamespaceNode(String namespace) {
         this.namespace = namespace;
     }
 
-    public NamespaceNode(String namespace, String spaceName, long spaceId) {
-        this.namespace = namespace;
-        this.spaceName = spaceName;
-        this.spaceId = spaceId;
+    public NamespaceNode(ServiceAccount.NamespacePack namespacePack) {
+        this.namespace = namespacePack.getNamespace();
+        this.namespacePack = namespacePack;
     }
 
     @Override
@@ -32,6 +29,8 @@ public class NamespaceNode extends DefaultMutableTreeNode {
     }
 
     public String getName() {
-        return StringUtils.isNotEmpty(spaceName) ? spaceName :namespace;
+        return namespacePack != null
+                ? String.format("%s (%s)", namespacePack.getSpaceName(), namespacePack.getNamespace())
+                : namespace;
     }
 }
