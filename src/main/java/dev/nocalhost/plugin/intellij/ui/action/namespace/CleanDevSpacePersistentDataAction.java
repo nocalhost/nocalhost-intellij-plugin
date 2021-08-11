@@ -13,7 +13,6 @@ import java.util.List;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.dialog.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -45,9 +44,6 @@ public class CleanDevSpacePersistentDataAction extends DumbAwareAction {
                     });
                 });
             } catch (Exception e) {
-                if (e instanceof NocalhostExecuteCmdException) {
-                    return;
-                }
                 ErrorUtil.dealWith(project, "Loading PVCs error",
                         "Error occurs while loading PVCs", e);
             }

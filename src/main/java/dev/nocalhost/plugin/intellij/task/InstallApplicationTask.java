@@ -18,7 +18,6 @@ import java.util.List;
 import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import lombok.SneakyThrows;
@@ -75,9 +74,6 @@ public class InstallApplicationTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        if (e instanceof NocalhostExecuteCmdException) {
-            return;
-        }
         LOG.error("error occurred while installing application", e);
         NocalhostNotifier.getInstance(project).notifyError(
                 "Nocalhost install devSpace error",
