@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Condition;
@@ -31,9 +30,6 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
 import icons.NocalhostIcons;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
-import static dev.nocalhost.plugin.intellij.utils.Constants.PRIVILEGE_TYPE_CLUSTER_ADMIN;
-import static dev.nocalhost.plugin.intellij.utils.Constants.PRIVILEGE_TYPE_CLUSTER_VIEWER;
-import static dev.nocalhost.plugin.intellij.utils.Constants.SPACE_OWN_TYPE_VIEWER;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_JOB;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
@@ -78,7 +74,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             NamespaceNode node = (NamespaceNode) value;
             append(node.getName());
             setToolTipText(node.getName());
-            if (isNamespaceViewer(node)) {
+            if (node.isDevSpaceViewer()) {
                 setIcon(NocalhostIcons.DevSpaceViewer);
             } else {
                 setIcon(NocalhostIcons.DevSpace);
@@ -238,27 +234,5 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             }
         }
         return status;
-    }
-
-    private boolean isNamespaceViewer(NamespaceNode node) {
-        ServiceAccount serviceAccount = node.getClusterNode().getServiceAccount();
-        if (serviceAccount == null) {
-            return false;
-        }
-        if (serviceAccount.isPrivilege()) {
-            if (StringUtils.equals(serviceAccount.getPrivilegeType(), PRIVILEGE_TYPE_CLUSTER_ADMIN)) {
-                return false;
-            }
-            if (StringUtils.equals(serviceAccount.getPrivilegeType(), PRIVILEGE_TYPE_CLUSTER_VIEWER)) {
-                if (node.getNamespacePack() != null) {
-                    return StringUtils.equals(node.getNamespacePack().getSpaceOwnType(), SPACE_OWN_TYPE_VIEWER);
-                } else {
-                    return true;
-                }
-            }
-            return true;
-        } else {
-            return StringUtils.equals(node.getNamespacePack().getSpaceOwnType(), SPACE_OWN_TYPE_VIEWER);
-        }
     }
 }
