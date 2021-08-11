@@ -137,7 +137,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     refreshClusterNodes((MutableTreeNode) root, clusterNodes);
                 });
 
-            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
                 if (e instanceof NocalhostApiException) {
                     ApplicationManager.getApplication().invokeLater(() -> {
@@ -245,7 +244,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshNamespaceNodes(clusterNode, pendingNamespaces);
                 });
-            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
                 LOG.error("Loading namespaces error", e);
             }
@@ -317,7 +315,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 final List<ApplicationNode> finalApplicationNodes = applicationNodes;
                 ApplicationManager.getApplication().invokeLater(() ->
                         refreshApplicationNodes(namespaceNode, finalApplicationNodes));
-            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
                 LOG.error("Loading applicatons error", e);
             }
@@ -402,7 +399,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshResourceNodes(resourceTypeNode, resources);
                 });
-            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
                 LOG.error("Loading resources error", e);
             }

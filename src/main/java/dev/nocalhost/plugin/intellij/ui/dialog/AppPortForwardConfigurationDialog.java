@@ -38,7 +38,6 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlAppPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardListOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.VerticalFlowLayout;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
@@ -105,9 +104,6 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                if (e instanceof NocalhostExecuteCmdException) {
-                    return;
-                }
                 LOG.error("error occurred while loading port forward list", e);
                 NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while loading port forward list", e.getMessage());
             }
@@ -182,9 +178,6 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
             ProgressManager.getInstance().run(new Task.Modal(project, "Stopping port forward " + portForward, false) {
                 @Override
                 public void onThrowable(@NotNull Throwable e) {
-                    if (e instanceof NocalhostExecuteCmdException) {
-                        return;
-                    }
                     LOG.error("error occurred while stopping port forward", e);
                     NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while stopping port forward", e.getMessage());
                 }
