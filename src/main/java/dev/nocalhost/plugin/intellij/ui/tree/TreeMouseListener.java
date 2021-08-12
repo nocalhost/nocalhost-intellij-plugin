@@ -40,6 +40,8 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.LogsAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.OpenProjectAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.PortForwardAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ResetAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.DebugAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.RunAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.StartDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.TerminalAction;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
@@ -183,6 +185,13 @@ public class TreeMouseListener extends MouseAdapter {
             actionGroup.add(new Separator());
             actionGroup.add(new OpenProjectAction(project, resourceNode));
         }
+
+        DefaultActionGroup cmd = new DefaultActionGroup("Command", true);
+        cmd.add(new RunAction(project, resourceNode));
+        cmd.add(new DebugAction(project, resourceNode));
+
+        actionGroup.add(new Separator());
+        actionGroup.add(cmd);
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());

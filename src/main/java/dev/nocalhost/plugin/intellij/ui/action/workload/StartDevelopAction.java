@@ -30,8 +30,11 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
+import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
+
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.task.ExecutionTask;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.dialog.ImageChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
@@ -58,10 +61,17 @@ public class StartDevelopAction extends DumbAwareAction {
     private final AtomicReference<String> projectPath = new AtomicReference<>();
     private final AtomicReference<String> selectedContainer = new AtomicReference<>();
 
+    private final String command;
+
     public StartDevelopAction(Project project, ResourceNode node) {
-        super("Start DevMode", "", NocalhostIcons.Status.DevStart);
-        this.project = project;
+        this("Start DevMode", project, node, "");
+    }
+
+    public StartDevelopAction(String title, Project project, ResourceNode node, String command) {
+        super(title, "", StringUtils.isEmpty(command) ? NocalhostIcons.Status.DevStart : null);
         this.node = node;
+        this.project = project;
+        this.command = command;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
         outputCapturedGitCommand = project.getService(OutputCapturedGitCommand.class);
@@ -78,9 +88,15 @@ public class StartDevelopAction extends DumbAwareAction {
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
                 if (nhctlDescribeService.isDeveloping()) {
-                    ApplicationManager.getApplication().invokeLater(() ->
-                            Messages.showMessageDialog("Dev mode has been started.",
-                                    "Start DevMode", null));
+                    if (StringUtils.isEmpty(command)) {
+                        ApplicationManager.getApplication().invokeLater(() ->
+                                Messages.showMessageDialog("Dev mode has been started.",
+                                        "Start DevMode", null));
+                    } else {
+                        ProgressManager
+                                .getInstance()
+                                .run(new ExecutionTask(project, project.getService(NocalhostProjectSettings.class).getDevModeService(), command));
+                    }
                     return;
                 }
 
@@ -368,7 +384,7 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (PathsUtil.isSame(projectPath.get(), project.getBasePath())) {
                 ProgressManager.getInstance().run(
-                        new StartingDevModeTask(project, serviceProjectPath));
+                        new StartingDevModeTask(project, serviceProjectPath, command));
             } else {
                 Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
                 for (Project openProject : openProjects) {
@@ -378,13 +394,15 @@ public class StartDevelopAction extends DumbAwareAction {
                         if (toolWindow != null) {
                             toolWindow.activate(() -> {
                                 ProgressManager.getInstance().run(
-                                        new StartingDevModeTask(openProject, serviceProjectPath));
+                                        new StartingDevModeTask(openProject, serviceProjectPath, command));
                             });
                             return;
                         }
                     }
                 }
+
                 nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
+                nocalhostSettings.set(ExecutionTask.asKey(serviceProjectPath.getProjectPath()), command);
                 ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPath.get()),
                         new OpenProjectTask());
             }

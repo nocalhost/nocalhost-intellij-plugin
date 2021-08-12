@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.task.ExecutionTask;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 
 public final class NocalhostStartupActivity implements StartupActivity {
@@ -24,14 +25,16 @@ public final class NocalhostStartupActivity implements StartupActivity {
     }
 
     private void devStart(Project project) {
-        final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
+        var settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
         String projectPath = Paths.get(project.getBasePath()).toString();
-        ServiceProjectPath serviceProjectPath = nocalhostSettings
-                .getDevModeServiceByProjectPath(projectPath);
+        ServiceProjectPath serviceProjectPath = settings.getDevModeServiceByProjectPath(projectPath);
         if (serviceProjectPath != null) {
             try {
-                ProgressManager.getInstance().run(new StartingDevModeTask(project,
-                        serviceProjectPath));
+                ProgressManager.getInstance().run(new StartingDevModeTask(
+                        project,
+                        serviceProjectPath,
+                        settings.get(ExecutionTask.asKey(projectPath))
+                ));
             } catch (Exception e) {
                 LOG.error("error occurred while starting develop", e);
                 NocalhostNotifier.getInstance(project).notifyError(
@@ -39,9 +42,9 @@ public final class NocalhostStartupActivity implements StartupActivity {
                         "Error occurred while starting dev mode",
                         e.getMessage());
             } finally {
-                nocalhostSettings.removeDevModeServiceByProjectPath(projectPath);
+                settings.del(ExecutionTask.asKey(projectPath));
+                settings.removeDevModeServiceByProjectPath(projectPath);
             }
         }
     }
-
 }

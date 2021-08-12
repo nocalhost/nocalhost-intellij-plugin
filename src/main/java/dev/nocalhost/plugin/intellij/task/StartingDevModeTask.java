@@ -6,6 +6,7 @@ import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
@@ -47,13 +48,15 @@ public class StartingDevModeTask extends Task.Backgroundable {
 
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
+    private final String command;
     private final Project project;
-    private final ServiceProjectPath serviceProjectPath;
     private final Path kubeConfigPath;
+    private final ServiceProjectPath serviceProjectPath;
 
-    public StartingDevModeTask(Project project, ServiceProjectPath serviceProjectPath) {
+    public StartingDevModeTask(Project project, ServiceProjectPath serviceProjectPath, String command) {
         super(project, "Starting DevMode", false);
         this.project = project;
+        this.command = command;
         this.serviceProjectPath = serviceProjectPath;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
@@ -86,14 +89,18 @@ public class StartingDevModeTask extends Task.Backgroundable {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
         NocalhostNotifier.getInstance(project).notifySuccess("DevMode started", "");
 
-        final NocalhostProjectSettings nocalhostProjectSettings = project.getService(
-                NocalhostProjectSettings.class);
-        nocalhostProjectSettings.setDevModeService(serviceProjectPath);
+        project.getService(NocalhostProjectSettings.class).setDevModeService(serviceProjectPath);
+
+        if (StringUtils.isNotEmpty(command)) {
+            ProgressManager
+                    .getInstance()
+                    .run(new ExecutionTask(project, serviceProjectPath, command));
+        }
     }
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        LOG.error("error occurred while starting dev mode", e);
+        LOG.error("Error occurred while starting dev mode", e);
         NocalhostNotifier.getInstance(project).notifyError(
                 "Nocalhost starting dev mode error",
                 "Error occurred while starting dev mode",

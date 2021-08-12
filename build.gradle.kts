@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    implementation(kotlin("stdlib"))
+    implementation(kotlin("stdlib", "1.5.10"))
 
 
     implementation("com.squareup.okhttp3:okhttp:4.9.0")
