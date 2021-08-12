@@ -1,6 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui.tree;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.LoadingNode;
 import com.intellij.ui.SimpleTextAttributes;
@@ -57,7 +56,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             append("  ");
             if (node.isActive()) {
                 append("ACTIVE", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
-                setIcon(NocalhostIcons.Kubernetes);
+                setIcon(NocalhostIcons.ClusterActive);
                 String accountInfo = node.getAccountInfo();
                 if (StringUtils.isNotEmpty(accountInfo)) {
                     setToolTipText(node.getName() + " [" + accountInfo + "]");
@@ -66,7 +65,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                 }
             } else {
                 append("Unable to Connect", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
-                setIcon(AllIcons.General.BalloonError);
+                setIcon(NocalhostIcons.ClusterWarning);
                 setToolTipText(node.getInfo());
             }
         }
@@ -75,6 +74,11 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             NamespaceNode node = (NamespaceNode) value;
             append(node.getName());
             setToolTipText(node.getName());
+            if (node.isDevSpaceViewer()) {
+                setIcon(NocalhostIcons.DevSpaceViewer);
+            } else {
+                setIcon(NocalhostIcons.DevSpace);
+            }
         }
 
         if (value instanceof ApplicationNode) {

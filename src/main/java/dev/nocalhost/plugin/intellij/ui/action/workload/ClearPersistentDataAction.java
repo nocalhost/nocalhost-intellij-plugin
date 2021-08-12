@@ -50,9 +50,6 @@ public class ClearPersistentDataAction extends DumbAwareAction {
                     new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems).showAndGet();
                 });
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                if (e instanceof NocalhostExecuteCmdException) {
-                    return;
-                }
                 LOG.error("error occurred while listing pvc", e);
             }
         });

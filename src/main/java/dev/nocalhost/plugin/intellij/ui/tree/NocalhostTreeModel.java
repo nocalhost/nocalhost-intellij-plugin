@@ -137,7 +137,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     refreshClusterNodes((MutableTreeNode) root, clusterNodes);
                 });
 
-            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
                 if (e instanceof NocalhostApiException) {
                     ApplicationManager.getApplication().invokeLater(() -> {
@@ -206,18 +205,28 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, "");
                 if (clusterNode.getServiceAccount() != null) {
                     if (clusterNode.getServiceAccount().isPrivilege()) {
-                        namespaceNodes = nhctlCommand.getResources("namespaces", nhctlGetOptions)
+                        List<String> namespaces = nhctlCommand.getResources("namespaces", nhctlGetOptions)
                                 .stream()
-                                .map(e -> new NamespaceNode(e.getKubeResource().getMetadata().getName()))
+                                .map(e -> e.getKubeResource().getMetadata().getName())
                                 .collect(Collectors.toList());
+                        List<ServiceAccount.NamespacePack> namespacePacks = clusterNode.getServiceAccount().getNamespacePacks();
+                        List<String> namespacesInsideNamespacePacks = namespacePacks.stream()
+                                .map(ServiceAccount.NamespacePack::getNamespace)
+                                .collect(Collectors.toList());
+                        namespaceNodes = Lists.newArrayList();
+                        namespaceNodes.addAll(namespaces.stream()
+                                .filter(e -> !namespacesInsideNamespacePacks.contains(e))
+                                .map(NamespaceNode::new)
+                                .collect(Collectors.toList()));
+                        namespaceNodes.addAll(namespacePacks.stream()
+                                .map(NamespaceNode::new)
+                                .collect(Collectors.toList()));
                     } else {
-                        if (clusterNode.getServiceAccount().getNamespaces() != null) {
-                            namespaceNodes = clusterNode.getServiceAccount().getNamespaces()
+                        if (clusterNode.getServiceAccount().getNamespacePacks() != null) {
+                            namespaceNodes = clusterNode.getServiceAccount().getNamespacePacks()
                                     .stream()
-                                    .map(e -> new NamespaceNode(e.getNamespace(), e.getSpaceName(), e.getSpaceId()))
+                                    .map(NamespaceNode::new)
                                     .collect(Collectors.toList());
-                        } else {
-                            namespaceNodes = Lists.newArrayList();
                         }
                     }
                 } else {
@@ -235,7 +244,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshNamespaceNodes(clusterNode, pendingNamespaces);
                 });
-            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
                 LOG.error("Loading namespaces error", e);
             }
@@ -255,6 +263,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                             .filter(e -> StringUtils.equals(e.getNamespace(), namespaceNode.getNamespace()))
                             .findFirst();
                     if (pendingNamespaceNodeOptional.isPresent()) {
+                        namespaceNode.updateFrom(pendingNamespaceNodeOptional.get());
+                        nodeChanged(namespaceNode);
                         updateApplications(namespaceNode);
                     } else {
                         removeNode(namespaceNode);
@@ -305,7 +315,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 final List<ApplicationNode> finalApplicationNodes = applicationNodes;
                 ApplicationManager.getApplication().invokeLater(() ->
                         refreshApplicationNodes(namespaceNode, finalApplicationNodes));
-            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
                 LOG.error("Loading applicatons error", e);
             }
@@ -390,7 +399,6 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshResourceNodes(resourceTypeNode, resources);
                 });
-            } catch (NocalhostExecuteCmdException ignored) {
             } catch (Exception e) {
                 LOG.error("Loading resources error", e);
             }

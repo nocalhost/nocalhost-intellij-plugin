@@ -71,6 +71,7 @@ public class NocalhostProfileState extends CommandLineState {
         List<String> commandLine = Lists.newArrayList(
                 NhctlUtil.binaryPath(), "exec", devModeService.getApplicationName(),
                 "--deployment", nocalhostDevInfo.getDevModeService().getServiceName(),
+                "--controller-type", nocalhostDevInfo.getDevModeService().getServiceType(),
                 "--command", shell, "--command", "-c", "--command", command,
                 "--kubeconfig", kubeConfigPath.toString(),
                 "--namespace", devModeService.getNamespace()

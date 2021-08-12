@@ -76,9 +76,6 @@ public class EndDevelopAction extends DumbAwareAction {
                     }
                 });
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                if (e instanceof NocalhostExecuteCmdException) {
-                    return;
-                }
                 LOG.error("error occurred while checking if service was in development", e);
             }
         });
@@ -96,9 +93,6 @@ public class EndDevelopAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                if (e instanceof NocalhostExecuteCmdException) {
-                    return;
-                }
                 LOG.error("error occurred while ending develop", e);
             }
 

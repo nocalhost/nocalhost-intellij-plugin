@@ -8,7 +8,6 @@ import com.google.gson.reflect.TypeToken;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.EnvironmentUtil;
 
@@ -690,9 +689,6 @@ public class NhctlCommand {
             int exitCode = process.waitFor();
             if (exitCode != 0) {
                 output += errorOutput.toString();
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    Messages.showErrorDialog(errorOutput.get(), "Nhctl Command Error");
-                });
                 throw new NocalhostExecuteCmdException(cmd, exitCode, output);
             }
             return output;

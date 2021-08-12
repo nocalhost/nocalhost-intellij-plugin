@@ -186,6 +186,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         List<String> lines = Lists.newArrayList(
                 NhctlUtil.binaryPath(), "exec", devService.getApplicationName(),
                 "--deployment", context.getDevModeService().getServiceName(),
+                "--controller-type", context.getDevModeService().getServiceType(),
                 "--command", shell, "--command", "-c", "--command", debug,
                 "--kubeconfig", kubeConfigPath.toString(),
                 "--namespace", devService.getNamespace()

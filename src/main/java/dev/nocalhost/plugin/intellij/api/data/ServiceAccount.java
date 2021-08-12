@@ -21,12 +21,15 @@ public class ServiceAccount {
     private String storageClass;
 
     @SerializedName("namespace_packs")
-    private List<Namespace> namespaces;
+    private List<NamespacePack> namespacePacks;
 
     private boolean privilege;
 
+    @SerializedName("privilege_type")
+    private String privilegeType;
+
     @Data
-    public static class Namespace {
+    public static class NamespacePack {
         @SerializedName("space_id")
         private long spaceId;
 
@@ -34,5 +37,8 @@ public class ServiceAccount {
 
         @SerializedName("spacename")
         private String spaceName;
+
+        @SerializedName("space_own_type")
+        private String spaceOwnType;
     }
 }
