@@ -1,5 +1,5 @@
 plugins {
-    id("org.jetbrains.intellij") version "0.7.2"
+    id("org.jetbrains.intellij") version "1.1.3"
     java
     kotlin("jvm") version "1.4.21"
     id("io.franzbecker.gradle-lombok") version "2.1"
@@ -42,7 +42,7 @@ dependencies {
     testImplementation("junit", "junit", "4.12")
 }
 
-var baseIDE = "IC"
+var baseIDE = "IU"
 if (project.hasProperty("baseIDE")) {
     baseIDE = project.property("baseIDE") as String
 }
@@ -60,17 +60,16 @@ version = "$nocalhostVersion-$platformVersion"
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = ideaVersion
-    val plugins = mutableListOf(
+    version.set(ideaVersion)
+    plugins.set(mutableListOf(
         terminalPlugin,
         pythonPlugin,
         javaPlugin,
         phpPlugin,
         goPlugin
-    )
-    setPlugins(*plugins.toTypedArray())
-    pluginName = "nocalhost-intellij-plugin"
-    updateSinceUntilBuild = true
+    ))
+    pluginName.set("nocalhost-intellij-plugin")
+    updateSinceUntilBuild.set(true)
 }
 
 sourceSets {
@@ -80,21 +79,24 @@ sourceSets {
 }
 
 tasks.runIde {
+    if (baseIDE == "IC") {
+        ideDir.set(File("/Applications/IntelliJ IDEA CE.app/Contents"))
+    }
     if (baseIDE == "GO") {
-        ideDirectory("/Applications/GoLand.app/Contents")
+        ideDir.set(File("/Applications/GoLand.app/Contents"))
     }
     if (baseIDE == "Python") {
-        ideDirectory("/Applications/PyCharm.app/Contents")
+        ideDir.set(File("/Applications/PyCharm.app/Contents"))
     }
     if (baseIDE == "PHP") {
-        ideDirectory("/Applications/PhpStorm.app/Contents")
+        ideDir.set(File("/Applications/PhpStorm.app/Contents"))
     }
 }
 
 tasks {
     patchPluginXml {
-        pluginId("dev.nocalhost.nocalhost-intellij-plugin")
-        pluginDescription(
+        pluginId.set("dev.nocalhost.nocalhost-intellij-plugin")
+        pluginDescription.set(
             """
             <html>
                 <p>
@@ -144,7 +146,7 @@ tasks {
             </html>
             """.trimIndent()
         )
-        changeNotes(
+        changeNotes.set(
             """
             <h2>Version 0.4.19</h2>
             
@@ -255,7 +257,7 @@ tasks {
     }
 
     publishPlugin {
-        token(System.getenv("JETBRAINS_TOKEN"))
+        token.set(System.getenv("JETBRAINS_TOKEN"))
     }
 
     buildSearchableOptions {
