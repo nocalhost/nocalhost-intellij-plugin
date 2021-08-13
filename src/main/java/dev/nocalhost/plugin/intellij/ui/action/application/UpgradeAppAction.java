@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -43,7 +42,6 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class UpgradeAppAction extends DumbAwareAction {
-    private static final Logger LOG = Logger.getInstance(UpgradeAppAction.class);
     private static final Set<String> CONFIG_FILE_EXTENSIONS = Set.of("yaml", "yml");
 
     private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
@@ -84,7 +82,8 @@ public class UpgradeAppAction extends DumbAwareAction {
                         try {
                             upgradeApp(applicationOptional.get());
                         } catch (IOException e) {
-                            LOG.error("error occurred while upgrading application", e);
+                            ErrorUtil.dealWith(project, "Upgrading application error",
+                                    "Error occurred while upgrading application", e);
                         }
                     });
                 } else {
@@ -196,8 +195,8 @@ public class UpgradeAppAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while upgrading application", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost upgrade application error", "Error occurred while upgrading application", e.getMessage());
+                ErrorUtil.dealWith(project, "Nocalhost upgrade application error",
+                        "Error occurred while upgrading application", e);
             }
 
             @SneakyThrows

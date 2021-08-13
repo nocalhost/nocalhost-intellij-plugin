@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.ui.tree;
 import com.google.common.collect.Lists;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.ui.LoadingNode;
@@ -30,9 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
-import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
@@ -43,12 +40,11 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
 public class NocalhostTreeModel extends NocalhostTreeModelBase {
-    private static final Logger LOG = Logger.getInstance(NocalhostTreeModel.class);
-
     private static final List<Pair<String, List<String>>> RESOURCE_GROUP_TYPE = List.of(
             Pair.create("Workloads", List.of(
                     "Deployments",
@@ -138,16 +134,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 });
 
             } catch (Exception e) {
-                if (e instanceof NocalhostApiException) {
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        NocalhostNotifier.getInstance(project).notifyError(
-                                "Loading clusters error",
-                                "Error occurs while loading clusters",
-                                e.getMessage());
-                    });
-                } else {
-                    LOG.error("Loading clusters error", e);
-                }
+                ErrorUtil.dealWith(project, "Loading clusters error",
+                        "Error occurs while loading clusters", e);
             }
         });
     }
@@ -245,7 +233,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     refreshNamespaceNodes(clusterNode, pendingNamespaces);
                 });
             } catch (Exception e) {
-                LOG.error("Loading namespaces error", e);
+                ErrorUtil.dealWith(project, "Loading namespaces error",
+                        "Error occurs while loading namespaces", e);
             }
         });
     }
@@ -316,7 +305,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 ApplicationManager.getApplication().invokeLater(() ->
                         refreshApplicationNodes(namespaceNode, finalApplicationNodes));
             } catch (Exception e) {
-                LOG.error("Loading applicatons error", e);
+                ErrorUtil.dealWith(project, "Loading applications error",
+                        "Error occurs while loading applications", e);
             }
         });
     }
@@ -400,7 +390,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     refreshResourceNodes(resourceTypeNode, resources);
                 });
             } catch (Exception e) {
-                LOG.error("Loading resources error", e);
+                ErrorUtil.dealWith(project, "Loading resources error",
+                        "Error occurs while loading resources", e);
             }
         });
     }

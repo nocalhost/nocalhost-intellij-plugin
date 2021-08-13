@@ -55,7 +55,8 @@ public class RenameClusterAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Renaming cluster error", "Error occurs while renaming cluster", e);
+                ErrorUtil.dealWith(project, "Renaming cluster error",
+                        "Error occurs while renaming cluster", e);
             }
 
             @SneakyThrows

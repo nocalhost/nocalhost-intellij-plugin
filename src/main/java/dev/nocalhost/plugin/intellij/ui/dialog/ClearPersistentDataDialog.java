@@ -1,6 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui.dialog;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -23,11 +22,9 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 
 public class ClearPersistentDataDialog extends DialogWrapper {
-    private static final Logger LOG = Logger.getInstance(ClearPersistentDataDialog.class);
-
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final Project project;
@@ -100,7 +97,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
-        if ( ! MessageDialogBuilder.yesNo("Clear PVC", "This action will permanently delete PVC(s). Do you want to continue?").ask(project)) {
+        if (!MessageDialogBuilder.yesNo("Clear PVC", "This action will permanently delete PVC(s). Do you want to continue?").ask(project)) {
             return;
         }
         ProgressManager.getInstance().run(new Task.Modal(null, "Clearing persistent data", true) {
@@ -123,8 +120,8 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                     try {
                         outputCapturedNhctlCommand.cleanPVC(opts);
                     } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                        LOG.error("error occurred while clearing persistent data", e);
-                        NocalhostNotifier.getInstance(project).notifyError("Nocalhost clear persistent data error", "Error occurred while clearing persistent data", e.getMessage());
+                        ErrorUtil.dealWith(this.getProject(), "Nocalhost clear persistent data error",
+                                "Error occurred while clearing persistent data", e);
                     }
                 }
             }

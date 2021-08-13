@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.vfs;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -29,13 +28,12 @@ import java.util.Date;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 
 @AllArgsConstructor
 public class KubeConfigFile extends VirtualFile {
-    private static final Logger LOG = Logger.getInstance(KubeConfigFile.class);
-
     private final String name;
     private final String path;
     private final String resourceName;
@@ -112,8 +110,8 @@ public class KubeConfigFile extends VirtualFile {
 
                 @Override
                 public void onThrowable(@NotNull Throwable e) {
-                    LOG.error("error occurred while apply config file", e);
-                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost apply error", "Error occurred while applying file", e.getMessage());
+                    ErrorUtil.dealWith(project, "Nocalhost apply error",
+                            "Error occurred while applying file", e);
                 }
 
                 @SneakyThrows

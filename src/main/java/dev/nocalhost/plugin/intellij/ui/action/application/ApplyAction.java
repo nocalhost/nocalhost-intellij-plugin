@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.action.application;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -17,13 +16,12 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ApplyAction extends DumbAwareAction {
-    private static final Logger LOG = Logger.getInstance(ApplyAction.class);
-
     private final Project project;
     private final Path kubeConfigPath;
     private final String namespace;
@@ -49,8 +47,8 @@ public class ApplyAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while apply kubernetes config file", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost apply error", "Error occurred while applying kubernetes file", e.getMessage());
+                ErrorUtil.dealWith(project, "Nocalhost apply error",
+                        "Error occurred while applying kubernetes file", e);
             }
 
             @Override

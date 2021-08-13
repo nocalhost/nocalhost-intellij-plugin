@@ -24,6 +24,7 @@ import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
 public class AddStandaloneClusterTask extends Task.Backgroundable {
@@ -91,10 +92,7 @@ public class AddStandaloneClusterTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        NocalhostNotifier.getInstance(getProject()).notifyError(
-                "Adding standalone clusters error",
-                "Error occurred while adding standalone cluster",
-                e.getMessage()
-        );
+        ErrorUtil.dealWith(this.getProject(), "Adding standalone clusters error",
+                "Error occurred while adding standalone cluster", e);
     }
 }

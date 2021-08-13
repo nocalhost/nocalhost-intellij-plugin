@@ -11,14 +11,13 @@ import com.intellij.execution.executors.DefaultRunExecutor;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -37,16 +36,15 @@ import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpConfiguration
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfiguration;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfigurationType;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ExecutionTask extends Task.Backgroundable {
     public final static String kRun = "run";
     public final static String kDebug = "debug";
-    private final static Logger LOG = Logger.getInstance(ExecutionTask.class);
 
     private final String command;
     private final Project project;
@@ -69,12 +67,8 @@ public class ExecutionTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable ex) {
-        LOG.error(String.format("Error occurred while starting `%s`", command), ex);
-        NocalhostNotifier.getInstance(project).notifyError(
-                "Nocalhost",
-                String.format("Error occurred while starting `%s`", command),
-                ex.getMessage()
-        );
+        ErrorUtil.dealWith(this.getProject(), "Nocalhost",
+                String.format("Error occurred while starting `%s`", command), ex);
     }
 
     @SneakyThrows

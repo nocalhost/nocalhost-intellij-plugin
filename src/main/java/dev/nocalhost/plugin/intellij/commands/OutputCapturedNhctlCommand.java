@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
+import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
@@ -88,7 +89,7 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
         if (exitCode != 0) {
             publisher.action(errorOutput.get() + System.lineSeparator());
             sb.append(errorOutput.get()).append(System.lineSeparator());
-            throw new NocalhostExecuteCmdException(cmd, exitCode, sb.toString());
+            throw new NhctlCommandException(cmd, exitCode, sb.toString(), errorOutput.get());
         }
 
         return sb.toString();

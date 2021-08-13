@@ -19,14 +19,13 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardListOptions;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Condition;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.utils.Constants;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
 public class BrowseDemoTask extends Task.Backgroundable {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
-    private final Project project;
     private final Path kubeConfigPath;
     private final String namespace;
 
@@ -34,7 +33,6 @@ public class BrowseDemoTask extends Task.Backgroundable {
 
     public BrowseDemoTask(Project project, Path kubeConfigPath, String namespace) {
         super(project, "Browse demo", false);
-        this.project = project;
         this.kubeConfigPath = kubeConfigPath;
         this.namespace = namespace;
     }
@@ -94,7 +92,7 @@ public class BrowseDemoTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        NocalhostNotifier.getInstance(project).notifyError("Demo browse error",
-                "Error occurred while browsing demo", e.getMessage());
+        ErrorUtil.dealWith(this.getProject(), "Demo browse error",
+                "Error occurred while browsing demo", e);
     }
 }

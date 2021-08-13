@@ -4,7 +4,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -19,16 +18,14 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.KubeConfigFile;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class LoadKubernetesResourceTask extends Task.Backgroundable {
-    private static final Logger LOG = Logger.getInstance(LoadKubernetesResourceTask.class);
-
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final ResourceNode node;
@@ -51,8 +48,8 @@ public class LoadKubernetesResourceTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        LOG.error("error occurred while loading kubernetes resource yaml", e);
-        NocalhostNotifier.getInstance(getProject()).notifyError("Nocalhost load kubernetes resource error", "Error occurred while loading kubernetes resource yaml", e.getMessage());
+        ErrorUtil.dealWith(this.getProject(), "Nocalhost load kubernetes resource error",
+                "Error occurred while loading kubernetes resource yaml", e);
     }
 
     @SneakyThrows

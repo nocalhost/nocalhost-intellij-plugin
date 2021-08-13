@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -17,12 +16,11 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetServiceOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ResetAction extends DumbAwareAction {
-    private static final Logger LOG = Logger.getInstance(ResetAction.class);
-
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final Project project;
@@ -50,7 +48,8 @@ public class ResetAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while resetting service", e);
+                ErrorUtil.dealWith(project, "Resetting service error",
+                        "Error occurred while resetting service", e);
             }
 
             @SneakyThrows

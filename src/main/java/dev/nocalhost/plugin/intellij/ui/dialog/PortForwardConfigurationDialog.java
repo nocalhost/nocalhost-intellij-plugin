@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.dialog;
 
 import com.intellij.ide.plugins.newui.ColorButton;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -53,17 +52,15 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.VerticalFlowLayout;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.SneakyThrows;
 
 public class PortForwardConfigurationDialog extends DialogWrapper {
-    private static final Logger LOG = Logger.getInstance(PortForwardConfigurationDialog.class);
-
     private static final Pattern PORT_TEXT_REGEX = Pattern.compile("^\\d+:\\d+(,\\d+:\\d+)*$");
 
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
@@ -127,8 +124,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while loading port forward list", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while loading port forward list", e.getMessage());
+                ErrorUtil.dealWith(project, "Nocalhost port forward error",
+                        "Error occurred while loading port forward list", e);
             }
 
             @SneakyThrows
@@ -227,7 +224,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     .filter(KubeResource::canSelector)
                     .collect(Collectors.toList());
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-            NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "List Resource error while starting port forward", e.getMessage());
+            ErrorUtil.dealWith(project, "Nocalhost port forward error",
+                    "List Resource error while starting port forward", e);
         }
         if (CollectionUtils.isNotEmpty(pods)) {
             if (pods.size() > 0) {
@@ -257,8 +255,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         ProgressManager.getInstance().run(new Task.Modal(project, "Starting port forward " + startTextField.getText(), true) {
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while starting port forward", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while starting port forward", e.getMessage());
+                ErrorUtil.dealWith(project, "Nocalhost port forward error",
+                        "Error occurred while starting port forward", e);
             }
 
             @Override
@@ -360,8 +358,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             ProgressManager.getInstance().run(new Task.Modal(project, "Stopping port forward " + portForward, false) {
                 @Override
                 public void onThrowable(@NotNull Throwable e) {
-                    LOG.error("error occurred while stopping port forward", e);
-                    NocalhostNotifier.getInstance(project).notifyError("Nocalhost port forward error", "Error occurred while stopping port forward", e.getMessage());
+                    ErrorUtil.dealWith(project, "Nocalhost port forward error",
+                            "Error occurred while stopping port forward", e);
                 }
 
                 @Override

@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.ui.action.application;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -20,12 +19,11 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class UninstallAppAction extends DumbAwareAction {
-    private static final Logger LOG = Logger.getInstance(UninstallAppAction.class);
-
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final Project project;
@@ -64,7 +62,8 @@ public class UninstallAppAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while uninstalling application", e);
+                ErrorUtil.dealWith(project, "Uninstalling application error",
+                        "Error occurred while uninstalling application", e);
             }
 
             @SneakyThrows
