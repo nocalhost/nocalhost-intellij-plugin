@@ -167,7 +167,8 @@ public class TreeMouseListener extends MouseAdapter {
         } else {
             actionGroup.add(new StartDevelopAction(project, resourceNode));
         }
-
+        actionGroup.add(new RunAction(project, resourceNode));
+        actionGroup.add(new DebugAction(project, resourceNode));
         actionGroup.add(new Separator());
         actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
         actionGroup.add(new ConfigAction(project, resourceNode));
@@ -185,13 +186,6 @@ public class TreeMouseListener extends MouseAdapter {
             actionGroup.add(new Separator());
             actionGroup.add(new OpenProjectAction(project, resourceNode));
         }
-
-        DefaultActionGroup cmd = new DefaultActionGroup("Command", true);
-        cmd.add(new RunAction(project, resourceNode));
-        cmd.add(new DebugAction(project, resourceNode));
-
-        actionGroup.add(new Separator());
-        actionGroup.add(cmd);
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
