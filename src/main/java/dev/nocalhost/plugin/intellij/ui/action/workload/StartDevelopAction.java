@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.swing.*;
+
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
@@ -64,11 +66,11 @@ public class StartDevelopAction extends DumbAwareAction {
     private final String command;
 
     public StartDevelopAction(Project project, ResourceNode node) {
-        this("Start DevMode", project, node, "");
+        this("Start DevMode", project, node, NocalhostIcons.Status.DevStart, "");
     }
 
-    public StartDevelopAction(String title, Project project, ResourceNode node, String command) {
-        super(title, "", StringUtils.isEmpty(command) ? NocalhostIcons.Status.DevStart : null);
+    public StartDevelopAction(String title, Project project, ResourceNode node, Icon icon, String command) {
+        super(title, "", icon);
         this.node = node;
         this.project = project;
         this.command = command;
