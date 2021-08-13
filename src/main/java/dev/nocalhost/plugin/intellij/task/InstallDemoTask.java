@@ -15,6 +15,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.Constants;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.MANIFEST_TYPE_RAW_MANIFEST;
@@ -49,8 +50,8 @@ public class InstallDemoTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        NocalhostNotifier.getInstance(project).notifyError("Demo install error",
-                "Error occurred while installing demo", e.getMessage());
+        ErrorUtil.dealWith(this.getProject(), "Demo install error",
+                "Error occurred while installing demo", e);
 
     }
 

@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -25,13 +24,12 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import icons.NocalhostIcons;
 import lombok.SneakyThrows;
 
 public class EndDevelopAction extends DumbAwareAction {
-    private static final Logger LOG = Logger.getInstance(EndDevelopAction.class);
-
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
@@ -76,7 +74,8 @@ public class EndDevelopAction extends DumbAwareAction {
                     }
                 });
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                LOG.error("error occurred while checking if service was in development", e);
+                ErrorUtil.dealWith(project, "Check service status error",
+                        "Error occurred while checking service status", e);
             }
         });
     }
@@ -93,7 +92,8 @@ public class EndDevelopAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while ending develop", e);
+                ErrorUtil.dealWith(project, "Ending devmode error",
+                        "Error occurred while ending devmode", e);
             }
 
             @SneakyThrows

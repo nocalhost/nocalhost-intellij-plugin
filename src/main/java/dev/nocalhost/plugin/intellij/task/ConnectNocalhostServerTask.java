@@ -14,6 +14,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
 public class ConnectNocalhostServerTask extends Task.Backgroundable {
@@ -55,10 +56,7 @@ public class ConnectNocalhostServerTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        NocalhostNotifier.getInstance(getProject()).notifyError(
-                "Connecting to Nocalhost server error",
-                "Error occurs while connecting to Nocalhost server",
-                e.getMessage()
-        );
+        ErrorUtil.dealWith(this.getProject(), "Connecting to Nocalhost server error",
+                "Error occurs while connecting to Nocalhost server", e);
     }
 }

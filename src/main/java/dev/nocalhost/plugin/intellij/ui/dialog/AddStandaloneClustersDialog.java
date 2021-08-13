@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.ui.dialog;
 import com.google.common.collect.Lists;
 
 import com.intellij.ide.BrowserUtil;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -29,15 +28,13 @@ import javax.swing.event.DocumentEvent;
 
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.task.AddStandaloneClusterTask;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 
 public class AddStandaloneClustersDialog extends DialogWrapper {
-    private static final Logger LOG = Logger.getInstance(AddStandaloneClustersDialog.class);
-
     private final Project project;
 
     private JPanel dialogPanel;
@@ -153,10 +150,8 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                     ProgressManager.getInstance().run(
                             new AddStandaloneClusterTask(project, rawKubeConfig, kubeContexts));
                 } catch (Exception e) {
-                    NocalhostNotifier.getInstance(project).notifyError(
-                            "Adding clusters error",
-                            "Error occurs while adding clusters",
-                            e.getMessage());
+                    ErrorUtil.dealWith(project, "Adding clusters error",
+                            "Error occurs while adding clusters", e);
                 }
                 break;
             case 1:
@@ -166,10 +161,8 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                     ProgressManager.getInstance().run(
                             new AddStandaloneClusterTask(project, rawKubeConfig, kubeContexts));
                 } catch (Exception e) {
-                    NocalhostNotifier.getInstance(project).notifyError(
-                            "Adding clusters error",
-                            "Error occurs while adding clusters",
-                            e.getMessage());
+                    ErrorUtil.dealWith(project, "Adding clusters error",
+                            "Error occurs while adding clusters", e);
                 }
                 break;
             default:

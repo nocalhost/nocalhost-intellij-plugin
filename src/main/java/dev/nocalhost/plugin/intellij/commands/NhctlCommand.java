@@ -52,6 +52,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlTerminalOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
+import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
@@ -689,7 +690,7 @@ public class NhctlCommand {
             int exitCode = process.waitFor();
             if (exitCode != 0) {
                 output += errorOutput.toString();
-                throw new NocalhostExecuteCmdException(cmd, exitCode, output);
+                throw new NhctlCommandException(cmd, exitCode, output, errorOutput.get());
             }
             return output;
         }

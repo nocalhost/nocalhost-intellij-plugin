@@ -1,7 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.vfs;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -29,14 +28,13 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 
 @AllArgsConstructor
 public class AppConfigFile extends VirtualFile {
-    private static final Logger LOG = Logger.getInstance(AppConfigFile.class);
-
     private final String name;
     private String content;
     private final Project project;
@@ -104,8 +102,8 @@ public class AppConfigFile extends VirtualFile {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                LOG.error("error occurred while saving config file", e);
-                NocalhostNotifier.getInstance(project).notifyError("Nocalhost save config error", "Error occurred while saving config file", e.getMessage());
+                ErrorUtil.dealWith(project, "Nocalhost save config error",
+                        "Error occurred while saving config file", e);
             }
 
             @SneakyThrows
