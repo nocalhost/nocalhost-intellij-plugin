@@ -25,18 +25,7 @@ public class NocalhostTreeNodeComparator implements Comparator<TreeNode> {
         if (o1 instanceof NamespaceNode && o2 instanceof NamespaceNode) {
             NamespaceNode n1 = (NamespaceNode) o1;
             NamespaceNode n2 = (NamespaceNode) o2;
-            if (n1.inNamespacePack() && n2.inNamespacePack()) {
-                if (n1.isDevSpaceViewer() && !n2.isDevSpaceViewer()) {
-                    return 1;
-                } else if (!n1.isDevSpaceViewer() && n2.isDevSpaceViewer()) {
-                    return -1;
-                }
-            } else if (n1.inNamespacePack() && !n2.inNamespacePack()) {
-                return -1;
-            } else if (!n1.inNamespacePack() && n2.inNamespacePack()) {
-                return 1;
-            }
-            return n1.getName().compareTo(n2.getName());
+            return n1.getNamespace().compareTo(n2.getNamespace());
         }
 
         if (o1 instanceof ApplicationNode && o2 instanceof ApplicationNode) {
