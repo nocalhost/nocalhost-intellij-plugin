@@ -41,6 +41,9 @@ public class NamespaceNode extends DefaultMutableTreeNode {
     }
 
     public boolean isDevSpaceViewer() {
+        if (this.getClusterNode() == null) {
+            return false;
+        }
         ServiceAccount serviceAccount = this.getClusterNode().getServiceAccount();
         if (serviceAccount == null) {
             return false;
