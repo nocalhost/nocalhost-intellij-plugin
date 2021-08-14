@@ -129,6 +129,9 @@ public class NhctlCommand {
             args.add("--local-path");
             args.add(opts.getLocalPath());
         }
+        if (opts.isAuthCheck()) {
+            args.add("--auth-check");
+        }
 
         return execute(args, opts);
     }
@@ -188,6 +191,9 @@ public class NhctlCommand {
         }
         if (opts.isWithoutTerminal()) {
             args.add("--without-terminal");
+        }
+        if (opts.isAuthCheck()) {
+            args.add("--auth-check");
         }
 
         return execute(args, opts);
@@ -689,7 +695,7 @@ public class NhctlCommand {
             String output = CharStreams.toString(reader);
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                output += errorOutput.toString();
+                output += errorOutput.get();
                 throw new NhctlCommandException(cmd, exitCode, output, errorOutput.get());
             }
             return output;

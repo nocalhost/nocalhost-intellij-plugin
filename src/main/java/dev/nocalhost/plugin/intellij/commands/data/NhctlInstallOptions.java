@@ -25,6 +25,7 @@ public class NhctlInstallOptions extends NhctlGlobalOptions {
     private String type;
     private boolean wait;
     private String localPath;
+    private boolean authCheck;
 
     public NhctlInstallOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);
