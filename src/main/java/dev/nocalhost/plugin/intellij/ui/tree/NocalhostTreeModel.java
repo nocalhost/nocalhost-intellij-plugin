@@ -197,7 +197,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                                 .stream()
                                 .map(e -> e.getKubeResource().getMetadata().getName())
                                 .collect(Collectors.toList());
-                        List<ServiceAccount.NamespacePack> namespacePacks = clusterNode.getServiceAccount().getNamespacePacks();
+                        List<ServiceAccount.NamespacePack> namespacePacks = Lists.newArrayList();
+                        if (clusterNode.getServiceAccount().getNamespacePacks() != null) {
+                            namespacePacks = clusterNode.getServiceAccount().getNamespacePacks();
+                        }
                         List<String> namespacesInsideNamespacePacks = namespacePacks.stream()
                                 .map(ServiceAccount.NamespacePack::getNamespace)
                                 .collect(Collectors.toList());
