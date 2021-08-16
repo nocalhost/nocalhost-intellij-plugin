@@ -72,6 +72,10 @@ public class InstallApplicationAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
+                NhctlInstallOptions installOptions = new NhctlInstallOptions(kubeConfigPath, namespace);
+                installOptions.setAuthCheck(true);
+                nhctlCommand.install("authCheck", installOptions);
+
                 NocalhostAccount nocalhostAccount = node.getClusterNode().getNocalhostAccount();
                 List<Application> applications = nocalhostApi.listApplications(
                         nocalhostAccount.getServer(),

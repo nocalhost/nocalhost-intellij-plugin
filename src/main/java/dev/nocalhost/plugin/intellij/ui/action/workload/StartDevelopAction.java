@@ -30,6 +30,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
@@ -84,6 +85,11 @@ public class StartDevelopAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
+                NhctlDevStartOptions devStartOptions = new NhctlDevStartOptions(kubeConfigPath, namespace);
+                devStartOptions.setControllerType(node.getKubeResource().getKind());
+                devStartOptions.setAuthCheck(true);
+                nhctlCommand.devStart(node.applicationName(), devStartOptions);
+
                 NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
                 opts.setType(node.getKubeResource().getKind());

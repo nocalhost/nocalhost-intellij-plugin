@@ -19,6 +19,7 @@ public class NhctlDevStartOptions extends NhctlGlobalOptions {
     private String container;
     private String controllerType;
     private boolean withoutTerminal;
+    private boolean authCheck;
 
     public NhctlDevStartOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);

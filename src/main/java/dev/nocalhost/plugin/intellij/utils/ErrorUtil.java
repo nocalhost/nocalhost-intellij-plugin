@@ -17,13 +17,25 @@ public final class ErrorUtil {
         }
         if (t instanceof NhctlCommandException) {
             final NhctlCommandException e = (NhctlCommandException) t;
-            ApplicationManager.getApplication().invokeLater(() ->
-                    NocalhostNotifier.getInstance(project).notifyError(title, e.getErrorOutput()));
+            int pos = e.getErrorOutput().indexOf(System.lineSeparator());
+            String firstLine = e.getErrorOutput();
+            String restLines = "";
+            if (pos > 0) {
+                firstLine = e.getErrorOutput().substring(0, pos);
+                if (pos + 1 < e.getErrorOutput().length()) {
+                    restLines = e.getErrorOutput().substring(pos + 1);
+                }
+            }
+            notifyNhctlError(project, title, firstLine, restLines);
         } else if (t instanceof NocalhostExecuteCmdException) {
-            ApplicationManager.getApplication().invokeLater(() ->
-                    NocalhostNotifier.getInstance(project).notifyError(title, message, t.getMessage()));
+            notifyNhctlError(project, title, message, t.getMessage());
         } else {
             LOG.error(title, t);
         }
+    }
+
+    private static void notifyNhctlError(Project project, String title, String summary, String message) {
+        ApplicationManager.getApplication().invokeLater(() ->
+                NocalhostNotifier.getInstance(project).notifyError(title, summary, message));
     }
 }
