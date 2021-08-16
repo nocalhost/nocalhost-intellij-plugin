@@ -59,7 +59,7 @@ public class NamespaceNode extends DefaultMutableTreeNode {
                     return true;
                 }
             }
-            return true;
+            return false;
         } else {
             return StringUtils.equals(this.getNamespacePack().getSpaceOwnType(), SPACE_OWN_TYPE_VIEWER);
         }
