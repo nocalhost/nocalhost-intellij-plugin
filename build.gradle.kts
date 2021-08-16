@@ -148,6 +148,47 @@ tasks {
         )
         changeNotes.set(
             """
+            <h2>Version 0.4.27</h2>
+            
+            <h3>New Features</h3>
+
+            <ul>
+                <li>
+                    Automatically open browser after installed Demo App
+                </li>
+                <li>
+                    Add cluster status
+                </li>
+                <li>
+                    Supports clearing namespace PVC
+                </li>
+                <li>
+                    Add `nhctl` error message pop-up feature
+                </li>
+                <li>
+                    Add supports to JetBrains IDEs 2021.2
+                </li>
+            </ul>
+
+            <h3>Refactor & Improvement</h3>
+
+            <ul>
+                <li>
+                    Modify the NPE that appears when the tree menu is rendered
+                </li>
+                <li>
+                    Optimize PHP debug
+                </li>
+            </ul>
+
+            <h3>Bug Fixes</h3>
+
+            <ul>
+                <li>
+                    Fixed `list workload PVC` issue
+                </li>
+            </ul>
+            
             <h2>Version 0.4.19</h2>
             
             <h3>New Features</h3>
