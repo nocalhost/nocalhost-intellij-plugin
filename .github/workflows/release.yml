@@ -53,6 +53,7 @@ jobs:
       run: |
         sed -i "s/sentryDsn=/sentryDsn=${{secrets.INTELLIJ_PLUGIN_SENTRY_DSN}}/g" src/main/resources/config.properties
         sed -i -E "s/nhctlVersion=(.+)/nhctlVersion=${{ env.NHCTL_VERSION }}/g" src/main/resources/config.properties
+        sed -i -E "s/serverVersion=(.+)/serverVersion=${{ secrets.MINIMUNM_VERSION_REQUIREMENT }}/g" src/main/resources/config.properties
         sed -i -E "s/version=(.+)/version=${{ env.PLUGIN_VERSION }}/g" gradle.properties
         ./gradlew clean publishPlugin
 
