@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,20 +27,21 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedCpuArchitectureException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedOperatingSystemException;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
-import lombok.SneakyThrows;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
 public class NocalhostBinService {
-    private static final HttpUrl NHCTL_BASE_URL = HttpUrl.parse("https://codingcorp-generic.pkg.coding.net/nocalhost/nhctl");
     private static final Pattern NHCTL_VERSION_PATTERN = Pattern.compile("Version:\\sv(.+)");
 
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final String nhctlVersion;
     private final File nocalhostBin;
+
+    private volatile boolean triedCoding = false;
+    private volatile boolean triedGithub = false;
 
     public NocalhostBinService() {
         InputStream in = NocalhostBinService.class.getClassLoader().getResourceAsStream("config.properties");
@@ -70,7 +70,7 @@ public class NocalhostBinService {
         }
 
         if (shouldDownload) {
-            downloadNhctl(nhctlVersion, "Download Nocalhost Command Tool");
+            tryDownload(nhctlVersion, "Download Nocalhost Command Tool");
         }
     }
 
@@ -85,36 +85,66 @@ public class NocalhostBinService {
             Version requiredVersion = Version.valueOf(nhctlVersion);
             int compare = currentVersion.compareTo(requiredVersion);
             if (compare < 0) {
-                downloadNhctl(nhctlVersion, "Upgrade Nocalhost Command Tool");
+                tryDownload(nhctlVersion, "Upgrade Nocalhost Command Tool");
             }
         } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
             Messages.showErrorDialog(e.getMessage(), "Get nhctl Version Error");
         }
     }
 
-    private void downloadNhctl(String version, String title) {
-        ProgressManager.getInstance().run(new Task.Modal(null, title, false) {
-            @Override
-            public void onThrowable(@NotNull Throwable e) {
-                Messages.showErrorDialog(e.getMessage(), "Download nhctl Error");
+    private void tryDownload(String version, String title) {
+        Exception downloadException = null;
+        do {
+            try {
+                downloadNhctl(version, title);
+            } catch (Exception e) {
+                downloadException = e;
             }
+        } while ((!triedCoding || !triedGithub) && downloadException != null);
+        if (triedCoding && triedCoding && downloadException != null) {
+            final Exception finalDownloadException = downloadException;
+            ApplicationManager.getApplication().invokeLater(() ->
+                    Messages.showErrorDialog(finalDownloadException.getMessage(), "Download nhctl Error"));
+        }
+    }
 
-            @SneakyThrows
+    private HttpUrl pickDownloadUrl(String version) {
+        if (!triedCoding) {
+            triedCoding = true;
+            return nhctlCodingDownloadUrl(version);
+        }
+        if (!triedGithub) {
+            triedGithub = true;
+            return nhctlGithubDownloadUrl(version);
+        }
+        return null;
+    }
+
+    private Void downloadNhctl(String version, String title) throws Exception {
+        return ProgressManager.getInstance().run(new Task.WithResult<Void, Exception>(null, title, false) {
             @Override
-            public void run(@NotNull ProgressIndicator indicator) {
+            protected Void compute(@NotNull ProgressIndicator indicator) throws Exception {
                 indicator.setIndeterminate(false);
-                startDownload(version, Paths.get(NhctlUtil.binaryDir()), indicator);
+                try {
+                    startDownload(version, Paths.get(NhctlUtil.binaryDir()), indicator);
+                } catch (Throwable t) {
+                    throw new Exception(t.getMessage());
+                }
                 nocalhostBin.setExecutable(true);
+                return null;
             }
         });
     }
 
     private void startDownload(final String version, final Path binDir, final ProgressIndicator indicator) throws IOException {
         final String downloadFilename = getDownloadFilename();
-        final HttpUrl url = NHCTL_BASE_URL.newBuilder().addPathSegment(downloadFilename)
-                .addQueryParameter("version", "v" + version).build();
+        final HttpUrl url = pickDownloadUrl(version);
+        if (url == null) {
+            return;
+        }
 
         indicator.setText(String.format("downloading %s v%s", downloadFilename, version));
+        indicator.setText2(String.format("from " + url.host()));
 
         Files.createDirectories(binDir);
 
@@ -126,18 +156,8 @@ public class NocalhostBinService {
                 .build();
         Path downloadingPath = binDir.resolve(getDownloadingTempFilename());
 
-        FileOutputStream fos = null;
-        FileLock fl = null;
-        Response response = null;
-        try {
-            fos = new FileOutputStream(downloadingPath.toFile());
-            fl = fos.getChannel().tryLock();
-            if (fl == null) {
-                return;
-            }
-
-            response = client.newCall(request).execute();
-
+        try (FileOutputStream fos = new FileOutputStream(downloadingPath.toFile());
+             Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 throw new IOException("Failed to download file: " + response);
             }
@@ -153,22 +173,6 @@ public class NocalhostBinService {
 
                 double fraction = (double) bytesRead / fileSize;
                 indicator.setFraction(fraction);
-            }
-        } finally {
-            if (fl != null) {
-                try {
-                    fl.release();
-                } catch (IOException ignored) {
-                }
-            }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException ignored) {
-                }
-            }
-            if (response != null) {
-                response.close();
             }
         }
         Path destPath = Paths.get(NhctlUtil.binaryPath());
@@ -189,7 +193,7 @@ public class NocalhostBinService {
         return NhctlUtil.getName() + ".downloading";
     }
 
-    private String getDownloadFilename() {
+    private static String getDownloadFilename() {
         String filename = String.format("nhctl-%s-amd64", os());
         if (SystemInfo.isWindows) {
             filename += ".exe";
@@ -197,7 +201,7 @@ public class NocalhostBinService {
         return filename;
     }
 
-    private String os() {
+    private static String os() {
         if (SystemInfo.isMac) {
             return "darwin";
         }
@@ -210,7 +214,7 @@ public class NocalhostBinService {
         throw new NocalhostUnsupportedOperatingSystemException(SystemInfo.OS_NAME);
     }
 
-    private String arch() {
+    private static String arch() {
         switch (SystemInfo.OS_ARCH) {
             case "aarch64":
             case "arm64":
@@ -221,5 +225,21 @@ public class NocalhostBinService {
             default:
         }
         throw new NocalhostUnsupportedCpuArchitectureException(SystemInfo.OS_ARCH);
+    }
+
+    private static HttpUrl nhctlCodingDownloadUrl(String version) {
+        return HttpUrl.parse("https://codingcorp-generic.pkg.coding.net/nocalhost/nhctl")
+                .newBuilder()
+                .addPathSegment(getDownloadFilename())
+                .addQueryParameter("version", "v" + version)
+                .build();
+    }
+
+    private static HttpUrl nhctlGithubDownloadUrl(String version) {
+        return HttpUrl.parse("https://github.com/nocalhost/nocalhost/releases/download")
+                .newBuilder()
+                .addPathSegment("v" + version)
+                .addPathSegment(getDownloadFilename())
+                .build();
     }
 }
