@@ -87,7 +87,7 @@ public class TreeMouseListener extends MouseAdapter {
 
             if (object instanceof ApplicationNode) {
                 ApplicationNode applicationNode = (ApplicationNode) object;
-                if (applicationNode.getNamespaceNode().inNamespacePack()) {
+                if (applicationNode.getNamespaceNode().isDevSpaceViewer()) {
                     return;
                 }
                 renderApplicationAction(event, applicationNode);
