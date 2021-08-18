@@ -79,18 +79,28 @@ public class TreeMouseListener extends MouseAdapter {
 
             if (object instanceof NamespaceNode) {
                 NamespaceNode namespaceNode = (NamespaceNode) object;
+                if (namespaceNode.isDevSpaceViewer()) {
+                    return;
+                }
                 renderNamespaceAction(event, namespaceNode);
             }
 
             if (object instanceof ApplicationNode) {
                 ApplicationNode applicationNode = (ApplicationNode) object;
+                if (applicationNode.getNamespaceNode().inNamespacePack()) {
+                    return;
+                }
                 renderApplicationAction(event, applicationNode);
                 return;
             }
 
             if (object instanceof ResourceNode) {
                 ResourceNode resourceNode = (ResourceNode) object;
-                renderWorkloadAction(event, resourceNode);
+                if (resourceNode.getNamespaceNode().isDevSpaceViewer()) {
+                    renderViewerWorkloadAction(event, resourceNode);
+                } else {
+                    renderWorkloadAction(event, resourceNode);
+                }
                 return;
             }
         }
@@ -187,6 +197,14 @@ public class TreeMouseListener extends MouseAdapter {
             actionGroup.add(new OpenProjectAction(project, resourceNode));
         }
 
+        ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
+        JBPopupMenu.showByEvent(event, menu.getComponent());
+    }
+
+    private void renderViewerWorkloadAction(MouseEvent event, ResourceNode resourceNode) {
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+        actionGroup.add(new PortForwardAction(project, resourceNode));
+        actionGroup.add(new LogsAction(project, resourceNode));
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
     }
