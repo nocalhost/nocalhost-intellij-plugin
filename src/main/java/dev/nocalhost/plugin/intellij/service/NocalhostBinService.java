@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -93,9 +94,10 @@ public class NocalhostBinService {
     }
 
     private void tryDownload(String version, String title) {
-        Exception downloadException = null;
+        Exception downloadException;
         do {
             try {
+                downloadException = null;
                 downloadNhctl(version, title);
             } catch (Exception e) {
                 downloadException = e;
@@ -156,8 +158,18 @@ public class NocalhostBinService {
                 .build();
         Path downloadingPath = binDir.resolve(getDownloadingTempFilename());
 
-        try (FileOutputStream fos = new FileOutputStream(downloadingPath.toFile());
-             Response response = client.newCall(request).execute()) {
+        FileOutputStream fos = null;
+        FileLock fl = null;
+        Response response = null;
+        try {
+            fos = new FileOutputStream(downloadingPath.toFile());
+            fl = fos.getChannel().tryLock();
+            if (fl == null) {
+                return;
+            }
+
+            response = client.newCall(request).execute();
+
             if (!response.isSuccessful()) {
                 throw new IOException("Failed to download file: " + response);
             }
@@ -173,6 +185,22 @@ public class NocalhostBinService {
 
                 double fraction = (double) bytesRead / fileSize;
                 indicator.setFraction(fraction);
+            }
+        } finally {
+            if (fl != null) {
+                try {
+                    fl.release();
+                } catch (IOException ignored) {
+                }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException ignored) {
+                }
+            }
+            if (response != null) {
+                response.close();
             }
         }
         Path destPath = Paths.get(NhctlUtil.binaryPath());
