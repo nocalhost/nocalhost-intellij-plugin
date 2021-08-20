@@ -64,17 +64,17 @@ public class StartDevelopAction extends DumbAwareAction {
     private final AtomicReference<String> projectPath = new AtomicReference<>();
     private final AtomicReference<String> selectedContainer = new AtomicReference<>();
 
-    private final String command;
+    private final String action;
 
     public StartDevelopAction(Project project, ResourceNode node) {
         this("Start DevMode", project, node, NocalhostIcons.Status.DevStart, "");
     }
 
-    public StartDevelopAction(String title, Project project, ResourceNode node, Icon icon, String command) {
+    public StartDevelopAction(String title, Project project, ResourceNode node, Icon icon, String action) {
         super(title, "", icon);
         this.node = node;
+        this.action = action;
         this.project = project;
-        this.command = command;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
         outputCapturedGitCommand = project.getService(OutputCapturedGitCommand.class);
@@ -96,14 +96,14 @@ public class StartDevelopAction extends DumbAwareAction {
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
                 if (nhctlDescribeService.isDeveloping()) {
-                    if (StringUtils.isEmpty(command)) {
+                    if (StringUtils.isEmpty(action)) {
                         ApplicationManager.getApplication().invokeLater(() ->
                                 Messages.showMessageDialog("Dev mode has been started.",
                                         "Start DevMode", null));
                     } else {
                         ProgressManager
                                 .getInstance()
-                                .run(new ExecutionTask(project, project.getService(NocalhostProjectSettings.class).getDevModeService(), command));
+                                .run(new ExecutionTask(project, project.getService(NocalhostProjectSettings.class).getDevModeService(), action));
                     }
                     return;
                 }
@@ -392,7 +392,7 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (PathsUtil.isSame(projectPath.get(), project.getBasePath())) {
                 ProgressManager.getInstance().run(
-                        new StartingDevModeTask(project, serviceProjectPath, command));
+                        new StartingDevModeTask(project, serviceProjectPath, action));
             } else {
                 Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
                 for (Project openProject : openProjects) {
@@ -402,7 +402,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         if (toolWindow != null) {
                             toolWindow.activate(() -> {
                                 ProgressManager.getInstance().run(
-                                        new StartingDevModeTask(openProject, serviceProjectPath, command));
+                                        new StartingDevModeTask(openProject, serviceProjectPath, action));
                             });
                             return;
                         }
@@ -410,7 +410,7 @@ public class StartDevelopAction extends DumbAwareAction {
                 }
 
                 nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
-                nocalhostSettings.set(ExecutionTask.asKey(serviceProjectPath.getProjectPath()), command);
+                nocalhostSettings.set(ExecutionTask.asKey(serviceProjectPath.getProjectPath()), action);
                 ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPath.get()),
                         new OpenProjectTask());
             }

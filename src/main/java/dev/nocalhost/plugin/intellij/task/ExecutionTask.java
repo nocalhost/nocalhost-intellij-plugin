@@ -46,7 +46,7 @@ public class ExecutionTask extends Task.Backgroundable {
     public final static String kRun = "run";
     public final static String kDebug = "debug";
 
-    private final String command;
+    private final String action;
     private final Project project;
     private final ServiceProjectPath service;
     private final Map<String, Class<? extends ConfigurationType>> hash = new HashMap<>() {
@@ -58,17 +58,17 @@ public class ExecutionTask extends Task.Backgroundable {
         }
     };
 
-    public ExecutionTask(Project project, ServiceProjectPath service, String command) {
-        super(project, String.format("Starting `%s`", command), true);
+    public ExecutionTask(Project project, ServiceProjectPath service, String action) {
+        super(project, String.format("Starting `%s`", action), true);
+        this.action = action;
         this.project = project;
         this.service = service;
-        this.command = command;
     }
 
     @Override
     public void onThrowable(@NotNull Throwable ex) {
         ErrorUtil.dealWith(this.getProject(), "Nocalhost",
-                String.format("Error occurred while starting `%s`", command), ex);
+                String.format("Error occurred while starting `%s`", action), ex);
     }
 
     @SneakyThrows
@@ -88,7 +88,7 @@ public class ExecutionTask extends Task.Backgroundable {
     }
 
     private Executor getExecutor() {
-        if (kDebug.equals(command)) {
+        if (kDebug.equals(action)) {
             return DefaultDebugExecutor.getDebugExecutorInstance();
         }
         return DefaultRunExecutor.getRunExecutorInstance();
@@ -161,6 +161,6 @@ public class ExecutionTask extends Task.Backgroundable {
     }
 
     public static @NotNull String asKey(@NotNull String path) {
-        return path + ":command";
+        return path + ":action";
     }
 }
