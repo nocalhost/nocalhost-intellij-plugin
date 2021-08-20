@@ -330,7 +330,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
     }
 
     private JPanel createItem(NhctlPortForward portForward) {
-        JLabel label = new JLabel(portForward.portForward());
+        JLabel label = new JLabel(String.format("%s (%s)", portForward.portForward(), portForward.getStatus()));
         label.setBorder(new CompoundBorder(new JBEmptyBorder(0), new JBEmptyBorder(0, 8, 0, 8)));
         GridConstraints labelConstraints = new GridConstraints();
         labelConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_WANT_GROW | GridConstraints.SIZEPOLICY_CAN_GROW);
