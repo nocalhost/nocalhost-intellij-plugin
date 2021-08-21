@@ -21,6 +21,8 @@
         <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.api.NocalhostApi"/>
         <applicationService
                 serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostSettings"/>
+        <applicationService
+                serviceImplementation="dev.nocalhost.plugin.intellij.config.NocalhostConfig"/>
 
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand"/>
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand" />
@@ -54,6 +56,9 @@
         <applicationInitializedListener
                 implementation="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"
                 order="after NocalhostTokenRefreshListener"/>
+        <applicationInitializedListener
+                implementation="dev.nocalhost.plugin.intellij.startup.ConfigMigrationListener"
+                order="before NhctlAutoUpgradeListener"/>
 
     </extensions>
 

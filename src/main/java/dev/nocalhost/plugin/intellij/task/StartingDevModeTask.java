@@ -27,6 +27,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
+import dev.nocalhost.plugin.intellij.config.NocalhostConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
@@ -43,8 +44,7 @@ import lombok.SneakyThrows;
 
 public class StartingDevModeTask extends Task.Backgroundable {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
-    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
-            NocalhostSettings.class);
+    private final NocalhostConfig nocalhostConfig = ApplicationManager.getApplication().getService(NocalhostConfig.class);
     private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
 
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
@@ -174,7 +174,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
 
     private String getStorageClass() throws IOException, NocalhostApiException {
         if (serviceProjectPath.getServer() != null) {
-            Set<NocalhostAccount> nocalhostAccounts = nocalhostSettings.getNocalhostAccounts();
+            Set<NocalhostAccount> nocalhostAccounts = nocalhostConfig.getNocalhostAccounts();
             Optional<NocalhostAccount> nocalhostAccountOptional = nocalhostAccounts.stream()
                     .filter(e -> StringUtils.equals(e.getServer(), serviceProjectPath.getServer())
                             && StringUtils.equals(e.getUsername(), serviceProjectPath.getUsername()))

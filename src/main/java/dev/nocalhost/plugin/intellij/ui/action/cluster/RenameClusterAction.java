@@ -13,8 +13,8 @@ import com.intellij.openapi.ui.Messages;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.config.NocalhostConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
@@ -23,8 +23,8 @@ import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
 public class RenameClusterAction extends DumbAwareAction {
-    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
-            NocalhostSettings.class);
+    private final NocalhostConfig nocalhostConfig = ApplicationManager.getApplication()
+            .getService(NocalhostConfig.class);
 
     private final Project project;
     private final ClusterNode node;
@@ -70,8 +70,8 @@ public class RenameClusterAction extends DumbAwareAction {
 
                 node.updateFrom(new ClusterNode(newRawKubeConfig, kubeConfig));
 
-                nocalhostSettings.removeStandaloneCluster(new StandaloneCluster(oldRawKubeConfig));
-                nocalhostSettings.updateStandaloneCluster(new StandaloneCluster(newRawKubeConfig));
+                nocalhostConfig.removeStandaloneCluster(new StandaloneCluster(oldRawKubeConfig));
+                nocalhostConfig.updateStandaloneCluster(new StandaloneCluster(newRawKubeConfig));
             }
         });
     }

@@ -12,7 +12,7 @@ import java.util.List;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.TokenResponse;
 import dev.nocalhost.plugin.intellij.api.data.UserInfo;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.config.NocalhostConfig;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
@@ -39,10 +39,10 @@ public class NocalhostTokenRefreshListener implements ApplicationInitializedList
     }
 
     public void checkAndRefreshTokens() {
-        NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
+        NocalhostConfig nocalhostConfig = ApplicationManager.getApplication().getService(NocalhostConfig.class);
         NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
 
-        List<NocalhostAccount> nocalhostAccounts = new ArrayList<>(nocalhostSettings.getNocalhostAccounts());
+        List<NocalhostAccount> nocalhostAccounts = new ArrayList<>(nocalhostConfig.getNocalhostAccounts());
 
         for (NocalhostAccount nocalhostAccount : nocalhostAccounts) {
             if (!TokenUtil.needRefresh(nocalhostAccount.getJwt())) {
@@ -56,7 +56,7 @@ public class NocalhostTokenRefreshListener implements ApplicationInitializedList
                         nocalhostAccount.getRefreshToken());
                 UserInfo userInfo = nocalhostApi.getUserInfo(nocalhostAccount.getServer(),
                         tokenResponse.getToken());
-                nocalhostSettings.updateNocalhostAccount(new NocalhostAccount(
+                nocalhostConfig.updateNocalhostAccount(new NocalhostAccount(
                         nocalhostAccount.getServer(),
                         nocalhostAccount.getUsername(),
                         tokenResponse.getToken(),
@@ -65,9 +65,9 @@ public class NocalhostTokenRefreshListener implements ApplicationInitializedList
 
             } catch (Exception e) {
                 LOG.error(MessageFormat.format(
-                        "Error occurs while refresh token {0} on {1}",
-                        nocalhostAccount.getUsername(),
-                        nocalhostAccount.getServer()),
+                                "Error occurs while refresh token {0} on {1}",
+                                nocalhostAccount.getUsername(),
+                                nocalhostAccount.getServer()),
                         e);
             }
         }

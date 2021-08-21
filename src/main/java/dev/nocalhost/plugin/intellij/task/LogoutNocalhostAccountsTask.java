@@ -9,12 +9,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.config.NocalhostConfig;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 
 public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
-    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
+    private final NocalhostConfig nocalhostConfig = ApplicationManager.getApplication().getService(NocalhostConfig.class);
 
     private final List<NocalhostAccount> nocalhostAccounts;
 
@@ -25,7 +25,7 @@ public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
 
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        nocalhostAccounts.forEach(e -> nocalhostSettings.removeNocalhostAccount(e));
+        nocalhostAccounts.forEach(e -> nocalhostConfig.removeNocalhostAccount(e));
     }
 
     @Override
