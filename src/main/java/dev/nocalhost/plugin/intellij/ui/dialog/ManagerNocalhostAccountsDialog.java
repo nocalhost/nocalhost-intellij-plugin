@@ -13,14 +13,13 @@ import java.awt.*;
 
 import javax.swing.*;
 
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
+import dev.nocalhost.plugin.intellij.config.NocalhostConfig;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.task.LogoutNocalhostAccountsTask;
 import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
 public class ManagerNocalhostAccountsDialog extends DialogWrapper {
-    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
-            NocalhostSettings.class);
+    private final NocalhostConfig nocalhostConfig = ApplicationManager.getApplication().getService(NocalhostConfig.class);
 
     private final Project project;
 
@@ -46,7 +45,7 @@ public class ManagerNocalhostAccountsDialog extends DialogWrapper {
                 }
             }
         });
-        accountList.setListData(nocalhostSettings.getNocalhostAccounts().toArray(
+        accountList.setListData(nocalhostConfig.getNocalhostAccounts().toArray(
                 new NocalhostAccount[0]));
         accountList.addListSelectionListener(e ->
                 ManagerNocalhostAccountsDialog.this.setOKActionEnabled(!accountList.isSelectionEmpty()));
