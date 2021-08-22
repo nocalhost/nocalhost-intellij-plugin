@@ -93,7 +93,14 @@ public class InstallApplicationAction extends DumbAwareAction {
                                 .noneMatch(e -> StringUtils.equals(e.getName(), application.getContext().getApplicationName()))
                         ).collect(Collectors.toList());
 
-                selectApplication(availableApplications);
+                if (availableApplications.size() > 0) {
+                    selectApplication(availableApplications);
+                } else {
+                    ApplicationManager.getApplication().invokeLater(() -> Messages.showInfoMessage(
+                            project,
+                            "No application found. Please configure your applications in Nocalhost Service Dashboard.",
+                            "Install Application"));
+                }
 
             } catch (NocalhostServerVersionOutDatedException e) {
                 NocalhostNotifier.getInstance(project).notifyError("Server version out-dated", e.getMessage());

@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken;
 
 import com.github.zafarkhaja.semver.Version;
 
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
@@ -131,6 +132,9 @@ public class NocalhostApi {
                 throw new NocalhostApiException(url, "list applications", response.code(), resp.getMessage());
             }
             List<Application> applications = resp.getData();
+            if (applications == null) {
+                return Lists.newArrayList();
+            }
             return applications.stream().peek(app -> app.setContext(DataUtils.GSON.fromJson(app.getContextStr(), Application.Context.class))).collect(Collectors.toList());
         }
     }
