@@ -15,7 +15,7 @@ public class DevSpaceTreeAutoRefreshListener implements ApplicationInitializedLi
             while (!ApplicationManager.getApplication().isDisposed()) {
                 try {
                     Thread.sleep(NOCALHOST_TREE_UPDATE_INTERVAL_MILLIS);
-                } catch (InterruptedException ignored) {
+                } catch (InterruptedException ignore) {
                 }
                 Application application = ApplicationManager.getApplication();
                 if (application.isDisposed()) {

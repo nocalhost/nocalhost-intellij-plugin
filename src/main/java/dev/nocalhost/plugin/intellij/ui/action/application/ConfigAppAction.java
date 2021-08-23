@@ -7,7 +7,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -18,6 +17,7 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.AppConfigFile;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -37,11 +37,12 @@ public class ConfigAppAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Loading app config") {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Loading app config") {
             private String config;
 
             @Override
             public void onSuccess() {
+                super.onSuccess();
                 String filename = node.getName() + ".yaml";
                 VirtualFile virtualFile = new AppConfigFile(filename, config, project, node);
                 OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
@@ -57,12 +58,12 @@ public class ConfigAppAction extends DumbAwareAction {
 
             @SneakyThrows
             @Override
-            public void run(@NotNull ProgressIndicator indicator) {
+            public void runTask(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
                 Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
                 String namespace = node.getNamespaceNode().getNamespace();
-                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, namespace);
+                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, namespace, this);
                 nhctlConfigOptions.setAppConfig(true);
                 config = nhctlCommand.getConfig(node.getName(), nhctlConfigOptions);
             }

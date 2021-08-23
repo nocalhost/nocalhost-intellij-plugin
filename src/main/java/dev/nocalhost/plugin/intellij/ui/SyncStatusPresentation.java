@@ -73,7 +73,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             if (!StringUtils.contains(e.getMessage(), "not found")) {
                 LOG.error("Fail to get sync status", e);
             }
-        } catch (JsonSyntaxException ignored) {
+        } catch (JsonSyntaxException ignore) {
         }
         return null;
     }

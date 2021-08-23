@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import com.intellij.openapi.progress.Task;
+
 import java.nio.file.Path;
 
 import lombok.Getter;
@@ -14,5 +16,9 @@ public class NhctlDevAssociateOptions extends NhctlGlobalOptions {
 
     public NhctlDevAssociateOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);
+    }
+
+    public NhctlDevAssociateOptions(Path kubeConfigPath, String namespace, Task task) {
+        super(kubeConfigPath, namespace, task);
     }
 }

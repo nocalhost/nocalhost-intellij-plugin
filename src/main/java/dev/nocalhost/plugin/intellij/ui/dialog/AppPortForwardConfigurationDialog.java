@@ -180,6 +180,7 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
 
                 @Override
                 public void onFinished() {
+                    super.onFinished();
                     updatePortForwardList();
                 }
 

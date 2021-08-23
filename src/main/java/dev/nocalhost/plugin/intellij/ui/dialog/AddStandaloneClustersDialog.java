@@ -103,7 +103,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             if (Files.exists(defaultKubeConfig)) {
                 kubeconfigFileSelectTextField.setText(defaultKubeConfig.toString());
             }
-        } catch (Exception ignored) {
+        } catch (Exception ignore) {
         }
 
         init();
@@ -186,7 +186,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         try {
             String content = Files.readString(path, StandardCharsets.UTF_8);
             return resolveContexts(content);
-        } catch (Exception ignored) {
+        } catch (Exception ignore) {
         }
         return Lists.newArrayList();
     }
@@ -195,8 +195,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         try {
             KubeConfig kubeConfig = DataUtils.YAML.loadAs(text, KubeConfig.class);
             return kubeConfig.getContexts();
-        } catch (Exception ignored) {
-            ignored.printStackTrace();
+        } catch (Exception ignore) {
         }
         return Lists.newArrayList();
     }

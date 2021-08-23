@@ -7,7 +7,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
@@ -25,7 +24,7 @@ import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
-public class LoadKubernetesResourceTask extends Task.Backgroundable {
+public class LoadKubernetesResourceTask extends BaseBackgroundTask {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final ResourceNode node;
@@ -43,6 +42,7 @@ public class LoadKubernetesResourceTask extends Task.Backgroundable {
 
     @Override
     public void onSuccess() {
+        super.onSuccess();
         FileEditorManager.getInstance(getProject()).openTextEditor(new OpenFileDescriptor(getProject(), virtualFile, 0), true);
     }
 
@@ -54,8 +54,8 @@ public class LoadKubernetesResourceTask extends Task.Backgroundable {
 
     @SneakyThrows
     @Override
-    public void run(@NotNull ProgressIndicator indicator) {
-        NhctlGetOptions opts = new NhctlGetOptions(kubeConfigPath, namespace);
+    public void runTask(@NotNull ProgressIndicator indicator) {
+        NhctlGetOptions opts = new NhctlGetOptions(kubeConfigPath, namespace, this);
         String output = nhctlCommand.get(node.getKubeResource().getKind(), opts);
         JsonElement resources = DataUtils.GSON.fromJson(output, JsonElement.class);
         JsonObject selectedResource = null;

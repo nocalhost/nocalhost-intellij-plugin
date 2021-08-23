@@ -4,7 +4,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.NlsSafe;
@@ -30,6 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -129,9 +129,10 @@ public class ConfigFile extends VirtualFile {
                 Object yml = DataUtils.YAML.load(newContent);
                 String json = DataUtils.GSON.toJson(yml);
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    ProgressManager.getInstance().run(new Task.Backgroundable(null, "Saving " + name, false) {
+                    ProgressManager.getInstance().run(new BaseBackgroundTask(null, "Saving " + name) {
                         @Override
                         public void onSuccess() {
+                            super.onSuccess();
                             NocalhostNotifier.getInstance(project).notifySuccess(name + " saved", "");
                         }
 
@@ -143,8 +144,8 @@ public class ConfigFile extends VirtualFile {
 
                         @SneakyThrows
                         @Override
-                        public void run(@NotNull ProgressIndicator indicator) {
-                            NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, node.getNamespaceNode().getNamespace());
+                        public void runTask(@NotNull ProgressIndicator indicator) {
+                            NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, node.getNamespaceNode().getNamespace(), this);
                             nhctlConfigOptions.setDeployment(node.resourceName());
                             nhctlConfigOptions.setControllerType(node.getKubeResource().getKind());
                             nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
