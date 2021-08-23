@@ -41,6 +41,8 @@
                 implementation="dev.nocalhost.plugin.intellij.startup.NocalhostStartupActivity"/>
         <postStartupActivity order="before NocalhostStartupActivity"
                 implementation="dev.nocalhost.plugin.intellij.startup.NocalhostProjectServiceActivify"/>
+        <postStartupActivity order="before NocalhostStartupActivity"
+                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTreeExpandActivity"/>
         <statusBarWidgetFactory
                 implementation="dev.nocalhost.plugin.intellij.ui.SyncStatusWidgetFactory"
                 order="first"/>
