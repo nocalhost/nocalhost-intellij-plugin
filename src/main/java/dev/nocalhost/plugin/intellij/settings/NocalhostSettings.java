@@ -60,6 +60,10 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         standaloneClustersJson = DataUtils.GSON.toJson(set);
     }
 
+    public synchronized void cleanStandaloneCluster() {
+        standaloneClustersJson = "[]";
+    }
+
     public synchronized Set<StandaloneCluster> getStandaloneClusters() {
         Set<StandaloneCluster> set = DataUtils.GSON.fromJson(standaloneClustersJson,
                 TypeToken.getParameterized(Set.class, StandaloneCluster.class).getType());
@@ -88,6 +92,10 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         }
         set.remove(nocalhostAccount);
         nocalhostAccountsJson = DataUtils.GSON.toJson(set);
+    }
+
+    public synchronized void cleanNocalhostAccount() {
+        nocalhostAccountsJson = "[]";
     }
 
     public synchronized Set<NocalhostAccount> getNocalhostAccounts() {
