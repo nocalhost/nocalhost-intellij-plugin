@@ -15,12 +15,12 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 
-import dev.nocalhost.plugin.intellij.config.NocalhostConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeCluster;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeUser;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
@@ -28,8 +28,8 @@ import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
 public class AddStandaloneClusterTask extends Task.Backgroundable {
-    private final NocalhostConfig nocalhostConfig = ApplicationManager.getApplication()
-            .getService(NocalhostConfig.class);
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
+            NocalhostSettings.class);
 
     private final String rawKubeConfig;
     private final List<KubeContext> kubeContexts;
@@ -78,7 +78,7 @@ public class AddStandaloneClusterTask extends Task.Backgroundable {
             outKubeConfig.setUsers(Lists.newArrayList(kubeUserOptional.get()));
 
             String kubeConfigText = DataUtils.toYaml(outKubeConfig);
-            nocalhostConfig.updateStandaloneCluster(new StandaloneCluster(kubeConfigText));
+            nocalhostSettings.updateStandaloneCluster(new StandaloneCluster(kubeConfigText));
         }
     }
 

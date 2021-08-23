@@ -11,14 +11,14 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
-import dev.nocalhost.plugin.intellij.config.NocalhostConfig;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 
 public class RemoveClusterAction extends DumbAwareAction {
-    private final NocalhostConfig nocalhostConfig = ApplicationManager.getApplication()
-            .getService(NocalhostConfig.class);
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
+            NocalhostSettings.class);
 
     private final Project project;
     private final ClusterNode node;
@@ -44,7 +44,7 @@ public class RemoveClusterAction extends DumbAwareAction {
 
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                nocalhostConfig.removeStandaloneCluster(
+                nocalhostSettings.removeStandaloneCluster(
                         new StandaloneCluster(node.getRawKubeConfig()));
             }
         });

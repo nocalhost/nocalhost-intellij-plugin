@@ -10,8 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.TokenResponse;
 import dev.nocalhost.plugin.intellij.api.data.UserInfo;
-import dev.nocalhost.plugin.intellij.config.NocalhostConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -19,7 +19,8 @@ import lombok.SneakyThrows;
 
 public class ConnectNocalhostServerTask extends Task.Backgroundable {
     private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
-    private final NocalhostConfig nocalhostConfig = ApplicationManager.getApplication().getService(NocalhostConfig.class);
+    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
+            NocalhostSettings.class);
 
     private final String server;
     private final String username;
@@ -40,7 +41,7 @@ public class ConnectNocalhostServerTask extends Task.Backgroundable {
     public void run(@NotNull ProgressIndicator indicator) {
         TokenResponse resp = nocalhostApi.login(server, username, password);
         UserInfo userInfo = nocalhostApi.getUserInfo(server, resp.getToken());
-        nocalhostConfig.updateNocalhostAccount(new NocalhostAccount(
+        nocalhostSettings.updateNocalhostAccount(new NocalhostAccount(
                 server, username, resp.getToken(), resp.getRefreshToken(), userInfo));
     }
 
