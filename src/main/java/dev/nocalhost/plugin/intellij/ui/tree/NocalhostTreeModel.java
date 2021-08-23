@@ -28,9 +28,9 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
-import dev.nocalhost.plugin.intellij.config.NocalhostConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
@@ -74,7 +74,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             ))
     );
 
-    private final NocalhostConfig nocalhostConfig = ApplicationManager.getApplication().getService(NocalhostConfig.class);
+    private final NocalhostSettings nocalhostSettings =
+            ApplicationManager.getApplication().getService(NocalhostSettings.class);
     private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
@@ -96,14 +97,14 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             try {
                 List<ClusterNode> clusterNodes = Lists.newArrayList();
 
-                for (StandaloneCluster standaloneCluster : nocalhostConfig.getStandaloneClusters()) {
+                for (StandaloneCluster standaloneCluster : nocalhostSettings.getStandaloneClusters()) {
                     KubeConfig kubeConfig = DataUtils.fromYaml(
                             standaloneCluster.getRawKubeConfig(), KubeConfig.class);
                     clusterNodes.add(new ClusterNode(standaloneCluster.getRawKubeConfig(),
                             kubeConfig));
                 }
 
-                for (NocalhostAccount nocalhostAccount : nocalhostConfig.getNocalhostAccounts()) {
+                for (NocalhostAccount nocalhostAccount : nocalhostSettings.getNocalhostAccounts()) {
                     if (!TokenUtil.isValid(nocalhostAccount.getJwt())) {
                         continue;
                     }
