@@ -9,6 +9,8 @@ jobs:
   create-release:
     name: create plugin release
     runs-on: ubuntu-latest
+    environment:
+      name: release
     outputs:
       gh_release_upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
