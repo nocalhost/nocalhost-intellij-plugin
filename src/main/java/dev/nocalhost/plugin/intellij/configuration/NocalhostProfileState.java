@@ -35,14 +35,19 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpDebugRunner;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
 import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEVELOP_STATUS_STARTED;
 
 public class NocalhostProfileState extends CommandLineState {
     private static final Logger LOG = Logger.getInstance(NocalhostProfileState.class);
@@ -92,8 +97,13 @@ public class NocalhostProfileState extends CommandLineState {
             }
 
             NhctlDescribeService nhctlDescribeService = getNhctlDescribeService(devModeService);
-            if (!nhctlDescribeService.isDeveloping() || !projectPathMatched(nhctlDescribeService)) {
+            if (!StringUtils.equals(nhctlDescribeService.getDevelop_status(), DEVELOP_STATUS_STARTED)
+                    || !projectPathMatched(nhctlDescribeService)) {
                 throw new ExecutionException("Service is not in dev mode.");
+            }
+
+            if (!isSyncStatusIdle()) {
+                throw new ExecutionException("File sync has not yet completed.");
             }
 
             NhctlRawConfig nhctlRawConfig = getNhctlConfig(devModeService);
@@ -194,7 +204,7 @@ public class NocalhostProfileState extends CommandLineState {
                     bus.action(line + System.lineSeparator());
                     sb.append(line).append(System.lineSeparator());
                 }
-                int code = process.waitFor();;
+                int code = process.waitFor();
                 if (code != 0) {
                     bus.action("Process finished with exit code " + code + System.lineSeparator());
                 }
@@ -308,6 +318,20 @@ public class NocalhostProfileState extends CommandLineState {
         }
 
         return pods.get().getKubeResource().getMetadata().getName();
+    }
+
+    private boolean isSyncStatusIdle() throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        ServiceProjectPath serviceProjectPath = getDevModeService();
+        final NhctlCommand nhctlCommand = ApplicationManager.getApplication()
+                .getService(NhctlCommand.class);
+        NhctlSyncStatusOptions opts = new NhctlSyncStatusOptions(
+                KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig()),
+                serviceProjectPath.getNamespace());
+        opts.setDeployment(serviceProjectPath.getServiceName());
+        opts.setControllerType(serviceProjectPath.getServiceType());
+        String status = nhctlCommand.syncStatus(serviceProjectPath.getApplicationName(), opts);
+        NhctlSyncStatus nhctlSyncStatus = DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
+        return StringUtils.equals(nhctlSyncStatus.getStatus(), "idle");
     }
 
     private ServiceProjectPath getDevModeService() {

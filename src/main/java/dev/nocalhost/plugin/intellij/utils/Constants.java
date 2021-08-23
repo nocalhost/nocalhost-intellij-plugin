@@ -37,4 +37,8 @@ public class Constants {
 
     public static final String PRIVILEGE_TYPE_CLUSTER_ADMIN = "CLUSTER_ADMIN";
     public static final String PRIVILEGE_TYPE_CLUSTER_VIEWER = "CLUSTER_VIEWER";
+
+    public static final String DEVELOP_STATUS_STARTED = "STARTED";
+    public static final String DEVELOP_STATUS_STARTING = "STARTING";
+    public static final String DEVELOP_STATUS_NONE = "NONE";
 }

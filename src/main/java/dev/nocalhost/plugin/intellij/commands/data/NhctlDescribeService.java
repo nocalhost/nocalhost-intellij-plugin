@@ -20,4 +20,5 @@ public class NhctlDescribeService {
     private boolean localconfigloaded;
     private boolean cmconfigloaded;
     private boolean annotationsconfigloaded;
+    private String develop_status;
 }
