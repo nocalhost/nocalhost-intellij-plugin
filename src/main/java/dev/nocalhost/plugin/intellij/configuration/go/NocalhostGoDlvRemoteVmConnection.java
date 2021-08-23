@@ -62,7 +62,7 @@ public class NocalhostGoDlvRemoteVmConnection extends DlvRemoteVmConnection {
                 if (socket != null) {
                     try {
                         socket.close();
-                    } catch (IOException ignored) {
+                    } catch (IOException ignore) {
                     }
                 }
             }

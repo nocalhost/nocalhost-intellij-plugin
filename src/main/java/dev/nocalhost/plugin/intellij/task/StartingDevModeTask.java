@@ -7,8 +7,8 @@ import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,7 +41,7 @@ import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.TerminalUtil;
 import lombok.SneakyThrows;
 
-public class StartingDevModeTask extends Task.Backgroundable {
+public class StartingDevModeTask extends BaseBackgroundTask {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
             NocalhostSettings.class);
@@ -55,7 +55,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
     private final ServiceProjectPath serviceProjectPath;
 
     public StartingDevModeTask(Project project, ServiceProjectPath serviceProjectPath, String action) {
-        super(project, "Starting DevMode", false);
+        super(project, "Starting DevMode", true);
         this.action = action;
         this.project = project;
         this.serviceProjectPath = serviceProjectPath;
@@ -107,7 +107,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
 
     private boolean isExecutable(String action) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         if (StringUtils.isEmpty(action)) {
-            return  true;
+            return true;
         }
         var path = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
         var opts = new NhctlConfigOptions(path, serviceProjectPath.getNamespace());
@@ -131,9 +131,9 @@ public class StartingDevModeTask extends Task.Backgroundable {
 
     @SneakyThrows
     @Override
-    public void run(@NotNull ProgressIndicator indicator) {
+    public void runTask(@NotNull ProgressIndicator indicator) {
         NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
-                serviceProjectPath.getNamespace());
+                serviceProjectPath.getNamespace(), this);
         nhctlDescribeOptions.setDeployment(serviceProjectPath.getServiceName());
         nhctlDescribeOptions.setType(serviceProjectPath.getServiceType());
 
@@ -146,7 +146,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
             return;
         }
 
-        if ( ! isExecutable(action)) {
+        if (!isExecutable(action)) {
             NocalhostNotifier
                     .getInstance(project)
                     .notifyError(
@@ -161,7 +161,7 @@ public class StartingDevModeTask extends Task.Backgroundable {
         String storageClass = getStorageClass();
 
         NhctlDevStartOptions nhctlDevStartOptions = new NhctlDevStartOptions(kubeConfigPath,
-                serviceProjectPath.getNamespace());
+                serviceProjectPath.getNamespace(), this);
         nhctlDevStartOptions.setDeployment(serviceProjectPath.getServiceName());
         nhctlDevStartOptions.setControllerType(serviceProjectPath.getServiceType());
         nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));

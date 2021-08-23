@@ -125,7 +125,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         ClusterStatus clusterStatus = nhctlCommand.checkCluster(opts);
                         clusterNode.setActive(clusterStatus.getCode() == 200);
                         clusterNode.setInfo(clusterStatus.getInfo());
-                    } catch (Exception ignored) {
+                    } catch (Exception ignore) {
                     }
                 }
 

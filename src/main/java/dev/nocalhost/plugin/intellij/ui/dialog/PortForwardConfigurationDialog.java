@@ -261,6 +261,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
             @Override
             public void onFinished() {
+                super.onFinished();
                 updatePortForwardList();
                 startTextField.setText("");
                 startButton.setEnabled(false);
@@ -364,6 +365,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
                 @Override
                 public void onFinished() {
+                    super.onFinished();
                     updatePortForwardList();
                 }
 

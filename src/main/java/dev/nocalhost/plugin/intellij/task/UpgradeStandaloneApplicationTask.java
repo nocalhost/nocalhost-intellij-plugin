@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.task;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +13,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
-public class UpgradeStandaloneApplicationTask extends Task.Backgroundable {
+public class UpgradeStandaloneApplicationTask extends BaseBackgroundTask {
     private final Project project;
     private final String applicationName;
     private final NhctlUpgradeOptions opts;
@@ -35,13 +34,15 @@ public class UpgradeStandaloneApplicationTask extends Task.Backgroundable {
 
     @SneakyThrows
     @Override
-    public void run(@NotNull ProgressIndicator indicator) {
+    public void runTask(@NotNull ProgressIndicator indicator) {
+        opts.setTask(this);
         outputCapturedNhctlCommand.upgrade(applicationName, opts);
     }
 
 
     @Override
     public void onSuccess() {
+        super.onSuccess();
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 

@@ -49,7 +49,7 @@ public class NocalhostBinService {
         Properties properties = new Properties();
         try {
             properties.load(in);
-        } catch (IOException ignored) {
+        } catch (IOException ignore) {
         }
         nhctlVersion = properties.getProperty("nhctlVersion");
         nocalhostBin = new File(NhctlUtil.binaryPath());
@@ -190,13 +190,13 @@ public class NocalhostBinService {
             if (fl != null) {
                 try {
                     fl.release();
-                } catch (IOException ignored) {
+                } catch (IOException ignore) {
                 }
             }
             if (fos != null) {
                 try {
                     fos.close();
-                } catch (IOException ignored) {
+                } catch (IOException ignore) {
                 }
             }
             if (response != null) {

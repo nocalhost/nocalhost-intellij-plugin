@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
+import com.intellij.openapi.progress.Task;
+
 import java.nio.file.Path;
 import java.util.List;
 
@@ -23,5 +25,9 @@ public class NhctlDevStartOptions extends NhctlGlobalOptions {
 
     public NhctlDevStartOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);
+    }
+
+    public NhctlDevStartOptions(Path kubeConfigPath, String namespace, Task task) {
+        super(kubeConfigPath, namespace, task);
     }
 }

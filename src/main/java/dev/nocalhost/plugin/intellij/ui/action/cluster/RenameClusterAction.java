@@ -49,6 +49,7 @@ public class RenameClusterAction extends DumbAwareAction {
 
             @Override
             public void onSuccess() {
+                super.onSuccess();
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(
                         NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
             }

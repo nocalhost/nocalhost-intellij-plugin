@@ -54,6 +54,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.service.ProgressProcessManager;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
@@ -675,6 +676,10 @@ public class NhctlCommand {
         Process process;
         try {
             process = commandLine.createProcess();
+            if (opts != null && opts.getTask() != null) {
+                ApplicationManager.getApplication().getService(ProgressProcessManager.class)
+                        .add(opts.getTask(), process);
+            }
             if (sudoPassword != null) {
                 SudoUtil.inputPassword(process, sudoPassword);
             }
@@ -687,7 +692,7 @@ public class NhctlCommand {
             InputStreamReader reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
             try {
                 errorOutput.set(CharStreams.toString(reader));
-            } catch (Exception ignored) {
+            } catch (Exception ignore) {
             }
         });
 

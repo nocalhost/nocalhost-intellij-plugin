@@ -4,7 +4,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.util.NlsSafe;
@@ -28,6 +27,7 @@ import java.util.Date;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
@@ -99,12 +99,13 @@ public class KubeConfigFile extends VirtualFile {
             if (!MessageDialogBuilder.yesNo("Edit Manifest", "Apply this resource?").ask(project)) {
                 return;
             }
-            ProgressManager.getInstance().run(new Task.Backgroundable(null, "Applying " + name, false) {
+            ProgressManager.getInstance().run(new BaseBackgroundTask(null, "Applying " + name, false) {
 
                 String result = "";
 
                 @Override
                 public void onSuccess() {
+                    super.onSuccess();
                     NocalhostNotifier.getInstance(project).notifySuccess(name + " applied", result);
                 }
 
@@ -116,11 +117,11 @@ public class KubeConfigFile extends VirtualFile {
 
                 @SneakyThrows
                 @Override
-                public void run(@NotNull ProgressIndicator indicator) {
+                public void runTask(@NotNull ProgressIndicator indicator) {
                     Path tempFile = Files.createTempFile(resourceName, ".yaml");
                     Files.write(tempFile, newContent.getBytes(StandardCharsets.UTF_8));
                     final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
-                    NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace);
+                    NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace, this);
                     nhctlApplyOptions.setFile(tempFile.toAbsolutePath().toString());
                     result = nhctlCommand.apply(appName, nhctlApplyOptions);
                 }

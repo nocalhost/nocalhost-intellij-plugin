@@ -4,7 +4,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.NlsSafe;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -26,6 +25,7 @@ import java.util.Date;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -94,9 +94,10 @@ public class AppConfigFile extends VirtualFile {
     protected void saveContent(String newContent) {
         Object yml = DataUtils.YAML.load(newContent);
         String json = DataUtils.GSON.toJson(yml);
-        ProgressManager.getInstance().run(new Task.Backgroundable(null, "Saving " + name, false) {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(null, "Saving " + name) {
             @Override
             public void onSuccess() {
+                super.onSuccess();
                 NocalhostNotifier.getInstance(project).notifySuccess(name + " saved", "");
             }
 
@@ -108,11 +109,11 @@ public class AppConfigFile extends VirtualFile {
 
             @SneakyThrows
             @Override
-            public void run(@NotNull ProgressIndicator indicator) {
+            public void runTask(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
                 Path path = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
                 String namespace = node.getNamespaceNode().getNamespace();
-                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(path, namespace);
+                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(path, namespace, this);
                 nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
                 nhctlConfigOptions.setAppConfig(true);
                 nhctlCommand.editConfig(node.getName(), nhctlConfigOptions);
