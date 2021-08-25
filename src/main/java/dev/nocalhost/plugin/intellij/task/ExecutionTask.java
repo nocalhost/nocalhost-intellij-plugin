@@ -36,7 +36,7 @@ import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpConfiguration
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfiguration;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfigurationType;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -48,7 +48,7 @@ public class ExecutionTask extends Task.Backgroundable {
 
     private final String action;
     private final Project project;
-    private final ServiceProjectPath service;
+    private final DevModeService service;
     private final Map<String, Class<? extends ConfigurationType>> hash = new HashMap<>() {
         {
             put("GO", NocalhostGoConfigurationType.class);
@@ -58,7 +58,7 @@ public class ExecutionTask extends Task.Backgroundable {
         }
     };
 
-    public ExecutionTask(Project project, ServiceProjectPath service, String action) {
+    public ExecutionTask(Project project, DevModeService service, String action) {
         super(project, String.format("Starting `%s`", action), true);
         this.action = action;
         this.project = project;
@@ -144,7 +144,7 @@ public class ExecutionTask extends Task.Backgroundable {
         return hash.containsKey(ide) ? hash.get(ide) : null;
     }
 
-    private @Nullable String getDebugPort(@NotNull ServiceProjectPath service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
+    private @Nullable String getDebugPort(@NotNull DevModeService service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
         var cmd = ApplicationManager.getApplication().getService(NhctlCommand.class);
         var path = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
         var opts = new NhctlConfigOptions(path, service.getNamespace());

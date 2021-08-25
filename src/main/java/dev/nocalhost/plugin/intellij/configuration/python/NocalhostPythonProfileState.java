@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,11 +30,10 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostDevInfo;
+import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
-import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEVELOP_STATUS_STARTED;
@@ -45,9 +43,11 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     private static final Logger LOG = Logger.getInstance(NocalhostPythonProfileState.class);
     private final List<Disposable> disposables = Lists.newArrayList();
     private final AtomicReference<NocalhostDevInfo> refContext = new AtomicReference<>(null);
+    private final NocalhostProjectService nocalhostProjectService;
 
     public NocalhostPythonProfileState(@NotNull Project project, @NotNull ExecutionEnvironment env) {
         super(project, env);
+        nocalhostProjectService = project.getService(NocalhostProjectService.class);
     }
 
     protected ProcessHandler startProcess() {
@@ -55,7 +55,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     }
 
     public void prepare() throws ExecutionException {
-        ServiceProjectPath devService = getDevModeService();
+        ServiceProjectPath devService = nocalhostProjectService.getServiceProjectPath();
         if (devService == null) {
             throw new ExecutionException("Service is not in dev mode.");
         }
@@ -98,15 +98,10 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         ));
     }
 
-    private ServiceProjectPath getDevModeService() {
-        return getEnvironment().getProject().getService(NocalhostProjectSettings.class).getDevModeService();
-    }
-
     private NhctlDescribeService getNhctlDescribeService(ServiceProjectPath serviceProjectPath) throws ExecutionException {
         try {
             NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
-            Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(serviceProjectPath.getRawKubeConfig());
-            NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, serviceProjectPath.getNamespace());
+            NhctlDescribeOptions opts = new NhctlDescribeOptions(serviceProjectPath.getKubeConfigPath(), serviceProjectPath.getNamespace());
             opts.setDeployment(serviceProjectPath.getServiceName());
             opts.setType(serviceProjectPath.getServiceType());
             return command.describe(
@@ -154,8 +149,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             throw new ExecutionException("Call prepare() before this method");
         }
         ServiceProjectPath devService = context.getDevModeService();
-        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devService.getRawKubeConfig());
-        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, devService.getNamespace());
+        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(devService.getKubeConfigPath(), devService.getNamespace());
         nhctlDescribeOptions.setDeployment(devService.getServiceName());
         nhctlDescribeOptions.setType(devService.getServiceType());
 
@@ -191,7 +185,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
                 "--deployment", context.getDevModeService().getServiceName(),
                 "--controller-type", context.getDevModeService().getServiceType(),
                 "--command", shell, "--command", "-c", "--command", debug,
-                "--kubeconfig", kubeConfigPath.toString(),
+                "--kubeconfig", devService.getKubeConfigPath().toString(),
                 "--namespace", devService.getNamespace()
         );
 
@@ -207,11 +201,10 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     }
 
     private String getDevPodName() throws IOException, InterruptedException, ExecutionException, NocalhostExecuteCmdException {
-        ServiceProjectPath service = getDevModeService();
+        ServiceProjectPath service = nocalhostProjectService.getServiceProjectPath();
         NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
 
-        NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, service.getNamespace());
+        NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(service.getKubeConfigPath(), service.getNamespace());
         Optional<NhctlGetResource> deployments = command
                 .getResources(service.getServiceType(), nhctlGetOptions)
                 .stream()
@@ -246,8 +239,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     private void createTunnel(ServiceContainer container) throws ExecutionException, NocalhostExecuteCmdException, IOException, InterruptedException {
         var port = resolveDebugPort(container);
         var project = getEnvironment().getProject();
-        var service = getDevModeService();
-        var kubeConfigPath = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
+        var service = nocalhostProjectService.getServiceProjectPath();
 
         var cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(), "ssh", "reverse",
@@ -256,7 +248,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
                 "--remote", port,
                 "--sshport", "50022",
                 "--namespace", service.getNamespace(),
-                "--kubeconfig", kubeConfigPath.toString()
+                "--kubeconfig", service.getKubeConfigPath().toString()
         )).withRedirectErrorStream(true);
 
         var bus = project

@@ -30,6 +30,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryerOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlExecOptions;
@@ -562,7 +563,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void devAssociate(String name, NhctlDevAssociateOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+    public String devAssociate(String name, NhctlDevAssociateOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "associate", name);
         if (StringUtils.isNotEmpty(opts.getAssociate())) {
             args.add("--associate");
@@ -576,7 +577,14 @@ public class NhctlCommand {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
-        execute(args, opts);
+        if (StringUtils.isNotEmpty(opts.getContainer())) {
+            args.add("--container");
+            args.add(opts.getContainer());
+        }
+        if (opts.isInfo()) {
+            args.add("--info");
+        }
+        return execute(args, opts);
     }
 
     public void profileSet(String name, NhctlProfileSetOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
@@ -656,6 +664,25 @@ public class NhctlCommand {
 
     public String render(Path path, NhctlRenderOptions opts) throws IOException, NocalhostExecuteCmdException, InterruptedException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "render", path.toString());
+        return execute(args, opts);
+    }
+
+    public String devAssociateQueryer(NhctlDevAssociateQueryerOptions opts) throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "associate-queryer");
+        if (StringUtils.isNotEmpty(opts.getAssociate())) {
+            args.add("--associate");
+            args.add(opts.getAssociate());
+        }
+        if (opts.isCurrent()) {
+            args.add("--current");
+        }
+        if (opts.getExcludeStatus() != null) {
+            for (String status : opts.getExcludeStatus()) {
+                args.add("--exclude-status");
+                args.add(status);
+            }
+        }
+        args.add("--json");
         return execute(args, opts);
     }
 
