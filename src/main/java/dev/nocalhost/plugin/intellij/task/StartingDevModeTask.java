@@ -34,6 +34,7 @@ import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -68,6 +69,8 @@ public class StartingDevModeTask extends BaseBackgroundTask {
         super.onSuccess();
 
         project.getService(NocalhostProjectService.class).refreshServiceProjectPath();
+        project.getMessageBus().syncPublisher(
+                NocalhostTreeExpandNotifier.NOCALHOST_TREE_EXPAND_NOTIFIER_TOPIC).action();
 
         TerminalUtil.openTerminal(
                 project,
