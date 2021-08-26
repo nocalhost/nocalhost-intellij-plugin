@@ -43,6 +43,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardListOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlRenderOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
@@ -602,6 +603,27 @@ public class NhctlCommand {
             args.add(opts.getValue());
         }
         execute(args, opts);
+    }
+
+    public String profileGet(String name, NhctlProfileGetOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "profile", "get", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        if (StringUtils.isNotEmpty(opts.getType())) {
+            args.add("--type");
+            args.add(opts.getType());
+        }
+        if (StringUtils.isNotEmpty(opts.getContainer())) {
+            args.add("--container");
+            args.add(opts.getContainer());
+        }
+        if (StringUtils.isNotEmpty(opts.getKey())) {
+            args.add("--key");
+            args.add(opts.getKey());
+        }
+        return execute(args, opts);
     }
 
     public String get(String resourceType, NhctlGetOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {

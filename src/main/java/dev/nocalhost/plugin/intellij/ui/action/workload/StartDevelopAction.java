@@ -31,6 +31,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
@@ -296,37 +297,16 @@ public class StartDevelopAction extends DumbAwareAction {
     private void getImage() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                NhctlProfileGetOptions opts = new NhctlProfileGetOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
                 opts.setType(node.getKubeResource().getKind());
-                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                        node.applicationName(), opts, NhctlDescribeService.class);
-
-                Optional<ServiceContainer> serviceContainerOptional = nhctlDescribeService
-                        .getRawConfig()
-                        .getContainers()
-                        .stream()
-                        .filter(e -> StringUtils.equals(e.getName(), selectedContainer.get()))
-                        .findFirst();
-                if (serviceContainerOptional.isPresent()) {
-                    ServiceContainer serviceContainer = serviceContainerOptional.get();
-                    if (serviceContainer.getDev() != null
-                            && StringUtils.isNotEmpty(serviceContainer.getDev().getImage())) {
-                        startDevelop();
-                        return;
-                    }
+                opts.setContainer(selectedContainer.get());
+                opts.setKey("image");
+                String image = nhctlCommand.profileGet(node.applicationName(), opts);
+                if (StringUtils.isNotEmpty(image)) {
+                    startDevelop();
+                    return;
                 }
-
-                if (nhctlDescribeService.getRawConfig().getContainers().size() == 1
-                        && StringUtils.equals(nhctlDescribeService.getRawConfig().getContainers().get(0).getName(), "")) {
-                    ServiceContainer serviceContainer = nhctlDescribeService.getRawConfig().getContainers().get(0);
-                    if (serviceContainer.getDev() != null
-                            && StringUtils.isNotEmpty(serviceContainer.getDev().getImage())) {
-                        startDevelop();
-                        return;
-                    }
-                }
-
                 selectImage();
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading dev image",
