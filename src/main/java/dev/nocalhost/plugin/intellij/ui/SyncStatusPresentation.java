@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.event.MouseEvent;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.*;
@@ -31,11 +30,10 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
+import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
-import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValuesPresentation, StatusBarWidget.Multiframe {
 
@@ -44,6 +42,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     private final StatusBar statusBar;
     private final Project project;
     private final Disposable widget;
+    private final NocalhostProjectService nocalhostProjectService;
 
     private final AtomicReference<NhctlSyncStatus> nhctlSyncStatus = new AtomicReference<>();
 
@@ -52,17 +51,14 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             return null;
         }
         final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        final NocalhostProjectSettings nocalhostProjectSettings = project.getService(NocalhostProjectSettings.class);
 
-        ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
-        if (devModeService == null || devModeService.getRawKubeConfig() == null) {
+        ServiceProjectPath devModeService = nocalhostProjectService.getServiceProjectPath();
+        if (devModeService == null) {
             return null;
         }
 
-        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
-
         try {
-            NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
+            NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
             nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
             nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
             String status = nhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
@@ -82,6 +78,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         this.statusBar = statusBar;
         this.project = project;
         this.widget = widget;
+        nocalhostProjectService = project.getService(NocalhostProjectService.class);
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
@@ -136,20 +133,17 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     @Override
     public @Nullable("null means the widget is unable to show the popup") ListPopup getPopupStep() {
         final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-        final NocalhostProjectSettings nocalhostProjectSettings = project.getService(NocalhostProjectSettings.class);
 
         if (nhctlSyncStatus.get() != null && nhctlSyncStatus.get().getStatus().equalsIgnoreCase("disconnected")) {
             if (MessageDialogBuilder.yesNo("Sync Resume", "do you want to resume file sync?").ask(project)) {
-                ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
-                if (devModeService == null || devModeService.getRawKubeConfig() == null) {
+                ServiceProjectPath devModeService = nocalhostProjectService.getServiceProjectPath();
+                if (devModeService == null) {
                     return null;
                 }
 
-                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
-
                 ApplicationManager.getApplication().executeOnPooledThread(() -> {
                     try {
-                        NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(kubeConfigPath, devModeService.getNamespace());
+                        NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
                         nhctlSyncOptions.setDeployment(devModeService.getServiceName());
                         nhctlSyncOptions.setControllerType(devModeService.getServiceType());
                         nhctlSyncOptions.setContainer(devModeService.getContainerName());
@@ -163,16 +157,15 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         }
         if (nhctlSyncStatus.get() != null && StringUtils.isNoneBlank(nhctlSyncStatus.get().getOutOfSync())) {
             if (MessageDialogBuilder.yesNo("Sync Override", "Override the remote changes according to the local folders?").ask(project)) {
-                ServiceProjectPath devModeService = nocalhostProjectSettings.getDevModeService();
-                if (devModeService == null || devModeService.getRawKubeConfig() == null) {
+                ServiceProjectPath devModeService = nocalhostProjectService.getServiceProjectPath();
+                if (devModeService == null) {
                     return null;
                 }
 
-                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
 
                 ApplicationManager.getApplication().executeOnPooledThread(() -> {
                     try {
-                        NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(kubeConfigPath, devModeService.getNamespace());
+                        NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
                         nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
                         nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
                         nhctlSyncStatusOptions.setOverride(true);

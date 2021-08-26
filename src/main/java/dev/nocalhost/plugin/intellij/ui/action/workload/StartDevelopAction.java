@@ -33,9 +33,9 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
-import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.task.ExecutionTask;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.dialog.ImageChooseDialog;
@@ -60,7 +60,7 @@ public class StartDevelopAction extends DumbAwareAction {
     private final Path kubeConfigPath;
     private final String namespace;
 
-    private final AtomicReference<String> projectPath = new AtomicReference<>();
+    private final AtomicReference<String> projectPathReference = new AtomicReference<>();
     private final AtomicReference<String> selectedContainer = new AtomicReference<>();
 
     private final String action;
@@ -102,7 +102,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     } else {
                         ProgressManager
                                 .getInstance()
-                                .run(new ExecutionTask(project, project.getService(NocalhostProjectSettings.class).getDevModeService(), action));
+                                .run(new ExecutionTask(project, makeDevModeService(project.getBasePath()), action));
                     }
                     return;
                 }
@@ -139,20 +139,23 @@ public class StartDevelopAction extends DumbAwareAction {
     private void getAssociate() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(namespace);
                 opts.setDeployment(node.resourceName());
-                opts.setType(node.getKubeResource().getKind());
-                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                        node.applicationName(), opts, NhctlDescribeService.class);
-
-                String associatedPath = nhctlDescribeService.getAssociate();
+                opts.setControllerType(node.getKubeResource().getKind());
+                opts.setContainer(selectedContainer.get());
+                opts.setInfo(true);
+                String associatedPath = nhctlCommand.devAssociate(node.applicationName(), opts);
                 if (StringUtils.isNotEmpty(associatedPath)
                         && Files.exists(Paths.get(associatedPath))) {
-                    projectPath.set(associatedPath);
+                    projectPathReference.set(associatedPath);
                     getImage();
                 } else {
                     selectCodeSource();
                 }
+            } catch (NocalhostExecuteCmdException e) {
+                ErrorUtil.dealWith(project, "Loading service profile error",
+                        "Error occurs while loading service profile", e);
+                selectCodeSource();
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading service profile error",
                         "Error occurs while loading service profile", e);
@@ -275,7 +278,7 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     private void setAssociate(String path) {
-        projectPath.set(path);
+        projectPathReference.set(path);
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(
@@ -360,11 +363,10 @@ public class StartDevelopAction extends DumbAwareAction {
         });
     }
 
-    private void startDevelop() {
-        projectPath.set(Paths.get(projectPath.get()).toString());
-        ServiceProjectPath serviceProjectPath;
+    private DevModeService makeDevModeService(String openProjectPath) {
+        openProjectPath = Paths.get(openProjectPath).toString();
         if (node.getClusterNode().getNocalhostAccount() != null) {
-            serviceProjectPath = ServiceProjectPath.builder()
+            return DevModeService.builder()
                     .server(node.getClusterNode().getNocalhostAccount().getServer())
                     .username(node.getClusterNode().getNocalhostAccount().getUsername())
                     .clusterId(node.getClusterNode().getServiceAccount().getClusterId())
@@ -374,43 +376,46 @@ public class StartDevelopAction extends DumbAwareAction {
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
                     .containerName(selectedContainer.get())
-                    .projectPath(projectPath.get())
+                    .projectPath(openProjectPath)
                     .build();
         } else {
-            serviceProjectPath = ServiceProjectPath.builder()
+            return DevModeService.builder()
                     .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
                     .namespace(node.getNamespaceNode().getNamespace())
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
                     .containerName(selectedContainer.get())
-                    .projectPath(projectPath.get())
+                    .projectPath(openProjectPath)
                     .build();
         }
+    }
 
+    private void startDevelop() {
+        DevModeService devModeService = makeDevModeService(projectPathReference.get());
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (PathsUtil.isSame(projectPath.get(), project.getBasePath())) {
+            if (PathsUtil.isSame(projectPathReference.get(), project.getBasePath())) {
                 ProgressManager.getInstance().run(
-                        new StartingDevModeTask(project, serviceProjectPath, action));
+                        new StartingDevModeTask(project, devModeService, action));
             } else {
                 Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
                 for (Project openProject : openProjects) {
-                    if (PathsUtil.isSame(projectPath.get(), openProject.getBasePath())) {
+                    if (PathsUtil.isSame(projectPathReference.get(), openProject.getBasePath())) {
                         ToolWindow toolWindow = ToolWindowManager.getInstance(openProject)
                                 .getToolWindow(ToolWindowId.PROJECT_VIEW);
                         if (toolWindow != null) {
                             toolWindow.activate(() -> {
                                 ProgressManager.getInstance().run(
-                                        new StartingDevModeTask(openProject, serviceProjectPath, action));
+                                        new StartingDevModeTask(openProject, devModeService, action));
                             });
                             return;
                         }
                     }
                 }
 
-                nocalhostSettings.setDevModeServiceToProjectPath(serviceProjectPath);
-                nocalhostSettings.set(ExecutionTask.asKey(serviceProjectPath.getProjectPath()), action);
-                ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPath.get()),
+                nocalhostSettings.setDevModeServiceToProjectPath(devModeService);
+                nocalhostSettings.set(ExecutionTask.asKey(devModeService.getProjectPath()), action);
+                ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPathReference.get()),
                         new OpenProjectTask());
             }
         });

@@ -18,8 +18,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.Set;
 
+import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
-import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import lombok.Getter;
@@ -107,17 +107,17 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         return set;
     }
 
-    public synchronized ServiceProjectPath getDevModeServiceByProjectPath(String projectPath) {
+    public synchronized DevModeService getDevModeServiceByProjectPath(String projectPath) {
         String json = devModeProjectPathServiceMap.get(projectPath);
         if (json == null) {
             return null;
         }
-        return DataUtils.GSON.fromJson(json, ServiceProjectPath.class);
+        return DataUtils.GSON.fromJson(json, DevModeService.class);
     }
 
-    public synchronized void setDevModeServiceToProjectPath(ServiceProjectPath serviceProjectPath) {
-        devModeProjectPathServiceMap.put(serviceProjectPath.getProjectPath(),
-                DataUtils.GSON.toJson(serviceProjectPath));
+    public synchronized void setDevModeServiceToProjectPath(DevModeService devModeService) {
+        devModeProjectPathServiceMap.put(devModeService.getProjectPath(),
+                DataUtils.GSON.toJson(devModeService));
     }
 
     public synchronized void removeDevModeServiceByProjectPath(String projectPath) {

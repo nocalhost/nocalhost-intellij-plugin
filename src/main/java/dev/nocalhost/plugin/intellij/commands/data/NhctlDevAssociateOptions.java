@@ -13,6 +13,12 @@ public class NhctlDevAssociateOptions extends NhctlGlobalOptions {
     private String associate;
     private String controllerType;
     private String deployment;
+    private String container;
+    private boolean info;
+
+    public NhctlDevAssociateOptions(String namespace) {
+        super(namespace);
+    }
 
     public NhctlDevAssociateOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);

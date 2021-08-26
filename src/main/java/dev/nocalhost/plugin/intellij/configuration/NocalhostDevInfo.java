@@ -1,6 +1,6 @@
 package dev.nocalhost.plugin.intellij.configuration;
 
-import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

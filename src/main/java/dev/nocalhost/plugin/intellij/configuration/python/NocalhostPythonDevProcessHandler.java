@@ -20,8 +20,8 @@ public class NocalhostPythonDevProcessHandler extends PyRemoteDebugCommandLineSt
     private final ExecutionEnvironment environment;
 
     public NocalhostPythonDevProcessHandler(
-        @NotNull ExecutionEnvironment environment,
-        @NotNull NocalhostPythonProfileState state
+            @NotNull ExecutionEnvironment environment,
+            @NotNull NocalhostPythonProfileState state
     ) {
         this.environment = environment;
         this.addProcessListener(new ProcessAdapter() {
@@ -30,6 +30,7 @@ public class NocalhostPythonDevProcessHandler extends PyRemoteDebugCommandLineSt
             public void startNotified(@NotNull ProcessEvent event) {
                 state.doStartupDebug();
             }
+
             @Override
             public void processTerminated(@NotNull ProcessEvent event) {
                 state.doDestroyDebug();
