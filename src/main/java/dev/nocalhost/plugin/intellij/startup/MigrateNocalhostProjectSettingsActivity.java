@@ -31,6 +31,7 @@ public class MigrateNocalhostProjectSettingsActivity implements StartupActivity 
             opts.setControllerType(devModeService.getServiceType());
             opts.setContainer(devModeService.getContainerName());
             opts.setAssociate(devModeService.getProjectPath());
+            opts.setMigrate(true);
             nhctlCommand.devAssociate(devModeService.getApplicationName(), opts);
             nocalhostProjectSettings.setDevModeService(null);
         } catch (Exception e) {

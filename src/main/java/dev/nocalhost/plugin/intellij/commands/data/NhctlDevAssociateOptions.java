@@ -15,6 +15,7 @@ public class NhctlDevAssociateOptions extends NhctlGlobalOptions {
     private String deployment;
     private String container;
     private boolean info;
+    private boolean migrate;
 
     public NhctlDevAssociateOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);
