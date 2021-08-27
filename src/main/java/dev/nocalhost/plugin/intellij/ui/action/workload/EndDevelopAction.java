@@ -26,6 +26,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import icons.NocalhostIcons;
 import lombok.SneakyThrows;
 
@@ -57,7 +58,7 @@ public class EndDevelopAction extends DumbAwareAction {
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    if (!nhctlDescribeService.isDeveloping()) {
+                    if (!NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
                         Messages.showMessageDialog("Dev mode has been ended.", "End DevMode", null);
                         return;
                     }

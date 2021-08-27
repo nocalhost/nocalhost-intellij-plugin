@@ -34,6 +34,7 @@ import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
+import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEVELOP_STATUS_STARTED;
@@ -61,8 +62,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         }
 
         NhctlDescribeService desService = getNhctlDescribeService(devService);
-        if (!StringUtils.equals(desService.getDevelop_status(), DEVELOP_STATUS_STARTED)
-                || !isProjectPathMatched(desService)) {
+        if (!NhctlDescribeServiceUtil.developStarted(desService) || !isProjectPathMatched(desService)) {
             throw new ExecutionException("Service is not in dev mode.");
         }
 
@@ -159,7 +159,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
                 nhctlDescribeOptions,
                 NhctlDescribeService.class);
 
-        if (!StringUtils.equals(nhctlDescribeService.getDevelop_status(), DEVELOP_STATUS_STARTED)) {
+        if (!NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
             throw new ExecutionException("Service is not in dev mode.");
         }
 

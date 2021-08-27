@@ -47,6 +47,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
@@ -176,7 +177,7 @@ public class TreeMouseListener extends MouseAdapter {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
-        if (nhctlDescribeService.isDeveloping()) {
+        if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
             actionGroup.add(new EndDevelopAction(project, resourceNode));
         } else {
             actionGroup.add(new StartDevelopAction(project, resourceNode));
@@ -196,7 +197,8 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new TerminalAction(project, resourceNode));
         actionGroup.add(new CopyTerminalAction(project, resourceNode));
 
-        if (nhctlDescribeService.isDeveloping() && !PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
+        if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)
+                && !PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
             actionGroup.add(SEPARATOR);
             actionGroup.add(new OpenProjectAction(project, resourceNode));
         }
