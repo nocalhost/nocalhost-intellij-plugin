@@ -22,10 +22,6 @@ public abstract class NhctlGlobalOptions {
         this.kubeconfig = kubeConfigPath.toString();
     }
 
-    protected NhctlGlobalOptions(String namespace) {
-        this.namespace = namespace;
-    }
-
     protected NhctlGlobalOptions(Path kubeConfigPath, String namespace) {
         this.kubeconfig = kubeConfigPath.toString();
         this.namespace = namespace;
