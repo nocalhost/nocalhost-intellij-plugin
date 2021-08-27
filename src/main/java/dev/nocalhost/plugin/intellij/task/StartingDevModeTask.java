@@ -38,6 +38,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.TerminalUtil;
 import lombok.SneakyThrows;
@@ -145,7 +146,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                 nhctlDescribeOptions,
                 NhctlDescribeService.class);
 
-        if (nhctlDescribeService.isDeveloping()) {
+        if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
             return;
         }
 

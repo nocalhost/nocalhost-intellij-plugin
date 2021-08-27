@@ -43,6 +43,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEVELOP_STATUS_STARTED;
@@ -96,7 +97,7 @@ public class NocalhostProfileState extends CommandLineState {
             }
 
             NhctlDescribeService nhctlDescribeService = getNhctlDescribeService(devModeService);
-            if (!StringUtils.equals(nhctlDescribeService.getDevelop_status(), DEVELOP_STATUS_STARTED)
+            if (!NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)
                     || !projectPathMatched(nhctlDescribeService)) {
                 throw new ExecutionException("Service is not in dev mode.");
             }
