@@ -140,7 +140,7 @@ public class StartDevelopAction extends DumbAwareAction {
     private void getAssociate() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(namespace);
+                NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
                 opts.setControllerType(node.getKubeResource().getKind());
                 opts.setContainer(selectedContainer.get());
