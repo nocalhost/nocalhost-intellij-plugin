@@ -27,6 +27,7 @@
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand" />
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.exception.NocalhostNotifier"/>
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.service.NocalhostProjectService"/>
+        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings"/>
 
         <toolWindow id="Nocalhost" anchor="right" icon="NocalhostIcons.Logo"
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostWindowFactory"/>
@@ -39,10 +40,12 @@
 
         <postStartupActivity id="NocalhostStartupActivity"
                 implementation="dev.nocalhost.plugin.intellij.startup.NocalhostStartupActivity"/>
-        <postStartupActivity order="before NocalhostStartupActivity"
+        <postStartupActivity id="NocalhostProjectServiceActivify" order="before NocalhostTreeExpandActivity"
                 implementation="dev.nocalhost.plugin.intellij.startup.NocalhostProjectServiceActivify"/>
-        <postStartupActivity order="before NocalhostStartupActivity"
+        <postStartupActivity id="NocalhostTreeExpandActivity" order="before NocalhostStartupActivity"
                 implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTreeExpandActivity"/>
+        <postStartupActivity order="before NocalhostProjectServiceActivify"
+                implementation="dev.nocalhost.plugin.intellij.startup.MigrateNocalhostProjectSettingsActivity"/>
         <statusBarWidgetFactory
                 implementation="dev.nocalhost.plugin.intellij.ui.SyncStatusWidgetFactory"
                 order="first"/>
