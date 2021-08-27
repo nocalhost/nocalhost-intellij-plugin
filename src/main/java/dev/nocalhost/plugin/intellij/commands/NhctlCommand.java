@@ -736,6 +736,18 @@ public class NhctlCommand {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
 
+        if (args.size() > 0 && StringUtils.equals(args.get(1), "get")) {
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    Thread.sleep(10 * 1000);
+                    if (process.isAlive()) {
+                        process.destroy();
+                    }
+                } catch (Exception ignore) {
+                }
+            });
+        }
+
         final AtomicReference<String> errorOutput = new AtomicReference<>();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             InputStreamReader reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
