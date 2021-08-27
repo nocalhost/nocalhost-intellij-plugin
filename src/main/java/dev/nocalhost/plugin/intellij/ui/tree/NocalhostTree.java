@@ -246,7 +246,7 @@ public class NocalhostTree extends Tree implements Disposable {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     if (resourceNodeAtomicReference.get() != null) {
                         TreePath path = new TreePath(model.getPathToRoot(resourceNodeAtomicReference.get()));
-                        this.setSelectionPath(path);
+                        this.scrollPathToVisible(path);
                     }
                 });
             });
