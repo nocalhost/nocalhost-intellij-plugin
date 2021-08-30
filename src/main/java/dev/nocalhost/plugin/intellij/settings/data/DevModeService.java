@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceProjectPath {
+public class DevModeService {
     private String server;
     private String username;
     private long clusterId;

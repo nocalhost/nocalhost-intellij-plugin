@@ -6,7 +6,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -17,6 +16,7 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -39,11 +39,12 @@ public class LoadResourceAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Loading kubernetes resources") {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Loading kubernetes resources") {
             private VirtualFile virtualFile;
 
             @Override
             public void onSuccess() {
+                super.onSuccess();
                 FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile, 0), true);
             }
 
@@ -55,10 +56,10 @@ public class LoadResourceAction extends DumbAwareAction {
 
             @SneakyThrows
             @Override
-            public void run(@NotNull ProgressIndicator indicator) {
+            public void runTask(@NotNull ProgressIndicator indicator) {
                 final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
-                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace, this);
                 String resource = nhctlCommand.describe(applicationName, opts);
                 String filename = applicationName + ".yaml";
                 virtualFile = new ReadOnlyVirtualFile(filename, filename, resource);

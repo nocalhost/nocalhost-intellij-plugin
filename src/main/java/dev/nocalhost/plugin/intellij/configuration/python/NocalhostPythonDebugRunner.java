@@ -8,6 +8,8 @@ import com.intellij.execution.configurations.RunnerSettings;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ProgramRunner;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.util.PathMappingSettings;
 import com.intellij.xdebugger.XDebugProcessStarter;
 import com.intellij.xdebugger.XDebuggerManager;
 import com.jetbrains.python.debugger.remote.PyRemoteDebugConfiguration;
@@ -16,6 +18,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+
+import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
+import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
 
 public class NocalhostPythonDebugRunner implements ProgramRunner<RunnerSettings> {
     public static final String NOCALHOST_PYTHON_DEBUG_RUNNER = "NocalhostPythonDebugRunner";
@@ -38,11 +47,28 @@ public class NocalhostPythonDebugRunner implements ProgramRunner<RunnerSettings>
         }
     }
 
+    private @NotNull PathMappingSettings createPathMappingSettings(@NotNull ExecutionEnvironment environment) throws ExecutionException {
+        var setting = new PathMappingSettings();
+        try {
+            var service = environment.getProject().getService(NocalhostProjectService.class).getServiceProjectPath();
+            setting.add(new PathMappingSettings.PathMapping() {
+                {
+                    setLocalRoot(environment.getProject().getBasePath());
+                    setRemoteRoot(getWorkDir(service));
+                }
+            });
+        } catch (Exception ex) {
+            throw new ExecutionException(ex);
+        }
+        return setting;
+    }
+
     @Override
     public void execute(@NotNull ExecutionEnvironment environment) throws ExecutionException {
         PyRemoteDebugConfiguration conf = (PyRemoteDebugConfiguration) environment.getRunProfile();
         ExecutionManager.getInstance(environment.getProject()).startRunProfile(environment, state -> {
             ((NocalhostPythonProfileState) state).prepare();
+            conf.setMappingSettings(createPathMappingSettings(environment));
             ServerSocket socket = createServerSocket(conf.getPort());
             ExecutionResult result = state.execute(environment.getExecutor(), NocalhostPythonDebugRunner.this);
             XDebugProcessStarter starter = new XDebugProcessStarterImpl(environment, conf, result, socket);
@@ -51,5 +77,22 @@ public class NocalhostPythonDebugRunner implements ProgramRunner<RunnerSettings>
                     .startSession(environment, starter)
                     .getRunContentDescriptor();
         });
+    }
+
+    private String getWorkDir(@NotNull ServiceProjectPath service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
+        var opts = new NhctlConfigOptions(service.getKubeConfigPath(), service.getNamespace());
+        opts.setDeployment(service.getServiceName());
+        opts.setControllerType(service.getServiceType());
+        var config = ApplicationManager
+                .getApplication()
+                .getService(NhctlCommand.class)
+                .getConfig(service.getApplicationName(), opts, NhctlRawConfig.class);
+        var bucket = config.getContainers();
+        var container = bucket.isEmpty() ? null : bucket.get(0);
+        try {
+            return container.getDev().getWorkDir();
+        } catch (Exception ex) {
+            throw new ExecutionException("The configuration of the service container is incorrect.");
+        }
     }
 }

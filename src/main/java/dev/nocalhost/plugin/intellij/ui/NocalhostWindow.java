@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -18,6 +19,7 @@ import com.intellij.util.ui.StatusText;
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.ui.action.AddStandaloneClustersAction;
+import dev.nocalhost.plugin.intellij.ui.action.CleanConfigurationAction;
 import dev.nocalhost.plugin.intellij.ui.action.ConnectNocalhostApiServerAction;
 import dev.nocalhost.plugin.intellij.ui.action.ManageNocalhostAccountsAction;
 import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
@@ -57,6 +59,13 @@ public class NocalhostWindow implements Disposable {
     }
 
     private void setToolbar() {
+        DefaultActionGroup moreActionGroup = new DefaultActionGroup();
+        moreActionGroup.getTemplatePresentation().setText("More");
+        moreActionGroup.getTemplatePresentation().setDescription("More");
+        moreActionGroup.getTemplatePresentation().setIcon(AllIcons.Actions.More);
+        moreActionGroup.setPopup(true);
+        moreActionGroup.add(new CleanConfigurationAction(project));
+
         DefaultActionGroup actionGroup = new DefaultActionGroup();
         actionGroup.add(new AddStandaloneClustersAction(project));
         actionGroup.add(new Separator());
@@ -64,6 +73,8 @@ public class NocalhostWindow implements Disposable {
         actionGroup.add(new ManageNocalhostAccountsAction(project));
         actionGroup.add(new Separator());
         actionGroup.add(new RefreshAction());
+        actionGroup.add(new Separator());
+        actionGroup.add(moreActionGroup);
 
         ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("Nocalhost.Toolbar", actionGroup, true);
         actionToolbar.setTargetComponent(panel);

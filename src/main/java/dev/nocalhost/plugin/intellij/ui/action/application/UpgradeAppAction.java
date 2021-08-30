@@ -6,7 +6,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -29,6 +28,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.exception.NocalhostServerVersionOutDatedException;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
+import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
@@ -184,9 +184,10 @@ public class UpgradeAppAction extends DumbAwareAction {
         }
         opts.setResourcesPath(resourceDirs);
 
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Upgrading application: " + applicationName, false) {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Upgrading application: " + applicationName) {
             @Override
             public void onSuccess() {
+                super.onSuccess();
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(
                         NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
@@ -201,8 +202,9 @@ public class UpgradeAppAction extends DumbAwareAction {
 
             @SneakyThrows
             @Override
-            public void run(@NotNull ProgressIndicator indicator) {
+            public void runTask(@NotNull ProgressIndicator indicator) {
                 final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
+                opts.setTask(this);
                 outputCapturedNhctlCommand.upgrade(applicationName, opts);
             }
         });

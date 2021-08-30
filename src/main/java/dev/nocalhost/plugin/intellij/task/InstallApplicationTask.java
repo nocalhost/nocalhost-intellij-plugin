@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
 import org.apache.commons.lang3.StringUtils;
@@ -22,7 +21,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
-public class InstallApplicationTask extends Task.Backgroundable {
+public class InstallApplicationTask extends BaseBackgroundTask {
     private static final List<String> BOOKINFO_URLS = Lists.newArrayList(
             "https://github.com/nocalhost/bookinfo.git",
             "git@github.com:nocalhost/bookinfo.git",
@@ -43,7 +42,7 @@ public class InstallApplicationTask extends Task.Backgroundable {
     private String productPagePort;
 
     public InstallApplicationTask(@Nullable Project project, Application application, NhctlInstallOptions opts) {
-        super(project, "Installing application: " + application.getContext().getApplicationName(), false);
+        super(project, "Deploying application: " + application.getContext().getApplicationName(), true);
         this.project = project;
         this.application = application;
         this.opts = opts;
@@ -53,12 +52,13 @@ public class InstallApplicationTask extends Task.Backgroundable {
 
     @Override
     public void onSuccess() {
+        super.onSuccess();
         bookinfo();
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
         NocalhostNotifier.getInstance(project).notifySuccess(
-                "Application " + application.getContext().getApplicationName() + " installed",
+                "Application " + application.getContext().getApplicationName() + " Deployed",
                 "");
     }
 
@@ -72,13 +72,14 @@ public class InstallApplicationTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Nocalhost install devSpace error",
-                "Error occurred while installing application", e);
+        ErrorUtil.dealWith(this.getProject(), "Application deployment error",
+                "Error occurred while deploying application", e);
     }
 
     @SneakyThrows
     @Override
-    public void run(@NotNull ProgressIndicator indicator) {
+    public void runTask(@NotNull ProgressIndicator indicator) {
+        opts.setTask(this);
         outputCapturedNhctlCommand.install(application.getContext().getApplicationName(), opts);
     }
 }

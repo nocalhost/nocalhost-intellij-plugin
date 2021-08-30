@@ -125,7 +125,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         ClusterStatus clusterStatus = nhctlCommand.checkCluster(opts);
                         clusterNode.setActive(clusterStatus.getCode() == 200);
                         clusterNode.setInfo(clusterStatus.getInfo());
-                    } catch (Exception ignored) {
+                    } catch (Exception ignore) {
                     }
                 }
 
@@ -183,7 +183,11 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     }
 
     void updateNamespaces(ClusterNode clusterNode) {
-        if (!tree.isExpanded(new TreePath(getPathToRoot(clusterNode)))) {
+        updateNamespaces(clusterNode, false);
+    }
+
+    void updateNamespaces(ClusterNode clusterNode, boolean force) {
+        if (!force && !tree.isExpanded(new TreePath(getPathToRoot(clusterNode)))) {
             return;
         }
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
@@ -284,7 +288,11 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     }
 
     void updateApplications(NamespaceNode namespaceNode) {
-        if (!tree.isExpanded(new TreePath(getPathToRoot(namespaceNode)))) {
+        updateApplications(namespaceNode, false);
+    }
+
+    void updateApplications(NamespaceNode namespaceNode, boolean force) {
+        if (!force && !tree.isExpanded(new TreePath(getPathToRoot(namespaceNode)))) {
             return;
         }
         ClusterNode clusterNode = namespaceNode.getClusterNode();
@@ -380,7 +388,11 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     }
 
     void updateResources(ResourceTypeNode resourceTypeNode) {
-        if (!tree.isExpanded(new TreePath(getPathToRoot(resourceTypeNode)))) {
+        updateResources(resourceTypeNode, false);
+    }
+
+    void updateResources(ResourceTypeNode resourceTypeNode, boolean force) {
+        if (!force && !tree.isExpanded(new TreePath(getPathToRoot(resourceTypeNode)))) {
             return;
         }
         ApplicationManager.getApplication().executeOnPooledThread(() -> {

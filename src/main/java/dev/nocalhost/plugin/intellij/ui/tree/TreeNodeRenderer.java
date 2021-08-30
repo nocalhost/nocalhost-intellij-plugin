@@ -27,9 +27,11 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
+import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import icons.NocalhostIcons;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEVELOP_STATUS_STARTED;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_JOB;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
@@ -179,7 +181,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     private ServiceStatus getServiceStatus(ResourceNode node) {
         ServiceStatus status = ServiceStatus.UNKNOWN;
         NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
-        if (nhctlDescribeService.isDeveloping()) {
+        if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
             return ServiceStatus.DEVELOPING;
         }
         boolean available = false;

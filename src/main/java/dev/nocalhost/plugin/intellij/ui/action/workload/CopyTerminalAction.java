@@ -32,6 +32,7 @@ import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class CopyTerminalAction extends DumbAwareAction {
@@ -59,7 +60,7 @@ public class CopyTerminalAction extends DumbAwareAction {
                 opts.setType(node.getKubeResource().getKind());
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
-                if (nhctlDescribeService.isDeveloping()) {
+                if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
                     copyDevTerminal();
                     return;
                 }

@@ -42,7 +42,7 @@ public final class ConfigUtil {
                                 && StringUtils.isNotEmpty(nc.getApplication().getName())) {
                             return true;
                         }
-                    } catch (Exception ignored) {
+                    } catch (Exception ignore) {
                     }
                     return false;
                 })

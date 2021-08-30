@@ -4,7 +4,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 
@@ -15,6 +14,7 @@ import java.nio.file.Path;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
@@ -42,7 +42,7 @@ public class ApplyAction extends DumbAwareAction {
             return;
         }
 
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Applying Kubernetes Configuration", false) {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Applying Kubernetes Configuration") {
             private String result = "";
 
             @Override
@@ -53,14 +53,15 @@ public class ApplyAction extends DumbAwareAction {
 
             @Override
             public void onSuccess() {
+                super.onSuccess();
                 NocalhostNotifier.getInstance(project).notifySuccess("Kubernetes configuration applied", result);
             }
 
             @SneakyThrows
             @Override
-            public void run(@NotNull ProgressIndicator progressIndicator) {
+            public void runTask(@NotNull ProgressIndicator progressIndicator) {
                 final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
-                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace);
+                NhctlApplyOptions nhctlApplyOptions = new NhctlApplyOptions(kubeConfigPath, namespace, this);
                 nhctlApplyOptions.setFile(chosenPath.toString());
                 result = nhctlCommand.apply(applicationName, nhctlApplyOptions);
             }

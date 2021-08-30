@@ -28,7 +28,7 @@ public class NocalhostTokenRefreshListener implements ApplicationInitializedList
                 checkAndRefreshTokens();
                 try {
                     Thread.sleep(NOCALHOST_TOKEN_REFRESH_INTERVAL_MILLIS);
-                } catch (InterruptedException ignored) {
+                } catch (InterruptedException ignore) {
                 }
                 Application application = ApplicationManager.getApplication();
                 if (application.isDisposed()) {

@@ -36,7 +36,7 @@ import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpConfiguration
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfiguration;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfigurationType;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.settings.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
@@ -46,9 +46,9 @@ public class ExecutionTask extends Task.Backgroundable {
     public final static String kRun = "run";
     public final static String kDebug = "debug";
 
-    private final String command;
+    private final String action;
     private final Project project;
-    private final ServiceProjectPath service;
+    private final DevModeService service;
     private final Map<String, Class<? extends ConfigurationType>> hash = new HashMap<>() {
         {
             put("GO", NocalhostGoConfigurationType.class);
@@ -58,17 +58,17 @@ public class ExecutionTask extends Task.Backgroundable {
         }
     };
 
-    public ExecutionTask(Project project, ServiceProjectPath service, String command) {
-        super(project, String.format("Starting `%s`", command), true);
+    public ExecutionTask(Project project, DevModeService service, String action) {
+        super(project, String.format("Starting `%s`", action), true);
+        this.action = action;
         this.project = project;
         this.service = service;
-        this.command = command;
     }
 
     @Override
     public void onThrowable(@NotNull Throwable ex) {
         ErrorUtil.dealWith(this.getProject(), "Nocalhost",
-                String.format("Error occurred while starting `%s`", command), ex);
+                String.format("Error occurred while starting `%s`", action), ex);
     }
 
     @SneakyThrows
@@ -88,7 +88,7 @@ public class ExecutionTask extends Task.Backgroundable {
     }
 
     private Executor getExecutor() {
-        if (kDebug.equals(command)) {
+        if (kDebug.equals(action)) {
             return DefaultDebugExecutor.getDebugExecutorInstance();
         }
         return DefaultRunExecutor.getRunExecutorInstance();
@@ -144,7 +144,7 @@ public class ExecutionTask extends Task.Backgroundable {
         return hash.containsKey(ide) ? hash.get(ide) : null;
     }
 
-    private @Nullable String getDebugPort(@NotNull ServiceProjectPath service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
+    private @Nullable String getDebugPort(@NotNull DevModeService service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
         var cmd = ApplicationManager.getApplication().getService(NhctlCommand.class);
         var path = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
         var opts = new NhctlConfigOptions(path, service.getNamespace());
@@ -161,6 +161,6 @@ public class ExecutionTask extends Task.Backgroundable {
     }
 
     public static @NotNull String asKey(@NotNull String path) {
-        return path + ":command";
+        return path + ":action";
     }
 }

@@ -30,6 +30,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryerOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlExecOptions;
@@ -43,6 +44,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardListOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlRenderOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
@@ -54,6 +56,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.service.ProgressProcessManager;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
@@ -561,7 +564,7 @@ public class NhctlCommand {
         execute(args, opts);
     }
 
-    public void devAssociate(String name, NhctlDevAssociateOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+    public String devAssociate(String name, NhctlDevAssociateOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "associate", name);
         if (StringUtils.isNotEmpty(opts.getAssociate())) {
             args.add("--associate");
@@ -575,7 +578,14 @@ public class NhctlCommand {
             args.add("--deployment");
             args.add(opts.getDeployment());
         }
-        execute(args, opts);
+        if (StringUtils.isNotEmpty(opts.getContainer())) {
+            args.add("--container");
+            args.add(opts.getContainer());
+        }
+        if (opts.isInfo()) {
+            args.add("--info");
+        }
+        return execute(args, opts);
     }
 
     public void profileSet(String name, NhctlProfileSetOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
@@ -601,6 +611,27 @@ public class NhctlCommand {
             args.add(opts.getValue());
         }
         execute(args, opts);
+    }
+
+    public String profileGet(String name, NhctlProfileGetOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "profile", "get", name);
+        if (StringUtils.isNotEmpty(opts.getDeployment())) {
+            args.add("--deployment");
+            args.add(opts.getDeployment());
+        }
+        if (StringUtils.isNotEmpty(opts.getType())) {
+            args.add("--type");
+            args.add(opts.getType());
+        }
+        if (StringUtils.isNotEmpty(opts.getContainer())) {
+            args.add("--container");
+            args.add(opts.getContainer());
+        }
+        if (StringUtils.isNotEmpty(opts.getKey())) {
+            args.add("--key");
+            args.add(opts.getKey());
+        }
+        return execute(args, opts);
     }
 
     public String get(String resourceType, NhctlGetOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
@@ -658,6 +689,25 @@ public class NhctlCommand {
         return execute(args, opts);
     }
 
+    public String devAssociateQueryer(NhctlDevAssociateQueryerOptions opts) throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "associate-queryer");
+        if (StringUtils.isNotEmpty(opts.getAssociate())) {
+            args.add("--associate");
+            args.add(opts.getAssociate());
+        }
+        if (opts.isCurrent()) {
+            args.add("--current");
+        }
+        if (opts.getExcludeStatus() != null) {
+            for (String status : opts.getExcludeStatus()) {
+                args.add("--exclude-status");
+                args.add(status);
+            }
+        }
+        args.add("--json");
+        return execute(args, opts);
+    }
+
     protected String execute(List<String> args, NhctlGlobalOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         return execute(args, opts, null);
     }
@@ -675,6 +725,10 @@ public class NhctlCommand {
         Process process;
         try {
             process = commandLine.createProcess();
+            if (opts != null && opts.getTask() != null) {
+                ApplicationManager.getApplication().getService(ProgressProcessManager.class)
+                        .add(opts.getTask(), process);
+            }
             if (sudoPassword != null) {
                 SudoUtil.inputPassword(process, sudoPassword);
             }
@@ -682,12 +736,24 @@ public class NhctlCommand {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
 
+        if (args.size() > 0 && StringUtils.equals(args.get(1), "get")) {
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    Thread.sleep(10 * 1000);
+                    if (process.isAlive()) {
+                        process.destroy();
+                    }
+                } catch (Exception ignore) {
+                }
+            });
+        }
+
         final AtomicReference<String> errorOutput = new AtomicReference<>();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             InputStreamReader reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
             try {
                 errorOutput.set(CharStreams.toString(reader));
-            } catch (Exception ignored) {
+            } catch (Exception ignore) {
             }
         });
 

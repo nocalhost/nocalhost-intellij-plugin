@@ -30,6 +30,7 @@ public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
 
     @Override
     public void onSuccess() {
+        super.onSuccess();
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
     }

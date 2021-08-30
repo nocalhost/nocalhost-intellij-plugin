@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGlobalOptions;
 import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.service.ProgressProcessManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.utils.NhctlOutputUtil;
@@ -53,6 +54,10 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
         Process process;
         try {
             process = commandLine.createProcess();
+            if (opts != null && opts.getTask() != null) {
+                ApplicationManager.getApplication().getService(ProgressProcessManager.class)
+                        .add(opts.getTask(), process);
+            }
             if (sudoPassword != null) {
                 SudoUtil.inputPassword(process, sudoPassword);
             }
@@ -65,7 +70,7 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
             InputStreamReader reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
             try {
                 errorOutput.set(CharStreams.toString(reader));
-            } catch (Exception ignored) {
+            } catch (Exception ignore) {
             }
         });
 

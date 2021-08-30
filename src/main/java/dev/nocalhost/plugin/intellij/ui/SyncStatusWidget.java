@@ -42,7 +42,7 @@ public class SyncStatusWidget implements StatusBarWidget {
                 statusBar.updateWidget("Nocalhost Sync Status");
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignore) {}
             }
         });
     }

@@ -3,7 +3,6 @@ package dev.nocalhost.plugin.intellij.task;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
 import org.apache.commons.lang3.StringUtils;
@@ -23,7 +22,7 @@ import dev.nocalhost.plugin.intellij.utils.Constants;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
-public class BrowseDemoTask extends Task.Backgroundable {
+public class BrowseDemoTask extends BaseBackgroundTask {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
     private final Path kubeConfigPath;
@@ -32,16 +31,16 @@ public class BrowseDemoTask extends Task.Backgroundable {
     private final AtomicReference<String> productPagePort = new AtomicReference<>(null);
 
     public BrowseDemoTask(Project project, Path kubeConfigPath, String namespace) {
-        super(project, "Browse demo", false);
+        super(project, "Browse demo", true);
         this.kubeConfigPath = kubeConfigPath;
         this.namespace = namespace;
     }
 
     @SneakyThrows
     @Override
-    public void run(@NotNull ProgressIndicator indicator) {
+    public void runTask(@NotNull ProgressIndicator indicator) {
         NhctlPortForwardListOptions nhctlPortForwardListOptions = new NhctlPortForwardListOptions(
-                kubeConfigPath, namespace);
+                kubeConfigPath, namespace, this);
         List<NhctlAppPortForward> portForwards = nhctlCommand.listPortForward(Constants.DEMO_NAME,
                 nhctlPortForwardListOptions);
         for (NhctlAppPortForward portForward : portForwards) {
@@ -57,7 +56,7 @@ public class BrowseDemoTask extends Task.Backgroundable {
         do {
             Thread.sleep(3000);
 
-            NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, namespace);
+            NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, namespace, this);
             nhctlGetOptions.setApplication(Constants.DEMO_NAME);
             List<NhctlGetResource> resources = nhctlCommand.getResources("Deployment", nhctlGetOptions);
             total = resources.size();
@@ -85,6 +84,7 @@ public class BrowseDemoTask extends Task.Backgroundable {
 
     @Override
     public void onSuccess() {
+        super.onSuccess();
         if (StringUtils.isNotEmpty(productPagePort.get())) {
             BrowserUtil.browse("http://127.0.0.1:" + productPagePort.get() + "/productpage");
         }

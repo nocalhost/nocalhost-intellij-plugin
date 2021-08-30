@@ -67,7 +67,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
     private final AtomicReference<Path> configPath = new AtomicReference<>();
 
     public InstallStandaloneApplicationAction(Project project, NamespaceNode node) {
-        super("Install Application", "", AllIcons.Actions.Install);
+        super("Deploy Application", "", AllIcons.Actions.Install);
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespace();
@@ -79,13 +79,13 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         int installTypeSelectedByUser = Messages.showDialog(
                 project,
-                "Please select the application installation source",
-                "Install Application",
+                "Please select the application deployment source",
+                "Deploy Application",
                 new String[]{
                         "Open Local Directory",
                         "Clone from Git",
                         "Helm Repo",
-                        "Install Demo",
+                        "Deploy Demo",
                         "Cancel"},
                 0,
                 Messages.getQuestionIcon());
@@ -94,7 +94,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
             case OPTION_OPEN_LOCAL_DIRECTORY:
                 Path localPath = FileChooseUtil.chooseSingleDirectory(
                         project,
-                        "Install Application",
+                        "Deploy Application",
                         "Select local directory which contains application configuration");
                 if (localPath == null) {
                     return;
@@ -140,7 +140,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                 resolveConfig();
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Cloning git repository error",
-                        "Error occurs while cloing git repository", e);
+                        "Error occurs while cloning git repository", e);
             }
         });
     }
@@ -205,7 +205,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                             Messages.showErrorDialog(
                                     project,
                                     "Manifest type " + installType + " is not supported.",
-                                    "Install Standalone Application");
+                                    "Deploy Standalone Application");
                             return;
                         }
                         break;
@@ -219,7 +219,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                             Messages.showErrorDialog(
                                     project,
                                     "Manifest type " + installType + " is not supported.",
-                                    "Install Standalone Application");
+                                    "Deploy Standalone Application");
                             return;
                         }
                         break;
@@ -228,7 +228,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                         Messages.showErrorDialog(
                                 project,
                                 "Manifest type " + installType + " is not supported.",
-                                "Install Standalone Application");
+                                "Deploy Standalone Application");
                         return;
                 }
 

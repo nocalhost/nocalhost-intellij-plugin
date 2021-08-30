@@ -42,7 +42,7 @@ public class NocalhostErrorReportSubmitter extends ErrorReportSubmitter {
         try {
             properties.load(in);
             dsn = properties.getProperty("sentryDsn");
-        } catch (IOException ignored) {
+        } catch (IOException ignore) {
         }
         sentryClient = SentryClientFactory.sentryClient(dsn);
     }

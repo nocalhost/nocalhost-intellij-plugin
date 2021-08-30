@@ -21,10 +21,12 @@
         <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.api.NocalhostApi"/>
         <applicationService
                 serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostSettings"/>
+        <applicationService serviceImplementation="dev.nocalhost.plugin.intellij.service.ProgressProcessManager"/>
 
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand"/>
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand" />
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.exception.NocalhostNotifier"/>
+        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.service.NocalhostProjectService"/>
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings"/>
 
         <toolWindow id="Nocalhost" anchor="right" icon="NocalhostIcons.Logo"
@@ -36,8 +38,14 @@
         <notificationGroup id="Nocalhost.Notification" displayType="BALLOON" toolWindowId="Nocalhost"/>
         <notificationGroup id="Nocalhost.Notification.Error" displayType="STICKY_BALLOON" toolWindowId="Nocalhost"/>
 
-        <postStartupActivity
+        <postStartupActivity id="NocalhostStartupActivity"
                 implementation="dev.nocalhost.plugin.intellij.startup.NocalhostStartupActivity"/>
+        <postStartupActivity id="NocalhostProjectServiceActivify" order="before NocalhostTreeExpandActivity"
+                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostProjectServiceActivify"/>
+        <postStartupActivity id="NocalhostTreeExpandActivity" order="before NocalhostStartupActivity"
+                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTreeExpandActivity"/>
+        <postStartupActivity order="before NocalhostProjectServiceActivify"
+                implementation="dev.nocalhost.plugin.intellij.startup.MigrateNocalhostProjectSettingsActivity"/>
         <statusBarWidgetFactory
                 implementation="dev.nocalhost.plugin.intellij.ui.SyncStatusWidgetFactory"
                 order="first"/>

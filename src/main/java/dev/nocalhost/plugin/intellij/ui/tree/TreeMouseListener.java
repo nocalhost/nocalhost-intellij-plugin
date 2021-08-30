@@ -19,7 +19,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.ui.action.application.AppPortForwardAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.ApplyAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.ClearAppPersisentDataAction;
-import dev.nocalhost.plugin.intellij.ui.action.application.ConfigAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.LoadResourceAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.UninstallAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.UpgradeAppAction;
@@ -34,13 +33,13 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryA
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.CopyTerminalAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.DebugAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.EditManifestAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.EndDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.LogsAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.OpenProjectAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.PortForwardAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ResetAction;
-import dev.nocalhost.plugin.intellij.ui.action.workload.DebugAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.RunAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.StartDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.TerminalAction;
@@ -48,12 +47,15 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
 
 public class TreeMouseListener extends MouseAdapter {
+    private static final Separator SEPARATOR = new Separator();
+
     private final Project project;
     private final Tree tree;
 
@@ -79,18 +81,28 @@ public class TreeMouseListener extends MouseAdapter {
 
             if (object instanceof NamespaceNode) {
                 NamespaceNode namespaceNode = (NamespaceNode) object;
+                if (namespaceNode.isDevSpaceViewer()) {
+                    return;
+                }
                 renderNamespaceAction(event, namespaceNode);
             }
 
             if (object instanceof ApplicationNode) {
                 ApplicationNode applicationNode = (ApplicationNode) object;
+                if (applicationNode.getNamespaceNode().isDevSpaceViewer()) {
+                    return;
+                }
                 renderApplicationAction(event, applicationNode);
                 return;
             }
 
             if (object instanceof ResourceNode) {
                 ResourceNode resourceNode = (ResourceNode) object;
-                renderWorkloadAction(event, resourceNode);
+                if (resourceNode.getNamespaceNode().isDevSpaceViewer()) {
+                    renderViewerWorkloadAction(event, resourceNode);
+                } else {
+                    renderWorkloadAction(event, resourceNode);
+                }
                 return;
             }
         }
@@ -101,7 +113,7 @@ public class TreeMouseListener extends MouseAdapter {
 
         actionGroup.add(new ViewClusterKubeConfigAction(project, clusterNode));
 
-        actionGroup.add(new Separator());
+        actionGroup.add(SEPARATOR);
         if (clusterNode.getServiceAccount() == null) {
             actionGroup.add(new RenameClusterAction(project, clusterNode));
             actionGroup.add(new RemoveClusterAction(project, clusterNode));
@@ -116,12 +128,12 @@ public class TreeMouseListener extends MouseAdapter {
 
         if (namespaceNode.getClusterNode().getNocalhostAccount() != null) {
             actionGroup.add(new InstallApplicationAction(project, namespaceNode));
-            actionGroup.add(new Separator());
+            actionGroup.add(SEPARATOR);
             actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
         } else {
             actionGroup.add(new InstallStandaloneApplicationAction(project, namespaceNode));
         }
-        actionGroup.add(new Separator());
+        actionGroup.add(SEPARATOR);
         actionGroup.add(new CleanDevSpacePersistentDataAction(project, namespaceNode));
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Namespace.Actions", actionGroup);
@@ -129,25 +141,28 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     private void renderApplicationAction(MouseEvent event, ApplicationNode applicationNode) {
-        if (StringUtils.equals(applicationNode.getName(), DEFAULT_APPLICATION_NAME)) {
-            return;
-        }
-
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
-        actionGroup.add(new UninstallAppAction(project, applicationNode));
-        actionGroup.add(new Separator());
+        if (StringUtils.equals(applicationNode.getName(), DEFAULT_APPLICATION_NAME)) {
+            actionGroup.add(new AppPortForwardAction(project, applicationNode));
+            actionGroup.add(new ClearAppPersisentDataAction(project, applicationNode));
+            actionGroup.add(new ApplyAction(project, applicationNode));
 
-        actionGroup.add(new AppPortForwardAction(project, applicationNode));
-        actionGroup.add(new ClearAppPersisentDataAction(project, applicationNode));
-        actionGroup.add(new ApplyAction(project, applicationNode));
+        } else {
+            actionGroup.add(new UninstallAppAction(project, applicationNode));
+            actionGroup.add(SEPARATOR);
 
-        if (applicationNode.getNamespaceNode().getClusterNode().getServiceAccount() != null) {
-            actionGroup.add(new UpgradeAppAction(project, applicationNode));
+            actionGroup.add(new AppPortForwardAction(project, applicationNode));
+            actionGroup.add(new ClearAppPersisentDataAction(project, applicationNode));
+            actionGroup.add(new ApplyAction(project, applicationNode));
+
+            if (applicationNode.getNamespaceNode().getClusterNode().getServiceAccount() != null) {
+                actionGroup.add(new UpgradeAppAction(project, applicationNode));
+            }
+
+            actionGroup.add(SEPARATOR);
+            actionGroup.add(new LoadResourceAction(project, applicationNode));
         }
-
-        actionGroup.add(new Separator());
-        actionGroup.add(new LoadResourceAction(project, applicationNode));
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Application.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
@@ -162,31 +177,40 @@ public class TreeMouseListener extends MouseAdapter {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
-        if (nhctlDescribeService.isDeveloping()) {
+        if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
             actionGroup.add(new EndDevelopAction(project, resourceNode));
         } else {
             actionGroup.add(new StartDevelopAction(project, resourceNode));
         }
         actionGroup.add(new RunAction(project, resourceNode));
         actionGroup.add(new DebugAction(project, resourceNode));
-        actionGroup.add(new Separator());
+        actionGroup.add(SEPARATOR);
         actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
         actionGroup.add(new ConfigAction(project, resourceNode));
         actionGroup.add(new EditManifestAction(project, resourceNode));
         actionGroup.add(new PortForwardAction(project, resourceNode));
         actionGroup.add(new LogsAction(project, resourceNode));
-        actionGroup.add(new Separator());
+        actionGroup.add(SEPARATOR);
         actionGroup.add(new ResetAction(project, resourceNode));
         actionGroup.add(new ClearPersistentDataAction(project, resourceNode));
-        actionGroup.add(new Separator());
+        actionGroup.add(SEPARATOR);
         actionGroup.add(new TerminalAction(project, resourceNode));
         actionGroup.add(new CopyTerminalAction(project, resourceNode));
 
-        if (nhctlDescribeService.isDeveloping() && !PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
-            actionGroup.add(new Separator());
+        if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)
+                && !PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
+            actionGroup.add(SEPARATOR);
             actionGroup.add(new OpenProjectAction(project, resourceNode));
         }
 
+        ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
+        JBPopupMenu.showByEvent(event, menu.getComponent());
+    }
+
+    private void renderViewerWorkloadAction(MouseEvent event, ResourceNode resourceNode) {
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+        actionGroup.add(new PortForwardAction(project, resourceNode));
+        actionGroup.add(new LogsAction(project, resourceNode));
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
     }

@@ -7,7 +7,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -18,6 +17,7 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ConfigFile;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -42,11 +42,12 @@ public class ConfigAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Loading config") {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Loading config") {
             private String config;
 
             @Override
             public void onSuccess() {
+                super.onSuccess();
                 String filename = node.resourceName() + ".yaml";
                 VirtualFile virtualFile = new ConfigFile(filename, filename, config, project, node);
                 OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
@@ -62,8 +63,8 @@ public class ConfigAction extends DumbAwareAction {
 
             @SneakyThrows
             @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, namespace);
+            public void runTask(@NotNull ProgressIndicator indicator) {
+                NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, namespace, this);
                 nhctlConfigOptions.setDeployment(node.resourceName());
                 nhctlConfigOptions.setControllerType(node.getKubeResource().getKind());
                 config = nhctlCommand.getConfig(node.applicationName(), nhctlConfigOptions);
