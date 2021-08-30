@@ -28,7 +28,7 @@ public class InstallDemoTask extends BaseBackgroundTask {
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     public InstallDemoTask(Project project, Path kubeConfigPath, String namespace) {
-        super(project, "Install demo", true);
+        super(project, "Deploy demo", true);
         this.project = project;
         this.kubeConfigPath = kubeConfigPath;
         this.namespace = namespace;
@@ -41,7 +41,7 @@ public class InstallDemoTask extends BaseBackgroundTask {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
-        NocalhostNotifier.getInstance(project).notifySuccess("Demo installed", "");
+        NocalhostNotifier.getInstance(project).notifySuccess("Demo deployed", "");
 
         ApplicationManager.getApplication().invokeLater(() -> {
             ProgressManager.getInstance().run(new BrowseDemoTask(project, kubeConfigPath, namespace));
@@ -50,8 +50,8 @@ public class InstallDemoTask extends BaseBackgroundTask {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Demo install error",
-                "Error occurred while installing demo", e);
+        ErrorUtil.dealWith(this.getProject(), "Demo deployment error",
+                "Error occurred while deploying demo", e);
 
     }
 

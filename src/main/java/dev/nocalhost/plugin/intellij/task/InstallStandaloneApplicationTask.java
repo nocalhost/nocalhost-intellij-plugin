@@ -23,7 +23,7 @@ public class InstallStandaloneApplicationTask extends BaseBackgroundTask {
     public InstallStandaloneApplicationTask(Project project,
                                             String applicationName,
                                             NhctlInstallOptions opts) {
-        super(project, "Install Application: " + applicationName);
+        super(project, "Deploy Application: " + applicationName);
 
         this.project = project;
         this.applicationName = applicationName;
@@ -46,14 +46,14 @@ public class InstallStandaloneApplicationTask extends BaseBackgroundTask {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
         NocalhostNotifier.getInstance(project).notifySuccess(
-                "Application " + applicationName + " installed",
+                "Application " + applicationName + " deployed",
                 "");
     }
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Application install error",
-                "Error occurred while installing application " + applicationName, e);
+        ErrorUtil.dealWith(this.getProject(), "Application deployment error",
+                "Error occurred while deploying application " + applicationName, e);
 
     }
 }

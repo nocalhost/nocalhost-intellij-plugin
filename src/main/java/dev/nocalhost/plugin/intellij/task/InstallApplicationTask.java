@@ -42,7 +42,7 @@ public class InstallApplicationTask extends BaseBackgroundTask {
     private String productPagePort;
 
     public InstallApplicationTask(@Nullable Project project, Application application, NhctlInstallOptions opts) {
-        super(project, "Installing application: " + application.getContext().getApplicationName(), true);
+        super(project, "Deploying application: " + application.getContext().getApplicationName(), true);
         this.project = project;
         this.application = application;
         this.opts = opts;
@@ -58,7 +58,7 @@ public class InstallApplicationTask extends BaseBackgroundTask {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
         NocalhostNotifier.getInstance(project).notifySuccess(
-                "Application " + application.getContext().getApplicationName() + " installed",
+                "Application " + application.getContext().getApplicationName() + " Deployed",
                 "");
     }
 
@@ -72,8 +72,8 @@ public class InstallApplicationTask extends BaseBackgroundTask {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Nocalhost install devSpace error",
-                "Error occurred while installing application", e);
+        ErrorUtil.dealWith(this.getProject(), "Application deployment error",
+                "Error occurred while deploying application", e);
     }
 
     @SneakyThrows

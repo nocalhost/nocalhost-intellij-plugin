@@ -61,7 +61,7 @@ public class InstallApplicationAction extends DumbAwareAction {
     private final String namespace;
 
     public InstallApplicationAction(Project project, NamespaceNode node) {
-        super("Install Application", "", AllIcons.Actions.Install);
+        super("Deploy Application", "", AllIcons.Actions.Install);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
@@ -99,7 +99,7 @@ public class InstallApplicationAction extends DumbAwareAction {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showInfoMessage(
                             project,
                             "No application found. Please configure your applications in Nocalhost Service Dashboard.",
-                            "Install Application"));
+                            "Deploy Application"));
                 }
 
             } catch (NocalhostServerVersionOutDatedException e) {
@@ -114,7 +114,7 @@ public class InstallApplicationAction extends DumbAwareAction {
     private void selectApplication(List<Application> applications) {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (applications.isEmpty()) {
-                Messages.showMessageDialog("All applications are installed.", "Install Application", null);
+                Messages.showMessageDialog("All applications are deployed.", "Deploy Application", null);
                 return;
             }
 
@@ -136,8 +136,8 @@ public class InstallApplicationAction extends DumbAwareAction {
                 try {
                     installApp(applicationOptional.get());
                 } catch (Exception e) {
-                    ErrorUtil.dealWith(project, "Install application error",
-                            "Error occurs while installing application", e);
+                    ErrorUtil.dealWith(project, "Application deployment error",
+                            "Error occurs while deploying application", e);
                 }
             }
         });
@@ -234,13 +234,13 @@ public class InstallApplicationAction extends DumbAwareAction {
     }
 
     private AppInstallOrUpgradeOption askAndGetInstallOption(String installType, Application app) {
-        final String title = "Install DevSpace: " + app.getContext().getApplicationName();
+        final String title = "Deploy Application: " + app.getContext().getApplicationName();
         AppInstallOrUpgradeOptionDialog dialog;
         if (StringUtils.equals(installType, MANIFEST_TYPE_HELM_REPO)) {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,
-                    "Which version to install?",
+                    "Which version to deploy?",
                     "Default Version",
                     "Input the version of chart",
                     "Chart version cannot be empty");
@@ -256,7 +256,7 @@ public class InstallApplicationAction extends DumbAwareAction {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,
-                    "Which branch to install(Manifests in Git Repo)?",
+                    "Which branch to deploy(Manifests in Git Repo)?",
                     "Default Branch",
                     "Input the branch of repository",
                     "Git ref cannot be empty");
