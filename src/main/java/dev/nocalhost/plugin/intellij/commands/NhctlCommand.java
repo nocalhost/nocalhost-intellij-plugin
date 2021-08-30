@@ -739,7 +739,7 @@ public class NhctlCommand {
         if (args.size() > 0 && StringUtils.equals(args.get(1), "get")) {
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
-                    Thread.sleep(10 * 1000);
+                    Thread.sleep(10 * 1000 * 1000);
                     if (process.isAlive()) {
                         process.destroy();
                     }
