@@ -25,11 +25,10 @@ public class NocalhostProjectService {
     }
 
     public void refreshServiceProjectPath() {
-        final String projectPath = project.getBasePath();
         final NhctlCommand nhctlCommand = ApplicationManager.getApplication()
                 .getService(NhctlCommand.class);
         final NhctlDevAssociateQueryerOptions opts = new NhctlDevAssociateQueryerOptions();
-        opts.setAssociate(Paths.get(projectPath).toString());
+        opts.setAssociate(Paths.get(project.getBasePath()).toString());
         opts.setCurrent(true);
         try {
             String output = nhctlCommand.devAssociateQueryer(opts);
