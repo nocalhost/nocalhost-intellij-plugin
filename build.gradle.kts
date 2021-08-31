@@ -51,6 +51,8 @@ val ideaVersion = prop("ideaVersion")
 val nocalhostVersion = prop("version")
 
 val terminalPlugin = "terminal"
+var javascriptPlugin = "JavaScript"
+var javascriptDebuggerPlugin = "JavaScriptDebugger"
 val javaPlugin = "com.intellij.java"
 val phpPlugin = "com.jetbrains.php:" + prop("phpPluginVersion")
 val goPlugin = "org.jetbrains.plugins.go:" + prop("goPluginVersion")
@@ -62,6 +64,8 @@ version = "$nocalhostVersion-$platformVersion"
 intellij {
     version.set(ideaVersion)
     plugins.set(mutableListOf(
+        javascriptDebuggerPlugin,
+        javascriptPlugin,
         terminalPlugin,
         pythonPlugin,
         javaPlugin,
@@ -84,6 +88,9 @@ tasks.runIde {
     }
     if (baseIDE == "GO") {
         ideDir.set(File("/Applications/GoLand.app/Contents"))
+    }
+    if (baseIDE == "Node") {
+        ideDir.set(File("/Applications/WebStorm.app/Contents"))
     }
     if (baseIDE == "Python") {
         ideDir.set(File("/Applications/PyCharm.app/Contents"))
