@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,8 +46,6 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
-
-import static dev.nocalhost.plugin.intellij.utils.Constants.DEVELOP_STATUS_STARTED;
 
 public class NocalhostProfileState extends CommandLineState {
     private static final Logger LOG = Logger.getInstance(NocalhostProfileState.class);
@@ -351,9 +350,9 @@ public class NocalhostProfileState extends CommandLineState {
     }
 
     private boolean projectPathMatched(NhctlDescribeService nhctlDescribeService) {
-        String projectPath = getEnvironment().getProject().getBasePath();
+        var basePath = Paths.get(getEnvironment().getProject().getBasePath()).toString();
         for (String path : nhctlDescribeService.getLocalAbsoluteSyncDirFromDevStartPlugin()) {
-            if (StringUtils.equals(projectPath, path)) {
+            if (StringUtils.equals(basePath, path)) {
                 return true;
             }
         }
