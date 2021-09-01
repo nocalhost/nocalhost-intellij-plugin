@@ -36,9 +36,9 @@ public class HotReload implements Disposable {
     private static final Logger LOG = Logger.getInstance(HotReload.class);
 
     private Process process;
-    private MessageBusConnection connection;
-    private ExecutionEnvironment environment;
-    private AtomicBoolean hasFileChanged = new AtomicBoolean(false);
+    private final MessageBusConnection connection;
+    private final ExecutionEnvironment environment;
+    private final AtomicBoolean hasFileChanged = new AtomicBoolean(false);
 
     public HotReload(@NotNull ExecutionEnvironment environment) {
         this.environment = environment;
