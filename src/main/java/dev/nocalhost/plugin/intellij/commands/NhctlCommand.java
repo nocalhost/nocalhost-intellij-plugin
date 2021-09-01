@@ -9,6 +9,8 @@ import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.SystemInfo;
+import com.intellij.util.Alarm;
+import com.intellij.util.AlarmFactory;
 import com.intellij.util.EnvironmentUtil;
 
 import org.apache.commons.lang3.StringUtils;
@@ -737,15 +739,9 @@ public class NhctlCommand {
         }
 
         if (args.size() > 0 && StringUtils.equals(args.get(1), "get")) {
-            ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                try {
-                    Thread.sleep(10 * 1000);
-                    if (process.isAlive()) {
-                        process.destroy();
-                    }
-                } catch (Exception ignore) {
-                }
-            });
+            AlarmFactory.getInstance()
+                        .create(Alarm.ThreadToUse.POOLED_THREAD, ApplicationManager.getApplication())
+                        .addRequest(process::destroy, 10 * 1000);
         }
 
         final AtomicReference<String> errorOutput = new AtomicReference<>();
