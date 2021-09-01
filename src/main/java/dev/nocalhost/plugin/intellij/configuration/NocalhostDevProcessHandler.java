@@ -9,6 +9,7 @@ import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.ui.RunContentDescriptor;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import com.intellij.execution.ui.RunContentManager;
 import com.intellij.openapi.diagnostic.Logger;
 
@@ -18,8 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
-
-import lombok.SneakyThrows;
 
 public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
     private static final Logger LOG = Logger.getInstance(NocalhostDevProcessHandler.class);
@@ -35,9 +34,12 @@ public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
         this.executionEnvironment = environment;
         this.addProcessListener(new ProcessAdapter() {
             @Override
-            @SneakyThrows
             public void startNotified(@NotNull ProcessEvent event) {
-                state.startup();
+                try {
+                    state.startup();
+                } catch (ExecutionException ex) {
+                    ErrorUtil.dealWith(environment.getProject(), "NocalhostProfileState#startup", ex.getMessage(), ex);
+                }
             }
 
             @Override

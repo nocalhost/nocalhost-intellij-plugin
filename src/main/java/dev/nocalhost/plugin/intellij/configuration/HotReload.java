@@ -27,10 +27,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
-import dev.nocalhost.plugin.intellij.settings.NocalhostProjectSettings;
+import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class HotReload implements Disposable {
@@ -89,7 +88,7 @@ public class HotReload implements Disposable {
 
     public HotReload withExec() throws ExecutionException {
         var project = environment.getProject();
-        var service = project.getService(NocalhostProjectSettings.class).getDevModeService();
+        var service = project.getService(NocalhostProjectService.class).getServiceProjectPath();
         var cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(),
                 "sync-status",
@@ -101,7 +100,7 @@ public class HotReload implements Disposable {
                 "--controller-type",
                 service.getServiceType(),
                 "--kubeconfig",
-                KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig()).toString(),
+                service.getKubeConfigPath().toString(),
                 "--watch"
         )).withRedirectErrorStream(true);
 
