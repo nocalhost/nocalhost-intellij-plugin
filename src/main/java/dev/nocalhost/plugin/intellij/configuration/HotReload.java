@@ -87,8 +87,8 @@ public class HotReload implements Disposable {
     }
 
     public HotReload withExec() throws ExecutionException {
-        var project = environment.getProject();
-        var service = project.getService(NocalhostProjectService.class).getServiceProjectPath();
+        var service = environment.getProject()
+                .getService(NocalhostProjectService.class).getServiceProjectPath();
         var cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(),
                 "sync-status",
