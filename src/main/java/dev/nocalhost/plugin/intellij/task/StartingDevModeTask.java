@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -168,7 +169,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                 devModeService.getNamespace(), this);
         nhctlDevStartOptions.setDeployment(devModeService.getServiceName());
         nhctlDevStartOptions.setControllerType(devModeService.getServiceType());
-        nhctlDevStartOptions.setLocalSync(Lists.newArrayList(project.getBasePath()));
+        nhctlDevStartOptions.setLocalSync(Lists.newArrayList(Paths.get(project.getBasePath()).toString()));
         nhctlDevStartOptions.setContainer(devModeService.getContainerName());
         nhctlDevStartOptions.setStorageClass(storageClass);
         nhctlDevStartOptions.setWithoutTerminal(true);
