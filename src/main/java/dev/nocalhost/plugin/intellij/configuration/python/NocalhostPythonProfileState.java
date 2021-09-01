@@ -29,6 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
+import dev.nocalhost.plugin.intellij.configuration.HotReload;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostDevInfo;
 import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -143,7 +144,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         return String.join(" ", container.getDev().getCommand().getDebug());
     }
 
-    public void doStartupDebug() throws ExecutionException, IOException, NocalhostExecuteCmdException, InterruptedException {
+    public void startup() throws ExecutionException, IOException, NocalhostExecuteCmdException, InterruptedException {
         NocalhostDevInfo context = refContext.get();
         if (context == null) {
             throw new ExecutionException("Call prepare() before this method");
@@ -193,9 +194,12 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         // Wait for SSH tunnel to be created
         Thread.sleep(2000);
         createServer(lines);
+
+        // live reload
+        disposables.add(new HotReload(getEnvironment()).withExec());
     }
 
-    public void doDestroyDebug() {
+    public void destroy() {
         disposables.forEach(it -> it.dispose());
         disposables.clear();
     }
@@ -290,7 +294,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
                 output.write(3);
                 output.flush();
             } catch (IOException ex) {
-                LOG.warn("Fail to send ctrl+c to remote process", ex);
+                LOG.warn("[exec] Fail to send ctrl+c to remote process", ex);
             }
         });
         ApplicationManager.getApplication().executeOnPooledThread(() -> {

@@ -19,25 +19,30 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
 
+import lombok.SneakyThrows;
+
 public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
     private static final Logger LOG = Logger.getInstance(NocalhostDevProcessHandler.class);
 
     private final ExecutionEnvironment executionEnvironment;
-    private final NocalhostProfileState nocalhostProfileState;
 
     public NocalhostDevProcessHandler(
             @NotNull GeneralCommandLine commandLine,
             @NotNull ExecutionEnvironment environment,
-            NocalhostProfileState nocalhostProfileState
+            NocalhostProfileState state
     ) throws ExecutionException {
         super(commandLine);
         this.executionEnvironment = environment;
-        this.nocalhostProfileState = nocalhostProfileState;
         this.addProcessListener(new ProcessAdapter() {
             @Override
+            @SneakyThrows
+            public void startNotified(@NotNull ProcessEvent event) {
+                state.startup();
+            }
+
+            @Override
             public void processTerminated(@NotNull ProcessEvent event) {
-                NocalhostDevProcessHandler.this.nocalhostProfileState.doRemoveTunnel();
-                NocalhostDevProcessHandler.this.nocalhostProfileState.stopDebugPortForward();
+                state.destroy();
             }
         });
     }

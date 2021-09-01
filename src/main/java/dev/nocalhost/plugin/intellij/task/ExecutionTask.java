@@ -77,6 +77,7 @@ public class ExecutionTask extends Task.Backgroundable {
         var path = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
         var opts = new NhctlSyncStatusOptions(path, service.getNamespace());
         opts.setWait(true);
+        opts.setTimeout(600);
         opts.setDeployment(service.getServiceName());
         opts.setControllerType(service.getServiceType());
         var cmd = project.getService(OutputCapturedNhctlCommand.class);

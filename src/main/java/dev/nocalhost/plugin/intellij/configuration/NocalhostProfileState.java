@@ -156,11 +156,6 @@ public class NocalhostProfileState extends CommandLineState {
         }
     }
 
-    public void doRemoveTunnel() {
-        disposables.forEach(x -> x.dispose());
-        disposables.clear();
-    }
-
     private void doCreateTunnel(ServiceContainer container) throws ExecutionException, NocalhostExecuteCmdException, IOException, InterruptedException {
         Project project = getEnvironment().getProject();
         String debugPort = resolveDebugPort(container);
@@ -386,5 +381,15 @@ public class NocalhostProfileState extends CommandLineState {
             return null;
         }
         return serviceContainer.getDev().getDebug().getRemoteDebugPort();
+    }
+
+    public void startup() throws ExecutionException {
+        disposables.add(new HotReload(getEnvironment()).withExec());
+    }
+
+    public void destroy() {
+        disposables.forEach(x -> x.dispose());
+        disposables.clear();
+        stopDebugPortForward();
     }
 }
