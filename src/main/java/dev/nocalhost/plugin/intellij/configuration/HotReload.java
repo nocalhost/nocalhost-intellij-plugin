@@ -93,15 +93,15 @@ public class HotReload implements Disposable {
                 NhctlUtil.binaryPath(),
                 "sync-status",
                 service.getApplicationName(),
-                "--namespace",
-                service.getNamespace(),
                 "--deployment",
                 service.getServiceName(),
+                "--watch",
                 "--controller-type",
                 service.getServiceType(),
+                "--namespace",
+                service.getNamespace(),
                 "--kubeconfig",
-                service.getKubeConfigPath().toString(),
-                "--watch"
+                service.getKubeConfigPath().toString()
         )).withRedirectErrorStream(true);
 
         echo("[cmd] " + cmd.getCommandLineString());
