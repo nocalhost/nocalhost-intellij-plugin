@@ -29,6 +29,7 @@ import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.TerminalUtil;
@@ -65,7 +66,7 @@ public class TerminalAction extends DumbAwareAction {
 
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, namespace);
                 List<NhctlGetResource> podList = nhctlCommand.getResources("Pods", nhctlGetOptions,
-                        node.getKubeResource().getSpec().getSelector().getMatchLabels());
+                        KubeResourceUtil.getMatchLabels(node.getKubeResource()));
                 List<KubeResource> pods = podList.stream()
                         .map(NhctlGetResource::getKubeResource)
                         .filter(KubeResource::canSelector)
