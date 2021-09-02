@@ -83,7 +83,7 @@ public class ExecutionTask extends Task.Backgroundable {
         var text = cmd.syncStatus(service.getApplicationName(), opts);
         var json = DataUtils.GSON.fromJson(text, NhctlSyncStatus.class);
         if ("idle".equals(json.getStatus())) {
-            doRun();
+            ApplicationManager.getApplication().invokeLater(this::doRun);
         }
     }
 
