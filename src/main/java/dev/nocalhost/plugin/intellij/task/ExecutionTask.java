@@ -55,6 +55,7 @@ public class ExecutionTask extends Task.Backgroundable {
             put("GO", NocalhostGoConfigurationType.class);
             put("PS", NocalhostPhpConfigurationType.class);
             put("WS", NocalhostNodeConfigurationType.class);
+            put("IC", NocalhostJavaConfigurationType.class);
             put("IU", NocalhostJavaConfigurationType.class);
             put("PY", NocalhostPythonConfigurationType.class);
         }

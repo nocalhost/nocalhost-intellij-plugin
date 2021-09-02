@@ -7,7 +7,7 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
 
-    <depends>JavaScript</depends>
+    <depends optional="true" config-file="js-only.xml">JavaScript</depends>
     <depends optional="true" config-file="node-only.xml">JavaScriptDebugger</depends>
 
     <depends optional="true" config-file="python-only.xml">Pythonid</depends>
