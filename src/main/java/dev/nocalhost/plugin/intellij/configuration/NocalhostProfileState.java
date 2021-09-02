@@ -46,6 +46,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
@@ -233,16 +234,7 @@ public class NocalhostProfileState extends CommandLineState {
                 throw new ExecutionException("Service not found");
             }
 
-            Map<String, String> labels = new HashMap<>();
-            if (deploymentOptional.get().getKubeResource().getKind().equals("Job")) {
-                labels.put("job-name", "job-generated-job-" + deploymentOptional.get().getKubeResource().getMetadata().getName());
-            } else if (deploymentOptional.get().getKubeResource().getKind().equals("CronJob")) {
-                labels.put("job-name", "cronjob-generated-job-" + deploymentOptional.get().getKubeResource().getMetadata().getName());
-            } else {
-                labels = deploymentOptional.get().getKubeResource().getSpec().getSelector().getMatchLabels();
-            }
-
-            var pods = nhctlCommand.getResources("Pods", nhctlGetOptions, labels);
+            var pods = nhctlCommand.getResources("Pods", nhctlGetOptions, KubeResourceUtil.getMatchLabels(deploymentOptional.get().getKubeResource()));
             Optional<NhctlGetResource> podOptional = pods.stream().filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev"))).findFirst();
             if (podOptional.isEmpty()) {
                 throw new ExecutionException("Pod not found");
@@ -313,7 +305,7 @@ public class NocalhostProfileState extends CommandLineState {
         }
 
         Optional<NhctlGetResource> pods = command
-                .getResources("Pods", nhctlGetOptions, deployments.get().getKubeResource().getSpec().getSelector().getMatchLabels())
+                .getResources("Pods", nhctlGetOptions, KubeResourceUtil.getMatchLabels(deployments.get().getKubeResource()))
                 .stream()
                 .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
                 .findFirst();
