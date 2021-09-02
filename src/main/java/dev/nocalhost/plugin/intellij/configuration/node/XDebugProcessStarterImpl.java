@@ -33,10 +33,10 @@ public class XDebugProcessStarterImpl extends XDebugProcessStarter {
             @NotNull InetSocketAddress socket,
             @NotNull ExecutionResult result
     ) {
-        this.environment = environment;
         this.conf = conf;
-        this.result = result;
         this.socket = socket;
+        this.result = result;
+        this.environment = environment;
     }
 
     @Override
