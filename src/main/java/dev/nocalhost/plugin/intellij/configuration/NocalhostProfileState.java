@@ -21,7 +21,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -231,9 +233,16 @@ public class NocalhostProfileState extends CommandLineState {
                 throw new ExecutionException("Service not found");
             }
 
-            List<NhctlGetResource> pods = nhctlCommand.getResources("Pods", nhctlGetOptions,
-                    deploymentOptional.get().getKubeResource().getSpec().getSelector().getMatchLabels());
+            Map<String, String> labels = new HashMap<>();
+            if (deploymentOptional.get().getKubeResource().getKind().equals("Job")) {
+                labels.put("job-name", "job-generated-job-" + deploymentOptional.get().getKubeResource().getMetadata().getName());
+            } else if (deploymentOptional.get().getKubeResource().getKind().equals("CronJob")) {
+                labels.put("job-name", "cronjob-generated-job-" + deploymentOptional.get().getKubeResource().getMetadata().getName());
+            } else {
+                labels = deploymentOptional.get().getKubeResource().getSpec().getSelector().getMatchLabels();
+            }
 
+            var pods = nhctlCommand.getResources("Pods", nhctlGetOptions, labels);
             Optional<NhctlGetResource> podOptional = pods.stream().filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev"))).findFirst();
             if (podOptional.isEmpty()) {
                 throw new ExecutionException("Pod not found");
