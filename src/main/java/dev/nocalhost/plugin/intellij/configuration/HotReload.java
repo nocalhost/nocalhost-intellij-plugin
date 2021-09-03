@@ -22,9 +22,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
@@ -58,7 +61,7 @@ public class HotReload implements Disposable {
     }
 
     private boolean isInIdea(String path) {
-        return Arrays.asList(path.split(File.separator)).contains(".idea");
+        return Arrays.asList(path.split(Matcher.quoteReplacement(File.separator))).contains(".idea");
     }
 
     public void dispose() {
