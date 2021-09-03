@@ -5,17 +5,14 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 
 public final class NhctlUtil {
     private static final Path NOCALHOST_BIN_DIR = Paths.get(System.getProperty("user.home"), ".nh", "bin");
