@@ -11,6 +11,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.newvfs.BulkFileListener;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
@@ -19,14 +20,12 @@ import com.intellij.util.messages.MessageBusConnection;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
 
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
@@ -48,7 +47,7 @@ public class HotReload implements Disposable {
             public void after(@NotNull List<? extends VFileEvent> events) {
                 var project = environment.getProject();
                 for (VFileEvent event: events) {
-                    if (isInIdea(event.getPath()) || event.getFile() == null) {
+                    if (event.getFile() == null || inIdea(event.getFile())) {
                         continue;
                     }
                     if (ProjectFileIndex.getInstance(project).isInContent(event.getFile())) {
@@ -60,8 +59,13 @@ public class HotReload implements Disposable {
         });
     }
 
-    private boolean isInIdea(String path) {
-        return Arrays.asList(path.split(Matcher.quoteReplacement(File.separator))).contains(".idea");
+    private boolean inIdea(VirtualFile file) {
+        for (Path part : Paths.get(file.getPresentableUrl())) {
+            if (part.toString().equals(".idea")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void dispose() {
