@@ -106,20 +106,20 @@ public class NocalhostProfileState extends CommandLineState {
 
             NhctlRawConfig nhctlRawConfig = getNhctlConfig(devService);
             List<ServiceContainer> containers = nhctlRawConfig.getContainers();
-            ServiceContainer svc = containers.isEmpty() ? null : containers.get(0);
+            ServiceContainer container = containers.isEmpty() ? null : containers.get(0);
             if (StringUtils.isNotEmpty(devService.getContainerName())) {
                 for (ServiceContainer c : containers) {
                     if (StringUtils.equals(devService.getContainerName(), c.getName())) {
-                        svc = c;
+                        container = c;
                         break;
                     }
                 }
             }
-            if (svc == null) {
+            if (container == null) {
                 throw new ExecutionException("Service container config not found.");
             }
 
-            NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(svc), resolveDebugCommand(svc));
+            NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(container), resolveDebugCommand(container));
             NocalhostDevInfo.Debug debug = null;
             if (isDebugExecutor()) {
                 if (!StringUtils.isNotEmpty(command.getDebug())) {
@@ -129,9 +129,9 @@ public class NocalhostProfileState extends CommandLineState {
                 String runnerId = getEnvironment().getRunner().getRunnerId();
                 if (NocalhostPhpDebugRunner.RUNNER_ID.equals(runnerId)) {
                     // PHP remote debugging use SSH tunnel
-                    doCreateTunnel(svc);
+                    doCreateTunnel(container);
                 } else {
-                    String remotePort = resolveDebugPort(svc);
+                    String remotePort = resolveDebugPort(container);
                     if (!StringUtils.isNotEmpty(remotePort)) {
                         throw new ExecutionException("Remote debug port not configured.");
                     }
@@ -146,9 +146,9 @@ public class NocalhostProfileState extends CommandLineState {
 
             devInfoHolder.set(new NocalhostDevInfo(
                     debug,
-                    svc.getDev().getShell(),
+                    container.getDev().getShell(),
                     command,
-                    svc,
+                    container,
                     devService
             ));
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException | ExecutionException e) {
