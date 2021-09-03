@@ -57,44 +57,45 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     }
 
     public void prepare() throws ExecutionException {
-        ServiceProjectPath devService = nocalhostProjectService.getServiceProjectPath();
+        var devService = NhctlUtil.getDevModeService(getEnvironment().getProject());
         if (devService == null) {
             throw new ExecutionException("Service is not in dev mode.");
         }
 
-        NhctlDescribeService desService = getNhctlDescribeService(devService);
+        var desService = NhctlUtil.getDescribeService(devService);
         if (!NhctlDescribeServiceUtil.developStarted(desService) || !isProjectPathMatched(desService)) {
             throw new ExecutionException("Service is not in dev mode.");
         }
 
         var containers = desService.getRawConfig().getContainers();
-        var container = containers.isEmpty() ? null : containers.get(0);
+        var svc = containers.isEmpty() ? null : containers.get(0);
         if (StringUtils.isNotEmpty(devService.getContainerName())) {
             for (ServiceContainer c : containers) {
                 if (StringUtils.equals(devService.getContainerName(), c.getName())) {
-                    container = c;
+                    svc = c;
                     break;
                 }
             }
         }
-        if (container == null) {
+        if (svc == null) {
             throw new ExecutionException("Service container config not found.");
         }
 
-        NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(container), resolveDebugCommand(container));
+        NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(svc), resolveDebugCommand(svc));
         if (!StringUtils.isNotEmpty(command.getDebug())) {
             throw new ExecutionException("Debug command is not configured");
         }
 
-        String port = resolveDebugPort(container);
+        String port = resolveDebugPort(svc);
         if (!StringUtils.isNotEmpty(port)) {
             throw new ExecutionException("Remote debug port is not configured.");
         }
 
         refContext.set(new NocalhostDevInfo(
-                command,
                 null,
-                container.getDev().getShell(),
+                svc.getDev().getShell(),
+                command,
+                svc,
                 devService
         ));
     }
@@ -164,20 +165,6 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             throw new ExecutionException("Service is not in dev mode.");
         }
 
-        List<ServiceContainer> containers = nhctlDescribeService.getRawConfig().getContainers();
-        ServiceContainer container = containers.isEmpty() ? null : containers.get(0);
-        if (StringUtils.isNotEmpty(devService.getContainerName())) {
-            for (ServiceContainer c : containers) {
-                if (StringUtils.equals(devService.getContainerName(), c.getName())) {
-                    container = c;
-                    break;
-                }
-            }
-        }
-        if (container == null) {
-            throw new ExecutionException("Service container config not found.");
-        }
-
         String shell = StringUtils.isNotEmpty(context.getShell()) ? context.getShell() : DEFAULT_SHELL;
         String debug = context.getCommand().getDebug();
 
@@ -190,13 +177,11 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
                 "--namespace", devService.getNamespace()
         );
 
-        createTunnel(container);
+        createTunnel(context.getContainer());
         // Wait for SSH tunnel to be created
         Thread.sleep(2000);
-        createServer(lines);
-
-        // live reload
-        disposables.add(new HotReload(getEnvironment()).withExec());
+        createClient(lines);
+        createReload(context.getContainer());
     }
 
     public void destroy() {
@@ -205,8 +190,9 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     }
 
     private String getDevPodName() throws IOException, InterruptedException, ExecutionException, NocalhostExecuteCmdException {
-        ServiceProjectPath service = nocalhostProjectService.getServiceProjectPath();
-        NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
+        var context = refContext.get();
+        var service = context.getDevModeService();
+        var command = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
         NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(service.getKubeConfigPath(), service.getNamespace());
         Optional<NhctlGetResource> deployments = command
@@ -279,7 +265,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         });
     }
 
-    private void createServer(List<String> lines) throws ExecutionException {
+    private void createClient(List<String> lines) throws ExecutionException {
         var cmd = new GeneralCommandLine(lines).withRedirectErrorStream(true);
         var bus = getEnvironment()
                 .getProject()
@@ -312,6 +298,12 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
                 LOG.error(ex);
             }
         });
+    }
+
+    private void createReload(ServiceContainer container) throws ExecutionException {
+        if (container.getDev().isHotReload()) {
+            disposables.add(new HotReload(getEnvironment()).withExec());
+        }
     }
 
     private @NotNull String withNewLine(String text) {

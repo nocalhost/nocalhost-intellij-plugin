@@ -90,14 +90,13 @@ public class NocalhostProfileState extends CommandLineState {
 
     public void prepareDevInfo() throws ExecutionException {
         try {
-            ServiceProjectPath devModeService = nocalhostProjectService.getServiceProjectPath();
-            if (devModeService == null) {
+            var devService = NhctlUtil.getDevModeService(getEnvironment().getProject());
+            if (devService == null) {
                 throw new ExecutionException("Service is not in dev mode.");
             }
 
-            NhctlDescribeService nhctlDescribeService = getNhctlDescribeService(devModeService);
-            if (!NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)
-                    || !projectPathMatched(nhctlDescribeService)) {
+            var desService = NhctlUtil.getDescribeService(devService);
+            if (!NhctlDescribeServiceUtil.developStarted(desService) || !projectPathMatched(desService)) {
                 throw new ExecutionException("Service is not in dev mode.");
             }
 
@@ -105,22 +104,22 @@ public class NocalhostProfileState extends CommandLineState {
                 throw new ExecutionException("File sync has not yet completed.");
             }
 
-            NhctlRawConfig nhctlRawConfig = getNhctlConfig(devModeService);
+            NhctlRawConfig nhctlRawConfig = getNhctlConfig(devService);
             List<ServiceContainer> containers = nhctlRawConfig.getContainers();
-            ServiceContainer serviceContainer = containers.isEmpty() ? null : containers.get(0);
-            if (StringUtils.isNotEmpty(devModeService.getContainerName())) {
+            ServiceContainer svc = containers.isEmpty() ? null : containers.get(0);
+            if (StringUtils.isNotEmpty(devService.getContainerName())) {
                 for (ServiceContainer c : containers) {
-                    if (StringUtils.equals(devModeService.getContainerName(), c.getName())) {
-                        serviceContainer = c;
+                    if (StringUtils.equals(devService.getContainerName(), c.getName())) {
+                        svc = c;
                         break;
                     }
                 }
             }
-            if (serviceContainer == null) {
+            if (svc == null) {
                 throw new ExecutionException("Service container config not found.");
             }
 
-            NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(serviceContainer), resolveDebugCommand(serviceContainer));
+            NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(svc), resolveDebugCommand(svc));
             NocalhostDevInfo.Debug debug = null;
             if (isDebugExecutor()) {
                 if (!StringUtils.isNotEmpty(command.getDebug())) {
@@ -130,13 +129,13 @@ public class NocalhostProfileState extends CommandLineState {
                 String runnerId = getEnvironment().getRunner().getRunnerId();
                 if (NocalhostPhpDebugRunner.RUNNER_ID.equals(runnerId)) {
                     // PHP remote debugging use SSH tunnel
-                    doCreateTunnel(serviceContainer);
+                    doCreateTunnel(svc);
                 } else {
-                    String remotePort = resolveDebugPort(serviceContainer);
+                    String remotePort = resolveDebugPort(svc);
                     if (!StringUtils.isNotEmpty(remotePort)) {
                         throw new ExecutionException("Remote debug port not configured.");
                     }
-                    String localPort = startDebugPortForward(devModeService, remotePort);
+                    String localPort = startDebugPortForward(devService, remotePort);
                     debug = new NocalhostDevInfo.Debug(remotePort, localPort);
                 }
             } else {
@@ -146,10 +145,11 @@ public class NocalhostProfileState extends CommandLineState {
             }
 
             devInfoHolder.set(new NocalhostDevInfo(
-                    command,
                     debug,
-                    serviceContainer.getDev().getShell(),
-                    devModeService
+                    svc.getDev().getShell(),
+                    command,
+                    svc,
+                    devService
             ));
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException | ExecutionException e) {
             throw new ExecutionException(e);
@@ -384,7 +384,13 @@ public class NocalhostProfileState extends CommandLineState {
     }
 
     public void startup() throws ExecutionException {
-        disposables.add(new HotReload(getEnvironment()).withExec());
+        var context = devInfoHolder.get();
+        if (context == null) {
+            throw new ExecutionException("Call prepareDevInfo() before this method");
+        }
+        if (context.getContainer().getDev().isHotReload()) {
+            disposables.add(new HotReload(getEnvironment()).withExec());
+        }
     }
 
     public void destroy() {

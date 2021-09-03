@@ -47,7 +47,7 @@ public class HotReload implements Disposable {
             public void after(@NotNull List<? extends VFileEvent> events) {
                 var project = environment.getProject();
                 for (VFileEvent event: events) {
-                    if (isInIdea(event.getPath())) {
+                    if (isInIdea(event.getPath()) || event.getFile() == null) {
                         continue;
                     }
                     if (ProjectFileIndex.getInstance(project).isInContent(event.getFile())) {
@@ -60,7 +60,7 @@ public class HotReload implements Disposable {
     }
 
     private boolean isInIdea(String path) {
-        return Arrays.stream(path.split(File.separator)).anyMatch(x -> x.equals(".idea"));
+        return Arrays.asList(path.split(File.separator)).contains(".idea");
     }
 
     public void dispose() {
