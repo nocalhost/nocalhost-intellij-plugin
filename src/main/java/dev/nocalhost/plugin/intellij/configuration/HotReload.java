@@ -25,12 +25,10 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
-import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
-import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
+import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 
 public class HotReload implements Disposable {
     private static final Logger LOG = Logger.getInstance(HotReload.class);
@@ -87,21 +85,20 @@ public class HotReload implements Disposable {
     }
 
     public HotReload withExec() throws ExecutionException {
-        var service = environment.getProject()
-                .getService(NocalhostProjectService.class).getServiceProjectPath();
+        var svc = NhctlUtil.getDevModeService(environment.getProject());
         var cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(),
                 "sync-status",
-                service.getApplicationName(),
+                svc.getApplicationName(),
                 "--deployment",
-                service.getServiceName(),
+                svc.getServiceName(),
                 "--controller-type",
-                service.getServiceType(),
+                svc.getServiceType(),
                 "--watch",
                 "--namespace",
-                service.getNamespace(),
+                svc.getNamespace(),
                 "--kubeconfig",
-                service.getKubeConfigPath().toString()
+                svc.getKubeConfigPath().toString()
         )).withRedirectErrorStream(true);
 
         echo("[cmd] " + cmd.getCommandLineString());

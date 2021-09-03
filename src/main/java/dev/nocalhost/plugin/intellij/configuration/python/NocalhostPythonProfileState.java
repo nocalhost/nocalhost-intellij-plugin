@@ -68,51 +68,36 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         }
 
         var containers = desService.getRawConfig().getContainers();
-        var svc = containers.isEmpty() ? null : containers.get(0);
+        var container = containers.isEmpty() ? null : containers.get(0);
         if (StringUtils.isNotEmpty(devService.getContainerName())) {
             for (ServiceContainer c : containers) {
                 if (StringUtils.equals(devService.getContainerName(), c.getName())) {
-                    svc = c;
+                    container = c;
                     break;
                 }
             }
         }
-        if (svc == null) {
+        if (container == null) {
             throw new ExecutionException("Service container config not found.");
         }
 
-        NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(svc), resolveDebugCommand(svc));
+        NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(container), resolveDebugCommand(container));
         if (!StringUtils.isNotEmpty(command.getDebug())) {
             throw new ExecutionException("Debug command is not configured");
         }
 
-        String port = resolveDebugPort(svc);
+        String port = resolveDebugPort(container);
         if (!StringUtils.isNotEmpty(port)) {
             throw new ExecutionException("Remote debug port is not configured.");
         }
 
         refContext.set(new NocalhostDevInfo(
                 null,
-                svc.getDev().getShell(),
+                container.getDev().getShell(),
                 command,
-                svc,
+                container,
                 devService
         ));
-    }
-
-    private NhctlDescribeService getNhctlDescribeService(ServiceProjectPath serviceProjectPath) throws ExecutionException {
-        try {
-            NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
-            NhctlDescribeOptions opts = new NhctlDescribeOptions(serviceProjectPath.getKubeConfigPath(), serviceProjectPath.getNamespace());
-            opts.setDeployment(serviceProjectPath.getServiceName());
-            opts.setType(serviceProjectPath.getServiceType());
-            return command.describe(
-                    serviceProjectPath.getApplicationName(),
-                    opts,
-                    NhctlDescribeService.class);
-        } catch (Exception ex) {
-            throw new ExecutionException(ex);
-        }
     }
 
     private boolean isProjectPathMatched(@NotNull NhctlDescribeService nhctlDescribeService) {
