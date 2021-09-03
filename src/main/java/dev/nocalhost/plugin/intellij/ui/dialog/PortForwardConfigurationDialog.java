@@ -56,6 +56,7 @@ import dev.nocalhost.plugin.intellij.ui.VerticalFlowLayout;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.SneakyThrows;
@@ -217,8 +218,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         List<KubeResource> pods = null;
         try {
             NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, namespace);
-            List<NhctlGetResource> podList = nhctlCommand.getResources("Pods", nhctlGetOptions,
-                    node.getKubeResource().getSpec().getSelector().getMatchLabels());
+            List<NhctlGetResource> podList = nhctlCommand.getResources("Pods", nhctlGetOptions, KubeResourceUtil.getMatchLabels(node.getKubeResource()));
             pods = podList.stream()
                     .map(NhctlGetResource::getKubeResource)
                     .filter(KubeResource::canSelector)

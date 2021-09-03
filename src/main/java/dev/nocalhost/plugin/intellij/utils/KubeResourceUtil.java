@@ -3,6 +3,7 @@ package dev.nocalhost.plugin.intellij.utils;
 import org.apache.commons.compress.utils.Lists;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
@@ -16,6 +17,16 @@ import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_STATEFULSET;
 
 public final class KubeResourceUtil {
+    public static Map<String, String> getMatchLabels(KubeResource resource) {
+        if (resource.getKind().equals("Job")) {
+            return Map.of("job-name", "job-generated-job-" + resource.getMetadata().getName());
+        }
+        if (resource.getKind().equals("CronJob")) {
+            return Map.of("job-name", "cronjob-generated-job-" + resource.getMetadata().getName());
+        }
+        return resource.getSpec().getSelector().getMatchLabels();
+    }
+
     public static List<String> resolveContainers(KubeResource resource) {
         switch (resource.getKind().toLowerCase()) {
             case WORKLOAD_TYPE_DEPLOYMENT:

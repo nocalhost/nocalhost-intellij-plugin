@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,6 +35,7 @@ import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
+import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
@@ -114,7 +116,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     }
 
     private boolean isProjectPathMatched(@NotNull NhctlDescribeService nhctlDescribeService) {
-        var basePath = getEnvironment().getProject().getBasePath();
+        var basePath = Paths.get(getEnvironment().getProject().getBasePath()).toString();
         for (String path : nhctlDescribeService.getLocalAbsoluteSyncDirFromDevStartPlugin()) {
             if (StringUtils.equals(basePath, path)) {
                 return true;
@@ -215,7 +217,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         }
 
         Optional<NhctlGetResource> pod = command
-                .getResources("Pods", nhctlGetOptions, deployments.get().getKubeResource().getSpec().getSelector().getMatchLabels())
+                .getResources("Pods", nhctlGetOptions, KubeResourceUtil.getMatchLabels(deployments.get().getKubeResource()))
                 .stream()
                 .filter(x -> x.getKubeResource().canSelector())
                 .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
