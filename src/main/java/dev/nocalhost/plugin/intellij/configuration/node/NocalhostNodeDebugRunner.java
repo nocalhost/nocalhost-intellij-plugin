@@ -8,6 +8,9 @@ import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ProgramRunner;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.xdebugger.XDebugProcess;
+import com.intellij.xdebugger.XDebugProcessStarter;
+import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebuggerManager;
 
 import org.jetbrains.annotations.NonNls;
@@ -42,7 +45,12 @@ public class NocalhostNodeDebugRunner implements ProgramRunner<RunnerSettings> {
 
             return XDebuggerManager
                     .getInstance(environment.getProject())
-                    .startSession(environment, new XDebugProcessStarterImpl(environment, conf, socket, result))
+                    .startSession(environment, new XDebugProcessStarter() {
+                        @Override
+                        public @NotNull XDebugProcess start(@NotNull XDebugSession session) {
+                            return conf.createDebugProcess(socket, session, result, environment);
+                        }
+                    })
                     .getRunContentDescriptor();
         });
     }
