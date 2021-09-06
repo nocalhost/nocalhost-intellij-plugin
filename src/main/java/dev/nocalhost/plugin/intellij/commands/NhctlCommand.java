@@ -112,12 +112,12 @@ public class NhctlCommand {
             }
         }
         if (opts.getValues() != null) {
-            String values = opts.getValues().entrySet()
+            String values = opts
+                    .getValues()
+                    .entrySet()
                     .stream()
                     .map((e) -> e.getKey() + "=" + e.getValue())
-                    .collect(Collectors.toList())
-                    .stream()
-                    .reduce(",", String::join);
+                    .collect(Collectors.joining(","));
             if (StringUtils.isNotEmpty(values)) {
                 args.add("--set");
                 args.add(values);
@@ -531,12 +531,12 @@ public class NhctlCommand {
             });
         }
         if (opts.getValues() != null) {
-            String values = opts.getValues().entrySet()
+            String values = opts
+                    .getValues()
+                    .entrySet()
                     .stream()
                     .map((e) -> e.getKey() + "=" + e.getValue())
-                    .collect(Collectors.toList())
-                    .stream()
-                    .reduce(",", String::join);
+                    .collect(Collectors.joining(","));
             if (StringUtils.isNotEmpty(values)) {
                 args.add("--set");
                 args.add(values);
