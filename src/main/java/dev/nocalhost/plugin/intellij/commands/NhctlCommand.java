@@ -276,7 +276,10 @@ public class NhctlCommand {
         if (opts.isWait()) {
             args.add("--wait");
         }
-
+        if (opts.getTimeout() > 0) {
+            args.add("--timeout");
+            args.add(opts.getTimeout() + "");
+        }
         return execute(args, opts);
     }
 

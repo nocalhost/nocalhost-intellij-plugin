@@ -14,6 +14,7 @@ public class ServiceContainerDev {
     private String workDir;
     private ServiceContainerDevCommand command;
     private ServiceContainerDevDebug debug;
+    private boolean hotReload;
     private boolean useDevContainer;
     private List<String> portForward;
 }
