@@ -24,7 +24,9 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.0")
     implementation("com.auth0:java-jwt:3.12.0")
     implementation("com.google.code.gson:gson:2.8.6")
-    implementation("com.google.guava:guava:27.1-jre")
+//  If import guava, NocalhostNodeConfiguration#createDebugProcess will report the following error at runtime, `com.jetbrains:ideaIU` has built-in guava, so remove the dependency here
+//  Error running 'Nocalhost': loader constraint violation: loader com.intellij.ide.plugins.cl.PluginClassLoader @690f178e (instance of com.intellij.ide.plugins.cl.PluginClassLoader, child of 'bootstrap') wants to load interface com.google.common.collect.BiMap. A different interface with the same name was previously loaded by com.intellij.ide.plugins.cl.PluginClassLoader @1acb7e07 (instance of com.intellij.ide.plugins.cl.PluginClassLoader, child of 'bootstrap').
+//  implementation("com.google.guava:guava:27.1-jre")
     implementation("org.yaml:snakeyaml:1.27")
 
     implementation("com.github.zafarkhaja:java-semver:0.9.0")
@@ -51,6 +53,8 @@ val ideaVersion = prop("ideaVersion")
 val nocalhostVersion = prop("version")
 
 val terminalPlugin = "terminal"
+var javascriptPlugin = "JavaScript"
+var javascriptDebuggerPlugin = "JavaScriptDebugger"
 val javaPlugin = "com.intellij.java"
 val phpPlugin = "com.jetbrains.php:" + prop("phpPluginVersion")
 val goPlugin = "org.jetbrains.plugins.go:" + prop("goPluginVersion")
@@ -62,6 +66,8 @@ version = "$nocalhostVersion-$platformVersion"
 intellij {
     version.set(ideaVersion)
     plugins.set(mutableListOf(
+        javascriptDebuggerPlugin,
+        javascriptPlugin,
         terminalPlugin,
         pythonPlugin,
         javaPlugin,
@@ -84,6 +90,9 @@ tasks.runIde {
     }
     if (baseIDE == "GO") {
         ideDir.set(File("/Applications/GoLand.app/Contents"))
+    }
+    if (baseIDE == "Node") {
+        ideDir.set(File("/Applications/WebStorm.app/Contents"))
     }
     if (baseIDE == "Python") {
         ideDir.set(File("/Applications/PyCharm.app/Contents"))

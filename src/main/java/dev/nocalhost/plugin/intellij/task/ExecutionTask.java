@@ -32,6 +32,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.configuration.go.NocalhostGoConfigurationType;
 import dev.nocalhost.plugin.intellij.configuration.java.NocalhostJavaConfigurationType;
+import dev.nocalhost.plugin.intellij.configuration.node.NocalhostNodeConfigurationType;
 import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpConfigurationType;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfiguration;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfigurationType;
@@ -53,6 +54,8 @@ public class ExecutionTask extends Task.Backgroundable {
         {
             put("GO", NocalhostGoConfigurationType.class);
             put("PS", NocalhostPhpConfigurationType.class);
+            put("WS", NocalhostNodeConfigurationType.class);
+            put("IC", NocalhostJavaConfigurationType.class);
             put("IU", NocalhostJavaConfigurationType.class);
             put("PY", NocalhostPythonConfigurationType.class);
         }
