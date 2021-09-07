@@ -256,7 +256,7 @@ public class NocalhostBinService {
     }
 
     private static HttpUrl nhctlCodingDownloadUrl(String version) {
-        return HttpUrl.parse("https://codingcorp-generic.pkg.coding.net/nocalhost/nhctl")
+        return HttpUrl.parse("https://nocalhost-generic.pkg.coding.net/nocalhost/nhctl")
                 .newBuilder()
                 .addPathSegment(getDownloadFilename())
                 .addQueryParameter("version", "v" + version)

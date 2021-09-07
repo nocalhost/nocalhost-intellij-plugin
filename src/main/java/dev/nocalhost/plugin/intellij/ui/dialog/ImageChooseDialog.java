@@ -19,14 +19,14 @@ import lombok.Getter;
 
 public class ImageChooseDialog extends DialogWrapper {
     private static final List<String> DEV_MODE_IMAGES = List.of(
-            "codingcorp-docker.pkg.coding.net/nocalhost/dev-images/java:11",
-            "codingcorp-docker.pkg.coding.net/nocalhost/dev-images/ruby:3.0",
-            "codingcorp-docker.pkg.coding.net/nocalhost/dev-images/node:14",
-            "codingcorp-docker.pkg.coding.net/nocalhost/dev-images/python:3.9",
-            "codingcorp-docker.pkg.coding.net/nocalhost/dev-images/golang:1.16",
-            "codingcorp-docker.pkg.coding.net/nocalhost/dev-images/perl:latest",
-            "codingcorp-docker.pkg.coding.net/nocalhost/dev-images/rust:latest",
-            "codingcorp-docker.pkg.coding.net/nocalhost/dev-images/php:latest"
+            "nocalhost-docker.pkg.coding.net/nocalhost/dev-images/java:11",
+            "nocalhost-docker.pkg.coding.net/nocalhost/dev-images/ruby:3.0",
+            "nocalhost-docker.pkg.coding.net/nocalhost/dev-images/node:14",
+            "nocalhost-docker.pkg.coding.net/nocalhost/dev-images/python:3.9",
+            "nocalhost-docker.pkg.coding.net/nocalhost/dev-images/golang:1.16",
+            "nocalhost-docker.pkg.coding.net/nocalhost/dev-images/perl:latest",
+            "nocalhost-docker.pkg.coding.net/nocalhost/dev-images/rust:latest",
+            "nocalhost-docker.pkg.coding.net/nocalhost/dev-images/php:latest"
     );
 
     private JPanel contentPane;
