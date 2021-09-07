@@ -75,4 +75,4 @@ jobs:
 
     - name: Push to Coding Artifacts
       run: |
-        curl -T build/distributions/nocalhost-intellij-plugin.zip -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${{ env.RELEASE_VERSION }}-${{ matrix.platform-version }}"
+        curl -T build/distributions/nocalhost-intellij-plugin.zip -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://nocalhost-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${{ env.RELEASE_VERSION }}-${{ matrix.platform-version }}"
