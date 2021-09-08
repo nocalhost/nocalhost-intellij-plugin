@@ -25,8 +25,8 @@ public class InstallApplicationTask extends BaseBackgroundTask {
     private static final List<String> BOOKINFO_URLS = Lists.newArrayList(
             "https://github.com/nocalhost/bookinfo.git",
             "git@github.com:nocalhost/bookinfo.git",
-            "https://e.coding.net/codingcorp/nocalhost/bookinfo.git",
-            "git@e.coding.net:codingcorp/nocalhost/bookinfo.git"
+            "https://e.coding.net/nocalhost/nocalhost/bookinfo.git",
+            "git@e.coding.net:nocalhost/nocalhost/bookinfo.git"
     );
 
     private static final List<String> BOOKINFO_APP_NAME = Lists.newArrayList(
