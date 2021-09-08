@@ -1,6 +1,8 @@
 package dev.nocalhost.plugin.intellij.ui.tree;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Lists;
+import com.google.gson.reflect.TypeToken;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -8,16 +10,19 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.ui.LoadingNode;
 import com.intellij.ui.treeStructure.Tree;
 
+import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.MutableTreeNode;
 
 import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
@@ -30,6 +35,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlDeleteKubeConfigCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
@@ -45,6 +51,7 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
 public class NocalhostTreeModel extends NocalhostTreeModelBase {
+    private static final String KUBE_CONFIG_MAP = "KubeConfigMap";
     private static final List<Pair<String, List<String>>> RESOURCE_GROUP_TYPE = List.of(
             Pair.create("Workloads", List.of(
                     "Deployments",
@@ -74,10 +81,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             ))
     );
 
-    private final NocalhostSettings nocalhostSettings =
-            ApplicationManager.getApplication().getService(NocalhostSettings.class);
     private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
+    private final NocalhostSettings settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
+    private final AtomicReference<Map<String, String>> previous = new AtomicReference<>(Maps.newHashMap());
 
     private final Project project;
     private final Tree tree;
@@ -86,6 +93,11 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         super(new NocalhostTreeNodeComparator());
         this.project = project;
         this.tree = tree;
+        var json = settings.get(KUBE_CONFIG_MAP);
+        if (StringUtils.isNotEmpty(json)) {
+            var token = TypeToken.getParameterized(Map.class, String.class, String.class).getType();
+            previous.set(DataUtils.GSON.fromJson(json, token));
+        }
     }
 
     public void update() {
@@ -95,19 +107,21 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     private void updateClusters() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
+                Map<String, String> map = Maps.newHashMap();
                 List<ClusterNode> clusterNodes = Lists.newArrayList();
 
-                for (StandaloneCluster standaloneCluster : nocalhostSettings.getStandaloneClusters()) {
+                for (StandaloneCluster standaloneCluster : settings.getStandaloneClusters()) {
                     KubeConfig kubeConfig = DataUtils.fromYaml(
                             standaloneCluster.getRawKubeConfig(), KubeConfig.class);
                     clusterNodes.add(new ClusterNode(standaloneCluster.getRawKubeConfig(),
                             kubeConfig));
                 }
 
-                for (NocalhostAccount nocalhostAccount : nocalhostSettings.getNocalhostAccounts()) {
+                for (NocalhostAccount nocalhostAccount : settings.getNocalhostAccounts()) {
                     if (!TokenUtil.isValid(nocalhostAccount.getJwt())) {
                         continue;
                     }
+
                     List<ServiceAccount> serviceAccounts = nocalhostApi.listServiceAccount(
                             nocalhostAccount.getServer(), nocalhostAccount.getJwt());
                     for (ServiceAccount serviceAccount : serviceAccounts) {
@@ -115,8 +129,15 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                                 serviceAccount.getKubeConfig(), KubeConfig.class);
                         clusterNodes.add(new ClusterNode(nocalhostAccount, serviceAccount,
                                 serviceAccount.getKubeConfig(), kubeConfig));
+
+                        var key = computeKey(nocalhostAccount, serviceAccount);
+                        map.put(key, serviceAccount.getKubeConfig());
+                        notifyToNhctl(key, serviceAccount.getKubeConfig());
                     }
                 }
+
+                previous.set(map);
+                settings.set(KUBE_CONFIG_MAP, DataUtils.GSON.toJson(map));
 
                 for (ClusterNode clusterNode : clusterNodes) {
                     try {
@@ -138,6 +159,23 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         "Error occurs while loading clusters", e);
             }
         });
+    }
+
+    private @NotNull String computeKey(@NotNull NocalhostAccount na, @NotNull ServiceAccount sa) {
+        return na.getServer() + ":" + na.getUsername() + ":" + sa.getClusterId();
+    }
+
+    private void notifyToNhctl(@NotNull String key, @NotNull String value) {
+        try {
+            var map = previous.get();
+            if (map.containsKey(key) && !StringUtils.equals(map.get(key), value)) {
+                var cmd = new NhctlDeleteKubeConfigCommand();
+                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(value));
+                cmd.execute();
+            }
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Notify nhctl error", "Error occurs while notify nhctl.", ex);
+        }
     }
 
     private void refreshClusterNodes(MutableTreeNode parent,
