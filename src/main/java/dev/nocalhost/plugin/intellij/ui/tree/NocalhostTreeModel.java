@@ -51,7 +51,6 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
 public class NocalhostTreeModel extends NocalhostTreeModelBase {
-    private static final String KUBE_CONFIG_MAP = "KubeConfigMap";
     private static final List<Pair<String, List<String>>> RESOURCE_GROUP_TYPE = List.of(
             Pair.create("Workloads", List.of(
                     "Deployments",
@@ -93,11 +92,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         super(new NocalhostTreeNodeComparator());
         this.project = project;
         this.tree = tree;
-        var json = settings.get(KUBE_CONFIG_MAP);
-        if (StringUtils.isNotEmpty(json)) {
-            var token = TypeToken.getParameterized(Map.class, String.class, String.class).getType();
-            previous.set(DataUtils.GSON.fromJson(json, token));
-        }
+        previous.set(settings.getKubeConfigMap());
     }
 
     public void update() {
@@ -137,7 +132,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 }
 
                 previous.set(map);
-                settings.set(KUBE_CONFIG_MAP, DataUtils.GSON.toJson(map));
+                settings.setKubeConfigMap(map);
 
                 for (ClusterNode clusterNode : clusterNodes) {
                     try {

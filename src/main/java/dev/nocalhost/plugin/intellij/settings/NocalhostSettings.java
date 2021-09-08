@@ -134,6 +134,19 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         XmlSerializerUtil.copyBean(state, this);
     }
 
+    public synchronized @NotNull Map<String, String> getKubeConfigMap() {
+        var json = get("KubeConfigMap");
+        if (StringUtils.isNotEmpty(json)) {
+            var token = TypeToken.getParameterized(Map.class, String.class, String.class).getType();
+            return DataUtils.GSON.fromJson(json, token);
+        }
+        return Maps.newHashMap();
+    }
+
+    public synchronized void setKubeConfigMap(@NotNull Map<String, String> map) {
+        set("KubeConfigMap", DataUtils.GSON.toJson(map));
+    }
+
     public synchronized String get(String key) {
         return hash.get(key);
     }
