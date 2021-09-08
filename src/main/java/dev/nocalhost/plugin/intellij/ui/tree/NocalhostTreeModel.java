@@ -2,7 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.tree;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Lists;
-import com.google.gson.reflect.TypeToken;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
