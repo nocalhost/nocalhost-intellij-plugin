@@ -24,7 +24,6 @@ import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
-    private static final String KUBE_CONFIG_MAP = "KubeConfigMap";
     private final NocalhostSettings settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
 
     private final List<NocalhostAccount> nocalhostAccounts;
