@@ -9,12 +9,15 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+import dev.nocalhost.plugin.intellij.nhctl.NhctlDeleteKubeConfigCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
-    private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
+    private final NocalhostSettings settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
 
     private final List<NocalhostAccount> nocalhostAccounts;
 
@@ -25,7 +28,19 @@ public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
 
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        nocalhostAccounts.forEach(e -> nocalhostSettings.removeNocalhostAccount(e));
+        var map = settings.getKubeConfigMap();
+        nocalhostAccounts.forEach(it -> {
+            var prefix = it.getServer() + ":" + it.getUsername() + ":";
+            settings.removeNocalhostAccount(it);
+            map.entrySet().removeIf(x -> {
+                var matched = x.getKey().startsWith(prefix);
+                if (matched) {
+                    notifyToNhctl(x.getValue());
+                }
+                return matched;
+            });
+        });
+        settings.setKubeConfigMap(map);
     }
 
     @Override
@@ -33,5 +48,15 @@ public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
         super.onSuccess();
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
+    }
+
+    private void notifyToNhctl(@NotNull String kubeConfig) {
+        try {
+            var cmd = new NhctlDeleteKubeConfigCommand();
+            cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(kubeConfig));
+            cmd.execute();
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(getProject(), "Notify nhctl error", "Error occurs while notify nhctl.", ex);
+        }
     }
 }
