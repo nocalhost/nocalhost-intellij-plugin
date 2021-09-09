@@ -164,7 +164,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             var map = previous.get();
             if (map.containsKey(key) && !StringUtils.equals(map.get(key), value)) {
                 var cmd = new NhctlDeleteKubeConfigCommand();
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(value));
+                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(map.get(key)));
                 cmd.execute();
             }
         } catch (Exception ex) {
