@@ -56,8 +56,11 @@ public class ConnectNocalhostServerTask extends Task.Backgroundable {
     }
 
     @Override
-    public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Connecting to Nocalhost server error",
-                "Error occurs while connecting to Nocalhost server", e);
+    public void onThrowable(@NotNull Throwable ex) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            NocalhostNotifier
+                    .getInstance(getProject())
+                    .notifyError("Connecting to Nocalhost server error", "Error occurs while connecting to Nocalhost server", ex.getMessage());
+        });
     }
 }
