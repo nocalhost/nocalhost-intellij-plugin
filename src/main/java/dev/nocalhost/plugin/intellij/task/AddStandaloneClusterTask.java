@@ -20,11 +20,13 @@ import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeUser;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlCreateKubeConfigCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class AddStandaloneClusterTask extends Task.Backgroundable {
@@ -79,6 +81,10 @@ public class AddStandaloneClusterTask extends Task.Backgroundable {
 
             String kubeConfigText = DataUtils.toYaml(outKubeConfig);
             nocalhostSettings.updateStandaloneCluster(new StandaloneCluster(kubeConfigText));
+
+            var cmd = new NhctlCreateKubeConfigCommand();
+            cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(kubeConfigText));
+            cmd.execute();
         }
     }
 

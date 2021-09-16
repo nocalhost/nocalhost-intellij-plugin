@@ -40,4 +40,4 @@ jobs:
         cd build/distributions/
         PLUGIN_ZIP=$(ls | grep nocalhost-intellij-plugin-)
         PLUGIN_VERSION="$(git rev-parse --short HEAD)-${{ matrix.platform-version }}"
-        curl -T ${PLUGIN_ZIP} -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://codingcorp-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${PLUGIN_VERSION}"
+        curl -T ${PLUGIN_ZIP} -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://nocalhost-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${PLUGIN_VERSION}"

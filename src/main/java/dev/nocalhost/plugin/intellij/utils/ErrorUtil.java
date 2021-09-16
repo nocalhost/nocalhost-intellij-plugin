@@ -4,6 +4,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 
+import org.apache.commons.lang.StringUtils;
+
 import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
@@ -16,17 +18,12 @@ public final class ErrorUtil {
             return;
         }
         if (t instanceof NhctlCommandException) {
-            final NhctlCommandException e = (NhctlCommandException) t;
-            int pos = e.getErrorOutput().indexOf(System.lineSeparator());
-            String firstLine = e.getErrorOutput();
-            String restLines = "";
-            if (pos > 0) {
-                firstLine = e.getErrorOutput().substring(0, pos);
-                if (pos + 1 < e.getErrorOutput().length()) {
-                    restLines = e.getErrorOutput().substring(pos + 1);
-                }
+            final NhctlCommandException ex = (NhctlCommandException) t;
+            String details = ex.getErrorOutput();
+            if (StringUtils.isEmpty(details)) {
+                details = ex.getMessage();
             }
-            notifyNhctlError(project, title, firstLine, restLines);
+            notifyNhctlError(project, title, message, details);
         } else if (t instanceof NocalhostExecuteCmdException) {
             notifyNhctlError(project, title, message, t.getMessage());
         } else {

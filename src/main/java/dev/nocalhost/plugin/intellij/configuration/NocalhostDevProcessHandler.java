@@ -9,6 +9,7 @@ import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.ui.RunContentDescriptor;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import com.intellij.execution.ui.RunContentManager;
 import com.intellij.openapi.diagnostic.Logger;
 
@@ -23,21 +24,27 @@ public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
     private static final Logger LOG = Logger.getInstance(NocalhostDevProcessHandler.class);
 
     private final ExecutionEnvironment executionEnvironment;
-    private final NocalhostProfileState nocalhostProfileState;
 
     public NocalhostDevProcessHandler(
             @NotNull GeneralCommandLine commandLine,
             @NotNull ExecutionEnvironment environment,
-            NocalhostProfileState nocalhostProfileState
+            NocalhostProfileState state
     ) throws ExecutionException {
         super(commandLine);
         this.executionEnvironment = environment;
-        this.nocalhostProfileState = nocalhostProfileState;
         this.addProcessListener(new ProcessAdapter() {
             @Override
+            public void startNotified(@NotNull ProcessEvent event) {
+                try {
+                    state.startup();
+                } catch (ExecutionException ex) {
+                    ErrorUtil.dealWith(environment.getProject(), "NocalhostProfileState#startup", ex.getMessage(), ex);
+                }
+            }
+
+            @Override
             public void processTerminated(@NotNull ProcessEvent event) {
-                NocalhostDevProcessHandler.this.nocalhostProfileState.doRemoveTunnel();
-                NocalhostDevProcessHandler.this.nocalhostProfileState.stopDebugPortForward();
+                state.destroy();
             }
         });
     }
