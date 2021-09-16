@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.ide.RecentProjectsManagerBase;
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
@@ -85,8 +86,9 @@ public class OpenProjectAction extends DumbAwareAction {
                     }
                 }
             }
-            ProjectManagerEx.getInstanceEx()
-                    .openProject(Paths.get(projectPath), new OpenProjectTask());
+
+            var task = new OpenProjectTask();
+            RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(projectPath), task.withRunConfigurators());
         });
     }
 }
