@@ -9,18 +9,22 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
+import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import lombok.SneakyThrows;
 
 public class AssociateLocalDirectoryAction extends DumbAwareAction {
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
+    private final AtomicReference<String> container = new AtomicReference<>("");
 
     private final Project project;
     private final ResourceNode node;
@@ -40,8 +44,19 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        final Path dir = FileChooseUtil.chooseSingleDirectory(project);
+        var containers = KubeResourceUtil.resolveContainers(node.getKubeResource());
+        if (containers.size() == 1) {
+            container.set(containers.get(0));
+        } else {
+            var dialog = new ListChooseDialog(project, "Select Container", containers);
+            if (dialog.showAndGet()) {
+                container.set(dialog.getSelectedValue());
+            } else {
+                return;
+            }
+        }
 
+        final Path dir = FileChooseUtil.chooseSingleDirectory(project);
         if (dir == null) {
             return;
         }
@@ -59,6 +74,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
             public void runTask(@NotNull ProgressIndicator indicator) {
                 NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace, this);
                 opts.setAssociate(dir.toString());
+                opts.setContainer(container.get());
                 opts.setDeployment(node.resourceName());
                 opts.setControllerType(node.getKubeResource().getKind());
                 outputCapturedNhctlCommand.devAssociate(node.applicationName(), opts);
