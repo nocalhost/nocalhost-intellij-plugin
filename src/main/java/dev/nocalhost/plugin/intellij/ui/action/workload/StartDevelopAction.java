@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
+import com.intellij.ide.RecentProjectsManagerBase;
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
@@ -396,8 +397,9 @@ public class StartDevelopAction extends DumbAwareAction {
 
                 nocalhostSettings.setDevModeServiceToProjectPath(devModeService);
                 nocalhostSettings.set(ExecutionTask.asKey(devModeService.getProjectPath()), action);
-                ProjectManagerEx.getInstanceEx().openProject(Paths.get(projectPathReference.get()),
-                        new OpenProjectTask());
+
+                var task = new OpenProjectTask();
+                RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(projectPathReference.get()), task.withRunConfigurators());
             }
         });
     }
