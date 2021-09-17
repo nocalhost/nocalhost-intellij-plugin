@@ -182,6 +182,9 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         ServiceStatus status = ServiceStatus.UNKNOWN;
         NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
         if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
+            return ServiceStatus.STARTING;
+        }
+        if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
             return ServiceStatus.DEVELOPING;
         }
         boolean available = false;
