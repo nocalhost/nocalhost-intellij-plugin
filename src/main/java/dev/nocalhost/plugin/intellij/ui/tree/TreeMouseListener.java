@@ -177,7 +177,7 @@ public class TreeMouseListener extends MouseAdapter {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
-        if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
+        if (NhctlDescribeServiceUtil.developStarting(nhctlDescribeService) || NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
             actionGroup.add(new EndDevelopAction(project, resourceNode));
         } else {
             actionGroup.add(new StartDevelopAction(project, resourceNode));
