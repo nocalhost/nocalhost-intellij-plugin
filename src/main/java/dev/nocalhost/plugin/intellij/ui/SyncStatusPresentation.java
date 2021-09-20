@@ -2,6 +2,7 @@ package dev.nocalhost.plugin.intellij.ui;
 
 import com.google.gson.JsonSyntaxException;
 
+import com.intellij.dvcs.ui.BranchActionGroupPopup;
 import com.intellij.dvcs.ui.LightActionGroup;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.DataManager;
@@ -145,12 +146,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
     @Override
     public @Nullable("null means the widget is unable to show the popup") ListPopup getPopupStep() {
-        return new NocalhostSyncPopup(
-                "Nocalhost Sync Manage",
-                createActions(),
-                DataManager.getInstance().getDataContext(statusBar.getComponent()));
-
-//        return new BranchActionGroupPopup("Nocalhost Sync", project, (action) -> false, createActions(), "Nocalhost.Sync");
+        return NocalhostSyncPopup.getInstance(project, createActions()).asListPopup();
 
 //
 //        final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
