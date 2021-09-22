@@ -77,16 +77,22 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
         var status = result.getSyncthingStatus().getStatus();
         var service = NhctlUtil.getDevModeService(project);
 
-        actions.add(new Separator("Cluster"));
+        actions.add(new Separator("[Cluster]"));
         if (service == null || !StringUtils.equals(service.getSha(), result.getSha())) {
             actions.add(new SwitchToCurrentAction(project));
         }
-        if (StringUtils.equals("disconnected", status)) {
-            actions.add(new ResumeSyncAction(project));
-        } else if (StringUtils.equals("end", status) || StringUtils.equals("error", status)) {
-            actions.add(new DeAssociateAction(project));
-        } else {
-            actions.add(new OverrideSyncAction(project));
+
+        switch (status) {
+            case "disconnected":
+                actions.add(new ResumeSyncAction(project));
+                break;
+            case "error":
+            case "end":
+                actions.add(new DeAssociateAction(project));
+                break;
+            default:
+                actions.add(new OverrideSyncAction(project));
+                break;
         }
         return actions.toArray(new AnAction[0]);
     }

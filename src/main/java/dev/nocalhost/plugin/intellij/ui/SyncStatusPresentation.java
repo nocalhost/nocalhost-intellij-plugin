@@ -163,21 +163,27 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
     @NotNull
     private ActionGroup createActions() {
+        var actions = new LightActionGroup();
         var results = services.get();
         var service = NhctlUtil.getDevModeService(project);
-        LightActionGroup popupGroup = new LightActionGroup();
-        popupGroup.addSeparator("Current Service");
-        if (service != null) {
-            var found = results.stream().filter(x -> StringUtils.equals(x.getSha(), service.getSha())).findFirst();
-            found.ifPresent(x -> popupGroup.add(new ServiceActionGroup(project, x)));
-            results = results.stream().filter(x -> !StringUtils.equals(x.getSha(), service.getSha())).collect(Collectors.toList());
-        }
 
-        popupGroup.addSeparator("Related Service");
-        results.forEach(x -> {
-            popupGroup.add(new ServiceActionGroup(project, x));
-        });
-        return popupGroup;
+        if (service != null) {
+            actions.addSeparator("Current Service");
+            results
+                    .stream()
+                    .filter(x -> StringUtils.equals(x.getSha(), service.getSha()))
+                    .findFirst()
+                    .ifPresent(x -> actions.add(new ServiceActionGroup(project, x)));
+            results = results
+                    .stream()
+                    .filter(x -> !StringUtils.equals(x.getSha(), service.getSha()))
+                    .collect(Collectors.toList());
+        }
+        if (!results.isEmpty()) {
+            actions.addSeparator("Related Service");
+            results.forEach(x -> actions.add(new ServiceActionGroup(project, x)));
+        }
+        return actions;
     }
 
     @Override
