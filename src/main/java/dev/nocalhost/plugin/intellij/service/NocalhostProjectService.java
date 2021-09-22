@@ -45,6 +45,7 @@ public class NocalhostProjectService {
                     .serviceType(result.getServicePack().getServiceType())
                     .serviceName(result.getServicePack().getServiceName())
                     .containerName(result.getServicePack().getContainer())
+                    .sha(result.getSha())
                     .build();
             serviceProjectPathAtomicReference.set(serviceProjectPath);
         } catch (NocalhostExecuteCmdException e) {

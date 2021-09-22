@@ -10,7 +10,7 @@ public class ResumeSyncAction extends DumbAwareAction {
     private final Project project;
 
     public ResumeSyncAction(@NotNull Project project) {
-        super("Resume file sync");
+        super("Resume File Sync");
         this.project = project;
     }
 

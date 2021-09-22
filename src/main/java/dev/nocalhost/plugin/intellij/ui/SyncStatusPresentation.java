@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import javax.swing.*;
 
@@ -39,9 +40,10 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlAssociateQueryerCommand;
 import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
 import dev.nocalhost.plugin.intellij.topic.NocalhostSyncUpdateNotifier;
-import dev.nocalhost.plugin.intellij.ui.sync.CurrentServiceActionGroup;
+import dev.nocalhost.plugin.intellij.ui.sync.ServiceActionGroup;
 import dev.nocalhost.plugin.intellij.ui.sync.NocalhostSyncPopup;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValuesPresentation, StatusBarWidget.Multiframe {
 
@@ -161,17 +163,20 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
     @NotNull
     private ActionGroup createActions() {
+        var results = services.get();
+        var service = NhctlUtil.getDevModeService(project);
         LightActionGroup popupGroup = new LightActionGroup();
         popupGroup.addSeparator("Current Service");
+        if (service != null) {
+            var found = results.stream().filter(x -> StringUtils.equals(x.getSha(), service.getSha())).findFirst();
+            found.ifPresent(x -> popupGroup.add(new ServiceActionGroup(project, x)));
+            results = results.stream().filter(x -> !StringUtils.equals(x.getSha(), service.getSha())).collect(Collectors.toList());
+        }
+
         popupGroup.addSeparator("Related Service");
-
-        var results = services.get();
         results.forEach(x -> {
-            popupGroup.add(new CurrentServiceActionGroup(project, x, AllIcons.Actions.Refresh));
+            popupGroup.add(new ServiceActionGroup(project, x));
         });
-
-//        popupGroup.add(new CurrentServiceActionGroup(project, "nh3zxjm/bookinfo/deployment/authors", "Upload to remote 22.3%", AllIcons.Actions.Refresh));
-//        popupGroup.add(new CurrentServiceActionGroup(project, "nh3zxjm/bookinfo/deployment/reviews", "Disconnected from sidecar", AllIcons.Debugger.ThreadStates.Socket));
         return popupGroup;
     }
 

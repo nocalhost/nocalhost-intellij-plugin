@@ -4,6 +4,7 @@ import com.intellij.dvcs.ui.BranchActionGroupPopup;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+import org.apache.commons.lang3.StringUtils;
 import com.intellij.ui.popup.PopupFactoryImpl;
 
 import java.util.List;
@@ -29,10 +30,10 @@ public class NocalhostSyncPopup {
                     List<Object> items = popup.getListStep().getValues();
                     items.forEach(x -> {
                         var item = (PopupFactoryImpl.ActionItem) x;
-                        var group = (CurrentServiceActionGroup) item.getAction();
+                        var group = (ServiceActionGroup) item.getAction();
                         results.forEach(it -> {
                             if (StringUtils.equals(it.getSha(), group.getSha())) {
-                                group.setDesc(it.getSyncthingStatus().getMessage());
+                                group.setResult(it);
                             }
                         });
                     });

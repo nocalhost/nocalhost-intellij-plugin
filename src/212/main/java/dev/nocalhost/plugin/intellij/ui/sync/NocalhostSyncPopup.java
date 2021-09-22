@@ -35,10 +35,10 @@ public class NocalhostSyncPopup {
                     List<Object> items = popup.getListStep().getValues();
                     items.forEach(x -> {
                         var item = (PopupFactoryImpl.ActionItem) x;
-                        var group = (CurrentServiceActionGroup) item.getAction();
+                        var group = (ServiceActionGroup) item.getAction();
                         results.forEach(it -> {
                             if (StringUtils.equals(it.getSha(), group.getSha())) {
-                                group.setDesc(it.getSyncthingStatus().getMessage());
+                                group.setResult(it);
                             }
                         });
                     });

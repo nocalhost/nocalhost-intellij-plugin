@@ -10,7 +10,7 @@ public class DeAssociateAction extends DumbAwareAction {
     private final Project project;
 
     public DeAssociateAction(@NotNull Project project) {
-        super("De associate from current dir");
+        super("Disassociate from Current Directory");
         this.project = project;
     }
 

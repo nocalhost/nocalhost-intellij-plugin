@@ -10,7 +10,7 @@ public class SwitchToCurrentAction extends DumbAwareAction {
     private final Project project;
 
     public SwitchToCurrentAction(@NotNull Project project) {
-        super("Switch this service as current service");
+        super("Switch This Service as Current Service");
         this.project = project;
     }
 

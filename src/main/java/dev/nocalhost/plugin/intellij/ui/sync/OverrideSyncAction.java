@@ -10,7 +10,7 @@ public class OverrideSyncAction extends DumbAwareAction {
     private final Project project;
 
     public OverrideSyncAction(@NotNull Project project) {
-        super("Override remote changing according to local files");
+        super("Override Remote Changing According to Local Files");
         this.project = project;
     }
 

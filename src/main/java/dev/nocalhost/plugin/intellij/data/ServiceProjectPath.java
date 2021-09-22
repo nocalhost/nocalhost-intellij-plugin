@@ -16,4 +16,5 @@ public class ServiceProjectPath {
     private String serviceName;
     private String serviceType;
     private String containerName;
+    private String sha;
 }
