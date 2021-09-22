@@ -1,11 +1,11 @@
 package dev.nocalhost.plugin.intellij.ui;
 
+import com.google.common.collect.Lists;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 
-import com.intellij.dvcs.ui.BranchActionGroupPopup;
 import com.intellij.dvcs.ui.LightActionGroup;
 import com.intellij.icons.AllIcons;
-import com.intellij.ide.DataManager;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
@@ -24,16 +24,21 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlAssociateQueryerCommand;
 import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
+import dev.nocalhost.plugin.intellij.topic.NocalhostSyncUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.sync.CurrentServiceActionGroup;
 import dev.nocalhost.plugin.intellij.ui.sync.NocalhostSyncPopup;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
@@ -48,6 +53,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     private final NocalhostProjectService nocalhostProjectService;
 
     private final AtomicReference<NhctlSyncStatus> nhctlSyncStatus = new AtomicReference<>();
+    private final AtomicReference<List<NhctlDevAssociateQueryResult>> services = new AtomicReference<>(Lists.newArrayList());
 
     private NhctlSyncStatus getNhctlSyncStatus() {
         if (project == null) {
@@ -91,6 +97,26 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                 }
             } catch (Exception e) {
                 LOG.error("Fail to get sync status", e);
+            }
+        });
+
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            var token = TypeToken.getParameterized(List.class, NhctlDevAssociateQueryResult.class).getType();
+            var command = new NhctlAssociateQueryerCommand();
+            command.setAssociate(Paths.get(project.getBasePath()).toString());
+            while ( ! project.isDisposed()) {
+                try {
+                    List<NhctlDevAssociateQueryResult> results = DataUtils.GSON.fromJson(command.execute(), token);
+                    services.set(results);
+                    project
+                            .getMessageBus()
+                            .syncPublisher(NocalhostSyncUpdateNotifier.NOCALHOST_SYNC_UPDATE_NOTIFIER_TOPIC)
+                            .action(results);
+
+                    Thread.sleep(3000);
+                } catch (Exception ex) {
+                    LOG.error("Failed to get sync status", ex);
+                }
             }
         });
     }
@@ -137,10 +163,15 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     private ActionGroup createActions() {
         LightActionGroup popupGroup = new LightActionGroup();
         popupGroup.addSeparator("Current Service");
-        popupGroup.add(new CurrentServiceActionGroup(project, "nh3zxjm/bookinfo/deployment/productpage", "Sync completed at 18:32:06", AllIcons.Actions.Commit));
         popupGroup.addSeparator("Related Service");
-        popupGroup.add(new CurrentServiceActionGroup(project, "nh3zxjm/bookinfo/deployment/authors", "Upload to remote 22.3%", AllIcons.Actions.Refresh));
-        popupGroup.add(new CurrentServiceActionGroup(project, "nh3zxjm/bookinfo/deployment/reviews", "Disconnected from sidecar", AllIcons.Debugger.ThreadStates.Socket));
+
+        var results = services.get();
+        results.forEach(x -> {
+            popupGroup.add(new CurrentServiceActionGroup(project, x, AllIcons.Actions.Refresh));
+        });
+
+//        popupGroup.add(new CurrentServiceActionGroup(project, "nh3zxjm/bookinfo/deployment/authors", "Upload to remote 22.3%", AllIcons.Actions.Refresh));
+//        popupGroup.add(new CurrentServiceActionGroup(project, "nh3zxjm/bookinfo/deployment/reviews", "Disconnected from sidecar", AllIcons.Debugger.ThreadStates.Socket));
         return popupGroup;
     }
 

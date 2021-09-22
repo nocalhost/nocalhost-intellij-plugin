@@ -13,6 +13,8 @@ public class NhctlDevAssociateQueryResult {
     private String sha;
     @SerializedName("kubeconfig_path")
     private String kubeconfigPath;
+    @SerializedName("syncthing_status")
+    private SyncthingStatus syncthingStatus;
 
     @Getter
     @Setter
@@ -26,5 +28,13 @@ public class NhctlDevAssociateQueryResult {
         @SerializedName("svc")
         private String serviceName;
         private String container;
+    }
+
+    @Getter
+    @Setter
+    public class SyncthingStatus {
+        private String status;
+        @SerializedName("msg")
+        private String message;
     }
 }

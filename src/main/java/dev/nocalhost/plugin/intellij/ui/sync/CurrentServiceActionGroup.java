@@ -6,34 +6,63 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import lombok.Setter;
+
 public class CurrentServiceActionGroup extends ActionGroup implements PopupElementWithAdditionalInfo {
-    private final String desc;
     private final Project project;
 
-    public CurrentServiceActionGroup(@NotNull Project project, @NotNull String text, @Nullable String desc, @Nullable Icon icon) {
-        super(text, true);
-        this.desc = desc;
+    @Setter
+    private NhctlDevAssociateQueryResult result;
+
+    public CurrentServiceActionGroup(@NotNull Project project, @NotNull NhctlDevAssociateQueryResult result, @Nullable Icon icon) {
+        super(getTitle(result), true);
+        this.result = result;
         this.project = project;
         var presentation = getTemplatePresentation();
         presentation.setIcon(icon);
     }
 
+    private static @NotNull String getTitle(@NotNull NhctlDevAssociateQueryResult result) {
+        return String.join("/", new String[] {
+                result.getServicePack().getNamespace(),
+                result.getServicePack().getApplicationName(),
+                result.getServicePack().getServiceType(),
+                result.getServicePack().getServiceName()
+        });
+    }
+
+    public @NotNull String getSha() {
+        return result.getSha();
+    }
+
     @Override
     public AnAction @NotNull [] getChildren(@Nullable AnActionEvent e) {
-        return new AnAction[]{
-                new OverrideSyncAction(project),
-                new ResumeSyncAction(project)
+        var service = NhctlUtil.getDevModeService(project);
+        service
+
+        if (StringUtils.equals("end", result.getSyncthingStatus().getStatus())) {
+            return new AnAction[] {
+                    new SwitchToCurrentAction(project),
+                    new DeAssociateAction(project)
+            };
+        }
+        return new AnAction[] {
+                new ResumeSyncAction(project),
+                new OverrideSyncAction(project)
         };
     }
 
     @Override
     public @Nls @Nullable String getInfoText() {
-        return desc;
+        return result.getSyncthingStatus().getMessage();
     }
 }

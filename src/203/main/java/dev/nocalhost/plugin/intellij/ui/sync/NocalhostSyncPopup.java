@@ -4,6 +4,10 @@ import com.intellij.dvcs.ui.BranchActionGroupPopup;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+import com.intellij.ui.popup.PopupFactoryImpl;
+
+import java.util.List;
+import dev.nocalhost.plugin.intellij.topic.NocalhostSyncUpdateNotifier;
 
 public class NocalhostSyncPopup {
     private final Project project;
@@ -18,6 +22,23 @@ public class NocalhostSyncPopup {
     }
 
     public BranchActionGroupPopup asListPopup() {
-        return new BranchActionGroupPopup("Nocalhost Sync Manage", project, (action) -> false, actions, "Nocalhost.Sync.Manage");
+        var popup = new BranchActionGroupPopup("Nocalhost Sync Manage", project, (action) -> false, actions, "Nocalhost.Sync.Manage");
+        project.getMessageBus().connect(popup).subscribe(
+                NocalhostSyncUpdateNotifier.NOCALHOST_SYNC_UPDATE_NOTIFIER_TOPIC,
+                results -> {
+                    List<Object> items = popup.getListStep().getValues();
+                    items.forEach(x -> {
+                        var item = (PopupFactoryImpl.ActionItem) x;
+                        var group = (CurrentServiceActionGroup) item.getAction();
+                        results.forEach(it -> {
+                            if (StringUtils.equals(it.getSha(), group.getSha())) {
+                                group.setDesc(it.getSyncthingStatus().getMessage());
+                            }
+                        });
+                    });
+                    popup.update();
+                }
+        );
+        return popup;
     }
 }

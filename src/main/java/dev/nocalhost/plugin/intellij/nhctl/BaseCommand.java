@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +24,14 @@ import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public abstract class BaseCommand {
+    protected Path kubeConfig;
+
     protected String getBinaryPath() {
         return NhctlUtil.binaryPath();
     }
