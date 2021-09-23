@@ -81,7 +81,6 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
         if (service == null || !StringUtils.equals(service.getSha(), result.getSha())) {
             actions.add(new SwitchToCurrentAction(project));
         }
-
         switch (status) {
             case "disconnected":
                 actions.add(new ResumeSyncAction(project));

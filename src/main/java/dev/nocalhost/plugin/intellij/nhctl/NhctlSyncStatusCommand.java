@@ -11,30 +11,25 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NhctlSyncCommand extends BaseCommand {
-    private boolean resume;
+public class NhctlSyncStatusCommand extends BaseCommand {
+    private boolean override;
     private String deployment;
-    private String controller;
     private String controllerType;
     private String applicationName;
 
     @Override
     protected List<String> compute() {
-        List<String> args = Lists.newArrayList(getBinaryPath(), "sync", applicationName);
+        List<String> args = Lists.newArrayList(getBinaryPath(), "sync-status", applicationName);
         if (StringUtils.isNotEmpty(deployment)) {
             args.add("--deployment");
             args.add(deployment);
-        }
-        if (StringUtils.isNotEmpty(controller)) {
-            args.add("--controller");
-            args.add(controller);
         }
         if (StringUtils.isNotEmpty(controllerType)) {
             args.add("--controller-type");
             args.add(controllerType);
         }
-        if (resume) {
-            args.add("--resume");
+        if (override) {
+            args.add("--override");
         }
         return fulfill(args);
     }

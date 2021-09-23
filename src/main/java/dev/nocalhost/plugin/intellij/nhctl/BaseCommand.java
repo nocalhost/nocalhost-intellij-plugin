@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.EnvironmentUtil;
 
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,6 +33,18 @@ import lombok.Setter;
 public abstract class BaseCommand {
     protected Path kubeConfig;
     protected String namespace;
+
+    protected List<String> fulfill(@NotNull List<String> args) {
+        if (kubeConfig != null) {
+            args.add("--kubeconfig");
+            args.add(kubeConfig.toString());
+        }
+        if (StringUtils.isNotEmpty(namespace)) {
+            args.add("--namespace");
+            args.add(namespace);
+        }
+        return args;
+    }
 
     protected String getBinaryPath() {
         return NhctlUtil.binaryPath();

@@ -26,6 +26,6 @@ public class NhctlAssociateQueryerCommand extends BaseCommand {
             args.add("--current");
         }
         args.add("--json");
-        return args;
+        return fulfill(args);
     }
 }
