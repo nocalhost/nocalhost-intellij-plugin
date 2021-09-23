@@ -263,12 +263,10 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             case "error":
                 return AllIcons.Actions.Cancel;
             case "scanning":
-            case "syncthing":
+            case "syncing":
                 return AllIcons.Actions.Refresh;
             case "idle":
                 return AllIcons.Actions.Checked;
-            case "end":
-                break;
             default:
                 break;
         }

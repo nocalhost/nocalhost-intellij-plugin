@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.topic.NocalhostSyncUpdateNotifier;
 
 public class NocalhostSyncPopup {
@@ -31,20 +32,22 @@ public class NocalhostSyncPopup {
         var popup = new BranchActionGroupPopup("Nocalhost Sync Manage", project, (action) -> false, actions, "Nocalhost.Sync.Manage", DataManager.getInstance().getDataContext(statusBar.getComponent()));
         project.getMessageBus().connect(popup).subscribe(
                 NocalhostSyncUpdateNotifier.NOCALHOST_SYNC_UPDATE_NOTIFIER_TOPIC,
-                results -> {
-                    List<Object> items = popup.getListStep().getValues();
-                    items.forEach(x -> {
-                        var item = (PopupFactoryImpl.ActionItem) x;
-                        var group = (ServiceActionGroup) item.getAction();
-                        results.forEach(it -> {
-                            if (StringUtils.equals(it.getSha(), group.getSha())) {
-                                group.setResult(it);
-                            }
-                        });
-                    });
-                    popup.update();
-                }
+                results -> update(popup, results)
         );
         return popup;
+    }
+
+    private void update(@NotNull BranchActionGroupPopup popup, @NotNull List<NhctlDevAssociateQueryResult> results) {
+        List<Object> items = popup.getListStep().getValues();
+        items.forEach(x -> {
+            var item = (PopupFactoryImpl.ActionItem) x;
+            var group = (ServiceActionGroup) item.getAction();
+            results.forEach(it -> {
+                if (StringUtils.equals(it.getSha(), group.getSha())) {
+                    group.setResult(it);
+                }
+            });
+        });
+        popup.update();
     }
 }

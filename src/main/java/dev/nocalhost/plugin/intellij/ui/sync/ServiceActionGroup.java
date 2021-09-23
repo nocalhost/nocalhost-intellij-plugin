@@ -21,6 +21,7 @@ import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import icons.NocalhostIcons;
 import lombok.Setter;
 
 public class ServiceActionGroup extends ActionGroup implements PopupElementWithAdditionalInfo {
@@ -51,7 +52,7 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
             case "idle":
                 return AllIcons.Actions.Commit;
             case "end":
-                return AllIcons.Debugger.Db_muted_disabled_breakpoint;
+                return NocalhostIcons.Status.Normal;
             default:
                 break;
         }
@@ -77,7 +78,6 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
         var status = result.getSyncthingStatus().getStatus();
         var service = NhctlUtil.getDevModeService(project);
 
-        actions.add(new Separator("[Cluster]"));
         if (service == null || !StringUtils.equals(service.getSha(), result.getSha())) {
             actions.add(new SwitchToCurrentAction(project));
         }
@@ -87,12 +87,16 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
                 actions.add(new ResumeSyncAction(project));
                 break;
             case "error":
+                break;
             case "end":
                 actions.add(new DeAssociateAction(project));
                 break;
             default:
                 actions.add(new OverrideSyncAction(project));
                 break;
+        }
+        if ( ! actions.isEmpty()) {
+            actions.add(0, new Separator("[Cluster]"));
         }
         return actions.toArray(new AnAction[0]);
     }
