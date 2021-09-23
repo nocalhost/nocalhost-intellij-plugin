@@ -27,6 +27,8 @@ public interface NocalhostIcons {
         Icon NormalPortForwarding = IconLoader.getIcon("/icons/normal_port_forwarding.svg", NocalhostIcons.class);
     }
 
+    Icon CloudUpload = IconLoader.getIcon("/icons/cloud_upload.svg", NocalhostIcons.class);
+
     Icon ClusterActive = IconLoader.getIcon("/icons/cluster_active.svg", NocalhostIcons.class);
     Icon ClusterWarning = IconLoader.getIcon("/icons/cluster_warning.svg", NocalhostIcons.class);
 

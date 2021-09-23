@@ -44,6 +44,7 @@ import dev.nocalhost.plugin.intellij.ui.sync.ServiceActionGroup;
 import dev.nocalhost.plugin.intellij.ui.sync.NocalhostSyncPopup;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import icons.NocalhostIcons;
 
 public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValuesPresentation, StatusBarWidget.Multiframe {
 
@@ -264,7 +265,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                 return AllIcons.Actions.Cancel;
             case "scanning":
             case "syncing":
-                return AllIcons.Actions.Refresh;
+                return NocalhostIcons.CloudUpload;
             case "idle":
                 return AllIcons.Actions.Checked;
             default:

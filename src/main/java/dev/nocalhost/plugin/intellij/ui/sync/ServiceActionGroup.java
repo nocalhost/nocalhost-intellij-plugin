@@ -46,7 +46,7 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
                 return AllIcons.General.Warning;
             case "scanning":
             case "syncing":
-                return AllIcons.Actions.Refresh;
+                return NocalhostIcons.CloudUpload;
             case "error":
                 return AllIcons.General.Error;
             case "idle":

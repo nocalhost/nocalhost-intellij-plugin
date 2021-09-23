@@ -31,6 +31,7 @@ import lombok.Setter;
 @Setter
 public abstract class BaseCommand {
     protected Path kubeConfig;
+    protected String namespace;
 
     protected String getBinaryPath() {
         return NhctlUtil.binaryPath();
