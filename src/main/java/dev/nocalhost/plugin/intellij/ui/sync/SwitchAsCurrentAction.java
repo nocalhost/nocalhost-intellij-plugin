@@ -6,11 +6,11 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
-public class DeAssociateAction extends DumbAwareAction {
+public class SwitchAsCurrentAction extends DumbAwareAction {
     private final Project project;
 
-    public DeAssociateAction(@NotNull Project project) {
-        super("Disassociate from Current Directory");
+    public SwitchAsCurrentAction(@NotNull Project project) {
+        super("Switch This Service as Current Service");
         this.project = project;
     }
 

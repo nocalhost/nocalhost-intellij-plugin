@@ -33,6 +33,7 @@ import lombok.Setter;
 public abstract class BaseCommand {
     protected Path kubeConfig;
     protected String namespace;
+    protected String deployment;
 
     protected List<String> fulfill(@NotNull List<String> args) {
         if (kubeConfig != null) {
@@ -42,6 +43,10 @@ public abstract class BaseCommand {
         if (StringUtils.isNotEmpty(namespace)) {
             args.add("--namespace");
             args.add(namespace);
+        }
+        if (StringUtils.isNotEmpty(deployment)) {
+            args.add("--deployment");
+            args.add(deployment);
         }
         return args;
     }

@@ -13,7 +13,6 @@ import lombok.Setter;
 @Setter
 public class NhctlSyncCommand extends BaseCommand {
     private boolean resume;
-    private String deployment;
     private String controller;
     private String controllerType;
     private String applicationName;
@@ -21,10 +20,6 @@ public class NhctlSyncCommand extends BaseCommand {
     @Override
     protected List<String> compute() {
         List<String> args = Lists.newArrayList(getBinaryPath(), "sync", applicationName);
-        if (StringUtils.isNotEmpty(deployment)) {
-            args.add("--deployment");
-            args.add(deployment);
-        }
         if (StringUtils.isNotEmpty(controller)) {
             args.add("--controller");
             args.add(controller);
