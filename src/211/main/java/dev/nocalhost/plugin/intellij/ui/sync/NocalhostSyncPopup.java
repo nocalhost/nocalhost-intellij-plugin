@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.popup.PopupFactoryImpl;
 
 import org.jetbrains.annotations.NotNull;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import dev.nocalhost.plugin.intellij.topic.NocalhostSyncUpdateNotifier;
@@ -39,7 +38,7 @@ public class NocalhostSyncPopup {
             var item = (PopupFactoryImpl.ActionItem) x;
             var group = (ServiceActionGroup) item.getAction();
             results.forEach(it -> {
-                if (StringUtils.equals(it.getSha(), group.getSha())) {
+                if (group.compare(it)) {
                     group.setResult(it);
                 }
             });

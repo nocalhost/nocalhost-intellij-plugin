@@ -20,7 +20,7 @@ import java.util.List;
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
-import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import icons.NocalhostIcons;
 import lombok.Setter;
 
@@ -68,32 +68,32 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
         });
     }
 
-    public @NotNull String getSha() {
-        return result.getSha();
+    public boolean compare(@NotNull NhctlDevAssociateQueryResult other) {
+        return StringUtils.equals(result.getSha(), other.getSha());
     }
 
     @Override
     public AnAction @NotNull [] getChildren(@Nullable AnActionEvent e) {
         List<AnAction> actions = Lists.newArrayList();
         var status = result.getSyncthingStatus().getStatus();
-        var service = NhctlUtil.getDevModeService(project);
+        var context = NocalhostContextManager.getInstance(project).getContext();
 
-        if (service == null || !StringUtils.equals(service.getSha(), result.getSha())) {
-            actions.add(new SwitchAsCurrentAction(project));
+        if (context == null || !StringUtils.equals(context.getSha(), result.getSha())) {
+            actions.add(new SwitchAsCurrentAction(project, result));
         }
         switch (status) {
             case "disconnected":
-                actions.add(new ResumeSyncAction(project));
+                actions.add(new ResumeSyncAction(project, result));
                 break;
             case "end":
                 actions.add(new DisassociateAction(project, result));
                 break;
             case "error":
-                actions.add(new ResumeSyncAction(project));
-                actions.add(new OverrideSyncAction(project));
+                actions.add(new ResumeSyncAction(project, result));
+                actions.add(new OverrideSyncAction(project, result));
                 break;
             default:
-                actions.add(new OverrideSyncAction(project));
+                actions.add(new OverrideSyncAction(project, result));
                 break;
         }
         if ( ! actions.isEmpty()) {

@@ -35,10 +35,9 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
-import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlAssociateQueryerCommand;
-import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostSyncUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.sync.ServiceActionGroup;
 import dev.nocalhost.plugin.intellij.ui.sync.NocalhostSyncPopup;
@@ -53,7 +52,6 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     private final StatusBar statusBar;
     private final Project project;
     private final Disposable widget;
-    private final NocalhostProjectService nocalhostProjectService;
 
     private final AtomicReference<NhctlSyncStatus> nhctlSyncStatus = new AtomicReference<>();
     private final AtomicReference<List<NhctlDevAssociateQueryResult>> services = new AtomicReference<>(Lists.newArrayList());
@@ -64,16 +62,16 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         }
         final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
-        ServiceProjectPath devModeService = nocalhostProjectService.getServiceProjectPath();
-        if (devModeService == null) {
+        var context = NocalhostContextManager.getInstance(project).getContext();
+        if (context == null) {
             return null;
         }
 
         try {
-            NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
-            nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
-            nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
-            String status = nhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
+            NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(context.getKubeConfigPath(), context.getNamespace());
+            nhctlSyncStatusOptions.setDeployment(context.getServiceName());
+            nhctlSyncStatusOptions.setControllerType(context.getServiceType());
+            String status = nhctlCommand.syncStatus(context.getApplicationName(), nhctlSyncStatusOptions);
             return DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
         } catch (InterruptedException | IOException e) {
             LOG.error("error occurred while get sync status ", e);
@@ -86,11 +84,10 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         return null;
     }
 
-    public SyncStatusPresentation(StatusBar statusBar, Project project, Disposable widget) {
-        this.statusBar = statusBar;
-        this.project = project;
+    public SyncStatusPresentation(Project project, StatusBar statusBar, Disposable widget) {
         this.widget = widget;
-        nocalhostProjectService = project.getService(NocalhostProjectService.class);
+        this.project = project;
+        this.statusBar = statusBar;
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
@@ -166,18 +163,18 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     private ActionGroup createActions() {
         var actions = new LightActionGroup();
         var results = services.get();
-        var service = NhctlUtil.getDevModeService(project);
+        var context = NocalhostContextManager.getInstance(project).getContext();
 
-        if (service != null) {
+        if (context != null) {
             actions.addSeparator("Current Service");
             results
                     .stream()
-                    .filter(x -> StringUtils.equals(x.getSha(), service.getSha()))
+                    .filter(x -> StringUtils.equals(x.getSha(), context.getSha()))
                     .findFirst()
                     .ifPresent(x -> actions.add(new ServiceActionGroup(project, x)));
             results = results
                     .stream()
-                    .filter(x -> !StringUtils.equals(x.getSha(), service.getSha()))
+                    .filter(x -> !StringUtils.equals(x.getSha(), context.getSha()))
                     .collect(Collectors.toList());
         }
         if (!results.isEmpty()) {

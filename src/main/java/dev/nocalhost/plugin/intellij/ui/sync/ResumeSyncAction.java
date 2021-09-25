@@ -7,37 +7,40 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Paths;
+
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlSyncCommand;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class ResumeSyncAction extends DumbAwareAction {
     private final Project project;
+    private final NhctlDevAssociateQueryResult result;
 
-    public ResumeSyncAction(@NotNull Project project) {
+    public ResumeSyncAction(@NotNull Project project, @NotNull NhctlDevAssociateQueryResult result) {
         super("Resume File Sync");
+        this.result = result;
         this.project = project;
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        var service = NhctlUtil.getDevModeService(project);
-        if (service != null) {
-            ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                try {
-                    var cmd = new NhctlSyncCommand();
-                    cmd.setResume(true);
-                    cmd.setNamespace(service.getNamespace());
-                    cmd.setDeployment(service.getServiceName());
-                    cmd.setController(service.getContainerName());
-                    cmd.setKubeConfig(service.getKubeConfigPath());
-                    cmd.setControllerType(service.getServiceType());
-                    cmd.setApplicationName(service.getApplicationName());
-                    cmd.execute();
-                } catch (Exception ex) {
-                    ErrorUtil.dealWith(project, "Resume sync", "Error occurred while sync override", ex);
-                }
-            });
-        }
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                var cmd = new NhctlSyncCommand();
+                cmd.setResume(true);
+                cmd.setNamespace(result.getServicePack().getNamespace());
+                cmd.setKubeConfig(Paths.get(result.getKubeconfigPath()));
+                cmd.setController(result.getServicePack().getContainer());
+                cmd.setDeployment(result.getServicePack().getServiceName());
+                cmd.setControllerType(result.getServicePack().getServiceType());
+                cmd.setApplicationName(result.getServicePack().getApplicationName());
+                cmd.execute();
+            } catch (Exception ex) {
+                ErrorUtil.dealWith(project, "Resume sync", "Error occurred while sync override", ex);
+            }
+        });
     }
 }

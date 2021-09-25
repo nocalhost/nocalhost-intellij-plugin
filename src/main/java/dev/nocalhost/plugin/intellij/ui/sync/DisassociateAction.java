@@ -12,11 +12,10 @@ import java.nio.file.Paths;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevAssociateCommand;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
-import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class DisassociateAction extends DumbAwareAction {
     private final Project project;
-    private NhctlDevAssociateQueryResult result;
+    private final NhctlDevAssociateQueryResult result;
 
     public DisassociateAction(@NotNull Project project, @NotNull NhctlDevAssociateQueryResult result) {
         super("Disassociate from Current Directory");
@@ -26,9 +25,10 @@ public class DisassociateAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
+        // TODO: if disassociate current service
+
         var basePath = project.getBasePath();
-        var service = NhctlUtil.getDevModeService(project);
-        if (service != null && basePath != null) {
+        if (basePath != null) {
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
                     var cmd = new NhctlDevAssociateCommand();
@@ -42,7 +42,7 @@ public class DisassociateAction extends DumbAwareAction {
                     cmd.setApplicationName(result.getServicePack().getApplicationName());
                     cmd.execute();
                 } catch (Exception ex) {
-                    ErrorUtil.dealWith(project, "Disassociate from Current Directory", "Error occurred while disassociate from current directory ", ex);
+                    ErrorUtil.dealWith(project, "Disassociate from Current Directory", "Error occurred while disassociate from current directory.", ex);
                 }
             });
         }

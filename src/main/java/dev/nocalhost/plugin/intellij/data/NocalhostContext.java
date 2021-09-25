@@ -9,7 +9,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @AllArgsConstructor
-public class ServiceProjectPath {
+public class NocalhostContext {
     private Path kubeConfigPath;
     private String namespace;
     private String applicationName;
