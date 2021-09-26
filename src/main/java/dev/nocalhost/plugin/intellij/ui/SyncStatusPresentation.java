@@ -42,7 +42,6 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostSyncUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.sync.ServiceActionGroup;
 import dev.nocalhost.plugin.intellij.ui.sync.NocalhostSyncPopup;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
-import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import icons.NocalhostIcons;
 
 public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValuesPresentation, StatusBarWidget.Multiframe {
@@ -101,9 +100,13 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         });
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            var path = project.getBasePath();
+            if (path == null) {
+                return;
+            }
             var token = TypeToken.getParameterized(List.class, NhctlDevAssociateQueryResult.class).getType();
             var command = new NhctlAssociateQueryerCommand();
-            command.setAssociate(Paths.get(project.getBasePath()).toString());
+            command.setAssociate(Paths.get(path).toString());
             while ( ! project.isDisposed()) {
                 try {
                     List<NhctlDevAssociateQueryResult> results = DataUtils.GSON.fromJson(command.execute(), token);
@@ -115,7 +118,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
                     Thread.sleep(3000);
                 } catch (Exception ex) {
-                    LOG.error("Failed to get sync status", ex);
+                    LOG.error("Failed to refresh service list", ex);
                 }
             }
         });
@@ -177,7 +180,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                     .filter(x -> !StringUtils.equals(x.getSha(), context.getSha()))
                     .collect(Collectors.toList());
         }
-        if (!results.isEmpty()) {
+        if ( ! results.isEmpty()) {
             actions.addSeparator("Related Service");
             results.forEach(x -> actions.add(new ServiceActionGroup(project, x)));
         }
@@ -187,53 +190,6 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     @Override
     public @Nullable("null means the widget is unable to show the popup") ListPopup getPopupStep() {
         return NocalhostSyncPopup.getInstance(project, createActions()).asListPopup();
-
-//
-//        final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-//
-//        if (nhctlSyncStatus.get() != null && nhctlSyncStatus.get().getStatus().equalsIgnoreCase("disconnected")) {
-//            if (MessageDialogBuilder.yesNo("Sync Resume", "do you want to resume file sync?").ask(project)) {
-//                ServiceProjectPath devModeService = nocalhostProjectService.getServiceProjectPath();
-//                if (devModeService == null) {
-//                    return null;
-//                }
-//
-//                ApplicationManager.getApplication().executeOnPooledThread(() -> {
-//                    try {
-//                        NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
-//                        nhctlSyncOptions.setDeployment(devModeService.getServiceName());
-//                        nhctlSyncOptions.setControllerType(devModeService.getServiceType());
-//                        nhctlSyncOptions.setContainer(devModeService.getContainerName());
-//                        nhctlSyncOptions.setResume(true);
-//                        outputCapturedNhctlCommand.sync(devModeService.getApplicationName(), nhctlSyncOptions);
-//                    } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
-//                        LOG.error("error occurred while sync resume ", e);
-//                    }
-//                });
-//            }
-//        }
-//        if (nhctlSyncStatus.get() != null && StringUtils.isNoneBlank(nhctlSyncStatus.get().getOutOfSync())) {
-//            if (MessageDialogBuilder.yesNo("Sync Override", "Override the remote changes according to the local folders?").ask(project)) {
-//                ServiceProjectPath devModeService = nocalhostProjectService.getServiceProjectPath();
-//                if (devModeService == null) {
-//                    return null;
-//                }
-//
-//
-//                ApplicationManager.getApplication().executeOnPooledThread(() -> {
-//                    try {
-//                        NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
-//                        nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
-//                        nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
-//                        nhctlSyncStatusOptions.setOverride(true);
-//                        outputCapturedNhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
-//                    } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
-//                        LOG.error("error occurred while sync status override ", e);
-//                    }
-//                });
-//            }
-//        }
-//        return null;
     }
 
     @Override
