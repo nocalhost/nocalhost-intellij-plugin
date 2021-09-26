@@ -38,7 +38,7 @@ public class OverrideSyncAction extends DumbAwareAction {
                 cmd.setApplicationName(result.getServicePack().getApplicationName());
                 cmd.execute();
             } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Override sync", "Error occurred while sync override", ex);
+                ErrorUtil.dealWith(project, "Failed to override sync", "Error occurred while override sync.", ex);
             }
         });
     }

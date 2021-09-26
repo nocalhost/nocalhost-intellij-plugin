@@ -39,7 +39,7 @@ public class ResumeSyncAction extends DumbAwareAction {
                 cmd.setApplicationName(result.getServicePack().getApplicationName());
                 cmd.execute();
             } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Resume sync", "Error occurred while sync override", ex);
+                ErrorUtil.dealWith(project, "Failed to resume sync", "Error occurred while resume sync.", ex);
             }
         });
     }
