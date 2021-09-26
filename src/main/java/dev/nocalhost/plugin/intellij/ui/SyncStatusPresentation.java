@@ -222,7 +222,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             case "syncing":
                 return NocalhostIcons.CloudUpload;
             case "idle":
-                return AllIcons.Actions.Checked;
+                return AllIcons.Actions.Commit;
             default:
                 break;
         }
