@@ -223,6 +223,8 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                 return NocalhostIcons.CloudUpload;
             case "idle":
                 return AllIcons.Actions.Commit;
+            case "end":
+                return NocalhostIcons.Status.Normal;
             default:
                 break;
         }
