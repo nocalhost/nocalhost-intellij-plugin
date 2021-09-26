@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class NhctlDevAssociateOptions extends NhctlGlobalOptions {
-    private String associate;
+    private String localSync;
     private String controllerType;
     private String deployment;
     private String container;

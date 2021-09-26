@@ -40,7 +40,7 @@ public class NocalhostContextManager {
 
             var cmd = new NhctlAssociateQueryerCommand();
             cmd.setCurrent(true);
-            cmd.setAssociate(Paths.get(path).toString());
+            cmd.setLocalSync(Paths.get(path).toString());
 
             var json = cmd.execute();
             if (StringUtils.isEmpty(json)) {

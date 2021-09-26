@@ -169,7 +169,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                 devModeService.getNamespace(), this);
         nhctlDevStartOptions.setDeployment(devModeService.getServiceName());
         nhctlDevStartOptions.setControllerType(devModeService.getServiceType());
-        nhctlDevStartOptions.setLocalSync(Lists.newArrayList(Paths.get(project.getBasePath()).toString()));
+        nhctlDevStartOptions.setLocalSync(Paths.get(project.getBasePath()).toString());
         nhctlDevStartOptions.setContainer(devModeService.getContainerName());
         nhctlDevStartOptions.setStorageClass(storageClass);
         nhctlDevStartOptions.setWithoutTerminal(true);

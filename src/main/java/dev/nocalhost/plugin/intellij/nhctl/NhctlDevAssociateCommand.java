@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 public class NhctlDevAssociateCommand extends BaseCommand{
     private boolean deAssociate;
-    private String associate;
+    private String localSync;
     private String container;
     private String controllerType;
     private String applicationName;
@@ -21,9 +21,9 @@ public class NhctlDevAssociateCommand extends BaseCommand{
     @Override
     protected List<String> compute() {
         List<String> args = Lists.newArrayList(getBinaryPath(), "dev", "associate", applicationName);
-        if (StringUtils.isNotEmpty(associate)) {
-            args.add("--associate");
-            args.add(associate);
+        if (StringUtils.isNotEmpty(localSync)) {
+            args.add("--local-sync");
+            args.add(localSync);
         }
         if (StringUtils.isNotEmpty(container)) {
             args.add("--container");

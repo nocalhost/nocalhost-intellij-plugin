@@ -104,9 +104,11 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             if (path == null) {
                 return;
             }
+
             var token = TypeToken.getParameterized(List.class, NhctlDevAssociateQueryResult.class).getType();
             var command = new NhctlAssociateQueryerCommand();
-            command.setAssociate(Paths.get(path).toString());
+            command.setLocalSync(Paths.get(path).toString());
+
             while ( ! project.isDisposed()) {
                 try {
                     List<NhctlDevAssociateQueryResult> results = DataUtils.GSON.fromJson(command.execute(), token);
@@ -195,9 +197,9 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     @Override
     public @Nullable String getSelectedValue() {
         if (nhctlSyncStatus.get() != null) {
-            return "Nocalhost Sync Status: " + nhctlSyncStatus.get().getMsg();
+            return "Nocalhost sync status: " + nhctlSyncStatus.get().getMsg();
         }
-        return "";
+        return "Nocalhost sync status: Waiting for enter DevMode";
     }
 
     @Override

@@ -13,14 +13,14 @@ import lombok.Setter;
 @Setter
 public class NhctlAssociateQueryerCommand extends BaseCommand {
     private boolean current;
-    private String associate;
+    private String localSync;
 
     @Override
     protected List<String> compute() {
         List<String> args = Lists.newArrayList(getBinaryPath(), "dev", "associate-queryer");
-        if (StringUtils.isNotEmpty(associate)) {
-            args.add("--associate");
-            args.add(associate);
+        if (StringUtils.isNotEmpty(localSync)) {
+            args.add("--local-sync");
+            args.add(localSync);
         }
         if (current) {
             args.add("--current");
