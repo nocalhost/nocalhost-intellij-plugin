@@ -5,12 +5,15 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
+import dev.nocalhost.plugin.intellij.data.NocalhostContext;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevAssociateCommand;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 
 public class DisassociateAction extends DumbAwareAction {
@@ -25,8 +28,6 @@ public class DisassociateAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        // TODO: if disassociate current service
-
         var basePath = project.getBasePath();
         if (basePath != null) {
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
@@ -41,6 +42,13 @@ public class DisassociateAction extends DumbAwareAction {
                     cmd.setControllerType(result.getServicePack().getServiceType());
                     cmd.setApplicationName(result.getServicePack().getApplicationName());
                     cmd.execute();
+
+                    // if disassociate current service
+                    var manager = NocalhostContextManager.getInstance(project);
+                    var context = manager.getContext();
+                    if (context != null && StringUtils.equals(context.getSha(), result.getSha())) {
+                        manager.replace(null);
+                    }
                 } catch (Exception ex) {
                     ErrorUtil.dealWith(project, "Disassociate from Current Directory", "Error occurred while disassociate from current directory.", ex);
                 }

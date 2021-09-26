@@ -60,8 +60,8 @@ public class NocalhostContextManager {
         }
     }
 
-    public void replace(@NotNull NhctlDevAssociateQueryResult result) {
-        var context = NocalhostContext.builder()
+    public void replace(@Nullable NhctlDevAssociateQueryResult result) {
+        var context = result == null ? null : NocalhostContext.builder()
                                      .kubeConfigPath(Paths.get(result.getKubeconfigPath()))
                                      .namespace(result.getServicePack().getNamespace())
                                      .applicationName(result.getServicePack().getApplicationName())
