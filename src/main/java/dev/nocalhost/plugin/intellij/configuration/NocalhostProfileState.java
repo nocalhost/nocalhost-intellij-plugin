@@ -212,14 +212,14 @@ public class NocalhostProfileState extends CommandLineState {
         return StringUtils.equals(DefaultDebugExecutor.EXECUTOR_ID, getEnvironment().getExecutor().getId());
     }
 
-    private String startDebugPortForward(NocalhostContext devModeService, String remotePort) throws ExecutionException {
+    private String startDebugPortForward(NocalhostContext context, String remotePort) throws ExecutionException {
         NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
         try {
-            NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
-            List<NhctlGetResource> deployments = nhctlCommand.getResources(devModeService.getServiceType(), nhctlGetOptions);
+            NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(context.getKubeConfigPath(), context.getNamespace());
+            List<NhctlGetResource> deployments = nhctlCommand.getResources(context.getServiceType(), nhctlGetOptions);
             Optional<NhctlGetResource> deploymentOptional = deployments.stream()
-                    .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), devModeService.getServiceName()))
+                    .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), context.getServiceName()))
                     .findFirst();
             if (deploymentOptional.isEmpty()) {
                 throw new ExecutionException("Service not found");
@@ -232,18 +232,18 @@ public class NocalhostProfileState extends CommandLineState {
             }
             String podName = podOptional.get().getKubeResource().getMetadata().getName();
 
-            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
+            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(context.getKubeConfigPath(), context.getNamespace());
             nhctlPortForwardStartOptions.setDevPorts(List.of(":" + remotePort));
             nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
-            nhctlPortForwardStartOptions.setDeployment(devModeService.getServiceName());
-            nhctlPortForwardStartOptions.setType(devModeService.getServiceType());
+            nhctlPortForwardStartOptions.setDeployment(context.getServiceName());
+            nhctlPortForwardStartOptions.setType(context.getServiceType());
             nhctlPortForwardStartOptions.setPod(podName);
-            nhctlCommand.startPortForward(devModeService.getApplicationName(), nhctlPortForwardStartOptions);
+            nhctlCommand.startPortForward(context.getApplicationName(), nhctlPortForwardStartOptions);
 
-            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
-            nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
-            nhctlDescribeOptions.setType(devModeService.getServiceType());
-            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(devModeService.getApplicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
+            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(context.getKubeConfigPath(), context.getNamespace());
+            nhctlDescribeOptions.setDeployment(context.getServiceName());
+            nhctlDescribeOptions.setType(context.getServiceType());
+            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(context.getApplicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
 
             for (NhctlPortForward pf : nhctlDescribeService.getDevPortForwardList()) {
                 if (StringUtils.equals(pf.getRemoteport(), remotePort)) {
