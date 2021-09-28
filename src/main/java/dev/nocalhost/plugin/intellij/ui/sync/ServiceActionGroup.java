@@ -97,7 +97,7 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
                 break;
         }
         if ( ! actions.isEmpty()) {
-            actions.add(0, new Separator("[Cluster]"));
+            actions.add(0, new Separator("[" + result.getServer() + "]"));
         }
         return actions.toArray(new AnAction[0]);
     }

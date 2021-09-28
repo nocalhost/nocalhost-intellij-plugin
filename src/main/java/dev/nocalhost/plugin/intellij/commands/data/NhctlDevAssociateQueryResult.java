@@ -10,11 +10,13 @@ import lombok.Setter;
 public class NhctlDevAssociateQueryResult {
     @SerializedName("svc_pack")
     private ServicePack servicePack;
-    private String sha;
     @SerializedName("kubeconfig_path")
     private String kubeconfigPath;
     @SerializedName("syncthing_status")
     private SyncthingStatus syncthingStatus;
+
+    private String sha;
+    private String server;
 
     @Getter
     @Setter
