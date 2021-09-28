@@ -65,6 +65,7 @@ public class StartDevelopAction extends DumbAwareAction {
 
     private final AtomicReference<String> projectPathReference = new AtomicReference<>();
     private final AtomicReference<String> selectedContainer = new AtomicReference<>();
+    private final AtomicReference<String> selectedImage = new AtomicReference<>();
 
     private final String action;
 
@@ -334,7 +335,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         opts.setKey("image");
                         opts.setValue(imageChooseDialog.getSelectedImage());
                         outputCapturedNhctlCommand.profileSet(node.applicationName(), opts);
-
+                        selectedImage.set(imageChooseDialog.getSelectedImage());
                         startDevelop();
                     } catch (Exception e) {
                         ErrorUtil.dealWith(project, "Setting dev image",
@@ -358,7 +359,9 @@ public class StartDevelopAction extends DumbAwareAction {
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
                     .containerName(selectedContainer.get())
+                    .image(selectedImage.get())
                     .projectPath(openProjectPath)
+                    .action(action)
                     .build();
         } else {
             return DevModeService.builder()
@@ -368,7 +371,9 @@ public class StartDevelopAction extends DumbAwareAction {
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
                     .containerName(selectedContainer.get())
+                    .image(selectedImage.get())
                     .projectPath(openProjectPath)
+                    .action(action)
                     .build();
         }
     }
@@ -378,7 +383,7 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (PathsUtil.isSame(projectPathReference.get(), project.getBasePath())) {
                 ProgressManager.getInstance().run(
-                        new StartingDevModeTask(project, devModeService, action));
+                        new StartingDevModeTask(project, devModeService));
             } else {
                 Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
                 for (Project openProject : openProjects) {
@@ -388,7 +393,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         if (toolWindow != null) {
                             toolWindow.activate(() -> {
                                 ProgressManager.getInstance().run(
-                                        new StartingDevModeTask(openProject, devModeService, action));
+                                        new StartingDevModeTask(openProject, devModeService));
                             });
                             return;
                         }
@@ -396,7 +401,6 @@ public class StartDevelopAction extends DumbAwareAction {
                 }
 
                 nocalhostSettings.setDevModeServiceToProjectPath(devModeService);
-                nocalhostSettings.set(ExecutionTask.asKey(devModeService.getProjectPath()), action);
 
                 var task = new OpenProjectTask();
                 RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(projectPathReference.get()), task.withRunConfigurators());

@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DevModeService {
+    private String image;
+    private String action;
     private String server;
     private String username;
     private long clusterId;

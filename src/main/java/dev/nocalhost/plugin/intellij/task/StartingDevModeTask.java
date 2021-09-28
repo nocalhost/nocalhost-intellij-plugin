@@ -52,14 +52,12 @@ public class StartingDevModeTask extends BaseBackgroundTask {
 
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
-    private final String action;
     private final Project project;
     private final Path kubeConfigPath;
     private final DevModeService devModeService;
 
-    public StartingDevModeTask(Project project, DevModeService devModeService, String action) {
+    public StartingDevModeTask(Project project, DevModeService devModeService) {
         super(project, "Starting DevMode", true);
-        this.action = action;
         this.project = project;
         this.devModeService = devModeService;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
@@ -97,10 +95,10 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
         NocalhostNotifier.getInstance(project).notifySuccess("DevMode started", "");
 
-        if (StringUtils.isNotEmpty(action)) {
+        if (StringUtils.isNotEmpty(devModeService.getAction())) {
             ProgressManager
                     .getInstance()
-                    .run(new ExecutionTask(project, devModeService, action));
+                    .run(new ExecutionTask(project, devModeService, devModeService.getAction()));
         }
     }
 
@@ -110,7 +108,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                 "Error occurred while starting dev mode", e);
     }
 
-    private boolean isExecutable(String action) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+    private boolean canStart(String action) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         if (StringUtils.isEmpty(action)) {
             return true;
         }
@@ -151,7 +149,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
             return;
         }
 
-        if (!isExecutable(action)) {
+        if ( ! canStart(devModeService.getAction())) {
             NocalhostNotifier
                     .getInstance(project)
                     .notifyError(
@@ -173,6 +171,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
         nhctlDevStartOptions.setContainer(devModeService.getContainerName());
         nhctlDevStartOptions.setStorageClass(storageClass);
         nhctlDevStartOptions.setWithoutTerminal(true);
+        nhctlDevStartOptions.setImage(devModeService.getImage());
         outputCapturedNhctlCommand.devStart(devModeService.getApplicationName(),
                 nhctlDevStartOptions);
     }
