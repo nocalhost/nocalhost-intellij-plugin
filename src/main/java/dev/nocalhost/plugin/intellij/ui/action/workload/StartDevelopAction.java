@@ -288,6 +288,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         kubeConfigPath, namespace);
                 opts.setLocalSync(path);
                 opts.setDeployment(node.resourceName());
+                opts.setContainer(selectedContainer.get());
                 opts.setControllerType(node.getKubeResource().getKind());
                 outputCapturedNhctlCommand.devAssociate(node.applicationName(), opts);
 

@@ -33,7 +33,7 @@ public class ResumeSyncAction extends DumbAwareAction {
                 cmd.setResume(true);
                 cmd.setNamespace(result.getServicePack().getNamespace());
                 cmd.setKubeConfig(Paths.get(result.getKubeconfigPath()));
-                cmd.setController(result.getServicePack().getContainer());
+                cmd.setContainer(result.getServicePack().getContainer());
                 cmd.setDeployment(result.getServicePack().getServiceName());
                 cmd.setControllerType(result.getServicePack().getServiceType());
                 cmd.setApplicationName(result.getServicePack().getApplicationName());
