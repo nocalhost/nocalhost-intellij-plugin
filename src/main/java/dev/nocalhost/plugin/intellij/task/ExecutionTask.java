@@ -145,7 +145,7 @@ public class ExecutionTask extends Task.Backgroundable {
 
     private @Nullable Class<? extends ConfigurationType> getConfType() {
         var ide = ApplicationInfo.getInstance().getBuild().getProductCode();
-        return hash.containsKey(ide) ? hash.get(ide) : null;
+        return hash.getOrDefault(ide, null);
     }
 
     private @Nullable String getDebugPort(@NotNull DevModeService service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
@@ -162,9 +162,5 @@ public class ExecutionTask extends Task.Backgroundable {
         } catch (Exception ex) {
             throw new ExecutionException("The configuration of the service container is incorrect.");
         }
-    }
-
-    public static @NotNull String asKey(@NotNull String path) {
-        return path + ":action";
     }
 }
