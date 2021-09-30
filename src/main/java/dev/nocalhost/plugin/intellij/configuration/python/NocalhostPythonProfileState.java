@@ -21,22 +21,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.HotReload;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostDevInfo;
-import dev.nocalhost.plugin.intellij.data.NocalhostContext;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
-import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
@@ -171,32 +166,6 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         disposables.clear();
     }
 
-    private String getDevPodName() throws IOException, InterruptedException, ExecutionException, NocalhostExecuteCmdException {
-        var dev = refContext.get();
-        var command = ApplicationManager.getApplication().getService(NhctlCommand.class);
-
-        NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(dev.getContext().getKubeConfigPath(), dev.getContext().getNamespace());
-        Optional<NhctlGetResource> deployments = command
-                .getResources(dev.getContext().getServiceType(), nhctlGetOptions)
-                .stream()
-                .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), dev.getContext().getServiceName()))
-                .findFirst();
-        if (deployments.isEmpty()) {
-            throw new ExecutionException("Service not found");
-        }
-
-        Optional<NhctlGetResource> pod = command
-                .getResources("Pods", nhctlGetOptions, KubeResourceUtil.getMatchLabels(deployments.get().getKubeResource()))
-                .stream()
-                .filter(x -> x.getKubeResource().canSelector())
-                .findFirst();
-        if (pod.isEmpty()) {
-            throw new ExecutionException("Pod not found");
-        }
-
-        return pod.get().getKubeResource().getMetadata().getName();
-    }
-
     private String resolveDebugPort(ServiceContainer serviceContainer) {
         if (serviceContainer == null
                 || serviceContainer.getDev() == null
@@ -206,14 +175,18 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         return serviceContainer.getDev().getDebug().getRemoteDebugPort();
     }
 
-    private void createTunnel(ServiceContainer container) throws ExecutionException, NocalhostExecuteCmdException, IOException, InterruptedException {
+    private void createTunnel(ServiceContainer container) throws ExecutionException {
         var port = resolveDebugPort(container);
         var project = getEnvironment().getProject();
         var context = NocalhostContextManager.getInstance(project).getContext();
 
+        if (StringUtils.isEmpty(port)) {
+            throw new ExecutionException("Remote debug port not configured.");
+        }
+
         var cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(), "ssh", "reverse",
-                "--pod", getDevPodName(),
+                "--pod", NhctlUtil.getDevPodName(context),
                 "--local", port,
                 "--remote", port,
                 "--sshport", "50022",

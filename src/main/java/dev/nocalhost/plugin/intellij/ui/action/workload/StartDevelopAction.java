@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
+import com.google.gson.reflect.TypeToken;
+
 import com.intellij.ide.RecentProjectsManagerBase;
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -36,6 +38,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlDevContainerListCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.task.ExecutionTask;
@@ -43,10 +46,10 @@ import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.dialog.ImageChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import icons.NocalhostIcons;
@@ -147,7 +150,20 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     private void getContainers() {
-        List<String> containers = KubeResourceUtil.resolveContainers(node.getKubeResource());
+        List<String> containers;
+
+        try {
+            var cmd = new NhctlDevContainerListCommand();
+            cmd.setNamespace(namespace);
+            cmd.setKubeConfig(kubeConfigPath);
+            cmd.setDeployment(node.resourceName());
+            cmd.setApplication(node.applicationName());
+            containers = DataUtils.GSON.fromJson(cmd.execute(), TypeToken.getParameterized(List.class, String.class).getType());
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Failed to get containers", "Error occurs while get containers", ex);
+            return;
+        }
+
         if (containers.size() > 1) {
             selectContainer(containers);
         } else if (containers.size() == 1) {
