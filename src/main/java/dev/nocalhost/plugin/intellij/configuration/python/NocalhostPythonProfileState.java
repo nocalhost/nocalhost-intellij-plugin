@@ -195,7 +195,6 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
                 .getResources("Pods", nhctlGetOptions, KubeResourceUtil.getMatchLabels(deployments.get().getKubeResource()))
                 .stream()
                 .filter(x -> x.getKubeResource().canSelector())
-                .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
                 .findFirst();
         if (pod.isEmpty()) {
             throw new ExecutionException("Pod not found");

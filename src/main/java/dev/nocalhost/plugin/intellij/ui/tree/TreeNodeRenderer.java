@@ -31,7 +31,6 @@ import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import icons.NocalhostIcons;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
-import static dev.nocalhost.plugin.intellij.utils.Constants.DEVELOP_STATUS_STARTED;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_JOB;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
@@ -138,6 +137,10 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         ServiceStatus status = getServiceStatus(node);
         switch (status) {
             case DEVELOPING:
+                // https://nocalhost.coding.net/p/nocalhost/wiki/551#user-content-jetbrains
+                if (NhctlDescribeServiceUtil.isDuplicateMode(nhctlDescribeService)) {
+                    return NocalhostIcons.Status.DevStartCopy;
+                }
                 if (nhctlDescribeService.isPossess()) {
                     if (CollectionUtils.isNotEmpty(nhctlPortForwards)) {
                         return NocalhostIcons.Status.DevPortForwarding;

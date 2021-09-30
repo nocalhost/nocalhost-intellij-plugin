@@ -51,6 +51,8 @@ import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import icons.NocalhostIcons;
 
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEV_MODE_DUPLICATE;
+
 public class StartDevelopAction extends DumbAwareAction {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
@@ -58,6 +60,7 @@ public class StartDevelopAction extends DumbAwareAction {
     private final OutputCapturedGitCommand outputCapturedGitCommand;
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
+    private final String mode;
     private final Project project;
     private final ResourceNode node;
     private final Path kubeConfigPath;
@@ -69,13 +72,21 @@ public class StartDevelopAction extends DumbAwareAction {
 
     private final String action;
 
-    public StartDevelopAction(Project project, ResourceNode node) {
-        this("Start DevMode", project, node, NocalhostIcons.Status.DevStart, "");
+    public StartDevelopAction(Project project, ResourceNode node, String mode) {
+        this(
+                StringUtils.equals(mode, DEV_MODE_DUPLICATE) ? "Start DevMode (Duplicate)" : "Start DevMode",
+                project,
+                node,
+                StringUtils.equals(mode, DEV_MODE_DUPLICATE) ? NocalhostIcons.Status.DevStartCopy : NocalhostIcons.Status.DevStart,
+                mode,
+                ""
+        );
     }
 
-    public StartDevelopAction(String title, Project project, ResourceNode node, Icon icon, String action) {
+    public StartDevelopAction(String title, Project project, ResourceNode node, Icon icon, String mode, String action) {
         super(title, "", icon);
         this.node = node;
+        this.mode = mode;
         this.action = action;
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
@@ -98,17 +109,33 @@ public class StartDevelopAction extends DumbAwareAction {
                 opts.setType(node.getKubeResource().getKind());
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
+
                 if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
-                    if (StringUtils.isEmpty(action)) {
-                        ApplicationManager.getApplication().invokeLater(() ->
-                                Messages.showMessageDialog("Dev mode has been started.",
-                                        "Start DevMode", null));
-                    } else {
+                    // remote run | remote debug
+                    if (StringUtils.isNotEmpty(action)) {
                         ProgressManager
                                 .getInstance()
                                 .run(new ExecutionTask(project, makeDevModeService(project.getBasePath()), action));
+                        return;
                     }
-                    return;
+                    // currently the service in the duplicate mode
+                    if (StringUtils.equals(nhctlDescribeService.getDevModeType(), DEV_MODE_DUPLICATE)) {
+                        ApplicationManager.getApplication().invokeLater(() ->
+                                Messages.showMessageDialog(
+                                        "Dev mode has been started.",
+                                        "Start DevMode",
+                                        null
+                                )
+                        );
+                        return;
+                    }
+                    // currently the service in the replace mode
+                    if ( ! StringUtils.equals(mode, DEV_MODE_DUPLICATE)) {
+                        ApplicationManager.getApplication().invokeLater(() ->
+                                Messages.showMessageDialog("Dev mode has been started.",
+                                        "Start DevMode", null));
+                        return;
+                    }
                 }
 
                 getContainers();
@@ -362,6 +389,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     .image(selectedImage.get())
                     .projectPath(openProjectPath)
                     .action(action)
+                    .mode(mode)
                     .build();
         } else {
             return DevModeService.builder()
@@ -374,6 +402,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     .image(selectedImage.get())
                     .projectPath(openProjectPath)
                     .action(action)
+                    .mode(mode)
                     .build();
         }
     }

@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.tree;
 
+import com.google.common.collect.Lists;
+
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPopupMenu;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
@@ -52,6 +54,11 @@ import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEV_MODE_DUPLICATE;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DAEMONSET;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_STATEFULSET;
 
 public class TreeMouseListener extends MouseAdapter {
     private static final Separator SEPARATOR = new Separator();
@@ -179,8 +186,16 @@ public class TreeMouseListener extends MouseAdapter {
         NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
         if (NhctlDescribeServiceUtil.developStarting(nhctlDescribeService) || NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
             actionGroup.add(new EndDevelopAction(project, resourceNode));
+
+            if ( ! nhctlDescribeService.isPossess() && copyable(resourceType)) {
+                actionGroup.add(new StartDevelopAction(project, resourceNode, DEV_MODE_DUPLICATE));
+            }
         } else {
-            actionGroup.add(new StartDevelopAction(project, resourceNode));
+            actionGroup.add(new StartDevelopAction(project, resourceNode, ""));
+
+            if (copyable(resourceType)) {
+                actionGroup.add(new StartDevelopAction(project, resourceNode, DEV_MODE_DUPLICATE));
+            }
         }
         actionGroup.add(new RunAction(project, resourceNode));
         actionGroup.add(new DebugAction(project, resourceNode));
@@ -213,5 +228,9 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new LogsAction(project, resourceNode));
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
+    }
+
+    private boolean copyable(String kind) {
+        return Lists.newArrayList(WORKLOAD_TYPE_DEPLOYMENT, WORKLOAD_TYPE_STATEFULSET, WORKLOAD_TYPE_DAEMONSET, WORKLOAD_TYPE_POD).contains(kind);
     }
 }

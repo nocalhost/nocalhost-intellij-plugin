@@ -200,6 +200,10 @@ public class NhctlCommand {
         if (opts.isAuthCheck()) {
             args.add("--auth-check");
         }
+        if (StringUtils.isNotEmpty(opts.getMode())) {
+            args.add("--dev-mode");
+            args.add(opts.getMode());
+        }
 
         return execute(args, opts);
     }
@@ -663,7 +667,7 @@ public class NhctlCommand {
     public List<NhctlGetResource> getResources(String resourceType, NhctlGetOptions opts, Map<String, String> matchedLabels) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<NhctlGetResource> nhctlGetResources = getResources(resourceType, opts);
         if (nhctlGetResources == null) {
-            return nhctlGetResources;
+            return Lists.newArrayList();
         }
         return nhctlGetResources.stream().filter(e -> {
             Map<String, String> labels = e.getKubeResource().getMetadata().getLabels();
