@@ -1,13 +1,16 @@
 package dev.nocalhost.plugin.intellij.ui;
 
+import com.google.common.collect.Lists;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 
+import com.intellij.dvcs.ui.LightActionGroup;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.popup.ListPopup;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.StatusBar;
@@ -21,19 +24,25 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
-import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlAssociateQueryerCommand;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
+import dev.nocalhost.plugin.intellij.topic.NocalhostSyncUpdateNotifier;
+import dev.nocalhost.plugin.intellij.ui.sync.ServiceActionGroup;
+import dev.nocalhost.plugin.intellij.ui.sync.NocalhostSyncPopup;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import icons.NocalhostIcons;
 
 public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValuesPresentation, StatusBarWidget.Multiframe {
 
@@ -42,9 +51,9 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     private final StatusBar statusBar;
     private final Project project;
     private final Disposable widget;
-    private final NocalhostProjectService nocalhostProjectService;
 
     private final AtomicReference<NhctlSyncStatus> nhctlSyncStatus = new AtomicReference<>();
+    private final AtomicReference<List<NhctlDevAssociateQueryResult>> services = new AtomicReference<>(Lists.newArrayList());
 
     private NhctlSyncStatus getNhctlSyncStatus() {
         if (project == null) {
@@ -52,16 +61,16 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         }
         final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
-        ServiceProjectPath devModeService = nocalhostProjectService.getServiceProjectPath();
-        if (devModeService == null) {
+        var context = NocalhostContextManager.getInstance(project).getContext();
+        if (context == null) {
             return null;
         }
 
         try {
-            NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
-            nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
-            nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
-            String status = nhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
+            NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(context.getKubeConfigPath(), context.getNamespace());
+            nhctlSyncStatusOptions.setDeployment(context.getServiceName());
+            nhctlSyncStatusOptions.setControllerType(context.getServiceType());
+            String status = nhctlCommand.syncStatus(context.getApplicationName(), nhctlSyncStatusOptions);
             return DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
         } catch (InterruptedException | IOException e) {
             LOG.error("error occurred while get sync status ", e);
@@ -74,11 +83,10 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         return null;
     }
 
-    public SyncStatusPresentation(StatusBar statusBar, Project project, Disposable widget) {
-        this.statusBar = statusBar;
-        this.project = project;
+    public SyncStatusPresentation(Project project, StatusBar statusBar, Disposable widget) {
         this.widget = widget;
-        nocalhostProjectService = project.getService(NocalhostProjectService.class);
+        this.project = project;
+        this.statusBar = statusBar;
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
@@ -88,6 +96,32 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                 }
             } catch (Exception e) {
                 LOG.error("Fail to get sync status", e);
+            }
+        });
+
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            var path = project.getBasePath();
+            if (path == null) {
+                return;
+            }
+
+            var token = TypeToken.getParameterized(List.class, NhctlDevAssociateQueryResult.class).getType();
+            var command = new NhctlAssociateQueryerCommand();
+            command.setLocalSync(Paths.get(path).toString());
+
+            while ( ! project.isDisposed()) {
+                try {
+                    List<NhctlDevAssociateQueryResult> results = DataUtils.GSON.fromJson(command.execute(), token);
+                    services.set(results);
+                    project
+                            .getMessageBus()
+                            .syncPublisher(NocalhostSyncUpdateNotifier.NOCALHOST_SYNC_UPDATE_NOTIFIER_TOPIC)
+                            .action(results);
+
+                    Thread.sleep(3000);
+                } catch (Exception ex) {
+                    LOG.error("Failed to refresh service list", ex);
+                }
             }
         });
     }
@@ -130,61 +164,42 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         };
     }
 
+    @NotNull
+    private ActionGroup createActions() {
+        var actions = new LightActionGroup();
+        var results = services.get();
+        var context = NocalhostContextManager.getInstance(project).getContext();
+
+        if (context != null) {
+            actions.addSeparator("Current Service");
+            results
+                    .stream()
+                    .filter(x -> StringUtils.equals(x.getSha(), context.getSha()))
+                    .findFirst()
+                    .ifPresent(x -> actions.add(new ServiceActionGroup(project, x)));
+            results = results
+                    .stream()
+                    .filter(x -> !StringUtils.equals(x.getSha(), context.getSha()))
+                    .collect(Collectors.toList());
+        }
+        if ( ! results.isEmpty()) {
+            actions.addSeparator("Related Service");
+            results.forEach(x -> actions.add(new ServiceActionGroup(project, x)));
+        }
+        return actions;
+    }
+
     @Override
     public @Nullable("null means the widget is unable to show the popup") ListPopup getPopupStep() {
-        final OutputCapturedNhctlCommand outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
-
-        if (nhctlSyncStatus.get() != null && nhctlSyncStatus.get().getStatus().equalsIgnoreCase("disconnected")) {
-            if (MessageDialogBuilder.yesNo("Sync Resume", "do you want to resume file sync?").ask(project)) {
-                ServiceProjectPath devModeService = nocalhostProjectService.getServiceProjectPath();
-                if (devModeService == null) {
-                    return null;
-                }
-
-                ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                    try {
-                        NhctlSyncOptions nhctlSyncOptions = new NhctlSyncOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
-                        nhctlSyncOptions.setDeployment(devModeService.getServiceName());
-                        nhctlSyncOptions.setControllerType(devModeService.getServiceType());
-                        nhctlSyncOptions.setContainer(devModeService.getContainerName());
-                        nhctlSyncOptions.setResume(true);
-                        outputCapturedNhctlCommand.sync(devModeService.getApplicationName(), nhctlSyncOptions);
-                    } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
-                        LOG.error("error occurred while sync resume ", e);
-                    }
-                });
-            }
-        }
-        if (nhctlSyncStatus.get() != null && StringUtils.isNoneBlank(nhctlSyncStatus.get().getOutOfSync())) {
-            if (MessageDialogBuilder.yesNo("Sync Override", "Override the remote changes according to the local folders?").ask(project)) {
-                ServiceProjectPath devModeService = nocalhostProjectService.getServiceProjectPath();
-                if (devModeService == null) {
-                    return null;
-                }
-
-
-                ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                    try {
-                        NhctlSyncStatusOptions nhctlSyncStatusOptions = new NhctlSyncStatusOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
-                        nhctlSyncStatusOptions.setDeployment(devModeService.getServiceName());
-                        nhctlSyncStatusOptions.setControllerType(devModeService.getServiceType());
-                        nhctlSyncStatusOptions.setOverride(true);
-                        outputCapturedNhctlCommand.syncStatus(devModeService.getApplicationName(), nhctlSyncStatusOptions);
-                    } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
-                        LOG.error("error occurred while sync status override ", e);
-                    }
-                });
-            }
-        }
-        return null;
+        return NocalhostSyncPopup.getInstance(project, createActions()).asListPopup();
     }
 
     @Override
     public @Nullable String getSelectedValue() {
         if (nhctlSyncStatus.get() != null) {
-            return "Nocalhost Sync Status: " + nhctlSyncStatus.get().getMsg();
+            return "Nocalhost sync status: " + nhctlSyncStatus.get().getMsg();
         }
-        return "";
+        return "Nocalhost sync status: Waiting for enter DevMode";
     }
 
     @Override
@@ -204,12 +219,12 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             case "error":
                 return AllIcons.Actions.Cancel;
             case "scanning":
-            case "syncthing":
-                return AllIcons.Actions.Refresh;
+            case "syncing":
+                return NocalhostIcons.CloudUpload;
             case "idle":
-                return AllIcons.Actions.Checked;
+                return AllIcons.Actions.Commit;
             case "end":
-                break;
+                return NocalhostIcons.Status.Normal;
             default:
                 break;
         }

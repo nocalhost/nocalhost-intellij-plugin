@@ -164,11 +164,9 @@ public class NhctlCommand {
             args.add("--image");
             args.add(opts.getImage());
         }
-        if (opts.getLocalSync() != null) {
-            for (String s : opts.getLocalSync()) {
-                args.add("--local-sync");
-                args.add(s);
-            }
+        if (StringUtils.isNotEmpty(opts.getLocalSync())) {
+            args.add("--local-sync");
+            args.add(opts.getLocalSync());
         }
         if (StringUtils.isNotEmpty(opts.getSidecarImage())) {
             args.add("--sidecar-image");
@@ -575,9 +573,9 @@ public class NhctlCommand {
 
     public String devAssociate(String name, NhctlDevAssociateOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "associate", name);
-        if (StringUtils.isNotEmpty(opts.getAssociate())) {
-            args.add("--associate");
-            args.add(opts.getAssociate());
+        if (StringUtils.isNotEmpty(opts.getLocalSync())) {
+            args.add("--local-sync");
+            args.add(opts.getLocalSync());
         }
         if (StringUtils.isNotEmpty(opts.getControllerType())) {
             args.add("--controller-type");
@@ -695,25 +693,6 @@ public class NhctlCommand {
 
     public String render(Path path, NhctlRenderOptions opts) throws IOException, NocalhostExecuteCmdException, InterruptedException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "render", path.toString());
-        return execute(args, opts);
-    }
-
-    public String devAssociateQueryer(NhctlDevAssociateQueryerOptions opts) throws IOException, NocalhostExecuteCmdException, InterruptedException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "associate-queryer");
-        if (StringUtils.isNotEmpty(opts.getAssociate())) {
-            args.add("--associate");
-            args.add(opts.getAssociate());
-        }
-        if (opts.isCurrent()) {
-            args.add("--current");
-        }
-        if (opts.getExcludeStatus() != null) {
-            for (String status : opts.getExcludeStatus()) {
-                args.add("--exclude-status");
-                args.add(status);
-            }
-        }
-        args.add("--json");
         return execute(args, opts);
     }
 

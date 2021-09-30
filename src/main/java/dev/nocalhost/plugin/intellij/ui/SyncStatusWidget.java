@@ -31,7 +31,7 @@ public class SyncStatusWidget implements StatusBarWidget {
 
     @Override
     public @Nullable WidgetPresentation getPresentation() {
-        return new SyncStatusPresentation(statusBar, project, this);
+        return new SyncStatusPresentation(project, statusBar, this);
     }
 
     @Override

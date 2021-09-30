@@ -22,8 +22,7 @@ import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
-import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
@@ -134,12 +133,11 @@ public class NocalhostTree extends Tree implements Disposable {
 
     private void expendWorkloadNode() {
         try {
-            final ServiceProjectPath serviceProjectPath = project.getService(NocalhostProjectService.class)
-                    .getServiceProjectPath();
-            if (serviceProjectPath == null) {
+            var context = NocalhostContextManager.getInstance(project).getContext();
+            if (context == null) {
                 return;
             }
-            final String rawKubeConfig = Files.readString(serviceProjectPath.getKubeConfigPath(), StandardCharsets.UTF_8);
+            final String rawKubeConfig = Files.readString(context.getKubeConfigPath(), StandardCharsets.UTF_8);
 
             final Object root = model.getRoot();
 
@@ -174,7 +172,7 @@ public class NocalhostTree extends Tree implements Disposable {
                         try {
                             for (int i = 0; i < model.getChildCount(clusterNodeAtomicReference.get()); i++) {
                                 NamespaceNode namespaceNode = (NamespaceNode) model.getChild(clusterNodeAtomicReference.get(), i);
-                                if (StringUtils.equals(namespaceNode.getNamespace(), serviceProjectPath.getNamespace())) {
+                                if (StringUtils.equals(namespaceNode.getNamespace(), context.getNamespace())) {
                                     namespaceNodeAtomicReference.set(namespaceNode);
                                     model.updateApplications(namespaceNode, true);
                                     break;
@@ -195,7 +193,7 @@ public class NocalhostTree extends Tree implements Disposable {
                         try {
                             for (int i = 0; i < model.getChildCount(namespaceNodeAtomicReference.get()); i++) {
                                 ApplicationNode applicationNode = (ApplicationNode) model.getChild(namespaceNodeAtomicReference.get(), i);
-                                if (StringUtils.equals(applicationNode.getName(), serviceProjectPath.getApplicationName())) {
+                                if (StringUtils.equals(applicationNode.getName(), context.getApplicationName())) {
                                     applicationNodeAtomicReference.set(applicationNode);
                                     break;
                                 }
@@ -221,13 +219,13 @@ public class NocalhostTree extends Tree implements Disposable {
                                 }
                                 for (int j = 0; j < model.getChildCount(resourceGroupNode); j++) {
                                     ResourceTypeNode resourceTypeNode = (ResourceTypeNode) model.getChild(resourceGroupNode, j);
-                                    if (!StringUtils.equalsIgnoreCase(RESOURCE_TYPE_MAP.get(resourceTypeNode.getName()), serviceProjectPath.getServiceType())) {
+                                    if (!StringUtils.equalsIgnoreCase(RESOURCE_TYPE_MAP.get(resourceTypeNode.getName()), context.getServiceType())) {
                                         continue;
                                     }
                                     model.updateResources(resourceTypeNode, true);
                                     for (int k = 0; k < model.getChildCount(resourceTypeNode); k++) {
                                         ResourceNode resourceNode = (ResourceNode) model.getChild(resourceTypeNode, k);
-                                        if (StringUtils.equals(resourceNode.resourceName(), serviceProjectPath.getServiceName())) {
+                                        if (StringUtils.equals(resourceNode.resourceName(), context.getServiceName())) {
                                             resourceNodeAtomicReference.set(resourceNode);
                                             break OUTER;
                                         }
