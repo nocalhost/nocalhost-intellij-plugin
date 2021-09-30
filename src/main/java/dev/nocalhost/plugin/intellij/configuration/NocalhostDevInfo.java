@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.configuration;
 
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
-import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.data.NocalhostContext;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,8 +13,8 @@ public class NocalhostDevInfo {
     private Debug debug;
     private String shell;
     private Command command;
+    private NocalhostContext context;
     private ServiceContainer container;
-    private ServiceProjectPath devModeService;
 
     @AllArgsConstructor
     @Getter

@@ -73,7 +73,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
             @Override
             public void runTask(@NotNull ProgressIndicator indicator) {
                 NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace, this);
-                opts.setAssociate(dir.toString());
+                opts.setLocalSync(dir.toString());
                 opts.setContainer(container.get());
                 opts.setDeployment(node.resourceName());
                 opts.setControllerType(node.getKubeResource().getKind());

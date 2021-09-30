@@ -31,7 +31,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
@@ -68,7 +68,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
     public void onSuccess() {
         super.onSuccess();
 
-        project.getService(NocalhostProjectService.class).refreshServiceProjectPath();
+        NocalhostContextManager.getInstance(project).refresh();
         project.getMessageBus().syncPublisher(
                 NocalhostTreeExpandNotifier.NOCALHOST_TREE_EXPAND_NOTIFIER_TOPIC).action();
 
@@ -167,7 +167,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                 devModeService.getNamespace(), this);
         nhctlDevStartOptions.setDeployment(devModeService.getServiceName());
         nhctlDevStartOptions.setControllerType(devModeService.getServiceType());
-        nhctlDevStartOptions.setLocalSync(Lists.newArrayList(Paths.get(project.getBasePath()).toString()));
+        nhctlDevStartOptions.setLocalSync(Paths.get(project.getBasePath()).toString());
         nhctlDevStartOptions.setContainer(devModeService.getContainerName());
         nhctlDevStartOptions.setStorageClass(storageClass);
         nhctlDevStartOptions.setWithoutTerminal(true);

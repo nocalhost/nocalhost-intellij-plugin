@@ -22,9 +22,9 @@ import java.net.ServerSocket;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
-import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.data.NocalhostContext;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 
 public class NocalhostPythonDebugRunner implements ProgramRunner<RunnerSettings> {
     public static final String NOCALHOST_PYTHON_DEBUG_RUNNER = "NocalhostPythonDebugRunner";
@@ -50,11 +50,11 @@ public class NocalhostPythonDebugRunner implements ProgramRunner<RunnerSettings>
     private @NotNull PathMappingSettings createPathMappingSettings(@NotNull ExecutionEnvironment environment) throws ExecutionException {
         var setting = new PathMappingSettings();
         try {
-            var service = environment.getProject().getService(NocalhostProjectService.class).getServiceProjectPath();
+            var context = NocalhostContextManager.getInstance(environment.getProject()).getContext();
             setting.add(new PathMappingSettings.PathMapping() {
                 {
                     setLocalRoot(environment.getProject().getBasePath());
-                    setRemoteRoot(getWorkDir(service));
+                    setRemoteRoot(getWorkDir(context));
                 }
             });
         } catch (Exception ex) {
@@ -79,7 +79,7 @@ public class NocalhostPythonDebugRunner implements ProgramRunner<RunnerSettings>
         });
     }
 
-    private String getWorkDir(@NotNull ServiceProjectPath service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
+    private String getWorkDir(@NotNull NocalhostContext service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
         var opts = new NhctlConfigOptions(service.getKubeConfigPath(), service.getNamespace());
         opts.setDeployment(service.getServiceName());
         opts.setControllerType(service.getServiceType());
