@@ -35,6 +35,7 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 
 public class CopyTerminalAction extends DumbAwareAction {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
@@ -95,11 +96,11 @@ public class CopyTerminalAction extends DumbAwareAction {
 
     private void copyDevTerminal() {
         GeneralCommandLine commandLine = new GeneralCommandLine(Lists.newArrayList(
-                NhctlUtil.binaryPath(),
+                PathsUtil.backslash(NhctlUtil.binaryPath()),
                 "dev",
                 "terminal", node.applicationName(),
                 "--deployment", node.resourceName(),
-                "--kubeconfig", kubeConfigPath.toString(),
+                "--kubeconfig", PathsUtil.backslash(kubeConfigPath.toString()),
                 "--namespace", namespace,
                 "--controller-type", node.getKubeResource().getKind(),
                 "--container", "nocalhost-dev"
@@ -155,11 +156,14 @@ public class CopyTerminalAction extends DumbAwareAction {
 
     private void copyTerminal(String podName, String containerName) {
         GeneralCommandLine commandLine = new GeneralCommandLine(Lists.newArrayList(
-                NhctlUtil.binaryPath(), "k", "exec", podName,
+                PathsUtil.backslash(NhctlUtil.binaryPath()),
+                "k",
+                "exec",
+                podName,
                 "--stdin",
                 "--tty",
                 "--container", containerName,
-                "--kubeconfig", kubeConfigPath.toString(),
+                "--kubeconfig", PathsUtil.backslash(kubeConfigPath.toString()),
                 "--namespace", namespace,
                 "--", "sh", "-c", "clear; (zsh || bash || ash || sh)"
         ));
