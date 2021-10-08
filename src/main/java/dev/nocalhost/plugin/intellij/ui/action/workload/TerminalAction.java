@@ -102,11 +102,11 @@ public class TerminalAction extends DumbAwareAction {
                                 node.resourceName()
                         ),
                         new GeneralCommandLine(Lists.newArrayList(
-                                NhctlUtil.binaryPath(),
+                                PathsUtil.backslash(NhctlUtil.binaryPath()),
                                 "dev",
                                 "terminal", node.applicationName(),
                                 "--deployment", node.resourceName(),
-                                "--kubeconfig", kubeConfigPath.toString(),
+                                "--kubeconfig", PathsUtil.backslash(kubeConfigPath.toString()),
                                 "--namespace", namespace,
                                 "--controller-type", node.getKubeResource().getKind(),
                                 "--container", "nocalhost-dev"
