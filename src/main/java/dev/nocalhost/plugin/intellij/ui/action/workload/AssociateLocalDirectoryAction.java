@@ -56,6 +56,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
             cmd.setKubeConfig(kubeConfigPath);
             cmd.setDeployment(node.resourceName());
             cmd.setApplication(node.applicationName());
+            cmd.setControllerType(node.getKubeResource().getKind());
             containers = DataUtils.GSON.fromJson(cmd.execute(), TypeToken.getParameterized(List.class, String.class).getType());
         } catch (Exception ex) {
             ErrorUtil.dealWith(project, "Failed to get containers", "Error occurs while get containers", ex);
