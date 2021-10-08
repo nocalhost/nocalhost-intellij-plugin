@@ -58,6 +58,7 @@ public final class NhctlUtil {
         cmd.setNamespace(context.getNamespace());
         cmd.setDeployment(context.getServiceName());
         cmd.setKubeConfig(context.getKubeConfigPath());
+        cmd.setControllerType(context.getServiceType());
         cmd.setApplication(context.getApplicationName());
 
         try {
