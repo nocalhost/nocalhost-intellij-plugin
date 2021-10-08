@@ -22,6 +22,7 @@ public class NhctlDevPodCommand extends BaseCommand{
 
     @Override
     public String execute() throws IOException, NocalhostExecuteCmdException, InterruptedException {
-        return super.execute().replace(System.lineSeparator(), "");
+        System.lineSeparator()
+        return super.execute().replace("\n", "");
     }
 }
