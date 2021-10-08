@@ -18,10 +18,17 @@ import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
@@ -138,7 +145,7 @@ public class NocalhostBinService {
         });
     }
 
-    private void startDownload(final String version, final Path binDir, final ProgressIndicator indicator) throws IOException {
+    private void startDownload(final String version, final Path binDir, final ProgressIndicator indicator) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         final String downloadFilename = getDownloadFilename();
         final HttpUrl url = pickDownloadUrl(version);
         if (url == null) {
@@ -150,11 +157,17 @@ public class NocalhostBinService {
 
         Files.createDirectories(binDir);
 
+        var x509 = new X509TrustManagerImpl();
+        var ssl = SSLContext.getInstance("SSL");
+        ssl.init(null, new TrustManager[]{x509}, new java.security.SecureRandom());
+
         Request request = new Request.Builder().url(url).build();
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(10, TimeUnit.SECONDS)
                 .writeTimeout(10, TimeUnit.SECONDS)
+                .sslSocketFactory(ssl.getSocketFactory(), x509)
+                .hostnameVerifier((hostname, session) -> true)
                 .build();
         Path downloadingPath = binDir.resolve(getDownloadingTempFilename());
 
@@ -269,5 +282,18 @@ public class NocalhostBinService {
                 .addPathSegment("v" + version)
                 .addPathSegment(getDownloadFilename())
                 .build();
+    }
+
+    private class X509TrustManagerImpl implements X509TrustManager {
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType) {
+        }
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) {
+        }
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
     }
 }
