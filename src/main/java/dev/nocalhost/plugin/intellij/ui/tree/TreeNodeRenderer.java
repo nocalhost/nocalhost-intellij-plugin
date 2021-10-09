@@ -139,7 +139,10 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             case DEVELOPING:
                 // https://nocalhost.coding.net/p/nocalhost/wiki/551#user-content-jetbrains
                 if (NhctlDescribeServiceUtil.isDuplicateMode(nhctlDescribeService)) {
-                    return NocalhostIcons.Status.DevStartCopy;
+                    if (nhctlPortForwards.isEmpty()) {
+                        return NocalhostIcons.Status.DevCopy;
+                    }
+                    return NocalhostIcons.Status.DevCopyWithPortForwarding;
                 }
                 if (nhctlDescribeService.isPossess()) {
                     if (CollectionUtils.isNotEmpty(nhctlPortForwards)) {

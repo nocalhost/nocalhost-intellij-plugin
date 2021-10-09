@@ -80,7 +80,7 @@ public class StartDevelopAction extends DumbAwareAction {
                 StringUtils.equals(mode, DEV_MODE_DUPLICATE) ? "Start DevMode (Duplicate)" : "Start DevMode",
                 project,
                 node,
-                StringUtils.equals(mode, DEV_MODE_DUPLICATE) ? NocalhostIcons.Status.DevStartCopy : NocalhostIcons.Status.DevStart,
+                StringUtils.equals(mode, DEV_MODE_DUPLICATE) ? NocalhostIcons.Status.DevCopy : NocalhostIcons.Status.DevStart,
                 mode,
                 ""
         );
