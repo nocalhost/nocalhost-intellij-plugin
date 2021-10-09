@@ -209,25 +209,7 @@ public class NocalhostProfileState extends CommandLineState {
         NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
         try {
-            NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(context.getKubeConfigPath(), context.getNamespace());
-            List<NhctlGetResource> deployments = nhctlCommand.getResources(context.getServiceType(), nhctlGetOptions);
-            Optional<NhctlGetResource> deploymentOptional = deployments.stream()
-                    .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), context.getServiceName()))
-                    .findFirst();
-            if (deploymentOptional.isEmpty()) {
-                throw new ExecutionException("Service not found");
-            }
-
-            var pod = nhctlCommand
-                    .getResources("Pods", nhctlGetOptions, KubeResourceUtil.getMatchLabels(deploymentOptional.get().getKubeResource()))
-                    .stream()
-                    .filter(x -> x.getKubeResource().canSelector())
-                    .findFirst();
-            if (pod.isEmpty()) {
-                throw new ExecutionException("Pod not found");
-            }
-
-            String podName = pod.get().getKubeResource().getMetadata().getName();
+            var podName = NhctlUtil.getDevPodName(context);
             NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(context.getKubeConfigPath(), context.getNamespace());
             nhctlPortForwardStartOptions.setDevPorts(List.of(":" + remotePort));
             nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
