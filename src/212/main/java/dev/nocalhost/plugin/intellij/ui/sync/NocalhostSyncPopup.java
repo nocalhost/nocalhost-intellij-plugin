@@ -40,12 +40,14 @@ public class NocalhostSyncPopup {
         List<Object> items = popup.getListStep().getValues();
         items.forEach(x -> {
             var item = (PopupFactoryImpl.ActionItem) x;
-            var group = (ServiceActionGroup) item.getAction();
-            results.forEach(it -> {
-                if (group.compare(it)) {
-                    group.setResult(it);
-                }
-            });
+            if (item.getAction() instanceof ServiceActionGroup) {
+                var group = (ServiceActionGroup) item.getAction();
+                results.forEach(it -> {
+                    if (group.compare(it)) {
+                        group.setResult(it);
+                    }
+                });
+            }
         });
         popup.update();
     }
