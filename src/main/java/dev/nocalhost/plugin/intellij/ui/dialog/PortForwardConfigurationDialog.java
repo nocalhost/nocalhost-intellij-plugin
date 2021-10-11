@@ -301,7 +301,6 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                 if (portForwardsToBeStarted.size() > 0) {
                     NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(kubeConfigPath, namespace);
                     nhctlPortForwardStartOptions.setDevPorts(Lists.newArrayList(portForwardsToBeStarted.iterator()));
-                    nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
                     nhctlPortForwardStartOptions.setDeployment(node.resourceName());
                     nhctlPortForwardStartOptions.setType(node.getKubeResource().getKind());
                     nhctlPortForwardStartOptions.setPod(finalPod);

@@ -312,8 +312,6 @@ public class NhctlCommand {
             args.add("--type");
             args.add(opts.getType());
         }
-        args.add("--way");
-        args.add(opts.getWay().getVal());
 
         execute(args, opts, sudoPassword);
     }
