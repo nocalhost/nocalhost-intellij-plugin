@@ -17,6 +17,10 @@ public final class NhctlDescribeServiceUtil {
         return StringUtils.equals(nhctlDescribeService.getDevelop_status(), DEVELOP_STATUS_STARTING);
     }
 
+    public static boolean isDeveloping(NhctlDescribeService nhctlDescribeService) {
+        return developStarting(nhctlDescribeService) || developStarted(nhctlDescribeService);
+    }
+
     public static boolean isDuplicateMode(NhctlDescribeService nhctlDescribeService) {
         return StringUtils.equals(nhctlDescribeService.getDevModeType(), DEV_MODE_DUPLICATE);
     }

@@ -184,7 +184,7 @@ public class TreeMouseListener extends MouseAdapter {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
-        if (NhctlDescribeServiceUtil.developStarting(nhctlDescribeService) || NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
+        if (NhctlDescribeServiceUtil.isDeveloping(nhctlDescribeService)) {
             actionGroup.add(new EndDevelopAction(project, resourceNode));
 
             if ( ! nhctlDescribeService.isPossess() && copyable(resourceType)) {
@@ -200,7 +200,11 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new RunAction(project, resourceNode));
         actionGroup.add(new DebugAction(project, resourceNode));
         actionGroup.add(SEPARATOR);
-        actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
+
+        if ( ! nhctlDescribeService.isPossess() || ! NhctlDescribeServiceUtil.isDeveloping(nhctlDescribeService)) {
+            actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
+        }
+
         actionGroup.add(new ConfigAction(project, resourceNode));
         actionGroup.add(new EditManifestAction(project, resourceNode));
         actionGroup.add(new PortForwardAction(project, resourceNode));
