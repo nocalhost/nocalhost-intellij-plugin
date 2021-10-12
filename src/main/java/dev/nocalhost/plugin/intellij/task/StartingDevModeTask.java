@@ -39,6 +39,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import dev.nocalhost.plugin.intellij.utils.TerminalUtil;
 import lombok.SneakyThrows;
 
@@ -77,11 +78,11 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                         devModeService.getServiceName()
                 ),
                 new GeneralCommandLine(Lists.newArrayList(
-                        NhctlUtil.binaryPath(),
+                        PathsUtil.backslash(NhctlUtil.binaryPath()),
                         "dev",
                         "terminal", devModeService.getApplicationName(),
                         "--deployment", devModeService.getServiceName(),
-                        "--kubeconfig", kubeConfigPath.toString(),
+                        "--kubeconfig", PathsUtil.backslash(kubeConfigPath.toString()),
                         "--namespace", devModeService.getNamespace(),
                         "--controller-type", devModeService.getServiceType(),
                         "--container", "nocalhost-dev"
