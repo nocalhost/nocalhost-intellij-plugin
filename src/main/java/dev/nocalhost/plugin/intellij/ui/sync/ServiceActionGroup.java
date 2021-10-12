@@ -52,7 +52,7 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
             case "idle":
                 return AllIcons.Actions.Commit;
             case "end":
-                return NocalhostIcons.Status.Normal;
+                return AllIcons.Actions.Exit;
             default:
                 break;
         }

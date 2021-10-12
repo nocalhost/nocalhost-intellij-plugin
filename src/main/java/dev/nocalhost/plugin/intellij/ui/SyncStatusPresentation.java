@@ -199,9 +199,9 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     @Override
     public @Nullable String getSelectedValue() {
         if (nhctlSyncStatus.get() != null) {
-            return "Nocalhost sync status: " + nhctlSyncStatus.get().getMsg();
+            return nhctlSyncStatus.get().getMsg();
         }
-        return "Nocalhost sync status: Waiting for enter DevMode";
+        return "Waiting for enter DevMode";
     }
 
     @Override
@@ -226,7 +226,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             case "idle":
                 return AllIcons.Actions.Commit;
             case "end":
-                return NocalhostIcons.Status.Normal;
+                return AllIcons.Actions.Exit;
             default:
                 break;
         }
