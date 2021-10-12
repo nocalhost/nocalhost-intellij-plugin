@@ -110,8 +110,10 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             command.setLocalSync(Paths.get(path).toString());
 
             while ( ! project.isDisposed()) {
+                var json = "";
                 try {
-                    List<NhctlDevAssociateQueryResult> results = DataUtils.GSON.fromJson(command.execute(), token);
+                    json = command.execute();
+                    List<NhctlDevAssociateQueryResult> results = DataUtils.GSON.fromJson(json, token);
                     services.set(results);
                     project
                             .getMessageBus()
@@ -120,7 +122,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
                     Thread.sleep(3000);
                 } catch (Exception ex) {
-                    LOG.error("Failed to refresh service list", ex);
+                    LOG.error("Failed to refresh service list: 【" + json + "】", ex);
                 }
             }
         });

@@ -2,8 +2,10 @@ package dev.nocalhost.plugin.intellij.utils;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
+
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,6 +14,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.data.NocalhostContext;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlDevPodCommand;
 
 public final class NhctlUtil {
     private static final Path NOCALHOST_BIN_DIR = Paths.get(System.getProperty("user.home"), ".nh", "bin");
@@ -45,6 +48,25 @@ public final class NhctlUtil {
                             opts,
                             NhctlDescribeService.class
                     );
+        } catch (Exception ex) {
+            throw new ExecutionException(ex);
+        }
+    }
+
+    public static @NotNull String getDevPodName(@NotNull NocalhostContext context) throws ExecutionException {
+        var cmd = new NhctlDevPodCommand();
+        cmd.setNamespace(context.getNamespace());
+        cmd.setDeployment(context.getServiceName());
+        cmd.setKubeConfig(context.getKubeConfigPath());
+        cmd.setControllerType(context.getServiceType());
+        cmd.setApplication(context.getApplicationName());
+
+        try {
+            var pod = cmd.execute();
+            if (StringUtils.isEmpty(pod)) {
+                throw new ExecutionException("Pod not found");
+            }
+            return pod;
         } catch (Exception ex) {
             throw new ExecutionException(ex);
         }

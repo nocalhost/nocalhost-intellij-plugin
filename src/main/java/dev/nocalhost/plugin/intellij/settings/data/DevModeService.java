@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DevModeService {
+    private String mode;
     private String image;
     private String action;
     private String server;

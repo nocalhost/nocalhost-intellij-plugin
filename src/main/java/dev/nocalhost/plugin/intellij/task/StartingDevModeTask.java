@@ -25,7 +25,6 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
@@ -39,13 +38,11 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.TerminalUtil;
 import lombok.SneakyThrows;
 
 public class StartingDevModeTask extends BaseBackgroundTask {
-    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
             NocalhostSettings.class);
     private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
@@ -140,15 +137,6 @@ public class StartingDevModeTask extends BaseBackgroundTask {
         nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
         nhctlDescribeOptions.setType(devModeService.getServiceType());
 
-        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                devModeService.getApplicationName(),
-                nhctlDescribeOptions,
-                NhctlDescribeService.class);
-
-        if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
-            return;
-        }
-
         if ( ! canStart(devModeService.getAction())) {
             NocalhostNotifier
                     .getInstance(project)
@@ -171,6 +159,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
         nhctlDevStartOptions.setContainer(devModeService.getContainerName());
         nhctlDevStartOptions.setStorageClass(storageClass);
         nhctlDevStartOptions.setWithoutTerminal(true);
+        nhctlDevStartOptions.setMode(devModeService.getMode());
         nhctlDevStartOptions.setImage(devModeService.getImage());
         outputCapturedNhctlCommand.devStart(devModeService.getApplicationName(),
                 nhctlDevStartOptions);
