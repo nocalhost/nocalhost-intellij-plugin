@@ -35,6 +35,8 @@ import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import dev.nocalhost.plugin.intellij.utils.TerminalUtil;
 
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
+
 public class TerminalAction extends DumbAwareAction {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
@@ -62,6 +64,11 @@ public class TerminalAction extends DumbAwareAction {
                         node.applicationName(), opts, NhctlDescribeService.class);
                 if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
                     openDevTerminal();
+                    return;
+                }
+
+                if (StringUtils.equalsIgnoreCase(WORKLOAD_TYPE_POD, node.getKubeResource().getKind())) {
+                    selectContainer(node.getKubeResource());
                     return;
                 }
 
