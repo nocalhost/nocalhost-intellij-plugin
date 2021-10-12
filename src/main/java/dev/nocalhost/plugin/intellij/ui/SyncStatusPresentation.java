@@ -199,15 +199,15 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     @Override
     public @Nullable String getSelectedValue() {
         if (nhctlSyncStatus.get() != null) {
-            return nhctlSyncStatus.get().getMsg();
+            return " " + nhctlSyncStatus.get().getMsg();
         }
-        return "Waiting for enter DevMode";
+        return " Waiting for enter DevMode";
     }
 
     @Override
     public @Nullable Icon getIcon() {
         if (nhctlSyncStatus.get() == null) {
-            return null;
+            return NocalhostIcons.ConfigurationLogo;
         }
         if (StringUtils.isNoneBlank(nhctlSyncStatus.get().getOutOfSync())) {
             return AllIcons.Toolwindows.ToolWindowProblemsEmpty;
