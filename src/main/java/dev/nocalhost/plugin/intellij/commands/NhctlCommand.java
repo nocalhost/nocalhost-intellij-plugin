@@ -665,8 +665,12 @@ public class NhctlCommand {
         if (nhctlGetResources == null) {
             return Lists.newArrayList();
         }
-        return nhctlGetResources.stream().filter(e -> {
-            Map<String, String> labels = e.getKubeResource().getMetadata().getLabels();
+        return nhctlGetResources.stream().filter(x -> {
+            Map<String, String> labels = x.getKubeResource().getMetadata().getLabels();
+            // `Pod` labels maybe null
+            if (labels == null) {
+                return false;
+            }
             for (Map.Entry<String, String> matchedLabel : matchedLabels.entrySet()) {
                 if (!StringUtils.equals(labels.get(matchedLabel.getKey()), matchedLabel.getValue())) {
                     return false;

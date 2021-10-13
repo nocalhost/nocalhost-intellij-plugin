@@ -30,6 +30,8 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
+
 public class LogsAction extends DumbAwareAction {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
@@ -50,6 +52,11 @@ public class LogsAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
+                if (StringUtils.equalsIgnoreCase(node.getKubeResource().getKind(), WORKLOAD_TYPE_POD)) {
+                    selectContainer(node.getKubeResource());
+                    return;
+                }
+
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, namespace);
                 List<NhctlGetResource> podList = nhctlCommand.getResources("Pods", nhctlGetOptions,
                         KubeResourceUtil.getMatchLabels(node.getKubeResource()));
