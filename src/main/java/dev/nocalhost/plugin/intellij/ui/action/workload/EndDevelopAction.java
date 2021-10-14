@@ -7,7 +7,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageDialogBuilder;
-import com.intellij.openapi.ui.Messages;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -58,8 +57,8 @@ public class EndDevelopAction extends DumbAwareAction {
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    if (!NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
-                        Messages.showMessageDialog("Dev mode has been ended.", "End DevMode", null);
+                    if (NhctlDescribeServiceUtil.developStarting(nhctlDescribeService)) {
+                        endDevelop();
                         return;
                     }
 
