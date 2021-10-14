@@ -32,7 +32,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryerOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlExecOptions;
@@ -418,26 +417,6 @@ public class NhctlCommand {
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
-        }
-        if (StringUtils.isNotEmpty(opts.getControllerType())) {
-            args.add("--controller-type");
-            args.add(opts.getControllerType());
-        }
-        execute(args, opts);
-    }
-
-    public void editConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "config", "edit", name);
-        if (StringUtils.isNotEmpty(opts.getDeployment())) {
-            args.add("--deployment");
-            args.add(opts.getDeployment());
-        }
-        if (StringUtils.isNotEmpty(opts.getContent())) {
-            args.add("--content");
-            args.add(opts.getContent());
-        }
-        if (opts.isAppConfig()) {
-            args.add("--app-config");
         }
         if (StringUtils.isNotEmpty(opts.getControllerType())) {
             args.add("--controller-type");

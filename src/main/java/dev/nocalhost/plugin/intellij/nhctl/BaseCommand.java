@@ -9,7 +9,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.EnvironmentUtil;
 
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -56,7 +55,7 @@ public abstract class BaseCommand {
     }
 
     protected GeneralCommandLine getCommandline(@NotNull List<String> args) {
-        final Map<String, String> environment = new HashMap<>(EnvironmentUtil.getEnvironmentMap());
+        Map<String, String> environment = new HashMap<>(EnvironmentUtil.getEnvironmentMap());
         environment.put("DISABLE_SPINNER", "true");
         if (SystemInfo.isMac || SystemInfo.isLinux) {
             String path = environment.get("PATH");
@@ -79,6 +78,10 @@ public abstract class BaseCommand {
         return doExecute(args, null);
     }
 
+    protected void consume(@NotNull Process process) {
+        // do nothing
+    }
+
     protected String doExecute(@NotNull List<String> args, String sudoPassword) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         if (sudoPassword != null) {
             args = SudoUtil.toSudoCommand(args);
@@ -97,13 +100,14 @@ public abstract class BaseCommand {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
 
-        final AtomicReference<String> err = new AtomicReference<>("");
+        AtomicReference<String> err = new AtomicReference<>("");
+        ApplicationManager.getApplication().executeOnPooledThread(() -> consume(process));
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             var reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
             try {
                 err.set(CharStreams.toString(reader));
             } catch (Exception ex) {
-                // ignored
+                // ignore
             }
         });
 
