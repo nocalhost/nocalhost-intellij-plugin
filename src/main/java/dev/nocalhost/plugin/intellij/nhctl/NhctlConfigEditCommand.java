@@ -43,6 +43,6 @@ public class NhctlConfigEditCommand extends BaseCommand {
             output.flush();
         } catch (Exception ex) {
             LOG.error("Failed to write dev config to stdin", ex);
-        }{
+        }
     }
 }
