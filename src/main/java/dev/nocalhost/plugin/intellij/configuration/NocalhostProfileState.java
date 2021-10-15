@@ -21,18 +21,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
@@ -41,12 +36,11 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpDebugRunner;
-import dev.nocalhost.plugin.intellij.data.ServiceProjectPath;
+import dev.nocalhost.plugin.intellij.data.NocalhostContext;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
-import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
@@ -57,48 +51,46 @@ public class NocalhostProfileState extends CommandLineState {
 
     private final List<Disposable> disposables = Lists.newArrayList();
     private final AtomicReference<NocalhostDevInfo> devInfoHolder = new AtomicReference<>(null);
-    private final NocalhostProjectService nocalhostProjectService;
 
     public NocalhostProfileState(ExecutionEnvironment environment) {
         super(environment);
-        nocalhostProjectService = environment.getProject().getService(NocalhostProjectService.class);
     }
 
     @Override
     protected @NotNull ProcessHandler startProcess() throws ExecutionException {
-        NocalhostDevInfo nocalhostDevInfo = devInfoHolder.get();
-        if (nocalhostDevInfo == null) {
+        NocalhostDevInfo dev = devInfoHolder.get();
+        if (dev == null) {
             throw new ExecutionException("Call prepareDevInfo() before this method");
         }
-        ServiceProjectPath devModeService = nocalhostDevInfo.getDevModeService();
+        NocalhostContext context = dev.getContext();
 
-        String shell = StringUtils.isNotEmpty(nocalhostDevInfo.getShell()) ? nocalhostDevInfo.getShell() : DEFAULT_SHELL;
-        String command = isDebugExecutor() ? nocalhostDevInfo.getCommand().getDebug() : nocalhostDevInfo.getCommand().getRun();
+        String shell = StringUtils.isNotEmpty(dev.getShell()) ? dev.getShell() : DEFAULT_SHELL;
+        String command = isDebugExecutor() ? dev.getCommand().getDebug() : dev.getCommand().getRun();
 
         List<String> commandLine = Lists.newArrayList(
-                NhctlUtil.binaryPath(), "exec", devModeService.getApplicationName(),
-                "--deployment", nocalhostDevInfo.getDevModeService().getServiceName(),
-                "--controller-type", nocalhostDevInfo.getDevModeService().getServiceType(),
+                NhctlUtil.binaryPath(), "exec", context.getApplicationName(),
+                "--deployment", dev.getContext().getServiceName(),
+                "--controller-type", dev.getContext().getServiceType(),
                 "--command", shell, "--command", "-c", "--command", command,
-                "--kubeconfig", devModeService.getKubeConfigPath().toString(),
-                "--namespace", devModeService.getNamespace()
+                "--kubeconfig", context.getKubeConfigPath().toString(),
+                "--namespace", context.getNamespace()
         );
         return new NocalhostDevProcessHandler(new GeneralCommandLine(commandLine), getEnvironment(), this);
     }
 
     public String getDebugPort() {
-        NocalhostDevInfo nocalhostDevInfo = devInfoHolder.get();
-        return nocalhostDevInfo.getDebug().getLocalPort();
+        NocalhostDevInfo dev = devInfoHolder.get();
+        return dev.getDebug().getLocalPort();
     }
 
     public void prepareDevInfo() throws ExecutionException {
         try {
-            var devService = NhctlUtil.getDevModeService(getEnvironment().getProject());
-            if (devService == null) {
+            var context = NocalhostContextManager.getInstance(getEnvironment().getProject()).getContext();
+            if (context == null) {
                 throw new ExecutionException("Service is not in dev mode.");
             }
 
-            var desService = NhctlUtil.getDescribeService(devService);
+            var desService = NhctlUtil.getDescribeService(context);
             if (!NhctlDescribeServiceUtil.developStarted(desService) || !projectPathMatched(desService)) {
                 throw new ExecutionException("Service is not in dev mode.");
             }
@@ -107,12 +99,12 @@ public class NocalhostProfileState extends CommandLineState {
                 throw new ExecutionException("File sync has not yet completed.");
             }
 
-            NhctlRawConfig nhctlRawConfig = getNhctlConfig(devService);
+            NhctlRawConfig nhctlRawConfig = getNhctlConfig(context);
             List<ServiceContainer> containers = nhctlRawConfig.getContainers();
             ServiceContainer container = containers.isEmpty() ? null : containers.get(0);
-            if (StringUtils.isNotEmpty(devService.getContainerName())) {
+            if (StringUtils.isNotEmpty(context.getContainerName())) {
                 for (ServiceContainer c : containers) {
-                    if (StringUtils.equals(devService.getContainerName(), c.getName())) {
+                    if (StringUtils.equals(context.getContainerName(), c.getName())) {
                         container = c;
                         break;
                     }
@@ -138,7 +130,7 @@ public class NocalhostProfileState extends CommandLineState {
                     if (!StringUtils.isNotEmpty(remotePort)) {
                         throw new ExecutionException("Remote debug port not configured.");
                     }
-                    String localPort = startDebugPortForward(devService, remotePort);
+                    String localPort = startDebugPortForward(context, remotePort);
                     debug = new NocalhostDevInfo.Debug(remotePort, localPort);
                 }
             } else {
@@ -151,46 +143,40 @@ public class NocalhostProfileState extends CommandLineState {
                     debug,
                     container.getDev().getShell(),
                     command,
-                    container,
-                    devService
+                    context,
+                    container
             ));
         } catch (IOException | InterruptedException | NocalhostExecuteCmdException | ExecutionException e) {
             throw new ExecutionException(e);
         }
     }
 
-    private void doCreateTunnel(ServiceContainer container) throws ExecutionException, NocalhostExecuteCmdException, IOException, InterruptedException {
+    private void doCreateTunnel(ServiceContainer container) throws ExecutionException {
+        String port = resolveDebugPort(container);
         Project project = getEnvironment().getProject();
-        String debugPort = resolveDebugPort(container);
-        ServiceProjectPath service = nocalhostProjectService.getServiceProjectPath();
+        NocalhostContext context = NocalhostContextManager.getInstance(project).getContext();
 
-        if (!StringUtils.isNotEmpty(debugPort)) {
+        if (StringUtils.isEmpty(port)) {
             throw new ExecutionException("Remote debug port not configured.");
         }
 
-        GeneralCommandLine cmd = new GeneralCommandLine(Lists.newArrayList(
+        var cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(), "ssh", "reverse",
-                "--pod", getDevPodName(),
-                "--local", debugPort,
-                "--remote", debugPort,
+                "--pod", NhctlUtil.getDevPodName(context),
+                "--local", port,
+                "--remote", port,
                 "--sshport", "50022",
-                "--namespace", service.getNamespace(),
-                "--kubeconfig", service.getKubeConfigPath().toString()
-        ));
+                "--namespace", context.getNamespace(),
+                "--kubeconfig", context.getKubeConfigPath().toString()
+        )).withRedirectErrorStream(true);
 
-        Process process;
-
-        try {
-            process = cmd.createProcess();
-        } catch (ExecutionException ex) {
-            throw new NocalhostExecuteCmdException(cmd.getCommandLineString(), -1, ex.getMessage());
-        }
-
-        NocalhostOutputAppendNotifier bus = project
+        var bus = project
                 .getMessageBus()
                 .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC);
-        bus.action("[cmd] " + cmd + System.lineSeparator());
+        bus.action("[cmd] " + cmd.getCommandLineString() + System.lineSeparator());
 
+        var process = cmd.createProcess();
+        disposables.add(() -> process.destroy());
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             StringBuilder sb = new StringBuilder();
             InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);
@@ -202,52 +188,34 @@ public class NocalhostProfileState extends CommandLineState {
                 }
                 int code = process.waitFor();
                 if (code != 0) {
-                    bus.action("Process finished with exit code " + code + System.lineSeparator());
+                    bus.action("[ssh] Process finished with exit code " + code + System.lineSeparator());
                 }
             } catch (Exception ex) {
                 LOG.error(ex);
             }
         });
-
-        disposables.add(() -> process.destroy());
     }
 
     private boolean isDebugExecutor() {
         return StringUtils.equals(DefaultDebugExecutor.EXECUTOR_ID, getEnvironment().getExecutor().getId());
     }
 
-    private String startDebugPortForward(ServiceProjectPath devModeService, String remotePort) throws ExecutionException {
+    private String startDebugPortForward(NocalhostContext context, String remotePort) throws ExecutionException {
         NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
         try {
-            NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
-            List<NhctlGetResource> deployments = nhctlCommand.getResources(devModeService.getServiceType(), nhctlGetOptions);
-            Optional<NhctlGetResource> deploymentOptional = deployments.stream()
-                    .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), devModeService.getServiceName()))
-                    .findFirst();
-            if (deploymentOptional.isEmpty()) {
-                throw new ExecutionException("Service not found");
-            }
-
-            var pods = nhctlCommand.getResources("Pods", nhctlGetOptions, KubeResourceUtil.getMatchLabels(deploymentOptional.get().getKubeResource()));
-            Optional<NhctlGetResource> podOptional = pods.stream().filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev"))).findFirst();
-            if (podOptional.isEmpty()) {
-                throw new ExecutionException("Pod not found");
-            }
-            String podName = podOptional.get().getKubeResource().getMetadata().getName();
-
-            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
+            var podName = NhctlUtil.getDevPodName(context);
+            NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(context.getKubeConfigPath(), context.getNamespace());
             nhctlPortForwardStartOptions.setDevPorts(List.of(":" + remotePort));
-            nhctlPortForwardStartOptions.setWay(NhctlPortForwardStartOptions.Way.MANUAL);
-            nhctlPortForwardStartOptions.setDeployment(devModeService.getServiceName());
-            nhctlPortForwardStartOptions.setType(devModeService.getServiceType());
+            nhctlPortForwardStartOptions.setDeployment(context.getServiceName());
+            nhctlPortForwardStartOptions.setType(context.getServiceType());
             nhctlPortForwardStartOptions.setPod(podName);
-            nhctlCommand.startPortForward(devModeService.getApplicationName(), nhctlPortForwardStartOptions);
+            nhctlCommand.startPortForward(context.getApplicationName(), nhctlPortForwardStartOptions);
 
-            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
-            nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
-            nhctlDescribeOptions.setType(devModeService.getServiceType());
-            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(devModeService.getApplicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
+            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(context.getKubeConfigPath(), context.getNamespace());
+            nhctlDescribeOptions.setDeployment(context.getServiceName());
+            nhctlDescribeOptions.setType(context.getServiceType());
+            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(context.getApplicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
 
             for (NhctlPortForward pf : nhctlDescribeService.getDevPortForwardList()) {
                 if (StringUtils.equals(pf.getRemoteport(), remotePort)) {
@@ -261,88 +229,49 @@ public class NocalhostProfileState extends CommandLineState {
     }
 
     public void stopDebugPortForward() {
-        NocalhostDevInfo nocalhostDevInfo = devInfoHolder.get();
-        NocalhostDevInfo.Debug debug = nocalhostDevInfo.getDebug();
+        NocalhostDevInfo dev = devInfoHolder.get();
+        NocalhostDevInfo.Debug debug = dev.getDebug();
         if (debug == null) {
             return;
         }
 
-        ServiceProjectPath devModeService = nocalhostDevInfo.getDevModeService();
-
+        NocalhostContext context = dev.getContext();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
-                NhctlPortForwardEndOptions nhctlPortForwardEndOptions = new NhctlPortForwardEndOptions(devModeService.getKubeConfigPath(), devModeService.getNamespace());
+                NhctlPortForwardEndOptions nhctlPortForwardEndOptions = new NhctlPortForwardEndOptions(context.getKubeConfigPath(), context.getNamespace());
                 nhctlPortForwardEndOptions.setPort(debug.getLocalPort() + ":" + debug.getRemotePort());
-                nhctlPortForwardEndOptions.setDeployment(devModeService.getServiceName());
-                nhctlPortForwardEndOptions.setType(devModeService.getServiceType());
+                nhctlPortForwardEndOptions.setDeployment(context.getServiceName());
+                nhctlPortForwardEndOptions.setType(context.getServiceType());
 
-                nhctlCommand.endPortForward(devModeService.getApplicationName(), nhctlPortForwardEndOptions);
+                nhctlCommand.endPortForward(context.getApplicationName(), nhctlPortForwardEndOptions);
             } catch (Exception e) {
                 LOG.error(e);
             }
         });
     }
 
-    private String getDevPodName() throws ExecutionException, IOException, NocalhostExecuteCmdException, InterruptedException {
-        ServiceProjectPath service = nocalhostProjectService.getServiceProjectPath();
-        NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(service.getKubeConfigPath(), service.getNamespace());
-
-        Optional<NhctlGetResource> deployments = command
-                .getResources(service.getServiceType(), nhctlGetOptions)
-                .stream()
-                .filter(e -> StringUtils.equals(e.getKubeResource().getMetadata().getName(), service.getServiceName()))
-                .findFirst();
-        if (deployments.isEmpty()) {
-            throw new ExecutionException("Service not found");
-        }
-
-        Optional<NhctlGetResource> pods = command
-                .getResources("Pods", nhctlGetOptions, KubeResourceUtil.getMatchLabels(deployments.get().getKubeResource()))
-                .stream()
-                .filter(e -> e.getKubeResource().getSpec().getContainers().stream().anyMatch(c -> StringUtils.equals(c.getName(), "nocalhost-dev")))
-                .findFirst();
-        if (pods.isEmpty()) {
-            throw new ExecutionException("Pod not found");
-        }
-
-        return pods.get().getKubeResource().getMetadata().getName();
-    }
-
     private boolean isSyncStatusIdle() throws IOException, NocalhostExecuteCmdException, InterruptedException {
-        ServiceProjectPath serviceProjectPath = nocalhostProjectService.getServiceProjectPath();
+        NocalhostContext nocalhostContext = NocalhostContextManager.getInstance(getEnvironment().getProject()).getContext();
         final NhctlCommand nhctlCommand = ApplicationManager.getApplication()
                 .getService(NhctlCommand.class);
-        NhctlSyncStatusOptions opts = new NhctlSyncStatusOptions(serviceProjectPath.getKubeConfigPath(),
-                serviceProjectPath.getNamespace());
-        opts.setDeployment(serviceProjectPath.getServiceName());
-        opts.setControllerType(serviceProjectPath.getServiceType());
-        String status = nhctlCommand.syncStatus(serviceProjectPath.getApplicationName(), opts);
+        NhctlSyncStatusOptions opts = new NhctlSyncStatusOptions(nocalhostContext.getKubeConfigPath(),
+                nocalhostContext.getNamespace());
+        opts.setDeployment(nocalhostContext.getServiceName());
+        opts.setControllerType(nocalhostContext.getServiceType());
+        String status = nhctlCommand.syncStatus(nocalhostContext.getApplicationName(), opts);
         NhctlSyncStatus nhctlSyncStatus = DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
         return StringUtils.equals(nhctlSyncStatus.getStatus(), "idle");
     }
 
-    private NhctlDescribeService getNhctlDescribeService(ServiceProjectPath serviceProjectPath)
+    private NhctlRawConfig getNhctlConfig(NocalhostContext nocalhostContext)
             throws InterruptedException, NocalhostExecuteCmdException, IOException {
         final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        NhctlDescribeOptions opts = new NhctlDescribeOptions(serviceProjectPath.getKubeConfigPath(), serviceProjectPath.getNamespace());
-        opts.setDeployment(serviceProjectPath.getServiceName());
-        opts.setType(serviceProjectPath.getServiceType());
-        return nhctlCommand.describe(
-                serviceProjectPath.getApplicationName(),
-                opts,
-                NhctlDescribeService.class);
-    }
-
-    private NhctlRawConfig getNhctlConfig(ServiceProjectPath serviceProjectPath)
-            throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        NhctlConfigOptions opts = new NhctlConfigOptions(serviceProjectPath.getKubeConfigPath(), serviceProjectPath.getNamespace());
-        opts.setDeployment(serviceProjectPath.getServiceName());
-        opts.setControllerType(serviceProjectPath.getServiceType());
-        return nhctlCommand.getConfig(serviceProjectPath.getApplicationName(), opts, NhctlRawConfig.class);
+        NhctlConfigOptions opts = new NhctlConfigOptions(nocalhostContext.getKubeConfigPath(), nocalhostContext.getNamespace());
+        opts.setDeployment(nocalhostContext.getServiceName());
+        opts.setControllerType(nocalhostContext.getServiceType());
+        return nhctlCommand.getConfig(nocalhostContext.getApplicationName(), opts, NhctlRawConfig.class);
     }
 
     private boolean projectPathMatched(NhctlDescribeService nhctlDescribeService) {

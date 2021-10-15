@@ -41,4 +41,6 @@ public class Constants {
     public static final String DEVELOP_STATUS_STARTED = "STARTED";
     public static final String DEVELOP_STATUS_STARTING = "STARTING";
     public static final String DEVELOP_STATUS_NONE = "NONE";
+
+    public static final String DEV_MODE_DUPLICATE = "duplicate";
 }

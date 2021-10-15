@@ -32,7 +32,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryerOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlExecOptions;
@@ -164,11 +163,9 @@ public class NhctlCommand {
             args.add("--image");
             args.add(opts.getImage());
         }
-        if (opts.getLocalSync() != null) {
-            for (String s : opts.getLocalSync()) {
-                args.add("--local-sync");
-                args.add(s);
-            }
+        if (StringUtils.isNotEmpty(opts.getLocalSync())) {
+            args.add("--local-sync");
+            args.add(opts.getLocalSync());
         }
         if (StringUtils.isNotEmpty(opts.getSidecarImage())) {
             args.add("--sidecar-image");
@@ -199,6 +196,10 @@ public class NhctlCommand {
         }
         if (opts.isAuthCheck()) {
             args.add("--auth-check");
+        }
+        if (StringUtils.isNotEmpty(opts.getMode())) {
+            args.add("--dev-mode");
+            args.add(opts.getMode());
         }
 
         return execute(args, opts);
@@ -310,8 +311,6 @@ public class NhctlCommand {
             args.add("--type");
             args.add(opts.getType());
         }
-        args.add("--way");
-        args.add(opts.getWay().getVal());
 
         execute(args, opts, sudoPassword);
     }
@@ -418,26 +417,6 @@ public class NhctlCommand {
         if (StringUtils.isNotEmpty(opts.getDeployment())) {
             args.add("--deployment");
             args.add(opts.getDeployment());
-        }
-        if (StringUtils.isNotEmpty(opts.getControllerType())) {
-            args.add("--controller-type");
-            args.add(opts.getControllerType());
-        }
-        execute(args, opts);
-    }
-
-    public void editConfig(String name, NhctlConfigOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "config", "edit", name);
-        if (StringUtils.isNotEmpty(opts.getDeployment())) {
-            args.add("--deployment");
-            args.add(opts.getDeployment());
-        }
-        if (StringUtils.isNotEmpty(opts.getContent())) {
-            args.add("--content");
-            args.add(opts.getContent());
-        }
-        if (opts.isAppConfig()) {
-            args.add("--app-config");
         }
         if (StringUtils.isNotEmpty(opts.getControllerType())) {
             args.add("--controller-type");
@@ -571,9 +550,9 @@ public class NhctlCommand {
 
     public String devAssociate(String name, NhctlDevAssociateOptions opts) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "associate", name);
-        if (StringUtils.isNotEmpty(opts.getAssociate())) {
-            args.add("--associate");
-            args.add(opts.getAssociate());
+        if (StringUtils.isNotEmpty(opts.getLocalSync())) {
+            args.add("--local-sync");
+            args.add(opts.getLocalSync());
         }
         if (StringUtils.isNotEmpty(opts.getControllerType())) {
             args.add("--controller-type");
@@ -663,10 +642,14 @@ public class NhctlCommand {
     public List<NhctlGetResource> getResources(String resourceType, NhctlGetOptions opts, Map<String, String> matchedLabels) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         List<NhctlGetResource> nhctlGetResources = getResources(resourceType, opts);
         if (nhctlGetResources == null) {
-            return nhctlGetResources;
+            return Lists.newArrayList();
         }
-        return nhctlGetResources.stream().filter(e -> {
-            Map<String, String> labels = e.getKubeResource().getMetadata().getLabels();
+        return nhctlGetResources.stream().filter(x -> {
+            Map<String, String> labels = x.getKubeResource().getMetadata().getLabels();
+            // `Pod` labels maybe null
+            if (labels == null) {
+                return false;
+            }
             for (Map.Entry<String, String> matchedLabel : matchedLabels.entrySet()) {
                 if (!StringUtils.equals(labels.get(matchedLabel.getKey()), matchedLabel.getValue())) {
                     return false;
@@ -691,25 +674,6 @@ public class NhctlCommand {
 
     public String render(Path path, NhctlRenderOptions opts) throws IOException, NocalhostExecuteCmdException, InterruptedException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "render", path.toString());
-        return execute(args, opts);
-    }
-
-    public String devAssociateQueryer(NhctlDevAssociateQueryerOptions opts) throws IOException, NocalhostExecuteCmdException, InterruptedException {
-        List<String> args = Lists.newArrayList(getNhctlCmd(), "dev", "associate-queryer");
-        if (StringUtils.isNotEmpty(opts.getAssociate())) {
-            args.add("--associate");
-            args.add(opts.getAssociate());
-        }
-        if (opts.isCurrent()) {
-            args.add("--current");
-        }
-        if (opts.getExcludeStatus() != null) {
-            for (String status : opts.getExcludeStatus()) {
-                args.add("--exclude-status");
-                args.add(status);
-            }
-        }
-        args.add("--json");
         return execute(args, opts);
     }
 

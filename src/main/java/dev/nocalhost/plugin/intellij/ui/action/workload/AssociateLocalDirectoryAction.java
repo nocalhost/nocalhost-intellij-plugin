@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
+import com.google.gson.reflect.TypeToken;
+
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -9,17 +11,19 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlDevContainerListCommand;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import lombok.SneakyThrows;
 
 public class AssociateLocalDirectoryAction extends DumbAwareAction {
@@ -44,7 +48,21 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        var containers = KubeResourceUtil.resolveContainers(node.getKubeResource());
+        List<String> containers;
+
+        try {
+            var cmd = new NhctlDevContainerListCommand();
+            cmd.setNamespace(namespace);
+            cmd.setKubeConfig(kubeConfigPath);
+            cmd.setDeployment(node.resourceName());
+            cmd.setApplication(node.applicationName());
+            cmd.setControllerType(node.getKubeResource().getKind());
+            containers = DataUtils.GSON.fromJson(cmd.execute(), TypeToken.getParameterized(List.class, String.class).getType());
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Failed to get containers", "Error occurs while get containers", ex);
+            return;
+        }
+
         if (containers.size() == 1) {
             container.set(containers.get(0));
         } else {
@@ -73,7 +91,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
             @Override
             public void runTask(@NotNull ProgressIndicator indicator) {
                 NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace, this);
-                opts.setAssociate(dir.toString());
+                opts.setLocalSync(dir.toString());
                 opts.setContainer(container.get());
                 opts.setDeployment(node.resourceName());
                 opts.setControllerType(node.getKubeResource().getKind());

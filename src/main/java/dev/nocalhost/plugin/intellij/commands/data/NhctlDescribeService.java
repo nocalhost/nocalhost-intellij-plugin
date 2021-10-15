@@ -15,10 +15,10 @@ public class NhctlDescribeService {
     private List<String> localAbsoluteSyncDirFromDevStartPlugin;
     private List<NhctlPortForward> devPortForwardList;
     private String associate;
-    private boolean developing;
     private boolean possess;
     private boolean localconfigloaded;
     private boolean cmconfigloaded;
     private boolean annotationsconfigloaded;
     private String develop_status;
+    private String devModeType;
 }

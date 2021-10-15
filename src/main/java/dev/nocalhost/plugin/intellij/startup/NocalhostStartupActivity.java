@@ -6,14 +6,15 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
-import dev.nocalhost.plugin.intellij.task.ExecutionTask;
 import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 
 public final class NocalhostStartupActivity implements StartupActivity {
@@ -25,16 +26,16 @@ public final class NocalhostStartupActivity implements StartupActivity {
     }
 
     private void devStart(Project project) {
+        var path = project.getBasePath();
+        if (StringUtils.isEmpty(path)) {
+            return;
+        }
         var settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
-        String projectPath = Paths.get(project.getBasePath()).toString();
+        String projectPath = Paths.get(path).toString();
         DevModeService devModeService = settings.getDevModeServiceByProjectPath(projectPath);
         if (devModeService != null) {
             try {
-                ProgressManager.getInstance().run(new StartingDevModeTask(
-                        project,
-                        devModeService,
-                        settings.get(ExecutionTask.asKey(projectPath))
-                ));
+                ProgressManager.getInstance().run(new StartingDevModeTask(project, devModeService));
             } catch (Exception e) {
                 LOG.error("error occurred while starting develop", e);
                 NocalhostNotifier.getInstance(project).notifyError(
@@ -42,7 +43,6 @@ public final class NocalhostStartupActivity implements StartupActivity {
                         "Error occurred while starting dev mode",
                         e.getMessage());
             } finally {
-                settings.del(ExecutionTask.asKey(projectPath));
                 settings.removeDevModeServiceByProjectPath(projectPath);
             }
         }

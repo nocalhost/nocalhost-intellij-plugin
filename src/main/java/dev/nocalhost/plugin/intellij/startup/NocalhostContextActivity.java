@@ -5,11 +5,11 @@ import com.intellij.openapi.startup.StartupActivity;
 
 import org.jetbrains.annotations.NotNull;
 
-import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 
-public final class NocalhostProjectServiceActivify implements StartupActivity {
+public final class NocalhostContextActivity implements StartupActivity {
     @Override
     public void runActivity(@NotNull Project project) {
-        project.getService(NocalhostProjectService.class).refreshServiceProjectPath();
+        NocalhostContextManager.getInstance(project).refresh();
     }
 }

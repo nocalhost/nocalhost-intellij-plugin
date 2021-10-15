@@ -20,25 +20,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import java.util.Base64;
 import java.util.Date;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlConfigEditCommand;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
-import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class ConfigFile extends VirtualFile {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
-    private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final String name;
     private final String path;
@@ -52,11 +48,9 @@ public class ConfigFile extends VirtualFile {
     public ConfigFile(String name, String path, String content, Project project, ResourceNode node) {
         this.name = name;
         this.path = path;
+        this.node = node;
         this.content = content;
         this.project = project;
-        this.node = node;
-
-        outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
 
         kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         namespace = node.getNamespaceNode().getNamespace();
@@ -126,8 +120,6 @@ public class ConfigFile extends VirtualFile {
                     return;
                 }
 
-                Object yml = DataUtils.YAML.load(newContent);
-                String json = DataUtils.GSON.toJson(yml);
                 ApplicationManager.getApplication().invokeLater(() -> {
                     ProgressManager.getInstance().run(new BaseBackgroundTask(null, "Saving " + name) {
                         @Override
@@ -137,19 +129,22 @@ public class ConfigFile extends VirtualFile {
                         }
 
                         @Override
-                        public void onThrowable(@NotNull Throwable e) {
-                            ErrorUtil.dealWith(project, "Nocalhost save config error",
-                                    "Error occurred while saving config file", e);
+                        public void onThrowable(@NotNull Throwable ex) {
+                            ErrorUtil.dealWith(project, "Failed to save dev config",
+                                    "Error occurred while saving dev config", ex);
                         }
 
                         @SneakyThrows
                         @Override
                         public void runTask(@NotNull ProgressIndicator indicator) {
-                            NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, node.getNamespaceNode().getNamespace(), this);
-                            nhctlConfigOptions.setDeployment(node.resourceName());
-                            nhctlConfigOptions.setControllerType(node.getKubeResource().getKind());
-                            nhctlConfigOptions.setContent(Base64.getEncoder().encodeToString(json.getBytes()));
-                            outputCapturedNhctlCommand.editConfig(node.applicationName(), nhctlConfigOptions);
+                            var cmd = new NhctlConfigEditCommand();
+                            cmd.setYaml(newContent);
+                            cmd.setKubeConfig(kubeConfigPath);
+                            cmd.setDeployment(node.resourceName());
+                            cmd.setApplication(node.applicationName());
+                            cmd.setControllerType(node.getKubeResource().getKind());
+                            cmd.setNamespace(node.getNamespaceNode().getNamespace());
+                            cmd.execute();
                         }
                     });
                 });

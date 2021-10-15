@@ -8,6 +8,6 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class RunAction extends StartDevelopAction {
     public RunAction(Project project, ResourceNode node) {
-        super("Remote Run", project, node, AllIcons.Actions.Execute, ExecutionTask.kRun);
+        super("Remote Run", project, node, AllIcons.Actions.Execute, "", ExecutionTask.kRun);
     }
 }

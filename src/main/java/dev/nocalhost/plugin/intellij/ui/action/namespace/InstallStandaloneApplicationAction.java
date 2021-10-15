@@ -294,7 +294,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                 if (StringUtils.isNotEmpty(gitRef.get())) {
                     opts.setGitRef(gitRef.get());
                 }
-                opts.setConfig(localPath.get().relativize(configPath.get()).toString());
+                opts.setConfig(configPath.get().getFileName().toString());
                 break;
 
             default:

@@ -8,6 +8,6 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
 public class DebugAction extends StartDevelopAction {
     public DebugAction(Project project, ResourceNode node) {
-        super("Remote Debug", project, node, AllIcons.Actions.StartDebugger, ExecutionTask.kDebug);
+        super("Remote Debug", project, node, AllIcons.Actions.StartDebugger, "", ExecutionTask.kDebug);
     }
 }

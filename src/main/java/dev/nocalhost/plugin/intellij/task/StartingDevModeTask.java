@@ -25,13 +25,12 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.service.NocalhostProjectService;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
@@ -39,27 +38,24 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import dev.nocalhost.plugin.intellij.utils.TerminalUtil;
 import lombok.SneakyThrows;
 
 public class StartingDevModeTask extends BaseBackgroundTask {
-    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
             NocalhostSettings.class);
     private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
 
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
-    private final String action;
     private final Project project;
     private final Path kubeConfigPath;
     private final DevModeService devModeService;
 
-    public StartingDevModeTask(Project project, DevModeService devModeService, String action) {
+    public StartingDevModeTask(Project project, DevModeService devModeService) {
         super(project, "Starting DevMode", true);
-        this.action = action;
         this.project = project;
         this.devModeService = devModeService;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
@@ -70,7 +66,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
     public void onSuccess() {
         super.onSuccess();
 
-        project.getService(NocalhostProjectService.class).refreshServiceProjectPath();
+        NocalhostContextManager.getInstance(project).refresh();
         project.getMessageBus().syncPublisher(
                 NocalhostTreeExpandNotifier.NOCALHOST_TREE_EXPAND_NOTIFIER_TOPIC).action();
 
@@ -82,11 +78,11 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                         devModeService.getServiceName()
                 ),
                 new GeneralCommandLine(Lists.newArrayList(
-                        NhctlUtil.binaryPath(),
+                        PathsUtil.backslash(NhctlUtil.binaryPath()),
                         "dev",
                         "terminal", devModeService.getApplicationName(),
                         "--deployment", devModeService.getServiceName(),
-                        "--kubeconfig", kubeConfigPath.toString(),
+                        "--kubeconfig", PathsUtil.backslash(kubeConfigPath.toString()),
                         "--namespace", devModeService.getNamespace(),
                         "--controller-type", devModeService.getServiceType(),
                         "--container", "nocalhost-dev"
@@ -97,10 +93,10 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
         NocalhostNotifier.getInstance(project).notifySuccess("DevMode started", "");
 
-        if (StringUtils.isNotEmpty(action)) {
+        if (StringUtils.isNotEmpty(devModeService.getAction())) {
             ProgressManager
                     .getInstance()
-                    .run(new ExecutionTask(project, devModeService, action));
+                    .run(new ExecutionTask(project, devModeService, devModeService.getAction()));
         }
     }
 
@@ -110,7 +106,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                 "Error occurred while starting dev mode", e);
     }
 
-    private boolean isExecutable(String action) throws InterruptedException, NocalhostExecuteCmdException, IOException {
+    private boolean canStart(String action) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         if (StringUtils.isEmpty(action)) {
             return true;
         }
@@ -142,16 +138,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
         nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
         nhctlDescribeOptions.setType(devModeService.getServiceType());
 
-        NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                devModeService.getApplicationName(),
-                nhctlDescribeOptions,
-                NhctlDescribeService.class);
-
-        if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
-            return;
-        }
-
-        if (!isExecutable(action)) {
+        if ( ! canStart(devModeService.getAction())) {
             NocalhostNotifier
                     .getInstance(project)
                     .notifyError(
@@ -169,10 +156,12 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                 devModeService.getNamespace(), this);
         nhctlDevStartOptions.setDeployment(devModeService.getServiceName());
         nhctlDevStartOptions.setControllerType(devModeService.getServiceType());
-        nhctlDevStartOptions.setLocalSync(Lists.newArrayList(Paths.get(project.getBasePath()).toString()));
+        nhctlDevStartOptions.setLocalSync(Paths.get(project.getBasePath()).toString());
         nhctlDevStartOptions.setContainer(devModeService.getContainerName());
         nhctlDevStartOptions.setStorageClass(storageClass);
         nhctlDevStartOptions.setWithoutTerminal(true);
+        nhctlDevStartOptions.setMode(devModeService.getMode());
+        nhctlDevStartOptions.setImage(devModeService.getImage());
         outputCapturedNhctlCommand.devStart(devModeService.getApplicationName(),
                 nhctlDevStartOptions);
     }

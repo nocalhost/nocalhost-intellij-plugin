@@ -83,6 +83,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final NocalhostSettings settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
     private final AtomicReference<Map<String, String>> previous = new AtomicReference<>(Maps.newHashMap());
+    private final AtomicReference<List<ClusterNode>> clusters = new AtomicReference<>(Lists.newArrayList());
+
 
     private final Project project;
     private final Tree tree;
@@ -132,8 +134,14 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
 
                 previous.set(map);
                 settings.setKubeConfigMap(map);
-
-                for (ClusterNode clusterNode : clusterNodes) {
+                clusters.set(clusterNodes);
+            } catch (Exception ex) {
+                ErrorUtil.dealWith(project, "Loading clusters error",
+                        "Error occurs while loading clusters", ex);
+            }
+            ApplicationManager.getApplication().invokeLater(() -> {
+                var nodes = clusters.get();
+                for (ClusterNode clusterNode : nodes) {
                     try {
                         Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(clusterNode.getRawKubeConfig());
                         NhctlCheckClusterOptions opts = new NhctlCheckClusterOptions(kubeConfigPath);
@@ -143,15 +151,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     } catch (Exception ignore) {
                     }
                 }
-
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    refreshClusterNodes((MutableTreeNode) root, clusterNodes);
-                });
-
-            } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading clusters error",
-                        "Error occurs while loading clusters", e);
-            }
+                refreshClusterNodes((MutableTreeNode) root, nodes);
+            });
         });
     }
 

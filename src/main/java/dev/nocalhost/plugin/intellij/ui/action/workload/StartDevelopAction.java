@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
+import com.google.gson.reflect.TypeToken;
+
 import com.intellij.ide.RecentProjectsManagerBase;
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -36,6 +38,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlDevContainerListCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.task.ExecutionTask;
@@ -43,13 +46,15 @@ import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
 import dev.nocalhost.plugin.intellij.ui.dialog.ImageChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import icons.NocalhostIcons;
+
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEV_MODE_DUPLICATE;
 
 public class StartDevelopAction extends DumbAwareAction {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
@@ -58,6 +63,7 @@ public class StartDevelopAction extends DumbAwareAction {
     private final OutputCapturedGitCommand outputCapturedGitCommand;
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
+    private final String mode;
     private final Project project;
     private final ResourceNode node;
     private final Path kubeConfigPath;
@@ -65,16 +71,25 @@ public class StartDevelopAction extends DumbAwareAction {
 
     private final AtomicReference<String> projectPathReference = new AtomicReference<>();
     private final AtomicReference<String> selectedContainer = new AtomicReference<>();
+    private final AtomicReference<String> selectedImage = new AtomicReference<>();
 
     private final String action;
 
-    public StartDevelopAction(Project project, ResourceNode node) {
-        this("Start DevMode", project, node, NocalhostIcons.Status.DevStart, "");
+    public StartDevelopAction(Project project, ResourceNode node, String mode) {
+        this(
+                StringUtils.equals(mode, DEV_MODE_DUPLICATE) ? "Start DevMode (Duplicate)" : "Start DevMode",
+                project,
+                node,
+                StringUtils.equals(mode, DEV_MODE_DUPLICATE) ? NocalhostIcons.Status.DevCopy : NocalhostIcons.Status.DevStart,
+                mode,
+                ""
+        );
     }
 
-    public StartDevelopAction(String title, Project project, ResourceNode node, Icon icon, String action) {
+    public StartDevelopAction(String title, Project project, ResourceNode node, Icon icon, String mode, String action) {
         super(title, "", icon);
         this.node = node;
+        this.mode = mode;
         this.action = action;
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
@@ -97,17 +112,33 @@ public class StartDevelopAction extends DumbAwareAction {
                 opts.setType(node.getKubeResource().getKind());
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
+
                 if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
-                    if (StringUtils.isEmpty(action)) {
-                        ApplicationManager.getApplication().invokeLater(() ->
-                                Messages.showMessageDialog("Dev mode has been started.",
-                                        "Start DevMode", null));
-                    } else {
+                    // remote run | remote debug
+                    if (StringUtils.isNotEmpty(action)) {
                         ProgressManager
                                 .getInstance()
                                 .run(new ExecutionTask(project, makeDevModeService(project.getBasePath()), action));
+                        return;
                     }
-                    return;
+                    // currently the service in the duplicate mode
+                    if (StringUtils.equals(nhctlDescribeService.getDevModeType(), DEV_MODE_DUPLICATE)) {
+                        ApplicationManager.getApplication().invokeLater(() ->
+                                Messages.showMessageDialog(
+                                        "Dev mode has been started.",
+                                        "Start DevMode",
+                                        null
+                                )
+                        );
+                        return;
+                    }
+                    // currently the service in the replace mode
+                    if ( ! StringUtils.equals(mode, DEV_MODE_DUPLICATE)) {
+                        ApplicationManager.getApplication().invokeLater(() ->
+                                Messages.showMessageDialog("Dev mode has been started.",
+                                        "Start DevMode", null));
+                        return;
+                    }
                 }
 
                 getContainers();
@@ -119,7 +150,21 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     private void getContainers() {
-        List<String> containers = KubeResourceUtil.resolveContainers(node.getKubeResource());
+        List<String> containers;
+
+        try {
+            var cmd = new NhctlDevContainerListCommand();
+            cmd.setNamespace(namespace);
+            cmd.setKubeConfig(kubeConfigPath);
+            cmd.setDeployment(node.resourceName());
+            cmd.setApplication(node.applicationName());
+            cmd.setControllerType(node.getKubeResource().getKind());
+            containers = DataUtils.GSON.fromJson(cmd.execute(), TypeToken.getParameterized(List.class, String.class).getType());
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Failed to get containers", "Error occurs while get containers", ex);
+            return;
+        }
+
         if (containers.size() > 1) {
             selectContainer(containers);
         } else if (containers.size() == 1) {
@@ -286,8 +331,9 @@ public class StartDevelopAction extends DumbAwareAction {
             try {
                 NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(
                         kubeConfigPath, namespace);
-                opts.setAssociate(path);
+                opts.setLocalSync(path);
                 opts.setDeployment(node.resourceName());
+                opts.setContainer(selectedContainer.get());
                 opts.setControllerType(node.getKubeResource().getKind());
                 outputCapturedNhctlCommand.devAssociate(node.applicationName(), opts);
 
@@ -334,7 +380,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         opts.setKey("image");
                         opts.setValue(imageChooseDialog.getSelectedImage());
                         outputCapturedNhctlCommand.profileSet(node.applicationName(), opts);
-
+                        selectedImage.set(imageChooseDialog.getSelectedImage());
                         startDevelop();
                     } catch (Exception e) {
                         ErrorUtil.dealWith(project, "Setting dev image",
@@ -358,7 +404,10 @@ public class StartDevelopAction extends DumbAwareAction {
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
                     .containerName(selectedContainer.get())
+                    .image(selectedImage.get())
                     .projectPath(openProjectPath)
+                    .action(action)
+                    .mode(mode)
                     .build();
         } else {
             return DevModeService.builder()
@@ -368,7 +417,10 @@ public class StartDevelopAction extends DumbAwareAction {
                     .serviceName(node.resourceName())
                     .serviceType(node.getKubeResource().getKind())
                     .containerName(selectedContainer.get())
+                    .image(selectedImage.get())
                     .projectPath(openProjectPath)
+                    .action(action)
+                    .mode(mode)
                     .build();
         }
     }
@@ -378,7 +430,7 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (PathsUtil.isSame(projectPathReference.get(), project.getBasePath())) {
                 ProgressManager.getInstance().run(
-                        new StartingDevModeTask(project, devModeService, action));
+                        new StartingDevModeTask(project, devModeService));
             } else {
                 Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
                 for (Project openProject : openProjects) {
@@ -388,7 +440,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         if (toolWindow != null) {
                             toolWindow.activate(() -> {
                                 ProgressManager.getInstance().run(
-                                        new StartingDevModeTask(openProject, devModeService, action));
+                                        new StartingDevModeTask(openProject, devModeService));
                             });
                             return;
                         }
@@ -396,7 +448,6 @@ public class StartDevelopAction extends DumbAwareAction {
                 }
 
                 nocalhostSettings.setDevModeServiceToProjectPath(devModeService);
-                nocalhostSettings.set(ExecutionTask.asKey(devModeService.getProjectPath()), action);
 
                 var task = new OpenProjectTask();
                 RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(projectPathReference.get()), task.withRunConfigurators());

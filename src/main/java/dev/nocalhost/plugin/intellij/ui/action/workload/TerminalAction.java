@@ -32,7 +32,10 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import dev.nocalhost.plugin.intellij.utils.TerminalUtil;
+
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
 
 public class TerminalAction extends DumbAwareAction {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
@@ -61,6 +64,11 @@ public class TerminalAction extends DumbAwareAction {
                         node.applicationName(), opts, NhctlDescribeService.class);
                 if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
                     openDevTerminal();
+                    return;
+                }
+
+                if (StringUtils.equalsIgnoreCase(WORKLOAD_TYPE_POD, node.getKubeResource().getKind())) {
+                    selectContainer(node.getKubeResource());
                     return;
                 }
 
@@ -101,11 +109,11 @@ public class TerminalAction extends DumbAwareAction {
                                 node.resourceName()
                         ),
                         new GeneralCommandLine(Lists.newArrayList(
-                                NhctlUtil.binaryPath(),
+                                PathsUtil.backslash(NhctlUtil.binaryPath()),
                                 "dev",
                                 "terminal", node.applicationName(),
                                 "--deployment", node.resourceName(),
-                                "--kubeconfig", kubeConfigPath.toString(),
+                                "--kubeconfig", PathsUtil.backslash(kubeConfigPath.toString()),
                                 "--namespace", namespace,
                                 "--controller-type", node.getKubeResource().getKind(),
                                 "--container", "nocalhost-dev"
@@ -167,11 +175,14 @@ public class TerminalAction extends DumbAwareAction {
                                 containerName
                         ),
                         new GeneralCommandLine(Lists.newArrayList(
-                                NhctlUtil.binaryPath(), "k", "exec", podName,
+                                PathsUtil.backslash(NhctlUtil.binaryPath()),
+                                "k",
+                                "exec",
+                                podName,
                                 "--stdin",
                                 "--tty",
                                 "--container", containerName,
-                                "--kubeconfig", kubeConfigPath.toString(),
+                                "--kubeconfig", PathsUtil.backslash(kubeConfigPath.toString()),
                                 "--namespace", namespace,
                                 "--", "sh", "-c", "clear; (zsh || bash || ash || sh)"
                         ))
