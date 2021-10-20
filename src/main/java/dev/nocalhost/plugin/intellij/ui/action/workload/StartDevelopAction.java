@@ -38,6 +38,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevContainerListCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
@@ -116,9 +117,21 @@ public class StartDevelopAction extends DumbAwareAction {
                 if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
                     // remote run | remote debug
                     if (StringUtils.isNotEmpty(action)) {
-                        ProgressManager
-                                .getInstance()
-                                .run(new ExecutionTask(project, makeDevModeService(project.getBasePath()), action));
+                        // this service maybe controlled by others
+                        if (StringUtils.isEmpty(nhctlDescribeService.getAssociate())) {
+                            NocalhostNotifier
+                                    .getInstance(project)
+                                    .notifyError("Failed to start remote " + action, "You need to associate the local directory before starting remote " + action + ".");
+                            return;
+                        }
+                        if (PathsUtil.isSame(project.getBasePath(), nhctlDescribeService.getAssociate())) {
+                            ProgressManager
+                                    .getInstance()
+                                    .run(new ExecutionTask(project, makeDevModeService(project.getBasePath()), action));
+                            return;
+                        }
+                        // https://nocalhost.coding.net/p/nocalhost/assignments/issues/624/detail
+                        startDevelop(nhctlDescribeService.getAssociate());
                         return;
                     }
                     // currently the service in the duplicate mode
@@ -355,7 +368,7 @@ public class StartDevelopAction extends DumbAwareAction {
                 opts.setKey("image");
                 String image = nhctlCommand.profileGet(node.applicationName(), opts);
                 if (StringUtils.isNotEmpty(image)) {
-                    startDevelop();
+                    startDevelop(projectPathReference.get());
                     return;
                 }
                 selectImage();
@@ -381,7 +394,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         opts.setValue(imageChooseDialog.getSelectedImage());
                         outputCapturedNhctlCommand.profileSet(node.applicationName(), opts);
                         selectedImage.set(imageChooseDialog.getSelectedImage());
-                        startDevelop();
+                        startDevelop(projectPathReference.get());
                     } catch (Exception e) {
                         ErrorUtil.dealWith(project, "Setting dev image",
                                 "Error occurs while setting dev image", e);
@@ -425,33 +438,32 @@ public class StartDevelopAction extends DumbAwareAction {
         }
     }
 
-    private void startDevelop() {
-        DevModeService devModeService = makeDevModeService(projectPathReference.get());
+    private void startDevelop(@NotNull String path) {
+        var devModeService = makeDevModeService(path);
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (PathsUtil.isSame(projectPathReference.get(), project.getBasePath())) {
-                ProgressManager.getInstance().run(
-                        new StartingDevModeTask(project, devModeService));
-            } else {
-                Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
-                for (Project openProject : openProjects) {
-                    if (PathsUtil.isSame(projectPathReference.get(), openProject.getBasePath())) {
-                        ToolWindow toolWindow = ToolWindowManager.getInstance(openProject)
-                                .getToolWindow(ToolWindowId.PROJECT_VIEW);
-                        if (toolWindow != null) {
-                            toolWindow.activate(() -> {
-                                ProgressManager.getInstance().run(
-                                        new StartingDevModeTask(openProject, devModeService));
-                            });
-                            return;
-                        }
+            if (PathsUtil.isSame(path, project.getBasePath())) {
+                ProgressManager.getInstance().run(new StartingDevModeTask(project, devModeService));
+                return;
+            }
+
+            var projects = ProjectManagerEx.getInstanceEx().getOpenProjects();
+            for (var op : projects) {
+                if (PathsUtil.isSame(path, op.getBasePath())) {
+                    ToolWindow toolWindow = ToolWindowManager.getInstance(op)
+                                                             .getToolWindow(ToolWindowId.PROJECT_VIEW);
+                    if (toolWindow != null) {
+                        toolWindow.activate(() -> {
+                            ProgressManager.getInstance().run(new StartingDevModeTask(op, devModeService));
+                        });
+                        return;
                     }
                 }
-
-                nocalhostSettings.setDevModeServiceToProjectPath(devModeService);
-
-                var task = new OpenProjectTask();
-                RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(projectPathReference.get()), task.withRunConfigurators());
             }
+
+            nocalhostSettings.setDevModeServiceToProjectPath(devModeService);
+
+            var task = new OpenProjectTask();
+            RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(path), task.withRunConfigurators());
         });
     }
 }
