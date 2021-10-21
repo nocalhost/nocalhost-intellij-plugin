@@ -46,7 +46,7 @@ public class NocalhostGoDlvDebugRunner implements ProgramRunner<RunnerSettings> 
     public void execute(@NotNull ExecutionEnvironment environment) throws ExecutionException {
         ExecutionManager.getInstance(environment.getProject()).startRunProfile(environment, state -> {
             NocalhostProfileState nocalhostProfileState = (NocalhostProfileState) state;
-            nocalhostProfileState.prepareDevInfo();
+            nocalhostProfileState.prepare();
             FileDocumentManager.getInstance().saveAllDocuments();
             return attachDlv(state, environment, nocalhostProfileState.getDebugPort());
         });

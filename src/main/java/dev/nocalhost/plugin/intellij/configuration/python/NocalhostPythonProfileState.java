@@ -15,6 +15,7 @@ import com.jetbrains.python.debugger.remote.PyRemoteDebugCommandLineState;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,7 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.HotReload;
-import dev.nocalhost.plugin.intellij.configuration.NocalhostDevInfo;
+import dev.nocalhost.plugin.intellij.configuration.NocalhostRunnerContext;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
@@ -39,7 +40,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     private static final String DEFAULT_SHELL = "sh";
     private static final Logger LOG = Logger.getInstance(NocalhostPythonProfileState.class);
     private final List<Disposable> disposables = Lists.newArrayList();
-    private final AtomicReference<NocalhostDevInfo> refContext = new AtomicReference<>(null);
+    private final AtomicReference<NocalhostRunnerContext> refContext = new AtomicReference<>(null);
 
     public NocalhostPythonProfileState(@NotNull Project project, @NotNull ExecutionEnvironment env) {
         super(project, env);
@@ -52,11 +53,14 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     public void prepare() throws ExecutionException {
         var context = NocalhostContextManager.getInstance(getEnvironment().getProject()).getContext();
         if (context == null) {
-            throw new ExecutionException("Service is not in dev mode.");
+            throw new ExecutionException("Nocalhost context is null.");
         }
 
         var desService = NhctlUtil.getDescribeService(context);
-        if (!NhctlDescribeServiceUtil.developStarted(desService) || !isProjectPathMatched(desService)) {
+        if ( ! isProjectPathMatched(desService)) {
+            throw new ExecutionException("Project path does not match.");
+        }
+        if (!NhctlDescribeServiceUtil.developStarted(desService)) {
             throw new ExecutionException("Service is not in dev mode.");
         }
 
@@ -74,7 +78,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             throw new ExecutionException("Service container config not found.");
         }
 
-        NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(container), resolveDebugCommand(container));
+        NocalhostRunnerContext.Command command = new NocalhostRunnerContext.Command(resolveRunCommand(container), resolveDebugCommand(container));
         if (!StringUtils.isNotEmpty(command.getDebug())) {
             throw new ExecutionException("Debug command is not configured");
         }
@@ -84,7 +88,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             throw new ExecutionException("Remote debug port is not configured.");
         }
 
-        refContext.set(new NocalhostDevInfo(
+        refContext.set(new NocalhostRunnerContext(
                 null,
                 container.getDev().getShell(),
                 command,
@@ -123,8 +127,12 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         return String.join(" ", container.getDev().getCommand().getDebug());
     }
 
+    public @Nullable NocalhostRunnerContext getRunnerContext() {
+        return refContext.get();
+    }
+
     public void startup() throws ExecutionException, IOException, NocalhostExecuteCmdException, InterruptedException {
-        NocalhostDevInfo dev = refContext.get();
+        NocalhostRunnerContext dev = refContext.get();
         if (dev == null) {
             throw new ExecutionException("Call prepare() before this method");
         }

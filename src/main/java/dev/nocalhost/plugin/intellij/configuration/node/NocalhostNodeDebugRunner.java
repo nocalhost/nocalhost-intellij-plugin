@@ -35,7 +35,7 @@ public class NocalhostNodeDebugRunner implements ProgramRunner<RunnerSettings> {
         FileDocumentManager.getInstance().saveAllDocuments();
         ExecutionManager.getInstance(environment.getProject()).startRunProfile(environment, state -> {
             var _state = (NocalhostProfileState) state;
-            _state.prepareDevInfo();
+            _state.prepare();
 
             var conf = (NocalhostNodeConfiguration)environment.getRunProfile();
             conf.setPort(Integer.parseInt(_state.getDebugPort()));

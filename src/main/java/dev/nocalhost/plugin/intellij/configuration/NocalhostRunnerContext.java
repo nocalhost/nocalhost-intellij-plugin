@@ -9,7 +9,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class NocalhostDevInfo {
+public class NocalhostRunnerContext {
     private Debug debug;
     private String shell;
     private Command command;
