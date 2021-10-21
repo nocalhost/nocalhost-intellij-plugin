@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 
 import com.intellij.execution.configurations.GeneralCommandLine;
@@ -142,7 +143,7 @@ public class LogsAction extends DumbAwareAction {
                                 "--container", containerName,
                                 "--kubeconfig", kubeConfigPath.toString(),
                                 "--namespace", namespace
-                        ))
-                ));
+                        )).withCharset(Charsets.UTF_8))
+                );
     }
 }
