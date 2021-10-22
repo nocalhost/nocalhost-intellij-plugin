@@ -2,6 +2,8 @@ package dev.nocalhost.plugin.intellij.nhctl;
 
 import com.google.common.collect.Lists;
 
+import com.intellij.openapi.project.Project;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -14,6 +16,10 @@ import lombok.Setter;
 public class NhctlDevContainerListCommand extends BaseCommand{
     private String application;
     private String controllerType;
+
+    public NhctlDevContainerListCommand(Project project) {
+        super(project);
+    }
 
     @Override
     protected List<String> compute() {

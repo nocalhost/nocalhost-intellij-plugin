@@ -82,7 +82,7 @@ public class AddStandaloneClusterTask extends Task.Backgroundable {
             String kubeConfigText = DataUtils.toYaml(outKubeConfig);
             nocalhostSettings.updateStandaloneCluster(new StandaloneCluster(kubeConfigText));
 
-            var cmd = new NhctlCreateKubeConfigCommand();
+            var cmd = new NhctlCreateKubeConfigCommand(getProject());
             cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(kubeConfigText));
             cmd.execute();
         }

@@ -3,7 +3,9 @@ package dev.nocalhost.plugin.intellij.ui.dialog;
 import com.google.common.collect.Lists;
 
 import com.intellij.ide.BrowserUtil;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -17,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,13 +29,20 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigCheckCommand;
 import dev.nocalhost.plugin.intellij.task.AddStandaloneClusterTask;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
+import lombok.SneakyThrows;
 
 public class AddStandaloneClustersDialog extends DialogWrapper {
     private final Project project;
@@ -140,35 +150,46 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
-        switch (tabbedPane.getSelectedIndex()) {
-            case 0:
-                try {
-                    String rawKubeConfig = Files.readString(
-                            Paths.get(kubeconfigFileSelectTextField.getText()),
-                            StandardCharsets.UTF_8);
-                    List<KubeContext> kubeContexts = contextList.getSelectedValuesList();
-                    ProgressManager.getInstance().run(
-                            new AddStandaloneClusterTask(project, rawKubeConfig, kubeContexts));
-                } catch (Exception e) {
-                    ErrorUtil.dealWith(project, "Adding clusters error",
-                            "Error occurs while adding clusters", e);
+        ProgressManager.getInstance().run(new Task.Modal(project, "Checking", false) {
+            @Override
+            public void onSuccess() {
+                super.onSuccess();
+                AddStandaloneClustersDialog.super.doOKAction();
+            }
+
+            @Override
+            public void onThrowable(@NotNull Throwable ex) {
+                ErrorUtil.dealWith(project, "Adding clusters error",
+                        "Error occurs while adding clusters", ex);
+            }
+
+            private String getRawKubeConfig() throws IOException {
+                if (tabbedPane.getSelectedIndex() == 0) {
+                    return Files.readString(Paths.get(kubeconfigFileSelectTextField.getText()), StandardCharsets.UTF_8);
                 }
-                break;
-            case 1:
-                try {
-                    String rawKubeConfig = kubeconfigFilePasteTextField.getText();
-                    List<KubeContext> kubeContexts = contextList.getSelectedValuesList();
-                    ProgressManager.getInstance().run(
-                            new AddStandaloneClusterTask(project, rawKubeConfig, kubeContexts));
-                } catch (Exception e) {
-                    ErrorUtil.dealWith(project, "Adding clusters error",
-                            "Error occurs while adding clusters", e);
+                return kubeconfigFilePasteTextField.getText();
+            }
+
+            @Override
+            @SneakyThrows
+            public void run(@NotNull ProgressIndicator indicator) {
+                String rawKubeConfig = getRawKubeConfig();
+                List<KubeContext> contexts = contextList.getSelectedValuesList();;
+                for (KubeContext context : contexts) {
+                    if (!check(KubeConfigUtil.kubeConfigPath(rawKubeConfig), context)) {
+                        return;
+                    }
                 }
-                break;
-            default:
-                break;
-        }
-        super.doOKAction();
+                ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, rawKubeConfig, contexts));
+            }
+        });
+    }
+
+    private boolean check(Path path, KubeContext context) throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        var cmd = new NhctlKubeConfigCheckCommand(project);
+        cmd.setKubeConfig(path);
+        cmd.setContext(context.getName());
+        return StringUtils.isEmpty(cmd.execute());
     }
 
     @Override

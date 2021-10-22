@@ -49,7 +49,7 @@ public class RemoveClusterAction extends DumbAwareAction {
             @Override
             @SneakyThrows
             public void run(@NotNull ProgressIndicator indicator) {
-                var cmd = new NhctlDeleteKubeConfigCommand();
+                var cmd = new NhctlDeleteKubeConfigCommand(project);
                 cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(node.getRawKubeConfig()));
                 cmd.execute();
 

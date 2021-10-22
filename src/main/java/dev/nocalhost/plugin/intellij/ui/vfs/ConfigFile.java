@@ -137,7 +137,7 @@ public class ConfigFile extends VirtualFile {
                         @SneakyThrows
                         @Override
                         public void runTask(@NotNull ProgressIndicator indicator) {
-                            var cmd = new NhctlConfigEditCommand();
+                            var cmd = new NhctlConfigEditCommand(project);
                             cmd.setYaml(newContent);
                             cmd.setKubeConfig(kubeConfigPath);
                             cmd.setDeployment(node.resourceName());

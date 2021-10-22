@@ -153,7 +153,7 @@ public class StartDevelopAction extends DumbAwareAction {
         List<String> containers;
 
         try {
-            var cmd = new NhctlDevContainerListCommand();
+            var cmd = new NhctlDevContainerListCommand(project);
             cmd.setNamespace(namespace);
             cmd.setKubeConfig(kubeConfigPath);
             cmd.setDeployment(node.resourceName());
