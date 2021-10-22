@@ -34,15 +34,19 @@ import lombok.Setter;
 @Getter
 @Setter
 public abstract class BaseCommand {
+    private boolean console;
     protected Project project;
     protected Path kubeConfig;
     protected String namespace;
     protected String deployment;
-    protected NocalhostOutputAppendNotifier bus;
 
     protected BaseCommand(Project project) {
+        this(project, true);
+    }
+
+    protected BaseCommand(Project project, boolean console) {
         this.project = project;
-        bus = project.getMessageBus().syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC);
+        this.console = console;
     }
 
     protected List<String> fulfill(@NotNull List<String> args) {
@@ -100,7 +104,7 @@ public abstract class BaseCommand {
 
         GeneralCommandLine commandLine = getCommandline(args);
         String cmd = commandLine.getCommandLineString();
-        bus.action("[cmd] " + cmd + System.lineSeparator());
+        print("[cmd] " + cmd);
 
         Process process;
         try {
@@ -128,7 +132,7 @@ public abstract class BaseCommand {
             String line;
             while ((line = br.readLine()) != null) {
                 stdout.append(line);
-                bus.action(line + System.lineSeparator());
+                print(line);
                 NhctlOutputUtil.showMessageByCommandOutput(project, line);
             }
         } catch (Exception ex) {
@@ -137,9 +141,18 @@ public abstract class BaseCommand {
 
         int code = process.waitFor();
         if (code != 0) {
-            bus.action(stderr.get() + System.lineSeparator());
+            print(stderr.get());
             throw new NhctlCommandException(cmd, code, stdout.toString(), stderr.get());
         }
         return stdout.toString();
+    }
+
+    public void print(String text) {
+        if (console) {
+            project
+                    .getMessageBus()
+                    .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC)
+                    .action(text + System.lineSeparator());
+        }
     }
 }

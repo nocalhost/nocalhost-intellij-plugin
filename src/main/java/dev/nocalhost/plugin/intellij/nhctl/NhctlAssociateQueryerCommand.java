@@ -18,7 +18,7 @@ public class NhctlAssociateQueryerCommand extends BaseCommand {
     private String localSync;
 
     public NhctlAssociateQueryerCommand(Project project) {
-        super(project);
+        super(project, false);
     }
 
     @Override
