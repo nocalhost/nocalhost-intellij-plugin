@@ -405,7 +405,6 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     private DevModeService makeDevModeService(String openProjectPath) {
-        openProjectPath = Paths.get(openProjectPath).toString();
         if (node.getClusterNode().getNocalhostAccount() != null) {
             return DevModeService.builder()
                     .server(node.getClusterNode().getNocalhostAccount().getServer())
@@ -418,24 +417,24 @@ public class StartDevelopAction extends DumbAwareAction {
                     .serviceType(node.getKubeResource().getKind())
                     .containerName(selectedContainer.get())
                     .image(selectedImage.get())
-                    .projectPath(openProjectPath)
-                    .action(action)
-                    .mode(mode)
-                    .build();
-        } else {
-            return DevModeService.builder()
-                    .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
-                    .namespace(node.getNamespaceNode().getNamespace())
-                    .applicationName(node.applicationName())
-                    .serviceName(node.resourceName())
-                    .serviceType(node.getKubeResource().getKind())
-                    .containerName(selectedContainer.get())
-                    .image(selectedImage.get())
-                    .projectPath(openProjectPath)
+                    .projectPath(Paths.get(openProjectPath).toString())
                     .action(action)
                     .mode(mode)
                     .build();
         }
+
+        return DevModeService.builder()
+             .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
+             .namespace(node.getNamespaceNode().getNamespace())
+             .applicationName(node.applicationName())
+             .serviceName(node.resourceName())
+             .serviceType(node.getKubeResource().getKind())
+             .containerName(selectedContainer.get())
+             .image(selectedImage.get())
+             .projectPath(Paths.get(openProjectPath).toString())
+             .action(action)
+             .mode(mode)
+             .build();
     }
 
     private void startDevelop(@NotNull String path) {
