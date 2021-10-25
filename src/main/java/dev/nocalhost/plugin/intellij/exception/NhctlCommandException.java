@@ -4,7 +4,7 @@ import lombok.Getter;
 
 public class NhctlCommandException extends NocalhostExecuteCmdException {
     @Getter
-    private String errorOutput;
+    private final String errorOutput;
 
     public NhctlCommandException(String cmd, int exitCode, String msg, String errorOutput) {
         super(cmd, exitCode, msg);

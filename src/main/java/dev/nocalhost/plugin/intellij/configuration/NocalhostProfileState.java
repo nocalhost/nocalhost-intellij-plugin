@@ -164,7 +164,7 @@ public class NocalhostProfileState extends CommandLineState {
 
         var cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(), "ssh", "reverse",
-                "--pod", NhctlUtil.getDevPodName(context),
+                "--pod", NhctlUtil.getDevPodName(project, context),
                 "--local", port,
                 "--remote", port,
                 "--sshport", "50022",
@@ -206,7 +206,7 @@ public class NocalhostProfileState extends CommandLineState {
         NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
         try {
-            var podName = NhctlUtil.getDevPodName(context);
+            var podName = NhctlUtil.getDevPodName(getEnvironment().getProject(), context);
             NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(context.getKubeConfigPath(), context.getNamespace());
             nhctlPortForwardStartOptions.setDevPorts(List.of(":" + remotePort));
             nhctlPortForwardStartOptions.setDeployment(context.getServiceName());

@@ -32,7 +32,7 @@ public class DisassociateAction extends DumbAwareAction {
         if (basePath != null) {
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
-                    var cmd = new NhctlDevAssociateCommand();
+                    var cmd = new NhctlDevAssociateCommand(project);
                     cmd.setDeAssociate(true);
                     cmd.setLocalSync(Paths.get(basePath).toString());
                     cmd.setKubeConfig(Paths.get(result.getKubeconfigPath()));

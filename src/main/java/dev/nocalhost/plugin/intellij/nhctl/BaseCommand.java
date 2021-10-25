@@ -6,12 +6,14 @@ import com.google.common.io.CharStreams;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.EnvironmentUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
@@ -20,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
+import dev.nocalhost.plugin.intellij.utils.NhctlOutputUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
@@ -30,9 +34,20 @@ import lombok.Setter;
 @Getter
 @Setter
 public abstract class BaseCommand {
+    private boolean console;
+    protected Project project;
     protected Path kubeConfig;
     protected String namespace;
     protected String deployment;
+
+    protected BaseCommand(Project project) {
+        this(project, true);
+    }
+
+    protected BaseCommand(Project project, boolean console) {
+        this.project = project;
+        this.console = console;
+    }
 
     protected List<String> fulfill(@NotNull List<String> args) {
         if (kubeConfig != null) {
@@ -89,6 +104,7 @@ public abstract class BaseCommand {
 
         GeneralCommandLine commandLine = getCommandline(args);
         String cmd = commandLine.getCommandLineString();
+        print("[cmd] " + cmd);
 
         Process process;
         try {
@@ -100,25 +116,43 @@ public abstract class BaseCommand {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
 
-        AtomicReference<String> err = new AtomicReference<>("");
+        AtomicReference<String> stderr = new AtomicReference<>("");
         ApplicationManager.getApplication().executeOnPooledThread(() -> consume(process));
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            var reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
-            try {
-                err.set(CharStreams.toString(reader));
-            } catch (Exception ex) {
+            try (var reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8)) {
+                stderr.set(CharStreams.toString(reader));
+            } catch (IOException ex) {
                 // ignore
             }
         });
 
-        try (var reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8)) {
-            var output = CharStreams.toString(reader);
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                output += err.get();
-                throw new NhctlCommandException(cmd, exitCode, output, err.get());
+        var stdout = new StringBuilder();
+        var reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);
+        try (var br = new BufferedReader(reader)) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                stdout.append(line);
+                print(line);
+                NhctlOutputUtil.showMessageByCommandOutput(project, line);
             }
-            return output;
+        } catch (Exception ex) {
+            // ignore
+        }
+
+        int code = process.waitFor();
+        if (code != 0) {
+            print(stderr.get());
+            throw new NhctlCommandException(cmd, code, stdout.toString(), stderr.get());
+        }
+        return stdout.toString();
+    }
+
+    public void print(String text) {
+        if (console) {
+            project
+                    .getMessageBus()
+                    .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC)
+                    .action(text + System.lineSeparator());
         }
     }
 }

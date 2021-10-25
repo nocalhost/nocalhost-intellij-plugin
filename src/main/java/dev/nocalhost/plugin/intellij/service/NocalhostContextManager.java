@@ -38,7 +38,7 @@ public class NocalhostContextManager {
                 return;
             }
 
-            var cmd = new NhctlAssociateQueryerCommand();
+            var cmd = new NhctlAssociateQueryerCommand(project);
             cmd.setCurrent(true);
             cmd.setLocalSync(Paths.get(path).toString());
 

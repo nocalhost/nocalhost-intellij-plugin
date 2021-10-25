@@ -29,7 +29,7 @@ public class OverrideSyncAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                var cmd = new NhctlSyncStatusCommand();
+                var cmd = new NhctlSyncStatusCommand(project);
                 cmd.setOverride(true);
                 cmd.setNamespace(result.getServicePack().getNamespace());
                 cmd.setKubeConfig(Paths.get(result.getKubeconfigPath()));

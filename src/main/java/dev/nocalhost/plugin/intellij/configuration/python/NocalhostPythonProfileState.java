@@ -194,7 +194,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
 
         var cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(), "ssh", "reverse",
-                "--pod", NhctlUtil.getDevPodName(context),
+                "--pod", NhctlUtil.getDevPodName(project, context),
                 "--local", port,
                 "--remote", port,
                 "--sshport", "50022",

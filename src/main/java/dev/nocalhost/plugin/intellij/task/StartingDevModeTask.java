@@ -24,7 +24,6 @@ import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
@@ -133,11 +132,6 @@ public class StartingDevModeTask extends BaseBackgroundTask {
     @SneakyThrows
     @Override
     public void runTask(@NotNull ProgressIndicator indicator) {
-        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath,
-                devModeService.getNamespace(), this);
-        nhctlDescribeOptions.setDeployment(devModeService.getServiceName());
-        nhctlDescribeOptions.setType(devModeService.getServiceType());
-
         if ( ! canStart(devModeService.getAction())) {
             NocalhostNotifier
                     .getInstance(project)
