@@ -12,7 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class NhctlKubeConfigCheckCommand extends BaseCommand {
-    private String context;
+    private List<String> contexts;
 
     public NhctlKubeConfigCheckCommand(Project project) {
         super(project);
@@ -21,9 +21,11 @@ public class NhctlKubeConfigCheckCommand extends BaseCommand {
     @Override
     protected List<String> compute() {
         List<String> args = Lists.newArrayList(getBinaryPath(), "kubeconfig", "check");
-        if (StringUtils.isNotEmpty(context)) {
-            args.add("--context");
-            args.add(context);
+        if (contexts != null) {
+            contexts.forEach(x -> {
+                args.add("--context");
+                args.add(x);
+            });
         }
         return fulfill(args);
     }

@@ -25,16 +25,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigCheckCommand;
 import dev.nocalhost.plugin.intellij.task.AddStandaloneClusterTask;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
@@ -150,7 +147,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
-        ProgressManager.getInstance().run(new Task.Modal(project, "Checking", false) {
+        ProgressManager.getInstance().run(new Task.Modal(project, "Adding", false) {
             @Override
             public void onSuccess() {
                 super.onSuccess();
@@ -159,8 +156,8 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
 
             @Override
             public void onThrowable(@NotNull Throwable ex) {
-                ErrorUtil.dealWith(project, "Adding clusters error",
-                        "Error occurs while adding clusters", ex);
+                ErrorUtil.dealWith(project, "Failed to add clusters",
+                        "Error occurred while adding clusters", ex);
             }
 
             private String getRawKubeConfig() throws IOException {
@@ -173,23 +170,17 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             @Override
             @SneakyThrows
             public void run(@NotNull ProgressIndicator indicator) {
-                String rawKubeConfig = getRawKubeConfig();
-                List<KubeContext> contexts = contextList.getSelectedValuesList();;
-                for (KubeContext context : contexts) {
-                    if (!check(KubeConfigUtil.kubeConfigPath(rawKubeConfig), context)) {
-                        return;
-                    }
-                }
-                ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, rawKubeConfig, contexts));
+                var config = getRawKubeConfig();
+                var contexts = contextList.getSelectedValuesList();
+                // check and show warning
+                var cmd = new NhctlKubeConfigCheckCommand(project);
+                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(config));
+                cmd.setContexts(contexts.stream().map(KubeContext::getName).collect(Collectors.toList()));
+                cmd.execute();
+                // https://nocalhost.coding.net/p/nocalhost/subtasks/issues/702/detail
+                ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, config, contexts));
             }
         });
-    }
-
-    private boolean check(Path path, KubeContext context) throws IOException, NocalhostExecuteCmdException, InterruptedException {
-        var cmd = new NhctlKubeConfigCheckCommand(project);
-        cmd.setKubeConfig(path);
-        cmd.setContext(context.getName());
-        return StringUtils.isEmpty(cmd.execute());
     }
 
     @Override
