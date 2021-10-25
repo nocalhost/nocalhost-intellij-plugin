@@ -97,7 +97,7 @@ public abstract class BaseCommand {
         // do nothing
     }
 
-    protected String doExecute(@NotNull List<String> args, String sudoPassword) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+    protected String doExecute(@NotNull List<String> args, String sudoPassword) throws InterruptedException, NocalhostExecuteCmdException, IOException {
         if (sudoPassword != null) {
             args = SudoUtil.toSudoCommand(args);
         }
@@ -135,8 +135,6 @@ public abstract class BaseCommand {
                 print(line);
                 NhctlOutputUtil.showMessageByCommandOutput(project, line);
             }
-        } catch (Exception ex) {
-            // ignore
         }
 
         int code = process.waitFor();
