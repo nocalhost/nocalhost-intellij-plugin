@@ -91,11 +91,11 @@ public class NocalhostProfileState extends CommandLineState {
             }
 
             var desService = NhctlUtil.getDescribeService(context);
-            if ( ! isProjectPathMatched(desService)) {
-                throw new ExecutionException("Project path does not match.");
-            }
             if ( ! NhctlDescribeServiceUtil.developStarted(desService)) {
                 throw new ExecutionException("Service is not in dev mode.");
+            }
+            if ( ! isProjectPathMatched(desService)) {
+                throw new ExecutionException("Project path does not match.");
             }
             if ( ! isSyncStatusIdle()) {
                 throw new ExecutionException("File sync has not yet completed.");
