@@ -14,6 +14,7 @@ import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.vfs.VirtualFile;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -52,7 +53,7 @@ public class ConfigAction extends DumbAwareAction {
                     "There is no development configuration for this service, set up a development configuration using a form?"
             ).ask(project);
             if (yes) {
-                BrowserUtil.browse("https://nocalhost.dev/tools");
+                openDevConfigTools();
                 return;
             }
         }
@@ -100,5 +101,20 @@ public class ConfigAction extends DumbAwareAction {
                     "Error occurred while checking dev config.", ex);
         }
         return false;
+    }
+
+    private void openDevConfigTools() {
+        try {
+            var x = new URIBuilder("https://nocalhost.dev/tools");
+            x.addParameter("name", node.resourceName());
+            x.addParameter("type", node.getKubeResource().getKind());
+            x.addParameter("namespace", namespace);
+            x.addParameter("kubeconfig", kubeConfigPath.toString());
+            x.addParameter("application", node.applicationName());
+            BrowserUtil.browse(x.build().toString());
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Failed to open browser",
+                    "Error occurred while opening browser", ex);
+        }
     }
 }

@@ -17,6 +17,7 @@ import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Files;
@@ -390,7 +391,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     .noText("Set development configuration with form")
                     .ask(project);
             if ( ! yes) {
-                BrowserUtil.browse("https://nocalhost.dev/tools");
+                openDevConfigTools();
                 return;
             }
             ImageChooseDialog imageChooseDialog = new ImageChooseDialog(project);
@@ -476,5 +477,21 @@ public class StartDevelopAction extends DumbAwareAction {
             var task = new OpenProjectTask();
             RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(path), task.withRunConfigurators());
         });
+    }
+
+    private void openDevConfigTools() {
+        try {
+            var x = new URIBuilder("https://nocalhost.dev/tools");
+            x.addParameter("name", node.resourceName());
+            x.addParameter("type", node.getKubeResource().getKind());
+            x.addParameter("namespace", namespace);
+            x.addParameter("container", selectedContainer.get());
+            x.addParameter("kubeconfig", kubeConfigPath.toString());
+            x.addParameter("application", node.applicationName());
+            BrowserUtil.browse(x.build().toString());
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Failed to open browser",
+                    "Error occurred while opening browser", ex);
+        }
     }
 }
