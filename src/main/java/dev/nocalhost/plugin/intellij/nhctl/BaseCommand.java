@@ -34,7 +34,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public abstract class BaseCommand {
-    private boolean console;
+    protected boolean console;
     protected Project project;
     protected Path kubeConfig;
     protected String namespace;
