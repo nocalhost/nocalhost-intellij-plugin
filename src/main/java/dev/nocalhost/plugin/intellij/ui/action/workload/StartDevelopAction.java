@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
+import com.intellij.ide.BrowserUtil;
 import com.google.gson.reflect.TypeToken;
-
 import com.intellij.ide.RecentProjectsManagerBase;
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -10,6 +10,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowId;
@@ -153,7 +154,6 @@ public class StartDevelopAction extends DumbAwareAction {
                         return;
                     }
                 }
-
                 getContainers();
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading service status error",
@@ -381,6 +381,18 @@ public class StartDevelopAction extends DumbAwareAction {
 
     private void selectImage() {
         ApplicationManager.getApplication().invokeLater(() -> {
+            var yes = MessageDialogBuilder
+                    .yesNo(
+                            "Start DevMode",
+                            "There is no development configuration for container `" + selectedContainer.get() + "`, please select an operation."
+                    )
+                    .yesText("Still enter development mode")
+                    .noText("Set development configuration with form")
+                    .ask(project);
+            if ( ! yes) {
+                BrowserUtil.browse("https://nocalhost.dev/tools");
+                return;
+            }
             ImageChooseDialog imageChooseDialog = new ImageChooseDialog(project);
             if (imageChooseDialog.showAndGet()) {
                 ApplicationManager.getApplication().executeOnPooledThread(() -> {
