@@ -18,6 +18,7 @@ import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -28,10 +29,10 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedCpuArchitectureException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedOperatingSystemException;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
-import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.Request;
+import okhttp3.HttpUrl;
 
 public class NocalhostBinService {
     private static final Pattern NHCTL_VERSION_PATTERN = Pattern.compile("Version:\\sv(.+)");
@@ -122,8 +123,8 @@ public class NocalhostBinService {
         return null;
     }
 
-    private Void downloadNhctl(String version, String title) throws Exception {
-        return ProgressManager.getInstance().run(new Task.WithResult<Void, Exception>(null, title, false) {
+    private void downloadNhctl(String version, String title) throws Exception {
+        ProgressManager.getInstance().run(new Task.WithResult<Void, Exception>(null, title, false) {
             @Override
             protected Void compute(@NotNull ProgressIndicator indicator) throws Exception {
                 indicator.setIndeterminate(false);
@@ -203,18 +204,19 @@ public class NocalhostBinService {
                 response.close();
             }
         }
-        Path destPath = Paths.get(NhctlUtil.binaryPath());
+
+        var destPath = Paths.get(NhctlUtil.binaryPath());
         if (SystemInfo.isWindows) {
-            Path tempPath = Paths.get(NhctlUtil.binaryPath() + ".temp");
             if (Files.exists(destPath)) {
-                Files.move(destPath, tempPath);
+                var tempPath = Paths.get(NhctlUtil.binaryPath() + "." + System.currentTimeMillis());
+                Files.move(destPath, tempPath, StandardCopyOption.REPLACE_EXISTING);
+                tempPath.toFile().deleteOnExit();
             }
             Files.move(downloadingPath, destPath);
-            Files.deleteIfExists(tempPath);
-        } else {
-            Files.deleteIfExists(destPath);
-            Files.move(downloadingPath, destPath);
+            return;
         }
+        Files.deleteIfExists(destPath);
+        Files.move(downloadingPath, destPath);
     }
 
     private String getDownloadingTempFilename() {
