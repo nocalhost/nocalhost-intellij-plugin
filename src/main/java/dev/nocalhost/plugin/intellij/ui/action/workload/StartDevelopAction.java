@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
+import com.intellij.ide.BrowserUtil;
 import com.google.gson.reflect.TypeToken;
-
 import com.intellij.ide.RecentProjectsManagerBase;
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -10,12 +10,14 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Files;
@@ -153,7 +155,6 @@ public class StartDevelopAction extends DumbAwareAction {
                         return;
                     }
                 }
-
                 getContainers();
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading service status error",
@@ -381,6 +382,18 @@ public class StartDevelopAction extends DumbAwareAction {
 
     private void selectImage() {
         ApplicationManager.getApplication().invokeLater(() -> {
+            var yes = MessageDialogBuilder
+                    .yesNo(
+                            "Start DevMode",
+                            "There is no development configuration for container `" + selectedContainer.get() + "`, please select an operation."
+                    )
+                    .yesText("Still enter development mode")
+                    .noText("Set development configuration with form")
+                    .ask(project);
+            if ( ! yes) {
+                openDevConfigTools();
+                return;
+            }
             ImageChooseDialog imageChooseDialog = new ImageChooseDialog(project);
             if (imageChooseDialog.showAndGet()) {
                 ApplicationManager.getApplication().executeOnPooledThread(() -> {
@@ -464,5 +477,22 @@ public class StartDevelopAction extends DumbAwareAction {
             var task = new OpenProjectTask();
             RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(path), task.withRunConfigurators());
         });
+    }
+
+    private void openDevConfigTools() {
+        try {
+            var x = new URIBuilder("https://nocalhost.dev/tools");
+            x.addParameter("from", "daemon");
+            x.addParameter("name", node.resourceName());
+            x.addParameter("type", node.getKubeResource().getKind());
+            x.addParameter("namespace", namespace);
+            x.addParameter("container", selectedContainer.get());
+            x.addParameter("kubeconfig", kubeConfigPath.toString());
+            x.addParameter("application", node.applicationName());
+            BrowserUtil.browse(x.build().toString());
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Failed to open browser",
+                    "Error occurred while opening browser", ex);
+        }
     }
 }

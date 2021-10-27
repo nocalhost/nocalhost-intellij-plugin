@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -9,14 +10,18 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.vfs.VirtualFile;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlDevConfigCheckCommand;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ConfigFile;
@@ -42,6 +47,16 @@ public class ConfigAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
+        if ( ! checkDevConfig()) {
+            var yes = MessageDialogBuilder.yesNo(
+                    "Dev Config",
+                    "There is no development configuration for this service, set up a development configuration using a form?"
+            ).ask(project);
+            if (yes) {
+                openDevConfigTools();
+                return;
+            }
+        }
         ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Loading config") {
             private String config;
 
@@ -70,5 +85,37 @@ public class ConfigAction extends DumbAwareAction {
                 config = nhctlCommand.getConfig(node.applicationName(), nhctlConfigOptions);
             }
         });
+    }
+
+    private boolean checkDevConfig() {
+        try {
+            var cmd = new NhctlDevConfigCheckCommand(project);
+            cmd.setNamespace(namespace);
+            cmd.setKubeConfig(kubeConfigPath);
+            cmd.setDeployment(node.resourceName());
+            cmd.setApplication(node.applicationName());
+            cmd.setControllerType(node.getKubeResource().getKind());
+            return StringUtils.equals(cmd.execute(), "true");
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Failed to check dev config",
+                    "Error occurred while checking dev config.", ex);
+        }
+        return false;
+    }
+
+    private void openDevConfigTools() {
+        try {
+            var x = new URIBuilder("https://nocalhost.dev/tools");
+            x.addParameter("from", "daemon");
+            x.addParameter("name", node.resourceName());
+            x.addParameter("type", node.getKubeResource().getKind());
+            x.addParameter("namespace", namespace);
+            x.addParameter("kubeconfig", kubeConfigPath.toString());
+            x.addParameter("application", node.applicationName());
+            BrowserUtil.browse(x.build().toString());
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Failed to open browser",
+                    "Error occurred while opening browser", ex);
+        }
     }
 }
