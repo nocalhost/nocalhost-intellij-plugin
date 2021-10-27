@@ -482,6 +482,7 @@ public class StartDevelopAction extends DumbAwareAction {
     private void openDevConfigTools() {
         try {
             var x = new URIBuilder("https://nocalhost.dev/tools");
+            x.addParameter("from", "daemon");
             x.addParameter("name", node.resourceName());
             x.addParameter("type", node.getKubeResource().getKind());
             x.addParameter("namespace", namespace);
