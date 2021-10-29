@@ -109,7 +109,7 @@ tasks {
         pluginDescription.set(provider { file("description.html").readText() })
         changeNotes.set(
             """
-            <h2>Version $changelogVersion</h2>
+            <h2>Version $nocalhostVersion</h2>
             <p>
                 <a href="https://nocalhost.dev/docs/changelogs/$changelogVersion/">https://nocalhost.dev/docs/changelogs/$changelogVersion</a>
             </p>
