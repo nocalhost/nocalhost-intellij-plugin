@@ -51,6 +51,7 @@ if (project.hasProperty("baseIDE")) {
 val platformVersion = prop("platformVersion").toInt()
 val ideaVersion = prop("ideaVersion")
 val nocalhostVersion = prop("version")
+val changelogVersion = nocalhostVersion.replace("(\\d+\\.\\d+\\.)(\\d+)".toRegex(), "$1x")
 
 val terminalPlugin = "terminal"
 var javascriptPlugin = "JavaScript"
@@ -106,7 +107,14 @@ tasks {
     patchPluginXml {
         pluginId.set("dev.nocalhost.nocalhost-intellij-plugin")
         pluginDescription.set(provider { file("description.html").readText() })
-        changeNotes.set(provider { file("changenotes.html").readText() })
+        changeNotes.set(
+            """
+            <h2>Version $changelogVersion</h2>
+            <p>
+                <a href="https://nocalhost.dev/docs/changelogs/$changelogVersion/">https://nocalhost.dev/docs/changelogs/$changelogVersion</a>
+            </p>
+            """
+        );
     }
 
     publishPlugin {
