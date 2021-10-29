@@ -224,22 +224,14 @@ public class NocalhostBinService {
     }
 
     private static String getDownloadFilename() {
-        String filename = String.format("nhctl-%s-amd64", os());
-        if (SystemInfo.isWindows) {
-            filename += ".exe";
-        }
-        return filename;
-    }
-
-    private static String os() {
         if (SystemInfo.isMac) {
-            return "darwin";
-        }
-        if (SystemInfo.isWindows) {
-            return "windows";
+           return "nhctl-darwin-" + arch();
         }
         if (SystemInfo.isLinux) {
-            return "linux";
+            return "nhctl-linux-amd64";
+        }
+        if (SystemInfo.isWindows) {
+            return "nhctl-windows-amd64.exe";
         }
         throw new NocalhostUnsupportedOperatingSystemException(SystemInfo.OS_NAME);
     }
