@@ -119,13 +119,6 @@ public class StartDevelopAction extends DumbAwareAction {
                 if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
                     // remote run | remote debug
                     if (StringUtils.isNotEmpty(action)) {
-                        // this service maybe controlled by others
-                        if (StringUtils.isEmpty(nhctlDescribeService.getAssociate())) {
-                            NocalhostNotifier
-                                    .getInstance(project)
-                                    .notifyError("Failed to start remote " + action, "You need to associate the local directory before starting remote " + action + ".");
-                            return;
-                        }
                         if (PathsUtil.isSame(project.getBasePath(), nhctlDescribeService.getAssociate())) {
                             ProgressManager
                                     .getInstance()
@@ -453,8 +446,16 @@ public class StartDevelopAction extends DumbAwareAction {
     private void startDevelop(@NotNull String path) {
         var devModeService = makeDevModeService(path);
         ApplicationManager.getApplication().invokeLater(() -> {
+            if ( ! PathsUtil.isExists(path)) {
+                NocalhostNotifier
+                        .getInstance(project)
+                        .notifyError("Failed to start dev", "The associated directory does not exist: [" + path + "]");
+                return;
+            }
             if (PathsUtil.isSame(path, project.getBasePath())) {
-                ProgressManager.getInstance().run(new StartingDevModeTask(project, devModeService));
+                ProgressManager
+                        .getInstance()
+                        .run(new StartingDevModeTask(project, devModeService));
                 return;
             }
 
