@@ -12,7 +12,6 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
 
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -20,7 +19,6 @@ import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
@@ -46,7 +44,7 @@ public class OpenProjectAction extends DumbAwareAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         String projectPath = node.getNhctlDescribeService().getAssociate();
-        if (StringUtils.isNotEmpty(projectPath)) {
+        if (PathsUtil.isExists(projectPath)) {
             setAssociate(projectPath);
         } else {
             Path codeSource = FileChooseUtil.chooseSingleDirectory(project, "",
@@ -76,13 +74,6 @@ public class OpenProjectAction extends DumbAwareAction {
 
     private void openProject(String projectPath) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            if ( ! PathsUtil.isExists(projectPath)) {
-                NocalhostNotifier
-                        .getInstance(project)
-                        .notifyError("Failed to open project", "The associated directory does not exist: [" + projectPath + "]");
-                return;
-            }
-
             Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
             for (Project openProject : openProjects) {
                 if (PathsUtil.isSame(projectPath, openProject.getBasePath())) {
