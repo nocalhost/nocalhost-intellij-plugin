@@ -1,7 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
+import com.intellij.ide.BrowserUtil;
 import com.google.gson.reflect.TypeToken;
-
 import com.intellij.ide.RecentProjectsManagerBase;
 import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -10,12 +10,14 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ex.ProjectManagerEx;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Files;
@@ -38,6 +40,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevContainerListCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
@@ -116,9 +119,14 @@ public class StartDevelopAction extends DumbAwareAction {
                 if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
                     // remote run | remote debug
                     if (StringUtils.isNotEmpty(action)) {
-                        ProgressManager
-                                .getInstance()
-                                .run(new ExecutionTask(project, makeDevModeService(project.getBasePath()), action));
+                        if (PathsUtil.isSame(project.getBasePath(), nhctlDescribeService.getAssociate())) {
+                            ProgressManager
+                                    .getInstance()
+                                    .run(new ExecutionTask(project, makeDevModeService(project.getBasePath()), action));
+                            return;
+                        }
+                        // https://nocalhost.coding.net/p/nocalhost/assignments/issues/624/detail
+                        startDevelop(nhctlDescribeService.getAssociate());
                         return;
                     }
                     // currently the service in the duplicate mode
@@ -140,7 +148,6 @@ public class StartDevelopAction extends DumbAwareAction {
                         return;
                     }
                 }
-
                 getContainers();
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading service status error",
@@ -153,7 +160,7 @@ public class StartDevelopAction extends DumbAwareAction {
         List<String> containers;
 
         try {
-            var cmd = new NhctlDevContainerListCommand();
+            var cmd = new NhctlDevContainerListCommand(project);
             cmd.setNamespace(namespace);
             cmd.setKubeConfig(kubeConfigPath);
             cmd.setDeployment(node.resourceName());
@@ -355,7 +362,7 @@ public class StartDevelopAction extends DumbAwareAction {
                 opts.setKey("image");
                 String image = nhctlCommand.profileGet(node.applicationName(), opts);
                 if (StringUtils.isNotEmpty(image)) {
-                    startDevelop();
+                    startDevelop(projectPathReference.get());
                     return;
                 }
                 selectImage();
@@ -368,6 +375,18 @@ public class StartDevelopAction extends DumbAwareAction {
 
     private void selectImage() {
         ApplicationManager.getApplication().invokeLater(() -> {
+            var yes = MessageDialogBuilder
+                    .yesNo(
+                            "Start DevMode",
+                            "There is no development configuration for container `" + selectedContainer.get() + "`, please select an operation."
+                    )
+                    .yesText("Still enter development mode")
+                    .noText("Set development configuration with form")
+                    .ask(project);
+            if ( ! yes) {
+                openDevConfigTools();
+                return;
+            }
             ImageChooseDialog imageChooseDialog = new ImageChooseDialog(project);
             if (imageChooseDialog.showAndGet()) {
                 ApplicationManager.getApplication().executeOnPooledThread(() -> {
@@ -381,7 +400,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         opts.setValue(imageChooseDialog.getSelectedImage());
                         outputCapturedNhctlCommand.profileSet(node.applicationName(), opts);
                         selectedImage.set(imageChooseDialog.getSelectedImage());
-                        startDevelop();
+                        startDevelop(projectPathReference.get());
                     } catch (Exception e) {
                         ErrorUtil.dealWith(project, "Setting dev image",
                                 "Error occurs while setting dev image", e);
@@ -392,7 +411,6 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     private DevModeService makeDevModeService(String openProjectPath) {
-        openProjectPath = Paths.get(openProjectPath).toString();
         if (node.getClusterNode().getNocalhostAccount() != null) {
             return DevModeService.builder()
                     .server(node.getClusterNode().getNocalhostAccount().getServer())
@@ -405,53 +423,77 @@ public class StartDevelopAction extends DumbAwareAction {
                     .serviceType(node.getKubeResource().getKind())
                     .containerName(selectedContainer.get())
                     .image(selectedImage.get())
-                    .projectPath(openProjectPath)
-                    .action(action)
-                    .mode(mode)
-                    .build();
-        } else {
-            return DevModeService.builder()
-                    .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
-                    .namespace(node.getNamespaceNode().getNamespace())
-                    .applicationName(node.applicationName())
-                    .serviceName(node.resourceName())
-                    .serviceType(node.getKubeResource().getKind())
-                    .containerName(selectedContainer.get())
-                    .image(selectedImage.get())
-                    .projectPath(openProjectPath)
+                    .projectPath(Paths.get(openProjectPath).toString())
                     .action(action)
                     .mode(mode)
                     .build();
         }
+
+        return DevModeService.builder()
+             .rawKubeConfig(node.getClusterNode().getRawKubeConfig())
+             .namespace(node.getNamespaceNode().getNamespace())
+             .applicationName(node.applicationName())
+             .serviceName(node.resourceName())
+             .serviceType(node.getKubeResource().getKind())
+             .containerName(selectedContainer.get())
+             .image(selectedImage.get())
+             .projectPath(Paths.get(openProjectPath).toString())
+             .action(action)
+             .mode(mode)
+             .build();
     }
 
-    private void startDevelop() {
-        DevModeService devModeService = makeDevModeService(projectPathReference.get());
+    private void startDevelop(@NotNull String path) {
+        var devModeService = makeDevModeService(path);
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (PathsUtil.isSame(projectPathReference.get(), project.getBasePath())) {
-                ProgressManager.getInstance().run(
-                        new StartingDevModeTask(project, devModeService));
-            } else {
-                Project[] openProjects = ProjectManagerEx.getInstanceEx().getOpenProjects();
-                for (Project openProject : openProjects) {
-                    if (PathsUtil.isSame(projectPathReference.get(), openProject.getBasePath())) {
-                        ToolWindow toolWindow = ToolWindowManager.getInstance(openProject)
-                                .getToolWindow(ToolWindowId.PROJECT_VIEW);
-                        if (toolWindow != null) {
-                            toolWindow.activate(() -> {
-                                ProgressManager.getInstance().run(
-                                        new StartingDevModeTask(openProject, devModeService));
-                            });
-                            return;
-                        }
+            if ( ! PathsUtil.isExists(path)) {
+                NocalhostNotifier
+                        .getInstance(project)
+                        .notifyError("Failed to start dev", "The associated directory does not exist: [" + path + "]");
+                return;
+            }
+            if (PathsUtil.isSame(path, project.getBasePath())) {
+                ProgressManager
+                        .getInstance()
+                        .run(new StartingDevModeTask(project, devModeService));
+                return;
+            }
+
+            var projects = ProjectManagerEx.getInstanceEx().getOpenProjects();
+            for (var op : projects) {
+                if (PathsUtil.isSame(path, op.getBasePath())) {
+                    ToolWindow toolWindow = ToolWindowManager.getInstance(op)
+                                                             .getToolWindow(ToolWindowId.PROJECT_VIEW);
+                    if (toolWindow != null) {
+                        toolWindow.activate(() -> {
+                            ProgressManager.getInstance().run(new StartingDevModeTask(op, devModeService));
+                        });
+                        return;
                     }
                 }
-
-                nocalhostSettings.setDevModeServiceToProjectPath(devModeService);
-
-                var task = new OpenProjectTask();
-                RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(projectPathReference.get()), task.withRunConfigurators());
             }
+
+            nocalhostSettings.setDevModeServiceToProjectPath(devModeService);
+
+            var task = new OpenProjectTask();
+            RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(path), task.withRunConfigurators());
         });
+    }
+
+    private void openDevConfigTools() {
+        try {
+            var x = new URIBuilder("https://nocalhost.dev/tools");
+            x.addParameter("from", "daemon");
+            x.addParameter("name", node.resourceName());
+            x.addParameter("type", node.getKubeResource().getKind());
+            x.addParameter("namespace", namespace);
+            x.addParameter("container", selectedContainer.get());
+            x.addParameter("kubeconfig", kubeConfigPath.toString());
+            x.addParameter("application", node.applicationName());
+            BrowserUtil.browse(x.build().toString());
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Failed to open browser",
+                    "Error occurred while opening browser", ex);
+        }
     }
 }

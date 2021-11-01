@@ -38,7 +38,7 @@ public class NocalhostPhpDebugRunner implements ProgramRunner<RunnerSettings> {
         }
         ExecutionManager.getInstance(project).startRunProfile(environment, state -> {
             if (state instanceof NocalhostProfileState) {
-                ((NocalhostProfileState) state).prepareDevInfo();
+                ((NocalhostProfileState) state).prepare();
             }
 
             FileDocumentManager.getInstance().saveAllDocuments();

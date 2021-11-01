@@ -2,6 +2,8 @@ package dev.nocalhost.plugin.intellij.nhctl;
 
 import com.google.common.collect.Lists;
 
+import com.intellij.openapi.project.Project;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -14,6 +16,10 @@ import lombok.Setter;
 public class NhctlAssociateQueryerCommand extends BaseCommand {
     private boolean current;
     private String localSync;
+
+    public NhctlAssociateQueryerCommand(Project project) {
+        super(project, false);
+    }
 
     @Override
     protected List<String> compute() {

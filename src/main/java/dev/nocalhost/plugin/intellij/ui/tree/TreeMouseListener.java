@@ -201,10 +201,7 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new DebugAction(project, resourceNode));
         actionGroup.add(SEPARATOR);
 
-        if ( ! nhctlDescribeService.isPossess() || ! NhctlDescribeServiceUtil.isDeveloping(nhctlDescribeService)) {
-            actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
-        }
-
+        actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
         actionGroup.add(new ConfigAction(project, resourceNode));
         actionGroup.add(new EditManifestAction(project, resourceNode));
         actionGroup.add(new PortForwardAction(project, resourceNode));

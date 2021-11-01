@@ -29,7 +29,7 @@ public class ResumeSyncAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                var cmd = new NhctlSyncCommand();
+                var cmd = new NhctlSyncCommand(project);
                 cmd.setResume(true);
                 cmd.setNamespace(result.getServicePack().getNamespace());
                 cmd.setKubeConfig(Paths.get(result.getKubeconfigPath()));

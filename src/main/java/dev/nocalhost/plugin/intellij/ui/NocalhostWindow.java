@@ -62,7 +62,7 @@ public class NocalhostWindow implements Disposable {
         DefaultActionGroup moreActionGroup = new DefaultActionGroup();
         moreActionGroup.getTemplatePresentation().setText("More");
         moreActionGroup.getTemplatePresentation().setDescription("More");
-        moreActionGroup.getTemplatePresentation().setIcon(AllIcons.Actions.More);
+        moreActionGroup.getTemplatePresentation().setIcon(AllIcons.General.Settings);
         moreActionGroup.setPopup(true);
         moreActionGroup.add(new CleanConfigurationAction(project));
 

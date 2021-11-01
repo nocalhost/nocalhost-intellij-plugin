@@ -49,7 +49,7 @@ public class NocalhostJavaDebugRunner implements ProgramRunner<RunnerSettings> {
     public void execute(@NotNull ExecutionEnvironment environment) throws ExecutionException {
         ExecutionManager.getInstance(environment.getProject()).startRunProfile(environment, state -> {
             NocalhostProfileState nocalhostProfileState = (NocalhostProfileState) state;
-            nocalhostProfileState.prepareDevInfo();
+            nocalhostProfileState.prepare();
             FileDocumentManager.getInstance().saveAllDocuments();
             RemoteConnection connection = new RemoteConnection(true, "127.0.0.1", nocalhostProfileState.getDebugPort(), false);
             return attachVirtualMachine(state, environment, connection);

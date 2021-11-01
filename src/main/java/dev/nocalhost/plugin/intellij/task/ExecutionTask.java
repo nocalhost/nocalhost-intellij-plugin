@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +38,8 @@ import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpConfiguration
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfiguration;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfigurationType;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlDevAssociateCommand;
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -70,13 +73,17 @@ public class ExecutionTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable ex) {
-        ErrorUtil.dealWith(this.getProject(), "Nocalhost",
+        ErrorUtil.dealWith(this.getProject(), "Failed to start " + action,
                 String.format("Error occurred while starting `%s`", action), ex);
     }
 
-    @SneakyThrows
     @Override
+    @SneakyThrows
     public void run(@NotNull ProgressIndicator indicator) {
+        // switch context
+        associate(project.getBasePath());
+        NocalhostContextManager.getInstance(project).refresh();
+        // check sync status
         var path = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
         var opts = new NhctlSyncStatusOptions(path, service.getNamespace());
         opts.setWait(true);
@@ -160,7 +167,19 @@ public class ExecutionTask extends Task.Backgroundable {
         try {
             return container.getDev().getDebug().getRemoteDebugPort();
         } catch (Exception ex) {
-            throw new ExecutionException("The configuration of the service container is incorrect.");
+            throw new ExecutionException("Cannot resolve remoteDebugPort.");
         }
+    }
+
+    private void associate(String path) throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        var cmd = new NhctlDevAssociateCommand(project);
+        cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig()));
+        cmd.setNamespace(service.getNamespace());
+        cmd.setLocalSync(Paths.get(path).toString());
+        cmd.setContainer(service.getContainerName());
+        cmd.setDeployment(service.getServiceName());
+        cmd.setControllerType(service.getServiceType());
+        cmd.setApplicationName(service.getApplicationName());
+        cmd.execute();
     }
 }

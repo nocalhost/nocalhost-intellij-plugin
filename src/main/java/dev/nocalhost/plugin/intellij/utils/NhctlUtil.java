@@ -2,6 +2,7 @@ package dev.nocalhost.plugin.intellij.utils;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 
 import org.apache.commons.lang3.StringUtils;
@@ -53,8 +54,8 @@ public final class NhctlUtil {
         }
     }
 
-    public static @NotNull String getDevPodName(@NotNull NocalhostContext context) throws ExecutionException {
-        var cmd = new NhctlDevPodCommand();
+    public static @NotNull String getDevPodName(Project project, @NotNull NocalhostContext context) throws ExecutionException {
+        var cmd = new NhctlDevPodCommand(project);
         cmd.setNamespace(context.getNamespace());
         cmd.setDeployment(context.getServiceName());
         cmd.setKubeConfig(context.getKubeConfigPath());

@@ -2,6 +2,8 @@ package dev.nocalhost.plugin.intellij.nhctl;
 
 import com.google.common.collect.Lists;
 
+import com.intellij.openapi.project.Project;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -15,6 +17,10 @@ public class NhctlSyncStatusCommand extends BaseCommand {
     private boolean override;
     private String controllerType;
     private String applicationName;
+
+    public NhctlSyncStatusCommand(Project project) {
+        super(project);
+    }
 
     @Override
     protected List<String> compute() {

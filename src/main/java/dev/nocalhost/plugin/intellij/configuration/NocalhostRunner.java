@@ -31,7 +31,7 @@ public class NocalhostRunner implements ProgramRunner<RunnerSettings> {
     public void execute(@NotNull ExecutionEnvironment environment) throws ExecutionException {
         ExecutionManager.getInstance(environment.getProject()).startRunProfile(environment, state -> {
             if (state instanceof NocalhostProfileState) {
-                ((NocalhostProfileState) state).prepareDevInfo();
+                ((NocalhostProfileState) state).prepare();
             }
             FileDocumentManager.getInstance().saveAllDocuments();
             ExecutionResult executionResult = state.execute(environment.getExecutor(), this);

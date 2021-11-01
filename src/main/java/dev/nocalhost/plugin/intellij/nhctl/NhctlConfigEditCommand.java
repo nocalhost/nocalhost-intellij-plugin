@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import com.google.common.collect.Lists;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -21,6 +22,10 @@ public class NhctlConfigEditCommand extends BaseCommand {
     private String yaml;
     private String application;
     private String controllerType;
+
+    public NhctlConfigEditCommand(Project project) {
+        super(project);
+    }
 
     @Override
     protected List<String> compute() {

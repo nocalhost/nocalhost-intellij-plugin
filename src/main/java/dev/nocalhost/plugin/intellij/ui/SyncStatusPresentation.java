@@ -106,7 +106,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             }
 
             var token = TypeToken.getParameterized(List.class, NhctlDevAssociateQueryResult.class).getType();
-            var command = new NhctlAssociateQueryerCommand();
+            var command = new NhctlAssociateQueryerCommand(project);
             command.setLocalSync(Paths.get(path).toString());
 
             while ( ! project.isDisposed()) {

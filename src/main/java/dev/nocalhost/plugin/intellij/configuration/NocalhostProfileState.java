@@ -50,7 +50,7 @@ public class NocalhostProfileState extends CommandLineState {
     private static final String DEFAULT_SHELL = "sh";
 
     private final List<Disposable> disposables = Lists.newArrayList();
-    private final AtomicReference<NocalhostDevInfo> devInfoHolder = new AtomicReference<>(null);
+    private final AtomicReference<NocalhostRunnerContext> refContext = new AtomicReference<>(null);
 
     public NocalhostProfileState(ExecutionEnvironment environment) {
         super(environment);
@@ -58,9 +58,9 @@ public class NocalhostProfileState extends CommandLineState {
 
     @Override
     protected @NotNull ProcessHandler startProcess() throws ExecutionException {
-        NocalhostDevInfo dev = devInfoHolder.get();
+        NocalhostRunnerContext dev = refContext.get();
         if (dev == null) {
-            throw new ExecutionException("Call prepareDevInfo() before this method");
+            throw new ExecutionException("Call prepare() before this method");
         }
         NocalhostContext context = dev.getContext();
 
@@ -79,23 +79,25 @@ public class NocalhostProfileState extends CommandLineState {
     }
 
     public String getDebugPort() {
-        NocalhostDevInfo dev = devInfoHolder.get();
+        NocalhostRunnerContext dev = refContext.get();
         return dev.getDebug().getLocalPort();
     }
 
-    public void prepareDevInfo() throws ExecutionException {
+    public void prepare() throws ExecutionException {
         try {
             var context = NocalhostContextManager.getInstance(getEnvironment().getProject()).getContext();
             if (context == null) {
-                throw new ExecutionException("Service is not in dev mode.");
+                throw new ExecutionException("Nocalhost context is null.");
             }
 
             var desService = NhctlUtil.getDescribeService(context);
-            if (!NhctlDescribeServiceUtil.developStarted(desService) || !projectPathMatched(desService)) {
+            if ( ! NhctlDescribeServiceUtil.developStarted(desService)) {
                 throw new ExecutionException("Service is not in dev mode.");
             }
-
-            if (!isSyncStatusIdle()) {
+            if ( ! isProjectPathMatched(desService)) {
+                throw new ExecutionException("Project path does not match.");
+            }
+            if ( ! isSyncStatusIdle()) {
                 throw new ExecutionException("File sync has not yet completed.");
             }
 
@@ -114,8 +116,8 @@ public class NocalhostProfileState extends CommandLineState {
                 throw new ExecutionException("Service container config not found.");
             }
 
-            NocalhostDevInfo.Command command = new NocalhostDevInfo.Command(resolveRunCommand(container), resolveDebugCommand(container));
-            NocalhostDevInfo.Debug debug = null;
+            NocalhostRunnerContext.Debug debug = null;
+            NocalhostRunnerContext.Command command = new NocalhostRunnerContext.Command(resolveRunCommand(container), resolveDebugCommand(container));
             if (isDebugExecutor()) {
                 if (!StringUtils.isNotEmpty(command.getDebug())) {
                     throw new ExecutionException("Debug command not configured");
@@ -131,7 +133,7 @@ public class NocalhostProfileState extends CommandLineState {
                         throw new ExecutionException("Remote debug port not configured.");
                     }
                     String localPort = startDebugPortForward(context, remotePort);
-                    debug = new NocalhostDevInfo.Debug(remotePort, localPort);
+                    debug = new NocalhostRunnerContext.Debug(remotePort, localPort);
                 }
             } else {
                 if (!StringUtils.isNotEmpty(command.getRun())) {
@@ -139,7 +141,7 @@ public class NocalhostProfileState extends CommandLineState {
                 }
             }
 
-            devInfoHolder.set(new NocalhostDevInfo(
+            refContext.set(new NocalhostRunnerContext(
                     debug,
                     container.getDev().getShell(),
                     command,
@@ -162,7 +164,7 @@ public class NocalhostProfileState extends CommandLineState {
 
         var cmd = new GeneralCommandLine(Lists.newArrayList(
                 NhctlUtil.binaryPath(), "ssh", "reverse",
-                "--pod", NhctlUtil.getDevPodName(context),
+                "--pod", NhctlUtil.getDevPodName(project, context),
                 "--local", port,
                 "--remote", port,
                 "--sshport", "50022",
@@ -204,7 +206,7 @@ public class NocalhostProfileState extends CommandLineState {
         NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
 
         try {
-            var podName = NhctlUtil.getDevPodName(context);
+            var podName = NhctlUtil.getDevPodName(getEnvironment().getProject(), context);
             NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(context.getKubeConfigPath(), context.getNamespace());
             nhctlPortForwardStartOptions.setDevPorts(List.of(":" + remotePort));
             nhctlPortForwardStartOptions.setDeployment(context.getServiceName());
@@ -229,8 +231,8 @@ public class NocalhostProfileState extends CommandLineState {
     }
 
     public void stopDebugPortForward() {
-        NocalhostDevInfo dev = devInfoHolder.get();
-        NocalhostDevInfo.Debug debug = dev.getDebug();
+        NocalhostRunnerContext dev = refContext.get();
+        NocalhostRunnerContext.Debug debug = dev.getDebug();
         if (debug == null) {
             return;
         }
@@ -274,7 +276,7 @@ public class NocalhostProfileState extends CommandLineState {
         return nhctlCommand.getConfig(nocalhostContext.getApplicationName(), opts, NhctlRawConfig.class);
     }
 
-    private boolean projectPathMatched(NhctlDescribeService nhctlDescribeService) {
+    private boolean isProjectPathMatched(NhctlDescribeService nhctlDescribeService) {
         var basePath = Paths.get(getEnvironment().getProject().getBasePath()).toString();
         for (String path : nhctlDescribeService.getLocalAbsoluteSyncDirFromDevStartPlugin()) {
             if (StringUtils.equals(basePath, path)) {
@@ -314,11 +316,11 @@ public class NocalhostProfileState extends CommandLineState {
     }
 
     public void startup() throws ExecutionException {
-        var context = devInfoHolder.get();
-        if (context == null) {
-            throw new ExecutionException("Call prepareDevInfo() before this method");
+        var dev = refContext.get();
+        if (dev == null) {
+            throw new ExecutionException("Call prepare() before this method");
         }
-        if (context.getContainer().getDev().isHotReload()) {
+        if (dev.getContainer().getDev().isHotReload()) {
             disposables.add(new HotReload(getEnvironment()).withExec());
         }
     }

@@ -2,6 +2,7 @@ package dev.nocalhost.plugin.intellij.utils;
 
 import com.intellij.openapi.util.SystemInfo;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -12,9 +13,16 @@ public class PathsUtil {
     public static boolean isSame(String a, String b) {
         try {
             return Files.isSameFile(Paths.get(a), Paths.get(b));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (IOException ignore) {
+            return false;
         }
+    }
+
+    public static boolean isExists(String path) {
+        if (StringUtils.isEmpty(path)) {
+            return false;
+        }
+        return Files.exists(Paths.get(path));
     }
 
     // https://nocalhost.coding.net/p/nocalhost/subtasks/issues/561/detail
