@@ -75,7 +75,7 @@ public class NocalhostProfileState extends CommandLineState {
                 "--kubeconfig", context.getKubeConfigPath().toString(),
                 "--namespace", context.getNamespace()
         );
-        return new NocalhostDevProcessHandler(new GeneralCommandLine(commandLine), getEnvironment(), this);
+        return new NocalhostDevProcessHandler(new GeneralCommandLine(commandLine).withCharset(Charsets.UTF_8), getEnvironment(), this);
     }
 
     public String getDebugPort() {
