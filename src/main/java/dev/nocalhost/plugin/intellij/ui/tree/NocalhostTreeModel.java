@@ -102,43 +102,45 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
 
     private void updateClusters() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
-                Map<String, String> map = Maps.newHashMap();
-                List<ClusterNode> clusterNodes = Lists.newArrayList();
+            Map<String, String> map = Maps.newHashMap();
+            List<ClusterNode> clusterNodes = Lists.newArrayList();
 
-                for (StandaloneCluster standaloneCluster : settings.getStandaloneClusters()) {
-                    KubeConfig kubeConfig = DataUtils.fromYaml(
-                            standaloneCluster.getRawKubeConfig(), KubeConfig.class);
-                    clusterNodes.add(new ClusterNode(standaloneCluster.getRawKubeConfig(),
-                            kubeConfig));
+            for (StandaloneCluster standaloneCluster : settings.getStandaloneClusters()) {
+                try {
+                    KubeConfig kubeConfig = DataUtils.fromYaml(standaloneCluster.getRawKubeConfig(), KubeConfig.class);
+                    clusterNodes.add(new ClusterNode(standaloneCluster.getRawKubeConfig(), kubeConfig));
+                } catch (Exception ex) {
+                    ErrorUtil.dealWith(project, "Failed to load cluster",
+                        "Error occurred while loading standalone cluster.", ex);
+                }
+            }
+
+            for (NocalhostAccount nocalhostAccount : settings.getNocalhostAccounts()) {
+                if ( ! TokenUtil.isValid(nocalhostAccount.getJwt())) {
+                    continue;
                 }
 
-                for (NocalhostAccount nocalhostAccount : settings.getNocalhostAccounts()) {
-                    if (!TokenUtil.isValid(nocalhostAccount.getJwt())) {
-                        continue;
-                    }
-
+                try {
                     List<ServiceAccount> serviceAccounts = nocalhostApi.listServiceAccount(
                             nocalhostAccount.getServer(), nocalhostAccount.getJwt());
                     for (ServiceAccount serviceAccount : serviceAccounts) {
-                        KubeConfig kubeConfig = DataUtils.fromYaml(
-                                serviceAccount.getKubeConfig(), KubeConfig.class);
-                        clusterNodes.add(new ClusterNode(nocalhostAccount, serviceAccount,
-                                serviceAccount.getKubeConfig(), kubeConfig));
+                        KubeConfig kubeConfig = DataUtils.fromYaml(serviceAccount.getKubeConfig(), KubeConfig.class);
+                        clusterNodes.add(new ClusterNode(nocalhostAccount, serviceAccount, serviceAccount.getKubeConfig(), kubeConfig));
 
                         var key = computeKey(nocalhostAccount, serviceAccount);
                         map.put(key, serviceAccount.getKubeConfig());
                         notifyToNhctl(key, serviceAccount.getKubeConfig());
                     }
+                } catch (Exception ex) {
+                    ErrorUtil.dealWith(project, "Failed to load cluster",
+                            "Error occurred while loading cluster from Nocalhost account.", ex);
                 }
-
-                previous.set(map);
-                settings.setKubeConfigMap(map);
-                clusters.set(clusterNodes);
-            } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Loading clusters error",
-                        "Error occurs while loading clusters", ex);
             }
+
+            previous.set(map);
+            clusters.set(clusterNodes);
+            settings.setKubeConfigMap(map);
+
             ApplicationManager.getApplication().invokeLater(() -> {
                 var nodes = clusters.get();
                 for (ClusterNode clusterNode : nodes) {
