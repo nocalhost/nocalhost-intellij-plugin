@@ -10,11 +10,12 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 public class NocalhostContext {
-    private Path kubeConfigPath;
-    private String namespace;
-    private String applicationName;
-    private String serviceName;
-    private String serviceType;
-    private String containerName;
-    private String sha;
+    private final Path kubeConfigPath;
+    private final String applicationName;
+    private final String containerName;
+    private final String serviceName;
+    private final String serviceType;
+    private final String namespace;
+    private final String server;
+    private final String sha;
 }

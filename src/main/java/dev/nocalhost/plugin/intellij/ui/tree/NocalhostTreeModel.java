@@ -216,10 +216,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     }
 
     void updateNamespaces(ClusterNode clusterNode) {
-        updateNamespaces(clusterNode, false);
+        updateNamespaces(clusterNode, false, () -> {});
     }
 
-    void updateNamespaces(ClusterNode clusterNode, boolean force) {
+    void updateNamespaces(ClusterNode clusterNode, boolean force, @NotNull Runnable next) {
         if (!force && !tree.isExpanded(new TreePath(getPathToRoot(clusterNode)))) {
             return;
         }
@@ -271,6 +271,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 final List<NamespaceNode> pendingNamespaces = namespaceNodes;
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshNamespaceNodes(clusterNode, pendingNamespaces);
+                    next.run();
                 });
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading namespaces error",
@@ -321,10 +322,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     }
 
     void updateApplications(NamespaceNode namespaceNode) {
-        updateApplications(namespaceNode, false);
+        updateApplications(namespaceNode, false, () -> {});
     }
 
-    void updateApplications(NamespaceNode namespaceNode, boolean force) {
+    void updateApplications(NamespaceNode namespaceNode, boolean force, @NotNull Runnable next) {
         if (!force && !tree.isExpanded(new TreePath(getPathToRoot(namespaceNode)))) {
             return;
         }
@@ -346,8 +347,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                             .collect(Collectors.toList());
                 }
                 final List<ApplicationNode> finalApplicationNodes = applicationNodes;
-                ApplicationManager.getApplication().invokeLater(() ->
-                        refreshApplicationNodes(namespaceNode, finalApplicationNodes));
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    refreshApplicationNodes(namespaceNode, finalApplicationNodes);
+                    next.run();
+                });
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading applications error",
                         "Error occurs while loading applications", e);
@@ -421,10 +424,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     }
 
     void updateResources(ResourceTypeNode resourceTypeNode) {
-        updateResources(resourceTypeNode, false);
+        updateResources(resourceTypeNode, false, () -> {});
     }
 
-    void updateResources(ResourceTypeNode resourceTypeNode, boolean force) {
+    void updateResources(ResourceTypeNode resourceTypeNode, boolean force, @NotNull Runnable next) {
         if (!force && !tree.isExpanded(new TreePath(getPathToRoot(resourceTypeNode)))) {
             return;
         }
@@ -436,6 +439,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 }
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshResourceNodes(resourceTypeNode, resources);
+                    next.run();
                 });
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading resources error",
