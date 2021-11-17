@@ -9,6 +9,7 @@ import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.messages.MessageBusConnection;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -22,6 +23,7 @@ import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import dev.nocalhost.plugin.intellij.data.NocalhostContext;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
@@ -131,124 +133,81 @@ public class NocalhostTree extends Tree implements Disposable {
         ).action();
     }
 
+    private String compress(String raw) {
+        return raw.replaceAll("[\\s\\t\\n\\r]", "");
+    }
+
     private void expendWorkloadNode() {
         try {
             var context = NocalhostContextManager.getInstance(project).getContext();
             if (context == null) {
                 return;
             }
-            final String rawKubeConfig = Files.readString(context.getKubeConfigPath(), StandardCharsets.UTF_8);
 
             final Object root = model.getRoot();
+            final String rawKubeConfig = Files.readString(context.getKubeConfigPath(), StandardCharsets.UTF_8);
 
-            final long expired = System.currentTimeMillis() + 5 * 60 * 1000;
-
-            ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                final AtomicReference<ClusterNode> clusterNodeAtomicReference = new AtomicReference<>(null);
-                while (clusterNodeAtomicReference.get() == null && System.currentTimeMillis() < expired) {
-                    ApplicationManager.getApplication().runReadAction(() -> {
-                        try {
-                            for (int i = 0; i < model.getChildCount(root); i++) {
-                                ClusterNode clusterNode = (ClusterNode) model.getChild(root, i);
-                                if (StringUtils.equals(clusterNode.getRawKubeConfig(), rawKubeConfig)) {
-                                    clusterNodeAtomicReference.set(clusterNode);
-                                    model.updateNamespaces(clusterNode, true);
-                                    break;
-                                }
-                            }
-
-                        } catch (Exception ignore) {
+            ApplicationManager.getApplication().runReadAction(() -> {
+                try {
+                    for (int i = 0; i < model.getChildCount(root); i++) {
+                        ClusterNode clusterNode = (ClusterNode) model.getChild(root, i);
+                        if (StringUtils.equals(compress(clusterNode.getRawKubeConfig()), compress(rawKubeConfig))) {
+                            model.updateNamespaces(clusterNode, true, () -> _locateNamespace(clusterNode, context));
+                            break;
                         }
-                    });
-                    try {
-                        Thread.sleep(500);
-                    } catch (Exception ignore) {
                     }
+                } catch (Exception ignore) {
                 }
-
-                final AtomicReference<NamespaceNode> namespaceNodeAtomicReference = new AtomicReference<>(null);
-                while (namespaceNodeAtomicReference.get() == null && System.currentTimeMillis() < expired) {
-                    ApplicationManager.getApplication().runReadAction(() -> {
-                        try {
-                            for (int i = 0; i < model.getChildCount(clusterNodeAtomicReference.get()); i++) {
-                                NamespaceNode namespaceNode = (NamespaceNode) model.getChild(clusterNodeAtomicReference.get(), i);
-                                if (StringUtils.equals(namespaceNode.getNamespace(), context.getNamespace())) {
-                                    namespaceNodeAtomicReference.set(namespaceNode);
-                                    model.updateApplications(namespaceNode, true);
-                                    break;
-                                }
-                            }
-                        } catch (Exception ignore) {
-                        }
-                    });
-                    try {
-                        Thread.sleep(500);
-                    } catch (Exception ignore) {
-                    }
-                }
-
-                final AtomicReference<ApplicationNode> applicationNodeAtomicReference = new AtomicReference<>(null);
-                while (applicationNodeAtomicReference.get() == null && System.currentTimeMillis() < expired) {
-                    ApplicationManager.getApplication().runReadAction(() -> {
-                        try {
-                            for (int i = 0; i < model.getChildCount(namespaceNodeAtomicReference.get()); i++) {
-                                ApplicationNode applicationNode = (ApplicationNode) model.getChild(namespaceNodeAtomicReference.get(), i);
-                                if (StringUtils.equals(applicationNode.getName(), context.getApplicationName())) {
-                                    applicationNodeAtomicReference.set(applicationNode);
-                                    break;
-                                }
-                            }
-                        } catch (Exception ignore) {
-                        }
-                    });
-                    try {
-                        Thread.sleep(500);
-                    } catch (Exception ignore) {
-                    }
-                }
-
-                final AtomicReference<ResourceNode> resourceNodeAtomicReference = new AtomicReference<>(null);
-                while (resourceNodeAtomicReference.get() == null && System.currentTimeMillis() < expired) {
-                    ApplicationManager.getApplication().runReadAction(() -> {
-                        try {
-                            OUTER:
-                            for (int i = 0; i < model.getChildCount(applicationNodeAtomicReference.get()); i++) {
-                                ResourceGroupNode resourceGroupNode = (ResourceGroupNode) model.getChild(applicationNodeAtomicReference.get(), i);
-                                if (!StringUtils.equals(resourceGroupNode.getName(), "Workloads")) {
-                                    continue;
-                                }
-                                for (int j = 0; j < model.getChildCount(resourceGroupNode); j++) {
-                                    ResourceTypeNode resourceTypeNode = (ResourceTypeNode) model.getChild(resourceGroupNode, j);
-                                    if (!StringUtils.equalsIgnoreCase(RESOURCE_TYPE_MAP.get(resourceTypeNode.getName()), context.getServiceType())) {
-                                        continue;
-                                    }
-                                    model.updateResources(resourceTypeNode, true);
-                                    for (int k = 0; k < model.getChildCount(resourceTypeNode); k++) {
-                                        ResourceNode resourceNode = (ResourceNode) model.getChild(resourceTypeNode, k);
-                                        if (StringUtils.equals(resourceNode.resourceName(), context.getServiceName())) {
-                                            resourceNodeAtomicReference.set(resourceNode);
-                                            break OUTER;
-                                        }
-                                    }
-                                }
-                            }
-                        } catch (Exception ignore) {
-                        }
-                    });
-                    try {
-                        Thread.sleep(500);
-                    } catch (Exception ignore) {
-                    }
-                }
-
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    if (resourceNodeAtomicReference.get() != null) {
-                        TreePath path = new TreePath(model.getPathToRoot(resourceNodeAtomicReference.get()));
-                        this.scrollPathToVisible(path);
-                    }
-                });
             });
         } catch (Exception ignore) {
+        }
+    }
+
+    private void _locateNamespace(@NotNull ClusterNode node, @NotNull NocalhostContext context) {
+        for (int i = 0; i < model.getChildCount(node); i++) {
+            var namespaceNode = (NamespaceNode) model.getChild(node, i);
+            if (StringUtils.equals(namespaceNode.getNamespace(), context.getNamespace())) {
+                model.updateApplications(namespaceNode, true, () -> _locateApplication(namespaceNode, context));
+                break;
+            }
+        }
+    }
+
+    private void _locateApplication(@NotNull NamespaceNode node, @NotNull NocalhostContext context) {
+        for (int i = 0; i < model.getChildCount(node); i++) {
+            var applicationNode = (ApplicationNode) model.getChild(node, i);
+            if (StringUtils.equals(applicationNode.getName(), context.getApplicationName())) {
+                _locateResource(applicationNode, context);
+                break;
+            }
+        }
+    }
+
+    private void _locateResource(@NotNull ApplicationNode node, @NotNull NocalhostContext context) {
+        for (int i = 0; i < model.getChildCount(node); i++) {
+            var group = (ResourceGroupNode) model.getChild(node, i);
+            if (StringUtils.equals(group.getName(), "Workloads")) {
+                for (int j = 0; j < model.getChildCount(group); j++) {
+                    var resourceTypeNode = (ResourceTypeNode) model.getChild(group, j);
+                    if (StringUtils.equalsIgnoreCase(RESOURCE_TYPE_MAP.get(resourceTypeNode.getName()), context.getServiceType())) {
+                        model.updateResources(resourceTypeNode, true, () -> {
+                            for (int k = 0; k < model.getChildCount(resourceTypeNode); k++) {
+                                ResourceNode resourceNode = (ResourceNode) model.getChild(resourceTypeNode, k);
+                                if (StringUtils.equals(resourceNode.resourceName(), context.getServiceName())) {
+                                    ApplicationManager.getApplication().invokeLater(() -> {
+                                        var path = new TreePath(model.getPathToRoot(resourceNode));
+                                        this.scrollPathToVisible(path);
+                                        this.setSelectionPath(path);
+                                    });
+                                    break;
+                                }
+                            }
+                        });
+                        break;
+                    }
+                }
+                break;
+            }
         }
     }
 
