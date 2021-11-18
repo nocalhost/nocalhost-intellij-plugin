@@ -203,7 +203,12 @@ public class TreeMouseListener extends MouseAdapter {
 
         actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
         actionGroup.add(new ConfigAction(project, resourceNode));
-        actionGroup.add(new EditManifestAction(project, resourceNode));
+
+        // https://nocalhost.coding.net/p/nocalhost/subtasks/issues/792/detail
+        if ( ! NhctlDescribeServiceUtil.isDuplicateMode(nhctlDescribeService)) {
+            actionGroup.add(new EditManifestAction(project, resourceNode));
+        }
+
         actionGroup.add(new PortForwardAction(project, resourceNode));
         actionGroup.add(new LogsAction(project, resourceNode));
         actionGroup.add(SEPARATOR);
@@ -214,7 +219,7 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new CopyTerminalAction(project, resourceNode));
 
         if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)
-                && !PathsUtil.isSame(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
+                && PathsUtil.isDiff(project.getBasePath(), resourceNode.getNhctlDescribeService().getAssociate())) {
             actionGroup.add(SEPARATOR);
             actionGroup.add(new OpenProjectAction(project, resourceNode));
         }
