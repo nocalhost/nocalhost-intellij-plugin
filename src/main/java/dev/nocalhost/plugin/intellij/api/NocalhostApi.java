@@ -93,6 +93,17 @@ public class NocalhostApi {
             if ( ! response.isSuccessful()) {
                 throw new NocalhostApiException(url, "sleep", response.code(), "");
             }
+            var body = response.body();
+            if (body != null) {
+                var text = CharStreams.toString(new InputStreamReader(body.byteStream(), Charsets.UTF_8));
+                NocalhostApiResponse<Object> resp = DataUtils.GSON.fromJson(
+                        text,
+                        TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType()
+                );
+                if (resp.getCode() != 0) {
+                    throw new NocalhostApiException(url, "sleep", response.code(), resp.getMessage());
+                }
+            }
         }
     }
 
@@ -106,6 +117,17 @@ public class NocalhostApi {
         try (Response response = client.newCall(request).execute()) {
             if ( ! response.isSuccessful()) {
                 throw new NocalhostApiException(url, "wakeup", response.code(), "");
+            }
+            var body = response.body();
+            if (body != null) {
+                var text = CharStreams.toString(new InputStreamReader(body.byteStream(), Charsets.UTF_8));
+                NocalhostApiResponse<Object> resp = DataUtils.GSON.fromJson(
+                        text,
+                        TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType()
+                );
+                if (resp.getCode() != 0) {
+                    throw new NocalhostApiException(url, "wakeup", response.code(), resp.getMessage());
+                }
             }
         }
     }
