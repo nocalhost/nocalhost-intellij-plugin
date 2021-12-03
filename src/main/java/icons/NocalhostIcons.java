@@ -35,5 +35,6 @@ public interface NocalhostIcons {
     Icon ClusterWarning = IconLoader.getIcon("/icons/cluster_warning.svg", NocalhostIcons.class);
 
     Icon DevSpace = IconLoader.getIcon("/icons/devspace.svg", NocalhostIcons.class);
+    Icon DevSpaceAsleep = IconLoader.getIcon("/icons/devspace_sleep.svg", NocalhostIcons.class);
     Icon DevSpaceViewer = IconLoader.getIcon("/icons/devspace_viewer.svg", NocalhostIcons.class);
 }

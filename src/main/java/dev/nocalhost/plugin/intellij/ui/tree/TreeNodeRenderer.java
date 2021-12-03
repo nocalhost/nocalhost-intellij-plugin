@@ -74,12 +74,8 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (value instanceof NamespaceNode) {
             NamespaceNode node = (NamespaceNode) value;
             append(node.getName());
+            setIcon(node.getIcon());
             setToolTipText(node.getName());
-            if (node.isDevSpaceViewer()) {
-                setIcon(NocalhostIcons.DevSpaceViewer);
-            } else {
-                setIcon(NocalhostIcons.DevSpace);
-            }
         }
 
         if (value instanceof ApplicationNode) {
