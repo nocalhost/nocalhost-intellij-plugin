@@ -27,10 +27,12 @@ import dev.nocalhost.plugin.intellij.ui.action.application.UpgradeAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.RemoveClusterAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.RenameClusterAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.ViewClusterKubeConfigAction;
+import dev.nocalhost.plugin.intellij.ui.action.namespace.AsleepAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.CleanDevSpacePersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallApplicationAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallStandaloneApplicationAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.ResetDevSpaceAction;
+import dev.nocalhost.plugin.intellij.ui.action.namespace.WakeupAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
@@ -134,9 +136,17 @@ public class TreeMouseListener extends MouseAdapter {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         if (namespaceNode.getClusterNode().getNocalhostAccount() != null) {
-            actionGroup.add(new InstallApplicationAction(project, namespaceNode));
-            actionGroup.add(SEPARATOR);
-            actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
+            if (namespaceNode.isAsleep()) {
+                actionGroup.add(new WakeupAction(project, namespaceNode));
+                actionGroup.add(new InstallApplicationAction(project, namespaceNode));
+                actionGroup.add(SEPARATOR);
+                actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
+            } else {
+                actionGroup.add(new InstallApplicationAction(project, namespaceNode));
+                actionGroup.add(SEPARATOR);
+                actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
+                actionGroup.add(new AsleepAction(project, namespaceNode));
+            }
         } else {
             actionGroup.add(new InstallStandaloneApplicationAction(project, namespaceNode));
         }

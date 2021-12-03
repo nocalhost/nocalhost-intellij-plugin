@@ -37,4 +37,9 @@ public interface NocalhostIcons {
     Icon DevSpace = IconLoader.getIcon("/icons/devspace.svg", NocalhostIcons.class);
     Icon DevSpaceAsleep = IconLoader.getIcon("/icons/devspace_sleep.svg", NocalhostIcons.class);
     Icon DevSpaceViewer = IconLoader.getIcon("/icons/devspace_viewer.svg", NocalhostIcons.class);
+
+    interface Menu {
+        Icon Asleep = IconLoader.getIcon("/icons/menu_asleep.svg", NocalhostIcons.class);
+        Icon Wakeup = IconLoader.getIcon("/icons/menu_wakeup.svg", NocalhostIcons.class);
+    }
 }

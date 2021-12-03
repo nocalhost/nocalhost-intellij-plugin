@@ -82,6 +82,34 @@ public class NocalhostApi {
         }
     }
 
+    public void forceAsleep(String server, String jwt, long devSpaceId) throws NocalhostApiException, IOException {
+        String url = String.format("%s/v2/dev_space/%s/sleep", server, devSpaceId);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("authorization", "Bearer " + jwt)
+                .post(RequestBody.create("".getBytes()))
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            if ( ! response.isSuccessful()) {
+                throw new NocalhostApiException(url, "sleep", response.code(), "");
+            }
+        }
+    }
+
+    public void forceWakeup(String server, String jwt, long devSpaceId) throws IOException, NocalhostApiException {
+        String url = String.format("%s/v2/dev_space/%s/wakeup", server, devSpaceId);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("authorization", "Bearer " + jwt)
+                .post(RequestBody.create("".getBytes()))
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            if ( ! response.isSuccessful()) {
+                throw new NocalhostApiException(url, "wakeup", response.code(), "");
+            }
+        }
+    }
+
     public List<ServiceAccount> listServiceAccount(String server, String jwt) throws NocalhostApiException, IOException {
         String url = NocalhostApiUrl.serviceAccounts(server);
         Request request = new Request.Builder()
