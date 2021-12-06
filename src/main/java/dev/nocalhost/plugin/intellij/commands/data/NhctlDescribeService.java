@@ -8,7 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class NhctlDescribeService {
-    private NhctlRawConfig rawConfig;
     private String actualName;
     private boolean portForwarded;
     private boolean syncing;

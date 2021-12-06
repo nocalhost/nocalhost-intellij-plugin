@@ -24,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.*;
@@ -32,12 +31,14 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileSetOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
@@ -129,7 +130,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         startDevelop(nhctlDescribeService.getAssociate());
                         return;
                     }
-                    // currently the service in the duplicate mode
+                    // the service in the `duplicate` mode currently
                     if (StringUtils.equals(nhctlDescribeService.getDevModeType(), DEV_MODE_DUPLICATE)) {
                         ApplicationManager.getApplication().invokeLater(() ->
                                 Messages.showMessageDialog(
@@ -140,7 +141,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         );
                         return;
                     }
-                    // currently the service in the replace mode
+                    // the service in the `replace` mode currently
                     if ( ! StringUtils.equals(mode, DEV_MODE_DUPLICATE)) {
                         ApplicationManager.getApplication().invokeLater(() ->
                                 Messages.showMessageDialog("Dev mode has been started.",
@@ -157,8 +158,6 @@ public class StartDevelopAction extends DumbAwareAction {
     }
 
     private void getContainers() {
-        List<String> containers;
-
         try {
             var cmd = new NhctlDevContainerListCommand(project);
             cmd.setNamespace(namespace);
@@ -166,17 +165,15 @@ public class StartDevelopAction extends DumbAwareAction {
             cmd.setDeployment(node.resourceName());
             cmd.setApplication(node.applicationName());
             cmd.setControllerType(node.getKubeResource().getKind());
-            containers = DataUtils.GSON.fromJson(cmd.execute(), TypeToken.getParameterized(List.class, String.class).getType());
+            List<String> containers = DataUtils.GSON.fromJson(cmd.execute(), TypeToken.getParameterized(List.class, String.class).getType());
+            if (containers.size() > 1) {
+                selectContainer(containers);
+            } else if (containers.size() == 1) {
+                selectedContainer.set(containers.get(0));
+                getAssociate();
+            }
         } catch (Exception ex) {
             ErrorUtil.dealWith(project, "Failed to get containers", "Error occurs while get containers", ex);
-            return;
-        }
-
-        if (containers.size() > 1) {
-            selectContainer(containers);
-        } else if (containers.size() == 1) {
-            selectedContainer.set(containers.get(0));
-            getAssociate();
         }
     }
 
@@ -245,20 +242,21 @@ public class StartDevelopAction extends DumbAwareAction {
     private void getGitUrl() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                var opts = new NhctlConfigOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
-                opts.setType(node.getKubeResource().getKind());
-                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                        node.applicationName(), opts, NhctlDescribeService.class);
+                opts.setControllerType(node.getKubeResource().getKind());
 
-                Optional<ServiceContainer> serviceContainerOptional = nhctlDescribeService
-                        .getRawConfig()
-                        .getContainers()
+                var devConfig = ApplicationManager
+                        .getApplication()
+                        .getService(NhctlCommand.class)
+                        .getConfig(node.applicationName(), opts, NhctlRawConfig.class);
+
+                var container = devConfig.getContainers()
                         .stream()
-                        .filter(e -> StringUtils.equals(e.getName(), selectedContainer.get()))
+                        .filter(x -> StringUtils.equals(x.getName(), selectedContainer.get()))
                         .findFirst();
-                if (serviceContainerOptional.isPresent()) {
-                    ServiceContainer serviceContainer = serviceContainerOptional.get();
+                if (container.isPresent()) {
+                    ServiceContainer serviceContainer = container.get();
                     if (serviceContainer.getDev() != null
                             && StringUtils.isNotEmpty(serviceContainer.getDev().getGitUrl())) {
                         cloneGitRepository(serviceContainer.getDev().getGitUrl());
@@ -266,9 +264,9 @@ public class StartDevelopAction extends DumbAwareAction {
                     }
                 }
 
-                if (nhctlDescribeService.getRawConfig().getContainers().size() == 1
-                        && StringUtils.equals(nhctlDescribeService.getRawConfig().getContainers().get(0).getName(), "")) {
-                    ServiceContainer serviceContainer = nhctlDescribeService.getRawConfig().getContainers().get(0);
+                if (devConfig.getContainers().size() == 1
+                        && StringUtils.equals(devConfig.getContainers().get(0).getName(), "")) {
+                    ServiceContainer serviceContainer = devConfig.getContainers().get(0);
                     if (serviceContainer.getDev() != null
                             && StringUtils.isNotEmpty(serviceContainer.getDev().getGitUrl())) {
                         cloneGitRepository(serviceContainer.getDev().getGitUrl());

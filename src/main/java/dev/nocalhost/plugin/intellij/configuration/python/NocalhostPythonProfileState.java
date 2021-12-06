@@ -25,8 +25,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.HotReload;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostRunnerContext;
@@ -64,7 +66,8 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             throw new ExecutionException("Project path does not match.");
         }
 
-        var containers = desService.getRawConfig().getContainers();
+        var devConfig = NhctlUtil.getDevConfig(context);
+        var containers = devConfig.getContainers();
         var container = containers.isEmpty() ? null : containers.get(0);
         if (StringUtils.isNotEmpty(context.getContainerName())) {
             for (ServiceContainer c : containers) {
@@ -80,7 +83,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
 
         NocalhostRunnerContext.Command command = new NocalhostRunnerContext.Command(resolveRunCommand(container), resolveDebugCommand(container));
         if (!StringUtils.isNotEmpty(command.getDebug())) {
-            throw new ExecutionException("Debug command is not configured");
+            throw new ExecutionException("Failed to resolve debug command.");
         }
 
         String port = resolveDebugPort(container);
