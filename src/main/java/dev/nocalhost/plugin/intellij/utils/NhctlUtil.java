@@ -8,13 +8,17 @@ import com.intellij.openapi.util.SystemInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.data.NocalhostContext;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevPodCommand;
 
 public final class NhctlUtil {
@@ -34,6 +38,21 @@ public final class NhctlUtil {
 
     public static String binaryPath() {
         return NOCALHOST_BIN_DIR.resolve(getName()).toAbsolutePath().toString();
+    }
+
+    public static NhctlRawConfig getDevConfig(NocalhostContext context) throws ExecutionException {
+        try {
+            var opts = new NhctlConfigOptions(context.getKubeConfigPath(), context.getNamespace());
+            opts.setDeployment(context.getServiceName());
+            opts.setControllerType(context.getServiceType());
+
+            return ApplicationManager
+                    .getApplication()
+                    .getService(NhctlCommand.class)
+                    .getConfig(context.getApplicationName(), opts, NhctlRawConfig.class);
+        } catch (Exception ex) {
+            throw new ExecutionException(ex);
+        }
     }
 
     public static NhctlDescribeService getDescribeService(NocalhostContext context) throws ExecutionException {
