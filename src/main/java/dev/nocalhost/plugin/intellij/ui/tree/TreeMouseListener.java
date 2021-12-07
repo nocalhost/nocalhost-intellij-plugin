@@ -145,7 +145,9 @@ public class TreeMouseListener extends MouseAdapter {
                 actionGroup.add(new InstallApplicationAction(project, namespaceNode));
                 actionGroup.add(SEPARATOR);
                 actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
-                actionGroup.add(new AsleepAction(project, namespaceNode));
+                if (namespaceNode.canSleep()) {
+                    actionGroup.add(new AsleepAction(project, namespaceNode));
+                }
             }
         } else {
             actionGroup.add(new InstallStandaloneApplicationAction(project, namespaceNode));

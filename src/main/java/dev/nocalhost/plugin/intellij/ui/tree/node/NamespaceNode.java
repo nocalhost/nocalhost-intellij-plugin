@@ -27,13 +27,6 @@ public class NamespaceNode extends DefaultMutableTreeNode {
         this.namespacePack = namespacePack;
     }
 
-    public boolean isAsleep() {
-        if (namespacePack != null) {
-            return namespacePack.isAsleep();
-        }
-        return false;
-    }
-
     @Override
     public boolean isLeaf() {
         return false;
@@ -81,6 +74,17 @@ public class NamespaceNode extends DefaultMutableTreeNode {
     public void updateFrom(NamespaceNode o) {
         this.namespace = o.namespace;
         this.namespacePack = o.namespacePack;
+    }
+
+    public boolean canSleep() {
+        return namespacePack != null;
+    }
+
+    public boolean isAsleep() {
+        if (namespacePack != null) {
+            return namespacePack.isAsleep();
+        }
+        return false;
     }
 
     public Icon getIcon() {
