@@ -136,19 +136,17 @@ public class TreeMouseListener extends MouseAdapter {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
         if (namespaceNode.getClusterNode().getNocalhostAccount() != null) {
-            if (namespaceNode.isAsleep()) {
-                actionGroup.add(new WakeupAction(project, namespaceNode));
-                actionGroup.add(new InstallApplicationAction(project, namespaceNode));
-                actionGroup.add(SEPARATOR);
-                actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
-            } else {
-                actionGroup.add(new InstallApplicationAction(project, namespaceNode));
-                actionGroup.add(SEPARATOR);
-                actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
-                if (namespaceNode.canSleep()) {
+            if (namespaceNode.isDevSpace()) {
+                if (namespaceNode.isAsleep()) {
+                    actionGroup.add(new WakeupAction(project, namespaceNode));
+                } else {
                     actionGroup.add(new AsleepAction(project, namespaceNode));
                 }
             }
+            actionGroup.add(SEPARATOR);
+            actionGroup.add(new InstallApplicationAction(project, namespaceNode));
+            actionGroup.add(SEPARATOR);
+            actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
         } else {
             actionGroup.add(new InstallStandaloneApplicationAction(project, namespaceNode));
         }

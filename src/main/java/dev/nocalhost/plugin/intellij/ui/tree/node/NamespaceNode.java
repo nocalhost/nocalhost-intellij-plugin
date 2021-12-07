@@ -76,7 +76,7 @@ public class NamespaceNode extends DefaultMutableTreeNode {
         this.namespacePack = o.namespacePack;
     }
 
-    public boolean canSleep() {
+    public boolean isDevSpace() {
         return namespacePack != null;
     }
 
