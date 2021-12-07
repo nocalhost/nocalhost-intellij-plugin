@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -24,6 +25,9 @@ public class AsleepAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
+        if ( ! MessageDialogBuilder.yesNo("Sleep", "Confirm to sleep?").ask(project)) {
+            return;
+        }
         var account = node.getClusterNode().getNocalhostAccount();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
