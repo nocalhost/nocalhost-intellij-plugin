@@ -34,6 +34,8 @@ public class AsleepAction extends DumbAwareAction {
                 ApplicationManager.getApplication()
                                   .getService(NocalhostApi.class)
                                   .forceAsleep(account.getServer(), account.getJwt(), node.getNamespacePack().getSpaceId());
+                NocalhostNotifier.getInstance(project)
+                        .notifySuccess("Sleep successful", "");
             } catch (Exception ex) {
                 NocalhostNotifier.getInstance(project)
                                  .notifyError("Failed to sleep", ex.getMessage());

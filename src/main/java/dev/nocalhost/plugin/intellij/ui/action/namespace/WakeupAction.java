@@ -30,6 +30,8 @@ public class WakeupAction extends DumbAwareAction {
                 ApplicationManager.getApplication()
                                   .getService(NocalhostApi.class)
                                   .forceWakeup(account.getServer(), account.getJwt(), node.getNamespacePack().getSpaceId());
+                NocalhostNotifier.getInstance(project)
+                                 .notifySuccess("Wakeup successful", "");
             } catch (Exception ex) {
                 NocalhostNotifier.getInstance(project)
                                  .notifyError("Failed to wakeup", ex.getMessage());
