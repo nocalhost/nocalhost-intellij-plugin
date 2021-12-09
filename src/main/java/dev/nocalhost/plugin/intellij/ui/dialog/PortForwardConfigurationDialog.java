@@ -126,8 +126,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Nocalhost port forward error",
-                        "Error occurred while loading port forward list", e);
+                ErrorUtil.dealWith(project, "Failed to loading port-forward list",
+                        "Error occurred while loading port-forward list", e);
             }
 
             @SneakyThrows
