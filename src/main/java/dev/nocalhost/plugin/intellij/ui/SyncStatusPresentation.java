@@ -89,13 +89,13 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         this.statusBar = statusBar;
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
-                while (!project.isDisposed()) {
+            while ( ! project.isDisposed()) {
+                try {
                     nhctlSyncStatus.set(getNhctlSyncStatus());
                     Thread.sleep(3000);
+                } catch (Exception ex) {
+                    LOG.error("Failed to get sync status", ex);
                 }
-            } catch (Exception e) {
-                LOG.error("Fail to get sync status", e);
             }
         });
 
