@@ -80,24 +80,31 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
                     }
 
                     final Path dir = FileChooseUtil.chooseSingleDirectory(project);
-                    if (dir == null) {
-                        return;
+                    if (dir != null) {
+                        associate(dir);
                     }
-
-                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                        try {
-                            var opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace, this);
-                            opts.setLocalSync(dir.toString());
-                            opts.setContainer(container.get());
-                            opts.setDeployment(node.resourceName());
-                            opts.setControllerType(node.getKubeResource().getKind());
-                            project.getService(OutputCapturedNhctlCommand.class).devAssociate(node.applicationName(), opts);
-                        } catch (Exception ex) {
-                            ErrorUtil.dealWith(project, "Failed to associate project path",
-                                    "Error occurred while associating project path", ex);
-                        }
-                    });
                 });
+            }
+        });
+    }
+
+    private void associate(@NotNull Path dir) {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Associating project path") {
+            @Override
+            public void onThrowable(@NotNull Throwable ex) {
+                ErrorUtil.dealWith(project, "Failed to associate project path",
+                        "Error occurred while associating project path", ex);
+            }
+
+            @Override
+            @SneakyThrows
+            public void runTask(@NotNull ProgressIndicator indicator) {
+                var opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace, this);
+                opts.setLocalSync(dir.toString());
+                opts.setContainer(container.get());
+                opts.setDeployment(node.resourceName());
+                opts.setControllerType(node.getKubeResource().getKind());
+                project.getService(OutputCapturedNhctlCommand.class).devAssociate(node.applicationName(), opts);
             }
         });
     }
