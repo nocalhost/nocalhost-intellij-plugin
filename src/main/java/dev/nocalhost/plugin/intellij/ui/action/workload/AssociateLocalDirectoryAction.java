@@ -3,6 +3,7 @@ package dev.nocalhost.plugin.intellij.ui.action.workload;
 import com.google.gson.reflect.TypeToken;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAwareAction;
@@ -27,7 +28,6 @@ import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import lombok.SneakyThrows;
 
 public class AssociateLocalDirectoryAction extends DumbAwareAction {
-    private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
     private final AtomicReference<String> container = new AtomicReference<>("");
 
     private final Project project;
@@ -42,60 +42,62 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
         this.node = resourceNode;
         this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
-
-        outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        List<String> containers;
-
-        try {
-            var cmd = new NhctlDevContainerListCommand(project);
-            cmd.setNamespace(namespace);
-            cmd.setKubeConfig(kubeConfigPath);
-            cmd.setDeployment(node.resourceName());
-            cmd.setApplication(node.applicationName());
-            cmd.setControllerType(node.getKubeResource().getKind());
-            containers = DataUtils.GSON.fromJson(cmd.execute(), TypeToken.getParameterized(List.class, String.class).getType());
-        } catch (Exception ex) {
-            ErrorUtil.dealWith(project, "Failed to get containers", "Error occurs while get containers", ex);
-            return;
-        }
-
-        if (containers.size() == 1) {
-            container.set(containers.get(0));
-        } else {
-            var dialog = new ListChooseDialog(project, "Select Container", containers);
-            if (dialog.showAndGet()) {
-                container.set(dialog.getSelectedValue());
-            } else {
-                return;
-            }
-        }
-
-        final Path dir = FileChooseUtil.chooseSingleDirectory(project);
-        if (dir == null) {
-            return;
-        }
-
         ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Associating project path") {
 
             @Override
-            public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Associating project path error",
-                        "Error occurs while associating project path", e);
+            public void onThrowable(@NotNull Throwable ex) {
+                ErrorUtil.dealWith(project, "Failed to associate project path",
+                        "Error occurred while associating project path", ex);
             }
 
-            @SneakyThrows
             @Override
+            @SneakyThrows
             public void runTask(@NotNull ProgressIndicator indicator) {
-                NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace, this);
-                opts.setLocalSync(dir.toString());
-                opts.setContainer(container.get());
-                opts.setDeployment(node.resourceName());
-                opts.setControllerType(node.getKubeResource().getKind());
-                outputCapturedNhctlCommand.devAssociate(node.applicationName(), opts);
+                List<String> containers;
+
+                var cmd = new NhctlDevContainerListCommand(project);
+                cmd.setNamespace(namespace);
+                cmd.setKubeConfig(kubeConfigPath);
+                cmd.setDeployment(node.resourceName());
+                cmd.setApplication(node.applicationName());
+                cmd.setControllerType(node.getKubeResource().getKind());
+                containers = DataUtils.GSON.fromJson(cmd.execute(), TypeToken.getParameterized(List.class, String.class).getType());
+
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    if (containers.size() == 1) {
+                        container.set(containers.get(0));
+                    } else {
+                        var dialog = new ListChooseDialog(project, "Select Container", containers);
+                        if (dialog.showAndGet()) {
+                            container.set(dialog.getSelectedValue());
+                        } else {
+                            return;
+                        }
+                    }
+
+                    final Path dir = FileChooseUtil.chooseSingleDirectory(project);
+                    if (dir == null) {
+                        return;
+                    }
+
+                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                        try {
+                            var opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace, this);
+                            opts.setLocalSync(dir.toString());
+                            opts.setContainer(container.get());
+                            opts.setDeployment(node.resourceName());
+                            opts.setControllerType(node.getKubeResource().getKind());
+                            project.getService(OutputCapturedNhctlCommand.class).devAssociate(node.applicationName(), opts);
+                        } catch (Exception ex) {
+                            ErrorUtil.dealWith(project, "Failed to associate project path",
+                                    "Error occurred while associating project path", ex);
+                        }
+                    });
+                });
             }
         });
     }
