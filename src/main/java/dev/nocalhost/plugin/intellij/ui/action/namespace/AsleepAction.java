@@ -25,7 +25,7 @@ public class AsleepAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        if ( ! MessageDialogBuilder.yesNo("Sleep", "Confirm to sleep?").ask(project)) {
+        if ( ! MessageDialogBuilder.yesNo("Sleep", "Confirm to enter sleep mode?").ask(project)) {
             return;
         }
         var account = node.getClusterNode().getNocalhostAccount();
