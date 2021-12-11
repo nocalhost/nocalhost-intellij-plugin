@@ -82,7 +82,7 @@ public class NamespaceNode extends DefaultMutableTreeNode {
 
     public boolean isAsleep() {
         if (namespacePack != null) {
-            return namespacePack.isAsleep();
+            return StringUtils.equals("asleep", namespacePack.getSleepStatus());
         }
         return false;
     }
