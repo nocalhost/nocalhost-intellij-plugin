@@ -75,7 +75,7 @@ public class NocalhostProfileState extends CommandLineState {
                 "--kubeconfig", context.getKubeConfigPath().toString(),
                 "--namespace", context.getNamespace()
         );
-        return new NocalhostDevProcessHandler(new GeneralCommandLine(commandLine), getEnvironment(), this);
+        return new NocalhostDevProcessHandler(new GeneralCommandLine(commandLine).withCharset(Charsets.UTF_8), getEnvironment(), this);
     }
 
     public String getDebugPort() {
@@ -101,8 +101,8 @@ public class NocalhostProfileState extends CommandLineState {
                 throw new ExecutionException("File sync has not yet completed.");
             }
 
-            NhctlRawConfig nhctlRawConfig = getNhctlConfig(context);
-            List<ServiceContainer> containers = nhctlRawConfig.getContainers();
+            NhctlRawConfig devConfig = NhctlUtil.getDevConfig(context);
+            List<ServiceContainer> containers = devConfig.getContainers();
             ServiceContainer container = containers.isEmpty() ? null : containers.get(0);
             if (StringUtils.isNotEmpty(context.getContainerName())) {
                 for (ServiceContainer c : containers) {
@@ -265,15 +265,6 @@ public class NocalhostProfileState extends CommandLineState {
         String status = nhctlCommand.syncStatus(nocalhostContext.getApplicationName(), opts);
         NhctlSyncStatus nhctlSyncStatus = DataUtils.GSON.fromJson(status, NhctlSyncStatus.class);
         return StringUtils.equals(nhctlSyncStatus.getStatus(), "idle");
-    }
-
-    private NhctlRawConfig getNhctlConfig(NocalhostContext nocalhostContext)
-            throws InterruptedException, NocalhostExecuteCmdException, IOException {
-        final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        NhctlConfigOptions opts = new NhctlConfigOptions(nocalhostContext.getKubeConfigPath(), nocalhostContext.getNamespace());
-        opts.setDeployment(nocalhostContext.getServiceName());
-        opts.setControllerType(nocalhostContext.getServiceType());
-        return nhctlCommand.getConfig(nocalhostContext.getApplicationName(), opts, NhctlRawConfig.class);
     }
 
     private boolean isProjectPathMatched(NhctlDescribeService nhctlDescribeService) {

@@ -18,6 +18,10 @@ public class PathsUtil {
         }
     }
 
+    public static boolean isDiff(String a, String b) {
+        return !isSame(a, b);
+    }
+
     public static boolean isExists(String path) {
         if (StringUtils.isEmpty(path)) {
             return false;

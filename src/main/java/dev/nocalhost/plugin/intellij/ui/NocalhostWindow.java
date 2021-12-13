@@ -21,13 +21,13 @@ import javax.swing.*;
 import dev.nocalhost.plugin.intellij.ui.action.AddStandaloneClustersAction;
 import dev.nocalhost.plugin.intellij.ui.action.CleanConfigurationAction;
 import dev.nocalhost.plugin.intellij.ui.action.ConnectNocalhostApiServerAction;
+import dev.nocalhost.plugin.intellij.ui.action.LocateCurrentServiceAction;
 import dev.nocalhost.plugin.intellij.ui.action.ManageNocalhostAccountsAction;
-import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
 import dev.nocalhost.plugin.intellij.ui.dialog.AddStandaloneClustersDialog;
+import dev.nocalhost.plugin.intellij.ui.action.RefreshAction;
 import dev.nocalhost.plugin.intellij.ui.tree.NocalhostTree;
 
 public class NocalhostWindow implements Disposable {
-    private static final Logger LOG = Logger.getInstance(NocalhostWindow.class);
 
     private final Project project;
 
@@ -73,6 +73,7 @@ public class NocalhostWindow implements Disposable {
         actionGroup.add(new ManageNocalhostAccountsAction(project));
         actionGroup.add(new Separator());
         actionGroup.add(new RefreshAction());
+        actionGroup.add(new LocateCurrentServiceAction(project));
         actionGroup.add(new Separator());
         actionGroup.add(moreActionGroup);
 

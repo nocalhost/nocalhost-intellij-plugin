@@ -102,43 +102,45 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
 
     private void updateClusters() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
-                Map<String, String> map = Maps.newHashMap();
-                List<ClusterNode> clusterNodes = Lists.newArrayList();
+            Map<String, String> map = Maps.newHashMap();
+            List<ClusterNode> clusterNodes = Lists.newArrayList();
 
-                for (StandaloneCluster standaloneCluster : settings.getStandaloneClusters()) {
-                    KubeConfig kubeConfig = DataUtils.fromYaml(
-                            standaloneCluster.getRawKubeConfig(), KubeConfig.class);
-                    clusterNodes.add(new ClusterNode(standaloneCluster.getRawKubeConfig(),
-                            kubeConfig));
+            for (StandaloneCluster standaloneCluster : settings.getStandaloneClusters()) {
+                try {
+                    KubeConfig kubeConfig = DataUtils.fromYaml(standaloneCluster.getRawKubeConfig(), KubeConfig.class);
+                    clusterNodes.add(new ClusterNode(standaloneCluster.getRawKubeConfig(), kubeConfig));
+                } catch (Exception ex) {
+                    ErrorUtil.dealWith(project, "Failed to load cluster",
+                        "Error occurred while loading standalone cluster.", ex);
+                }
+            }
+
+            for (NocalhostAccount nocalhostAccount : settings.getNocalhostAccounts()) {
+                if ( ! TokenUtil.isValid(nocalhostAccount.getJwt())) {
+                    continue;
                 }
 
-                for (NocalhostAccount nocalhostAccount : settings.getNocalhostAccounts()) {
-                    if (!TokenUtil.isValid(nocalhostAccount.getJwt())) {
-                        continue;
-                    }
-
+                try {
                     List<ServiceAccount> serviceAccounts = nocalhostApi.listServiceAccount(
                             nocalhostAccount.getServer(), nocalhostAccount.getJwt());
                     for (ServiceAccount serviceAccount : serviceAccounts) {
-                        KubeConfig kubeConfig = DataUtils.fromYaml(
-                                serviceAccount.getKubeConfig(), KubeConfig.class);
-                        clusterNodes.add(new ClusterNode(nocalhostAccount, serviceAccount,
-                                serviceAccount.getKubeConfig(), kubeConfig));
+                        KubeConfig kubeConfig = DataUtils.fromYaml(serviceAccount.getKubeConfig(), KubeConfig.class);
+                        clusterNodes.add(new ClusterNode(nocalhostAccount, serviceAccount, serviceAccount.getKubeConfig(), kubeConfig));
 
                         var key = computeKey(nocalhostAccount, serviceAccount);
                         map.put(key, serviceAccount.getKubeConfig());
                         notifyToNhctl(key, serviceAccount.getKubeConfig());
                     }
+                } catch (Exception ex) {
+                    ErrorUtil.dealWith(project, "Failed to load cluster",
+                            "Error occurred while loading cluster from Nocalhost account.", ex);
                 }
-
-                previous.set(map);
-                settings.setKubeConfigMap(map);
-                clusters.set(clusterNodes);
-            } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Loading clusters error",
-                        "Error occurs while loading clusters", ex);
             }
+
+            previous.set(map);
+            clusters.set(clusterNodes);
+            settings.setKubeConfigMap(map);
+
             ApplicationManager.getApplication().invokeLater(() -> {
                 var nodes = clusters.get();
                 for (ClusterNode clusterNode : nodes) {
@@ -216,10 +218,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     }
 
     void updateNamespaces(ClusterNode clusterNode) {
-        updateNamespaces(clusterNode, false);
+        updateNamespaces(clusterNode, false, () -> {});
     }
 
-    void updateNamespaces(ClusterNode clusterNode, boolean force) {
+    void updateNamespaces(ClusterNode clusterNode, boolean force, @NotNull Runnable next) {
         if (!force && !tree.isExpanded(new TreePath(getPathToRoot(clusterNode)))) {
             return;
         }
@@ -271,6 +273,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 final List<NamespaceNode> pendingNamespaces = namespaceNodes;
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshNamespaceNodes(clusterNode, pendingNamespaces);
+                    next.run();
                 });
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading namespaces error",
@@ -321,10 +324,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     }
 
     void updateApplications(NamespaceNode namespaceNode) {
-        updateApplications(namespaceNode, false);
+        updateApplications(namespaceNode, false, () -> {});
     }
 
-    void updateApplications(NamespaceNode namespaceNode, boolean force) {
+    void updateApplications(NamespaceNode namespaceNode, boolean force, @NotNull Runnable next) {
         if (!force && !tree.isExpanded(new TreePath(getPathToRoot(namespaceNode)))) {
             return;
         }
@@ -346,8 +349,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                             .collect(Collectors.toList());
                 }
                 final List<ApplicationNode> finalApplicationNodes = applicationNodes;
-                ApplicationManager.getApplication().invokeLater(() ->
-                        refreshApplicationNodes(namespaceNode, finalApplicationNodes));
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    refreshApplicationNodes(namespaceNode, finalApplicationNodes);
+                    next.run();
+                });
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading applications error",
                         "Error occurs while loading applications", e);
@@ -421,10 +426,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     }
 
     void updateResources(ResourceTypeNode resourceTypeNode) {
-        updateResources(resourceTypeNode, false);
+        updateResources(resourceTypeNode, false, () -> {});
     }
 
-    void updateResources(ResourceTypeNode resourceTypeNode, boolean force) {
+    void updateResources(ResourceTypeNode resourceTypeNode, boolean force, @NotNull Runnable next) {
         if (!force && !tree.isExpanded(new TreePath(getPathToRoot(resourceTypeNode)))) {
             return;
         }
@@ -436,6 +441,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 }
                 ApplicationManager.getApplication().invokeLater(() -> {
                     refreshResourceNodes(resourceTypeNode, resources);
+                    next.run();
                 });
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading resources error",
