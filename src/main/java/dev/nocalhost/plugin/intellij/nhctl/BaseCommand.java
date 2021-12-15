@@ -85,16 +85,20 @@ public abstract class BaseCommand {
 
     protected abstract List<String> compute();
 
+    protected void consume(@NotNull Process process) {
+        // do nothing
+    }
+
     public String execute() throws IOException, NocalhostExecuteCmdException, InterruptedException {
         return doExecute(compute());
     }
 
-    protected String doExecute(@NotNull List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
-        return doExecute(args, null);
+    public String execute(@NotNull String password) throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        return doExecute(compute(), password);
     }
 
-    protected void consume(@NotNull Process process) {
-        // do nothing
+    protected String doExecute(@NotNull List<String> args) throws IOException, InterruptedException, NocalhostExecuteCmdException {
+        return doExecute(args, null);
     }
 
     protected String doExecute(@NotNull List<String> args, String sudoPassword) throws InterruptedException, NocalhostExecuteCmdException, IOException {
@@ -131,8 +135,8 @@ public abstract class BaseCommand {
         try (var br = new BufferedReader(reader)) {
             String line;
             while ((line = br.readLine()) != null) {
-                stdout.append(line);
                 print(line);
+                stdout.append(line);
                 NhctlOutputUtil.showMessageByCommandOutput(project, line);
             }
         }

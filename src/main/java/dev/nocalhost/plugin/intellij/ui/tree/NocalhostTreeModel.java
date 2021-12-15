@@ -517,7 +517,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     if (nhctlDescribeService == null) {
                         nhctlDescribeService = new NhctlDescribeService();
                     }
-                    return new ResourceNode(e.getKubeResource(), nhctlDescribeService);
+                    return new ResourceNode(e.getKubeResource(), nhctlDescribeService, e.getVpn());
                 })
                 .collect(Collectors.toList());
     }
