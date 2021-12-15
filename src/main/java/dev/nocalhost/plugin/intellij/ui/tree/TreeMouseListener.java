@@ -62,6 +62,7 @@ import static dev.nocalhost.plugin.intellij.utils.Constants.VPN_UNHEALTHY;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DAEMONSET;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_SERVICE;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_STATEFULSET;
 
 public class TreeMouseListener extends MouseAdapter {
@@ -187,7 +188,7 @@ public class TreeMouseListener extends MouseAdapter {
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
-        // the workload is in proxy mode currently
+        // the workload is in proxy mode
         var vpn = resourceNode.getVpn();
         if (vpn != null) {
             if (vpn.isBelongsToMe() && StringUtils.equals(vpn.getStatus(), VPN_UNHEALTHY)) {
@@ -195,6 +196,13 @@ public class TreeMouseListener extends MouseAdapter {
             }
             actionGroup.add(new ProxyDisconnectAction(project, resourceNode));
 
+            ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
+            JBPopupMenu.showByEvent(event, menu.getComponent());
+            return;
+        }
+
+        if (StringUtils.equals(kind, WORKLOAD_TYPE_SERVICE)) {
+            actionGroup.add(new ProxyConnectAction(project, resourceNode));
             ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
             JBPopupMenu.showByEvent(event, menu.getComponent());
             return;
@@ -265,6 +273,6 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     private boolean proxyable(String kind) {
-        return Lists.newArrayList(WORKLOAD_TYPE_DEPLOYMENT, WORKLOAD_TYPE_STATEFULSET).contains(kind);
+        return Lists.newArrayList(WORKLOAD_TYPE_DEPLOYMENT, WORKLOAD_TYPE_STATEFULSET, WORKLOAD_TYPE_SERVICE).contains(kind);
     }
 }

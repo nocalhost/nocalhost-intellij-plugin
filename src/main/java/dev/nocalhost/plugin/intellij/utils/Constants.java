@@ -18,6 +18,7 @@ public class Constants {
     public static final String WORKLOAD_TYPE_DEPLOYMENT = "deployment";
     public static final String WORKLOAD_TYPE_STATEFULSET = "statefulset";
     public static final String WORKLOAD_TYPE_DAEMONSET = "daemonset";
+    public static final String WORKLOAD_TYPE_SERVICE = "service";
     public static final String WORKLOAD_TYPE_JOB = "job";
     public static final String WORKLOAD_TYPE_CRONJOB = "cronjob";
     public static final String WORKLOAD_TYPE_POD = "pod";
@@ -26,8 +27,9 @@ public class Constants {
             WORKLOAD_TYPE_DEPLOYMENT,
             WORKLOAD_TYPE_STATEFULSET,
             WORKLOAD_TYPE_DAEMONSET,
-            WORKLOAD_TYPE_JOB,
+            WORKLOAD_TYPE_SERVICE,
             WORKLOAD_TYPE_CRONJOB,
+            WORKLOAD_TYPE_JOB,
             WORKLOAD_TYPE_POD
     );
 
