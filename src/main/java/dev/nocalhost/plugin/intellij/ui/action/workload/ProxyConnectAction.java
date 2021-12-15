@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlProxyCommand;
+import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.ui.dialog.SudoPasswordDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -28,6 +29,7 @@ public class ProxyConnectAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent e) {
         var dialog = new SudoPasswordDialog(project, NhctlUtil.binaryPath());
         if (dialog.showAndGet()) {
+            NocalhostConsoleManager.activateOutputWindow(project);
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
                     var cmd = new NhctlProxyCommand(project);
