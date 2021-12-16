@@ -141,7 +141,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             clusters.set(clusterNodes);
             settings.setKubeConfigMap(map);
 
-            ApplicationManager.getApplication().invokeLater(() -> {
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 var nodes = clusters.get();
                 for (ClusterNode clusterNode : nodes) {
                     try {
@@ -153,7 +153,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     } catch (Exception ignore) {
                     }
                 }
-                refreshClusterNodes((MutableTreeNode) root, nodes);
+                ApplicationManager.getApplication().invokeLater(() -> refreshClusterNodes((MutableTreeNode) root, nodes));
             });
         });
     }
