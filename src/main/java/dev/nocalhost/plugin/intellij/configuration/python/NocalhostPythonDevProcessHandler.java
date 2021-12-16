@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.configuration.python;
 
+import com.intellij.execution.ExecutionException;
 import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.runners.ExecutionEnvironment;
@@ -7,6 +8,7 @@ import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.ui.RunContentDescriptor;
 import com.intellij.execution.ui.RunContentManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.jetbrains.python.debugger.remote.PyRemoteDebugCommandLineState;
 
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
 
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
 public class NocalhostPythonDevProcessHandler extends PyRemoteDebugCommandLineState.PyRemoteDebugProcessHandler {
@@ -28,7 +31,13 @@ public class NocalhostPythonDevProcessHandler extends PyRemoteDebugCommandLineSt
             @Override
             @SneakyThrows
             public void startNotified(@NotNull ProcessEvent event) {
-                state.startup();
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    try {
+                        state.startup();
+                    } catch (Exception ex) {
+                        ErrorUtil.dealWith(environment.getProject(), "NocalhostPythonProfileState#startup", ex.getMessage(), ex);
+                    }
+                });
             }
 
             @Override
