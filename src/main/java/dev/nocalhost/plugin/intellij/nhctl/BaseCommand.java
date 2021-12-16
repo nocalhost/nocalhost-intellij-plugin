@@ -93,7 +93,7 @@ public abstract class BaseCommand {
         return doExecute(compute());
     }
 
-    public String execute(@NotNull String password) throws IOException, NocalhostExecuteCmdException, InterruptedException {
+    public String execute(String password) throws IOException, NocalhostExecuteCmdException, InterruptedException {
         return doExecute(compute(), password);
     }
 
