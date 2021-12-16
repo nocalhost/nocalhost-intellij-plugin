@@ -28,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -51,7 +50,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.task.TaskModality;
 import dev.nocalhost.plugin.intellij.ui.VerticalFlowLayout;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -115,7 +114,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
     }
 
     private void updatePortForwardList() {
-        ProgressManager.getInstance().run(new Task.Modal(project, "Loading Port Forward List", false) {
+        ProgressManager.getInstance().run(new TaskModality(project, "Loading Port-Forward List", true) {
             private List<NhctlPortForward> devPortForwardList;
 
             @Override
@@ -126,21 +125,20 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Nocalhost port forward error",
-                        "Error occurred while loading port forward list", e);
+                ErrorUtil.dealWith(project, "Failed to loading port-forward list",
+                        "Error occurred while loading port-forward list", e);
             }
 
-            @SneakyThrows
             @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+            @SneakyThrows
+            public void exec(@NotNull ProgressIndicator indicator) {
+                var opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
+                opts.setTask(this);
                 opts.setDeployment(node.resourceName());
                 opts.setType(node.getKubeResource().getKind());
-                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                        node.applicationName(),
-                        opts,
-                        NhctlDescribeService.class);
-                devPortForwardList = nhctlDescribeService.getDevPortForwardList();
+                devPortForwardList = nhctlCommand
+                        .describe(node.applicationName(), opts, NhctlDescribeService.class)
+                        .getDevPortForwardList();
             }
         });
     }

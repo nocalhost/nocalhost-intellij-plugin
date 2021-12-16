@@ -11,6 +11,7 @@ import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.ui.RunContentDescriptor;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import com.intellij.execution.ui.RunContentManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 
 import org.jetbrains.annotations.NotNull;
@@ -35,11 +36,13 @@ public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
         this.addProcessListener(new ProcessAdapter() {
             @Override
             public void startNotified(@NotNull ProcessEvent event) {
-                try {
-                    state.startup();
-                } catch (ExecutionException ex) {
-                    ErrorUtil.dealWith(environment.getProject(), "NocalhostProfileState#startup", ex.getMessage(), ex);
-                }
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    try {
+                        state.startup();
+                    } catch (Exception ex) {
+                        ErrorUtil.dealWith(environment.getProject(), "NocalhostProfileState#startup", ex.getMessage(), ex);
+                    }
+                });
             }
 
             @Override

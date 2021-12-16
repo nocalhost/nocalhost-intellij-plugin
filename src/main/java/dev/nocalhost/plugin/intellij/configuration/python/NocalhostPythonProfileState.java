@@ -150,8 +150,8 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             throw new ExecutionException("Service is not in dev mode.");
         }
 
-        String shell = StringUtils.isNotEmpty(dev.getShell()) ? dev.getShell() : DEFAULT_SHELL;
         String debug = dev.getCommand().getDebug();
+        String shell = StringUtils.isNotEmpty(dev.getShell()) ? dev.getShell() : DEFAULT_SHELL;
 
         List<String> lines = Lists.newArrayList(
                 NhctlUtil.binaryPath(), "exec", dev.getContext().getApplicationName(),
@@ -189,7 +189,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         var context = NocalhostContextManager.getInstance(project).getContext();
 
         if (StringUtils.isEmpty(port)) {
-            throw new ExecutionException("Remote debug port not configured.");
+            throw new ExecutionException("Failed to resolve remote debug port.");
         }
 
         var cmd = new GeneralCommandLine(Lists.newArrayList(
