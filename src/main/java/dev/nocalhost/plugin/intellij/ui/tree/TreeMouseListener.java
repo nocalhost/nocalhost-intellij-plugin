@@ -177,7 +177,7 @@ public class TreeMouseListener extends MouseAdapter {
 
     private void renderWorkloadAction(MouseEvent event, ResourceNode resourceNode) {
         String resourceType = resourceNode.getKubeResource().getKind().toLowerCase();
-        if (!ALL_WORKLOAD_TYPES.contains(resourceType)) {
+        if (!ALL_WORKLOAD_TYPES.contains(resourceType) && !resourceNode.isCrd()) {
             return;
         }
 

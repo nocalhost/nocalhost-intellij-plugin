@@ -14,12 +14,11 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeWillExpandListener;
-import javax.swing.tree.ExpandVetoException;
+import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -29,6 +28,8 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdKindNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -71,24 +72,18 @@ public class NocalhostTree extends Tree implements Disposable {
         this.addMouseListener(new TreeMouseListener(this, project));
         this.addTreeWillExpandListener(new TreeWillExpandListener() {
             @Override
-            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
-                Object node = event.getPath().getLastPathComponent();
-                if (node instanceof ClusterNode) {
-                    ClusterNode clusterNode = (ClusterNode) node;
-                    model.insertLoadingNode(clusterNode);
-                }
-                if (node instanceof NamespaceNode) {
-                    NamespaceNode namespaceNode = (NamespaceNode) node;
-                    model.insertLoadingNode(namespaceNode);
-                }
-                if (node instanceof ResourceTypeNode) {
-                    ResourceTypeNode resourceTypeNode = (ResourceTypeNode) node;
-                    model.insertLoadingNode(resourceTypeNode);
+            public void treeWillExpand(TreeExpansionEvent event) {
+                var node = event.getPath().getLastPathComponent();
+                if (node instanceof MutableTreeNode) {
+                    var mutable = (MutableTreeNode) node;
+                    if ( ! mutable.isLeaf()) {
+                        model.insertLoadingNode(mutable);
+                    }
                 }
             }
 
             @Override
-            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+            public void treeWillCollapse(TreeExpansionEvent event) {
 
             }
         });
@@ -107,6 +102,14 @@ public class NocalhostTree extends Tree implements Disposable {
                 if (node instanceof ResourceTypeNode) {
                     ResourceTypeNode resourceTypeNode = (ResourceTypeNode) node;
                     model.updateResources(resourceTypeNode);
+                }
+                if (node instanceof CrdNode) {
+                    var crd = (CrdNode) node;
+                    model.updateCrdNode(crd, false, () -> {});
+                }
+                if (node instanceof CrdKindNode) {
+                    var kind = (CrdKindNode) node;
+                    model.updateCrdKindNode(kind, false, () -> {});
                 }
             }
 

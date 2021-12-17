@@ -23,6 +23,9 @@ import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Condition;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Status;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdKindNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -101,6 +104,24 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             setToolTipText(node.getName());
         }
 
+        if (value instanceof CrdNode) {
+            var node = (CrdNode) value;
+            append(node.getName());
+            setToolTipText(node.getName());
+        }
+
+        if (value instanceof CrdGroupNode) {
+            var node = (CrdGroupNode) value;
+            append(node.getName());
+            setToolTipText(node.getName());
+        }
+
+        if (value instanceof CrdKindNode) {
+            var node = (CrdKindNode) value;
+            append(node.getName());
+            setToolTipText(node.getName());
+        }
+
         if (value instanceof ResourceNode) {
             ResourceNode node = (ResourceNode) value;
             append(node.getKubeResource().getMetadata().getName());
@@ -120,7 +141,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
 
     private Icon getWorkloadIcon(ResourceNode node) {
         String resourceType = node.getKubeResource().getKind().toLowerCase();
-        if (!ALL_WORKLOAD_TYPES.contains(resourceType)) {
+        if (!ALL_WORKLOAD_TYPES.contains(resourceType) && !node.isCrd()) {
             return null;
         }
 
