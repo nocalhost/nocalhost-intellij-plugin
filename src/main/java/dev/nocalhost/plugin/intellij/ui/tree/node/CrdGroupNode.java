@@ -1,7 +1,5 @@
 package dev.nocalhost.plugin.intellij.ui.tree.node;
 
-import java.util.List;
-
 import javax.swing.tree.DefaultMutableTreeNode;
 import lombok.Getter;
 

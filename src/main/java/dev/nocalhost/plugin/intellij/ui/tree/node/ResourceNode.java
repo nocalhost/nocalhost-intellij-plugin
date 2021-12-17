@@ -22,22 +22,15 @@ public class ResourceNode extends DefaultMutableTreeNode {
         this(kubeResource, nhctlDescribeService, false);
     }
 
-    private CrdKindNode getCrdKindNode() {
-        var owner = getParent();
-        while (owner != null) {
-            if (owner instanceof CrdKindNode) {
-                return (CrdKindNode) owner;
-            }
-            owner = owner.getParent();
-        }
-        return null;
+    public String resourceName() {
+        return kubeResource.getMetadata().getName();
     }
 
-    public String resourceName() {
+    public String controllerType() {
         if (crd) {
-            return getCrdKindNode().getResourceType();
+            return ((CrdKindNode) getParent()).getResourceType();
         }
-        return kubeResource.getMetadata().getName();
+        return kubeResource.getKind();
     }
 
     public String applicationName() {

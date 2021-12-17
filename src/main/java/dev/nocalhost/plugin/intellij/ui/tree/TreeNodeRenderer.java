@@ -132,7 +132,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             }
 
             String tips = node.getKubeResource().getMetadata().getName();
-            if (StringUtils.equals(node.getKubeResource().getKind().toLowerCase(), WORKLOAD_TYPE_JOB)) {
+            if (StringUtils.equalsIgnoreCase(node.controllerType(), WORKLOAD_TYPE_JOB)) {
                 tips += "(" + getJobStatus(node) + ")";
             }
             setToolTipText(tips);
@@ -140,7 +140,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     }
 
     private Icon getWorkloadIcon(ResourceNode node) {
-        String resourceType = node.getKubeResource().getKind().toLowerCase();
+        String resourceType = node.controllerType().toLowerCase();
         if (!ALL_WORKLOAD_TYPES.contains(resourceType) && !node.isCrd()) {
             return null;
         }
@@ -219,7 +219,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         List<Condition> conditions = node.getKubeResource().getStatus()
                 .getConditions();
         if (conditions != null) {
-            switch (node.getKubeResource().getKind().toLowerCase()) {
+            switch (node.controllerType().toLowerCase()) {
                 case WORKLOAD_TYPE_DEPLOYMENT:
                     for (Condition condition : conditions) {
                         if (StringUtils.equals(condition.getType(), "Available")

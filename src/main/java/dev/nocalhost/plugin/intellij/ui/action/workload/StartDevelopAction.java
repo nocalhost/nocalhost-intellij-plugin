@@ -107,13 +107,13 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 NhctlDevStartOptions devStartOptions = new NhctlDevStartOptions(kubeConfigPath, namespace);
-                devStartOptions.setControllerType(node.getKubeResource().getKind());
+                devStartOptions.setControllerType(node.controllerType());
                 devStartOptions.setAuthCheck(true);
                 nhctlCommand.devStart(node.applicationName(), devStartOptions);
 
                 NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
-                opts.setType(node.getKubeResource().getKind());
+                opts.setType(node.controllerType());
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
 
@@ -164,7 +164,7 @@ public class StartDevelopAction extends DumbAwareAction {
             cmd.setKubeConfig(kubeConfigPath);
             cmd.setDeployment(node.resourceName());
             cmd.setApplication(node.applicationName());
-            cmd.setControllerType(node.getKubeResource().getKind());
+            cmd.setControllerType(node.controllerType());
             List<String> containers = DataUtils.GSON.fromJson(cmd.execute(), TypeToken.getParameterized(List.class, String.class).getType());
             if (containers.size() > 1) {
                 selectContainer(containers);
@@ -193,7 +193,7 @@ public class StartDevelopAction extends DumbAwareAction {
             try {
                 NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
-                opts.setControllerType(node.getKubeResource().getKind());
+                opts.setControllerType(node.controllerType());
                 opts.setContainer(selectedContainer.get());
                 opts.setInfo(true);
                 String associatedPath = nhctlCommand.devAssociate(node.applicationName(), opts);
@@ -244,7 +244,7 @@ public class StartDevelopAction extends DumbAwareAction {
             try {
                 var opts = new NhctlConfigOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
-                opts.setControllerType(node.getKubeResource().getKind());
+                opts.setControllerType(node.controllerType());
 
                 var devConfig = ApplicationManager
                         .getApplication()
@@ -301,7 +301,7 @@ public class StartDevelopAction extends DumbAwareAction {
                             if (!StringUtils.equals(url, finalGitUrl)) {
                                 NhctlProfileSetOptions opts = new NhctlProfileSetOptions(kubeConfigPath, namespace);
                                 opts.setDeployment(node.resourceName());
-                                opts.setType(node.getKubeResource().getKind());
+                                opts.setType(node.controllerType());
                                 opts.setContainer(selectedContainer.get());
                                 opts.setKey("gitUrl");
                                 opts.setValue(finalGitUrl);
@@ -339,7 +339,7 @@ public class StartDevelopAction extends DumbAwareAction {
                 opts.setLocalSync(path);
                 opts.setDeployment(node.resourceName());
                 opts.setContainer(selectedContainer.get());
-                opts.setControllerType(node.getKubeResource().getKind());
+                opts.setControllerType(node.controllerType());
                 outputCapturedNhctlCommand.devAssociate(node.applicationName(), opts);
 
                 getImage();
@@ -355,7 +355,7 @@ public class StartDevelopAction extends DumbAwareAction {
             try {
                 NhctlProfileGetOptions opts = new NhctlProfileGetOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
-                opts.setType(node.getKubeResource().getKind());
+                opts.setType(node.controllerType());
                 opts.setContainer(selectedContainer.get());
                 opts.setKey("image");
                 String image = nhctlCommand.profileGet(node.applicationName(), opts);
@@ -392,7 +392,7 @@ public class StartDevelopAction extends DumbAwareAction {
                         NhctlProfileSetOptions opts = new NhctlProfileSetOptions(kubeConfigPath,
                                 namespace);
                         opts.setDeployment(node.resourceName());
-                        opts.setType(node.getKubeResource().getKind());
+                        opts.setType(node.controllerType());
                         opts.setContainer(selectedContainer.get());
                         opts.setKey("image");
                         opts.setValue(imageChooseDialog.getSelectedImage());
@@ -418,7 +418,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     .namespace(node.getNamespaceNode().getNamespace())
                     .applicationName(node.applicationName())
                     .serviceName(node.resourceName())
-                    .serviceType(node.getKubeResource().getKind())
+                    .serviceType(node.controllerType())
                     .containerName(selectedContainer.get())
                     .image(selectedImage.get())
                     .projectPath(Paths.get(openProjectPath).toString())
@@ -432,7 +432,7 @@ public class StartDevelopAction extends DumbAwareAction {
              .namespace(node.getNamespaceNode().getNamespace())
              .applicationName(node.applicationName())
              .serviceName(node.resourceName())
-             .serviceType(node.getKubeResource().getKind())
+             .serviceType(node.controllerType())
              .containerName(selectedContainer.get())
              .image(selectedImage.get())
              .projectPath(Paths.get(openProjectPath).toString())
@@ -483,7 +483,7 @@ public class StartDevelopAction extends DumbAwareAction {
             var x = new URIBuilder("https://nocalhost.dev/tools");
             x.addParameter("from", "daemon");
             x.addParameter("name", node.resourceName());
-            x.addParameter("type", node.getKubeResource().getKind());
+            x.addParameter("type", node.controllerType());
             x.addParameter("namespace", namespace);
             x.addParameter("container", selectedContainer.get());
             x.addParameter("kubeconfig", kubeConfigPath.toString());

@@ -135,7 +135,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                 var opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 opts.setTask(this);
                 opts.setDeployment(node.resourceName());
-                opts.setType(node.getKubeResource().getKind());
+                opts.setType(node.controllerType());
                 devPortForwardList = nhctlCommand
                         .describe(node.applicationName(), opts, NhctlDescribeService.class)
                         .getDevPortForwardList();
@@ -220,7 +220,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         try {
             var opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
             opts.setDeployment(node.resourceName());
-            opts.setType(node.getKubeResource().getKind());
+            opts.setType(node.controllerType());
             var service = nhctlCommand.describe(node.applicationName(), opts, NhctlDescribeService.class);
             isDevMode = NhctlDescribeServiceUtil.developStarted(service);
         } catch (Exception ex) {
@@ -284,7 +284,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             public void run(@NotNull ProgressIndicator indicator) {
                 NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 nhctlDescribeOptions.setDeployment(node.resourceName());
-                nhctlDescribeOptions.setType(node.getKubeResource().getKind());
+                nhctlDescribeOptions.setType(node.controllerType());
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(),
                         nhctlDescribeOptions,
@@ -300,7 +300,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     NhctlPortForwardStartOptions nhctlPortForwardStartOptions = new NhctlPortForwardStartOptions(kubeConfigPath, namespace);
                     nhctlPortForwardStartOptions.setDevPorts(Lists.newArrayList(portForwardsToBeStarted.iterator()));
                     nhctlPortForwardStartOptions.setDeployment(node.resourceName());
-                    nhctlPortForwardStartOptions.setType(node.getKubeResource().getKind());
+                    nhctlPortForwardStartOptions.setType(node.controllerType());
                     nhctlPortForwardStartOptions.setPod(finalPod);
 
                     outputCapturedNhctlCommand.startPortForward(node.applicationName(), nhctlPortForwardStartOptions, finalSudoPassword);
@@ -386,7 +386,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                     NhctlPortForwardEndOptions opts = new NhctlPortForwardEndOptions(kubeConfigPath, namespace);
                     opts.setPort(portForward.portForwardStr());
                     opts.setDeployment(node.resourceName());
-                    opts.setType(node.getKubeResource().getKind());
+                    opts.setType(node.controllerType());
                     outputCapturedNhctlCommand.endPortForward(node.applicationName(), opts, finalSudoPassword);
                 }
             });

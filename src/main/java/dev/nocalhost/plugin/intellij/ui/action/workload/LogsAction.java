@@ -53,7 +53,7 @@ public class LogsAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                if (StringUtils.equalsIgnoreCase(node.getKubeResource().getKind(), WORKLOAD_TYPE_POD)) {
+                if (StringUtils.equalsIgnoreCase(node.controllerType(), WORKLOAD_TYPE_POD)) {
                     selectContainer(node.getKubeResource());
                     return;
                 }
