@@ -187,15 +187,12 @@ public class TreeMouseListener extends MouseAdapter {
         if (NhctlDescribeServiceUtil.isDeveloping(nhctlDescribeService)) {
             actionGroup.add(new EndDevelopAction(project, resourceNode));
 
-            if ( ! nhctlDescribeService.isPossess() && copyable(resourceType)) {
+            if ( ! nhctlDescribeService.isPossess()) {
                 actionGroup.add(new StartDevelopAction(project, resourceNode, DEV_MODE_DUPLICATE));
             }
         } else {
             actionGroup.add(new StartDevelopAction(project, resourceNode, ""));
-
-            if (copyable(resourceType)) {
-                actionGroup.add(new StartDevelopAction(project, resourceNode, DEV_MODE_DUPLICATE));
-            }
+            actionGroup.add(new StartDevelopAction(project, resourceNode, DEV_MODE_DUPLICATE));
         }
         actionGroup.add(new RunAction(project, resourceNode));
         actionGroup.add(new DebugAction(project, resourceNode));
@@ -234,9 +231,5 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new LogsAction(project, resourceNode));
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
-    }
-
-    private boolean copyable(String kind) {
-        return Lists.newArrayList(WORKLOAD_TYPE_DEPLOYMENT, WORKLOAD_TYPE_STATEFULSET, WORKLOAD_TYPE_DAEMONSET, WORKLOAD_TYPE_POD).contains(kind);
     }
 }
