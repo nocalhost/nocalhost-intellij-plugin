@@ -28,12 +28,14 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdKindNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
+import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_CRONJOB;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DAEMONSET;
@@ -180,7 +182,49 @@ public class NocalhostTree extends Tree implements Disposable {
         for (int i = 0; i < model.getChildCount(node); i++) {
             var applicationNode = (ApplicationNode) model.getChild(node, i);
             if (StringUtils.equals(applicationNode.getName(), context.getApplicationName())) {
-                _locateResource(applicationNode, context);
+                if (KubeResourceUtil.isCRD(context.getServiceType())) {
+                    _locateCrdKind(applicationNode, context);
+                } else {
+                    _locateResource(applicationNode, context);
+                }
+                break;
+            }
+        }
+    }
+
+    private void _locateCrdKind(@NotNull ApplicationNode node, @NotNull NocalhostContext context) {
+        for (int i = 0, j = model.getChildCount(node); i < j; i++) {
+            var child = (MutableTreeNode) model.getChild(node, i);
+            if (child instanceof CrdNode) {
+                var crdNode = (CrdNode) child;
+                model.updateCrdNode(crdNode, true, () -> {
+                    var group = context.getServiceType().replaceFirst("^([a-zA-Z0-9]+)\\.([a-zA-Z0-9]+)\\.", "");
+                    for (int a = 0, b = model.getChildCount(crdNode); a < b; a++) {
+                        var crdGroupNode = (CrdGroupNode) model.getChild(crdNode, a);
+                        if (StringUtils.equals(crdGroupNode.getName(), group)) {
+                            for (int x = 0, y = model.getChildCount(crdGroupNode); x < y; x++) {
+                                var kind = (CrdKindNode) model.getChild(crdGroupNode, x);
+                                if (StringUtils.equals(kind.getResourceType(), context.getServiceType())) {
+                                    model.updateCrdKindNode(kind, true, () -> _locateCrdResource(kind, context));
+                                }
+                            }
+                        }
+                    }
+                });
+                break;
+            }
+        }
+    }
+
+    private void _locateCrdResource(@NotNull CrdKindNode kind, @NotNull NocalhostContext context) {
+        for (int i = 0, j = model.getChildCount(kind); i < j; i++) {
+            var node = (ResourceNode) model.getChild(kind, i);
+            if (StringUtils.equals(node.resourceName(), context.getServiceName())) {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    var path = new TreePath(model.getPathToRoot(node));
+                    this.scrollPathToVisible(path);
+                    this.setSelectionPath(path);
+                });
                 break;
             }
         }
