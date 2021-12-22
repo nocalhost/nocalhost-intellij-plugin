@@ -110,8 +110,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     KubeConfig kubeConfig = DataUtils.fromYaml(standaloneCluster.getRawKubeConfig(), KubeConfig.class);
                     clusterNodes.add(new ClusterNode(standaloneCluster.getRawKubeConfig(), kubeConfig));
                 } catch (Exception ex) {
-                    ErrorUtil.dealWith(project, "Failed to load cluster",
-                        "Error occurred while loading standalone cluster.", ex);
+                    ErrorUtil.console(project, "Error occurred while loading standalone cluster.", ex);
                 }
             }
 
@@ -132,8 +131,12 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         notifyToNhctl(key, serviceAccount.getKubeConfig());
                     }
                 } catch (Exception ex) {
-                    ErrorUtil.dealWith(project, "Failed to load cluster",
-                            "Error occurred while loading cluster from Nocalhost account.", ex);
+                    var summary = String.format(
+                            "Error occurred while loading cluster from server: %s, account: %s",
+                            nocalhostAccount.getServer(),
+                            nocalhostAccount.getUsername()
+                    );
+                    ErrorUtil.console(project, summary, ex);
                 }
             }
 
@@ -171,7 +174,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 cmd.execute();
             }
         } catch (Exception ex) {
-            ErrorUtil.dealWith(project, "Notify nhctl error", "Error occurs while notify nhctl.", ex);
+            ErrorUtil.dealWith(project, "Notify nhctl error", "Error occurred while notify nhctl.", ex);
         }
     }
 
@@ -275,9 +278,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     refreshNamespaceNodes(clusterNode, pendingNamespaces);
                     next.run();
                 });
-            } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading namespaces error",
-                        "Error occurs while loading namespaces", e);
+            } catch (Exception ex) {
+                ErrorUtil.console(project, "Error occurred while loading namespaces.", ex);
             }
         });
     }
@@ -353,9 +355,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     refreshApplicationNodes(namespaceNode, finalApplicationNodes);
                     next.run();
                 });
-            } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading applications error",
-                        "Error occurs while loading applications", e);
+            } catch (Exception ex) {
+                ErrorUtil.console(project, "Error occurred while loading applications.", ex);
             }
         });
     }
@@ -443,9 +444,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     refreshResourceNodes(resourceTypeNode, resources);
                     next.run();
                 });
-            } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading resources error",
-                        "Error occurs while loading resources", e);
+            } catch (Exception ex) {
+                ErrorUtil.console(project, "Error occurred while loading resources.", ex);
             }
         });
     }
