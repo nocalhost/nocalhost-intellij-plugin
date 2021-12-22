@@ -22,11 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
-import dev.nocalhost.plugin.intellij.utils.NhctlOutputUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlOutputUtil;
 import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
+import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,6 +39,8 @@ public abstract class BaseCommand {
     protected Path kubeConfig;
     protected String namespace;
     protected String deployment;
+
+    protected AtomicReference<String> stderr = new AtomicReference<>("");
 
     protected BaseCommand(Project project) {
         this(project, true);
@@ -85,8 +87,16 @@ public abstract class BaseCommand {
 
     protected abstract List<String> compute();
 
-    protected void consume(@NotNull Process process) {
+    protected void onInput(@NotNull Process process) {
         // do nothing
+    }
+
+    protected void onError(@NotNull Process process) {
+        try (var reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8)) {
+            stderr.set(CharStreams.toString(reader));
+        } catch (IOException ex) {
+            // ignore
+        }
     }
 
     public String execute() throws IOException, NocalhostExecuteCmdException, InterruptedException {
@@ -120,15 +130,8 @@ public abstract class BaseCommand {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
 
-        AtomicReference<String> stderr = new AtomicReference<>("");
-        ApplicationManager.getApplication().executeOnPooledThread(() -> consume(process));
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try (var reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8)) {
-                stderr.set(CharStreams.toString(reader));
-            } catch (IOException ex) {
-                // ignore
-            }
-        });
+        ApplicationManager.getApplication().executeOnPooledThread(() -> onError(process));
+        ApplicationManager.getApplication().executeOnPooledThread(() -> onInput(process));
 
         var stdout = new StringBuilder();
         var reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);

@@ -1,24 +1,23 @@
 package dev.nocalhost.plugin.intellij.nhctl;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import dev.nocalhost.plugin.intellij.ui.dialog.SudoPasswordDialog;
-import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -43,42 +42,31 @@ public class NhctlProxyCommand extends BaseCommand {
     }
 
     @Override
-    protected void consume(@NotNull Process process) {
-        if (SystemInfo.isWindows) {
-            return;
-        }
-
-        var output = "";
+    protected void onError(@NotNull Process process) {
+        int b;
+        var output = new StringBuilder();
         var reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
         try (var br = new BufferedReader(reader)) {
-            while ((output = br.readLine()) != null && isSudo(output)) {
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    var dialog = new SudoPasswordDialog(project, NhctlUtil.binaryPath());
-                    if (dialog.showAndGet()) {
-                        inject(process, dialog.getPassword());
-                    }
-                });
+            while ((b = br.read()) != -1) {
+                output.append((char) b);
+                stderr.set(output.toString());
+                if (SystemInfo.isWindows) {
+                    continue;
+                }
+                if (StringUtils.contains(output.toString(), "Password:")) {
+                    output.setLength(0);
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        var dialog = new SudoPasswordDialog(project, NhctlUtil.binaryPath());
+                        if (dialog.showAndGet()) {
+                            SudoUtil.inputPassword(process, dialog.getPassword());
+                        } else {
+                            process.destroy();
+                        }
+                    });
+                }
             }
         } catch (IOException ex) {
             // ignore
         }
-    }
-
-    private boolean isSudo(String text) {
-        return StringUtils.contains(text, "Password:")
-                || StringUtils.contains(text, "[sudo] password for")
-                || StringUtils.contains(text, "Sorry, try again:");
-    }
-
-    private void inject(@NotNull Process process, @NotNull String password) {
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            var stream = process.getOutputStream();
-            try (stream) {
-                stream.write((password + "\n").getBytes(StandardCharsets.UTF_8));
-                stream.flush();
-            } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Failed to start proxy", "Error occurred while writing password to stdin", ex);
-            }
-        });
     }
 }
