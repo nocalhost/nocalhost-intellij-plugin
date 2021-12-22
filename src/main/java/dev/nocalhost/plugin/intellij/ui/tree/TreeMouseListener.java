@@ -21,7 +21,6 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.ui.action.application.AppPortForwardAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.ApplyAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.ClearAppPersisentDataAction;
-import dev.nocalhost.plugin.intellij.ui.action.application.LoadResourceAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.UninstallAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.application.UpgradeAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.RemoveClusterAction;
@@ -166,9 +165,6 @@ public class TreeMouseListener extends MouseAdapter {
             if (applicationNode.getNamespaceNode().getClusterNode().getServiceAccount() != null) {
                 actionGroup.add(new UpgradeAppAction(project, applicationNode));
             }
-
-            actionGroup.add(SEPARATOR);
-            actionGroup.add(new LoadResourceAction(project, applicationNode));
         }
 
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Application.Actions", actionGroup);
