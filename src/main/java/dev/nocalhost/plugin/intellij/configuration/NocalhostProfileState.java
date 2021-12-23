@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
@@ -85,12 +84,16 @@ public class NocalhostProfileState extends CommandLineState {
 
     public void prepare() throws ExecutionException {
         try {
-            var context = NocalhostContextManager.getInstance(getEnvironment().getProject()).getContext();
+            var project = getEnvironment().getProject();
+            var context = NocalhostContextManager.getInstance(project).getContext();
             if (context == null) {
                 throw new ExecutionException("Nocalhost context is null.");
             }
 
-            var desService = NhctlUtil.getDescribeService(context);
+            var desService = NhctlUtil.getDescribeService(project, context);
+            if (desService == null) {
+                throw new ExecutionException("Failed to get resource.");
+            }
             if ( ! NhctlDescribeServiceUtil.developStarted(desService)) {
                 throw new ExecutionException("Service is not in dev mode.");
             }

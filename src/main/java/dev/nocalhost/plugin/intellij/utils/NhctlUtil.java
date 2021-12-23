@@ -7,19 +7,19 @@ import com.intellij.openapi.util.SystemInfo;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import dev.nocalhost.plugin.intellij.nhctl.NhctlGetCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.data.NocalhostContext;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevPodCommand;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 
 public final class NhctlUtil {
     private static final Path NOCALHOST_BIN_DIR = Paths.get(System.getProperty("user.home"), ".nh", "bin");
@@ -55,22 +55,22 @@ public final class NhctlUtil {
         }
     }
 
-    public static NhctlDescribeService getDescribeService(NocalhostContext context) throws ExecutionException {
+    public static @Nullable NhctlDescribeService getDescribeService(@NotNull Project project, @NotNull NocalhostContext context) throws ExecutionException {
         try {
-            NhctlDescribeOptions opts = new NhctlDescribeOptions(context.getKubeConfigPath(), context.getNamespace());
-            opts.setDeployment(context.getServiceName());
-            opts.setType(context.getServiceType());
-            return ApplicationManager
-                    .getApplication()
-                    .getService(NhctlCommand.class)
-                    .describe(
-                            context.getApplicationName(),
-                            opts,
-                            NhctlDescribeService.class
-                    );
+            NhctlGetCommand cmd = new NhctlGetCommand(project);
+            cmd.setName(context.getServiceName());
+            cmd.setKind(context.getServiceType());
+            cmd.setNamespace(context.getNamespace());
+            cmd.setKubeConfig(context.getKubeConfigPath());
+            cmd.setApplication(context.getApplicationName());
+            var resource = cmd.execute(NhctlGetResource.class);
+            if (resource != null) {
+                return resource.getNhctlDescribeService();
+            }
         } catch (Exception ex) {
             throw new ExecutionException(ex);
         }
+        return null;
     }
 
     public static @NotNull String getDevPodName(Project project, @NotNull NocalhostContext context) throws ExecutionException {
