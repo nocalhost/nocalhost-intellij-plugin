@@ -11,7 +11,8 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
-import dev.nocalhost.plugin.intellij.nhctl.NhctlDeleteKubeConfigCommand;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigRemoveCommand;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeconfigRenderCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
@@ -49,8 +50,10 @@ public class RemoveClusterAction extends DumbAwareAction {
             @Override
             @SneakyThrows
             public void run(@NotNull ProgressIndicator indicator) {
-                var cmd = new NhctlDeleteKubeConfigCommand(project);
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(node.getRawKubeConfig()));
+                var path = KubeConfigUtil.kubeConfigPath(node.getRawKubeConfig());
+                NhctlKubeconfigRenderCommand.destroy(path.toString());
+                var cmd = new NhctlKubeConfigRemoveCommand(project);
+                cmd.setKubeConfig(path);
                 cmd.execute();
 
                 nocalhostSettings.removeStandaloneCluster(

@@ -4,14 +4,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Lists;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ex.ApplicationManagerEx;
-import com.intellij.openapi.application.impl.ApplicationImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.ui.LoadingNode;
 import com.intellij.ui.treeStructure.Tree;
-import com.intellij.util.concurrency.AppExecutorUtil;
-import com.intellij.util.concurrency.AppScheduledExecutorService;
 
 import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +34,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
-import dev.nocalhost.plugin.intellij.nhctl.NhctlDeleteKubeConfigCommand;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigRemoveCommand;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeconfigRenderCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
@@ -197,8 +193,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         try {
             var map = previous.get();
             if (map.containsKey(key) && !StringUtils.equals(map.get(key), value)) {
-                var cmd = new NhctlDeleteKubeConfigCommand(project);
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(map.get(key)));
+                var path = KubeConfigUtil.kubeConfigPath(map.get(key));
+                NhctlKubeconfigRenderCommand.destroy(path.toString());
+                var cmd = new NhctlKubeConfigRemoveCommand(project);
+                cmd.setKubeConfig(path);
                 cmd.execute();
             }
         } catch (Exception ex) {

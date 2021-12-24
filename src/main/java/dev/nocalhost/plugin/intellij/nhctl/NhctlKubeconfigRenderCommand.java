@@ -72,6 +72,13 @@ public class NhctlKubeconfigRenderCommand extends BaseCommand {
         return false;
     }
 
+    public static void destroy(@NotNull String path) {
+        var proc = procMap.get(path);
+        if (proc != null) {
+            proc.destroy();
+        }
+    }
+
     public static @Nullable String getConf(@NotNull String path) {
         return confMap.get(path);
     }
