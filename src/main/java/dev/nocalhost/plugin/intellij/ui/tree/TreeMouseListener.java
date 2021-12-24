@@ -273,6 +273,12 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     private boolean proxyable(String kind) {
-        return Lists.newArrayList(WORKLOAD_TYPE_DEPLOYMENT, WORKLOAD_TYPE_STATEFULSET, WORKLOAD_TYPE_SERVICE).contains(kind);
+        return Lists.newArrayList(
+                WORKLOAD_TYPE_DEPLOYMENT,
+                WORKLOAD_TYPE_STATEFULSET,
+                WORKLOAD_TYPE_DAEMONSET,
+                WORKLOAD_TYPE_SERVICE,
+                WORKLOAD_TYPE_POD
+        ).contains(kind);
     }
 }
