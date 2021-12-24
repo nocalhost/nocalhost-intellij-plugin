@@ -124,10 +124,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     List<ServiceAccount> sas = nocalhostApi.listServiceAccount(na.getServer(), na.getJwt());
                     for (var sa : sas) {
                         KubeConfig kubeConfig = DataUtils.fromYaml(sa.getKubeConfig(), KubeConfig.class);
-                        if (StringUtils.equals(sa.getKubeConfigType(), ServiceAccount.V_CLUSTER) && StringUtils.equals(sa.getVirtualCluster().getType(), ServiceAccount.CLUSTER_IP)) {
-                            var kPath = KubeConfigUtil.kubeConfigPath(sa.getKubeConfig());
-                            if (NhctlKubeconfigRenderCommand.isAlive(kPath.toString())) {
-                                var conf = NhctlKubeconfigRenderCommand.getConf(kPath.toString());
+                        if (sa.isVirtualCluster()) {
+                            var path = KubeConfigUtil.kubeConfigPath(sa.getKubeConfig());
+                            if (NhctlKubeconfigRenderCommand.isAlive(path.toString())) {
+                                var conf = NhctlKubeconfigRenderCommand.getConf(path.toString());
                                 if (StringUtils.isNotEmpty(conf)) {
                                     clusterNodes.add(new ClusterNode(na, sa, conf, DataUtils.fromYaml(conf, KubeConfig.class)));
                                 }
@@ -137,7 +137,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                                 cmd.setAddress(sa.getVirtualCluster().getAddress());
                                 cmd.setContext(sa.getVirtualCluster().getContext());
                                 cmd.setNamespace(sa.getVirtualCluster().getNamespace());
-                                cmd.setKubeConfig(kPath);
+                                cmd.setKubeConfig(path);
 
                                 if (project.isDisposed()) {
                                     return;

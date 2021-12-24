@@ -2,6 +2,8 @@ package dev.nocalhost.plugin.intellij.api.data;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.List;
 
 import lombok.Data;
@@ -67,5 +69,9 @@ public class ServiceAccount {
 
         @SerializedName("service_namespace")
         private String namespace;
+    }
+
+    public boolean isVirtualCluster() {
+        return StringUtils.equals(kubeConfigType, ServiceAccount.V_CLUSTER) && StringUtils.equals(virtualCluster.getType(), ServiceAccount.CLUSTER_IP);
     }
 }
