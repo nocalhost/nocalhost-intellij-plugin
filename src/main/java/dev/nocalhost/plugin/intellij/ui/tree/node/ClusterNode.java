@@ -35,11 +35,12 @@ public class ClusterNode extends DefaultMutableTreeNode {
     }
 
     public String getName() {
-        String name = kubeConfig.getClusters().get(0).getName();
-        if (serviceAccount != null && StringUtils.isNotEmpty(serviceAccount.getClusterName())) {
-            name = serviceAccount.getClusterName();
-        }
-        return name;
+        return kubeConfig.getContexts()
+            .stream()
+            .filter(x -> StringUtils.equals(x.getName(),kubeConfig.getCurrentContext()))
+            .map(x -> x.getContext().getCluster())
+            .findFirst()
+            .orElseGet(() -> kubeConfig.getClusters().get(0).getName());
     }
 
     public String getAccountInfo() {
