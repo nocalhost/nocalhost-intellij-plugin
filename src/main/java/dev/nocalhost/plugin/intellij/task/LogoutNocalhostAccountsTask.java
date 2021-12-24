@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigRemoveCommand;
-import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeconfigRenderCommand;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigRenderCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
@@ -54,7 +54,7 @@ public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
     private void notifyToNhctl(@NotNull String kubeConfig) {
         try {
             var path = KubeConfigUtil.kubeConfigPath(kubeConfig);
-            NhctlKubeconfigRenderCommand.destroy(path.toString());
+            NhctlKubeConfigRenderCommand.destroy(path.toString());
             var cmd = new NhctlKubeConfigRemoveCommand(getProject());
             cmd.setKubeConfig(path);
             cmd.execute();

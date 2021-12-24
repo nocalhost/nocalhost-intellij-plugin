@@ -2,16 +2,10 @@ package dev.nocalhost.plugin.intellij.nhctl;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.impl.ApplicationImpl;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
-import com.intellij.openapi.project.VetoableProjectManagerListener;
-import com.intellij.openapi.project.ex.ProjectManagerEx;
-import com.intellij.openapi.project.impl.ProjectLifecycleListener;
-import com.intellij.openapi.project.impl.ProjectManagerImpl;
-import com.intellij.util.concurrency.AppExecutorUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -35,16 +29,16 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NhctlKubeconfigRenderCommand extends BaseCommand {
+public class NhctlKubeConfigRenderCommand extends BaseCommand {
     private String port;
     private String context;
     private String address;
     private static String EOF = "EOF";
     private static Map<String, String> confMap = Maps.newHashMap();
     private static Map<String, Process> procMap = Maps.newHashMap();
-    private static final Logger LOG = Logger.getInstance(NhctlKubeconfigRenderCommand.class);
+    private static final Logger LOG = Logger.getInstance(NhctlKubeConfigRenderCommand.class);
 
-    public NhctlKubeconfigRenderCommand(@NotNull Project project) {
+    public NhctlKubeConfigRenderCommand(@NotNull Project project) {
         super(project);
     }
 

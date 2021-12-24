@@ -35,7 +35,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigRemoveCommand;
-import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeconfigRenderCommand;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigRenderCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
@@ -126,13 +126,13 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         KubeConfig kubeConfig = DataUtils.fromYaml(sa.getKubeConfig(), KubeConfig.class);
                         if (sa.isVirtualCluster()) {
                             var path = KubeConfigUtil.kubeConfigPath(sa.getKubeConfig());
-                            if (NhctlKubeconfigRenderCommand.isAlive(path.toString())) {
-                                var conf = NhctlKubeconfigRenderCommand.getConf(path.toString());
+                            if (NhctlKubeConfigRenderCommand.isAlive(path.toString())) {
+                                var conf = NhctlKubeConfigRenderCommand.getConf(path.toString());
                                 if (StringUtils.isNotEmpty(conf)) {
                                     clusterNodes.add(new ClusterNode(na, sa, conf, DataUtils.fromYaml(conf, KubeConfig.class)));
                                 }
                             } else {
-                                var cmd = new NhctlKubeconfigRenderCommand(project);
+                                var cmd = new NhctlKubeConfigRenderCommand(project);
                                 cmd.setPort(sa.getVirtualCluster().getPort());
                                 cmd.setAddress(sa.getVirtualCluster().getAddress());
                                 cmd.setContext(sa.getVirtualCluster().getContext());
@@ -194,7 +194,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             var map = previous.get();
             if (map.containsKey(key) && !StringUtils.equals(map.get(key), value)) {
                 var path = KubeConfigUtil.kubeConfigPath(map.get(key));
-                NhctlKubeconfigRenderCommand.destroy(path.toString());
+                NhctlKubeConfigRenderCommand.destroy(path.toString());
                 var cmd = new NhctlKubeConfigRemoveCommand(project);
                 cmd.setKubeConfig(path);
                 cmd.execute();
