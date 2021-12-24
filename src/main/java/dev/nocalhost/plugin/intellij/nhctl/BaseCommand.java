@@ -35,6 +35,7 @@ import lombok.Setter;
 @Setter
 public abstract class BaseCommand {
     protected boolean console;
+    protected Process process;
     protected Project project;
     protected Path kubeConfig;
     protected String namespace;
@@ -106,7 +107,6 @@ public abstract class BaseCommand {
         String cmd = commandLine.getCommandLineString();
         print("[cmd] " + cmd);
 
-        Process process;
         try {
             process = commandLine.createProcess();
             if (sudoPassword != null) {
@@ -145,8 +145,8 @@ public abstract class BaseCommand {
         return stdout.toString();
     }
 
-    public void print(String text) {
-        if (console) {
+    protected void print(String text) {
+        if (console && !project.isDisposed()) {
             project
                     .getMessageBus()
                     .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC)

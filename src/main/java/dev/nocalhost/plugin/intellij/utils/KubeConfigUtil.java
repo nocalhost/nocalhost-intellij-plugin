@@ -30,17 +30,18 @@ public class KubeConfigUtil {
     public static Path kubeConfigPath(String kubeConfig) {
         synchronized (kubeConfigPathMap) {
             try {
-                if (!kubeConfigPathMap.containsKey(kubeConfig)) {
+                var key = compress(kubeConfig);
+                if ( ! kubeConfigPathMap.containsKey(key)) {
                     Path path;
                     while (true) {
-                        path = KUBE_CONFIGS_DIR.resolve(UUID.randomUUID().toString() + "_config");
+                        path = KUBE_CONFIGS_DIR.resolve(UUID.randomUUID() + "_config");
                         if (!Files.exists(path)) {
-                            kubeConfigPathMap.put(kubeConfig, path);
+                            kubeConfigPathMap.put(key, path);
                             break;
                         }
                     }
                 }
-                Path path = kubeConfigPathMap.get(kubeConfig);
+                Path path = kubeConfigPathMap.get(key);
                 if (!Files.exists(path)) {
                     Files.createDirectories(path.getParent());
                     if (!SystemInfo.isWindows) {
@@ -59,5 +60,9 @@ public class KubeConfigUtil {
                 throw new RuntimeException("Preparing kubeconfig file error", e);
             }
         }
+    }
+
+    public static String compress(String raw) {
+        return raw.replaceAll("[\\s\\t\\n\\r]", "");
     }
 }
