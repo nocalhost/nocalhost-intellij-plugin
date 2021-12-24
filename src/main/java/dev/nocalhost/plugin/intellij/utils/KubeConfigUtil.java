@@ -4,7 +4,7 @@ import com.google.common.collect.Maps;
 
 import com.intellij.openapi.util.SystemInfo;
 
-import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -64,5 +64,9 @@ public class KubeConfigUtil {
 
     public static String compress(String raw) {
         return raw.replaceAll("[\\s\\t\\n\\r]", "");
+    }
+
+    public static boolean isSame(String c1, String c2) {
+        return StringUtils.equals(compress(c1), compress(c2));
     }
 }

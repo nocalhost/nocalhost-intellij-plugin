@@ -33,6 +33,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_CRONJOB;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DAEMONSET;
@@ -133,10 +134,6 @@ public class NocalhostTree extends Tree implements Disposable {
         ).action();
     }
 
-    private String compress(String raw) {
-        return raw.replaceAll("[\\s\\t\\n\\r]", "");
-    }
-
     private void expendWorkloadNode() {
         try {
             var context = NocalhostContextManager.getInstance(project).getContext();
@@ -151,7 +148,7 @@ public class NocalhostTree extends Tree implements Disposable {
                 try {
                     for (int i = 0; i < model.getChildCount(root); i++) {
                         ClusterNode clusterNode = (ClusterNode) model.getChild(root, i);
-                        if (StringUtils.equals(compress(clusterNode.getRawKubeConfig()), compress(rawKubeConfig))) {
+                        if (KubeConfigUtil.isSame(clusterNode.getRawKubeConfig(), rawKubeConfig)) {
                             model.updateNamespaces(clusterNode, true, () -> _locateNamespace(clusterNode, context));
                             break;
                         }
