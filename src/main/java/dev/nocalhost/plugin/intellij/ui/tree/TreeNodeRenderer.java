@@ -214,10 +214,13 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
             return ServiceStatus.DEVELOPING;
         }
+        if (node.getKubeResource().getStatus() == null) {
+            return status;
+        }
+
         boolean available = false;
         boolean progressing = false;
-        List<Condition> conditions = node.getKubeResource().getStatus()
-                .getConditions();
+        List<Condition> conditions = node.getKubeResource().getStatus().getConditions();
         if (conditions != null) {
             switch (node.controllerType().toLowerCase()) {
                 case WORKLOAD_TYPE_DEPLOYMENT:
