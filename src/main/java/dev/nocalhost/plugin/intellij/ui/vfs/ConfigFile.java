@@ -112,7 +112,7 @@ public class ConfigFile extends VirtualFile {
             try {
                 NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 nhctlDescribeOptions.setDeployment(node.resourceName());
-                nhctlDescribeOptions.setType(node.getKubeResource().getKind());
+                nhctlDescribeOptions.setType(node.controllerType());
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(node.applicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
 
                 if (isReadonly(nhctlDescribeService)) {
@@ -142,7 +142,7 @@ public class ConfigFile extends VirtualFile {
                             cmd.setKubeConfig(kubeConfigPath);
                             cmd.setDeployment(node.resourceName());
                             cmd.setApplication(node.applicationName());
-                            cmd.setControllerType(node.getKubeResource().getKind());
+                            cmd.setControllerType(node.controllerType());
                             cmd.setNamespace(node.getNamespaceNode().getNamespace());
                             cmd.execute();
                         }

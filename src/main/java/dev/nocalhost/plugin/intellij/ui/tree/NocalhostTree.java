@@ -18,7 +18,7 @@ import java.util.Map;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeWillExpandListener;
-import javax.swing.tree.ExpandVetoException;
+import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -28,10 +28,14 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdKindNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdRootNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceTypeNode;
+import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_CRONJOB;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DAEMONSET;
@@ -70,24 +74,18 @@ public class NocalhostTree extends Tree implements Disposable {
         this.addMouseListener(new TreeMouseListener(this, project));
         this.addTreeWillExpandListener(new TreeWillExpandListener() {
             @Override
-            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
-                Object node = event.getPath().getLastPathComponent();
-                if (node instanceof ClusterNode) {
-                    ClusterNode clusterNode = (ClusterNode) node;
-                    model.insertLoadingNode(clusterNode);
-                }
-                if (node instanceof NamespaceNode) {
-                    NamespaceNode namespaceNode = (NamespaceNode) node;
-                    model.insertLoadingNode(namespaceNode);
-                }
-                if (node instanceof ResourceTypeNode) {
-                    ResourceTypeNode resourceTypeNode = (ResourceTypeNode) node;
-                    model.insertLoadingNode(resourceTypeNode);
+            public void treeWillExpand(TreeExpansionEvent event) {
+                var node = event.getPath().getLastPathComponent();
+                if (node instanceof MutableTreeNode) {
+                    var mutable = (MutableTreeNode) node;
+                    if ( ! mutable.isLeaf()) {
+                        model.insertLoadingNode(mutable);
+                    }
                 }
             }
 
             @Override
-            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+            public void treeWillCollapse(TreeExpansionEvent event) {
 
             }
         });
@@ -106,6 +104,14 @@ public class NocalhostTree extends Tree implements Disposable {
                 if (node instanceof ResourceTypeNode) {
                     ResourceTypeNode resourceTypeNode = (ResourceTypeNode) node;
                     model.updateResources(resourceTypeNode);
+                }
+                if (node instanceof CrdRootNode) {
+                    var crd = (CrdRootNode) node;
+                    model.updateCrdRootNode(crd, false, () -> {});
+                }
+                if (node instanceof CrdKindNode) {
+                    var kind = (CrdKindNode) node;
+                    model.updateCrdKindNode(kind, false, () -> {});
                 }
             }
 
@@ -176,7 +182,49 @@ public class NocalhostTree extends Tree implements Disposable {
         for (int i = 0; i < model.getChildCount(node); i++) {
             var applicationNode = (ApplicationNode) model.getChild(node, i);
             if (StringUtils.equals(applicationNode.getName(), context.getApplicationName())) {
-                _locateResource(applicationNode, context);
+                if (KubeResourceUtil.isCRD(context.getServiceType())) {
+                    _locateCrdKind(applicationNode, context);
+                } else {
+                    _locateResource(applicationNode, context);
+                }
+                break;
+            }
+        }
+    }
+
+    private void _locateCrdKind(@NotNull ApplicationNode node, @NotNull NocalhostContext context) {
+        for (int i = 0, j = model.getChildCount(node); i < j; i++) {
+            var child = (MutableTreeNode) model.getChild(node, i);
+            if (child instanceof CrdRootNode) {
+                var crdRootNode = (CrdRootNode) child;
+                model.updateCrdRootNode(crdRootNode, true, () -> {
+                    var group = context.getServiceType().replaceFirst("^([a-zA-Z0-9]+)\\.([a-zA-Z0-9]+)\\.", "");
+                    for (int a = 0, b = model.getChildCount(crdRootNode); a < b; a++) {
+                        var crdGroupNode = (CrdGroupNode) model.getChild(crdRootNode, a);
+                        if (StringUtils.equals(crdGroupNode.getName(), group)) {
+                            for (int x = 0, y = model.getChildCount(crdGroupNode); x < y; x++) {
+                                var kind = (CrdKindNode) model.getChild(crdGroupNode, x);
+                                if (StringUtils.equals(kind.getResourceType(), context.getServiceType())) {
+                                    model.updateCrdKindNode(kind, true, () -> _locateCrdResource(kind, context));
+                                }
+                            }
+                        }
+                    }
+                });
+                break;
+            }
+        }
+    }
+
+    private void _locateCrdResource(@NotNull CrdKindNode kind, @NotNull NocalhostContext context) {
+        for (int i = 0, j = model.getChildCount(kind); i < j; i++) {
+            var node = (ResourceNode) model.getChild(kind, i);
+            if (StringUtils.equals(node.resourceName(), context.getServiceName())) {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    var path = new TreePath(model.getPathToRoot(node));
+                    this.scrollPathToVisible(path);
+                    this.setSelectionPath(path);
+                });
                 break;
             }
         }

@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.utils;
 
 import org.apache.commons.compress.utils.Lists;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 
+import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_CRONJOB;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DAEMONSET;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
@@ -62,5 +64,9 @@ public final class KubeResourceUtil {
             default:
                 return Lists.newArrayList();
         }
+    }
+
+    public static boolean isCRD(@NotNull String kind) {
+        return !(ALL_WORKLOAD_TYPES.contains(kind));
     }
 }

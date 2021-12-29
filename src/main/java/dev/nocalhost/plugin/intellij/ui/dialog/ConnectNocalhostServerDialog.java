@@ -53,7 +53,7 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
             return new ValidationInfo("Server cannot be empty", serverTextField);
         }
         if (!StringUtils.isNotEmpty(getUsername())) {
-            return new ValidationInfo("Username cannot be empty", usernameTextField);
+            return new ValidationInfo("Email address cannot be empty", usernameTextField);
         }
         if (!StringUtils.isNotEmpty(getPassword())) {
             return new ValidationInfo("Password cannot be empty", passwordField);
