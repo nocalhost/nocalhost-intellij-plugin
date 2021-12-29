@@ -30,7 +30,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdKindNode;
-import dev.nocalhost.plugin.intellij.ui.tree.node.CrdNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdRootNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -105,9 +105,9 @@ public class NocalhostTree extends Tree implements Disposable {
                     ResourceTypeNode resourceTypeNode = (ResourceTypeNode) node;
                     model.updateResources(resourceTypeNode);
                 }
-                if (node instanceof CrdNode) {
-                    var crd = (CrdNode) node;
-                    model.updateCrdNode(crd, false, () -> {});
+                if (node instanceof CrdRootNode) {
+                    var crd = (CrdRootNode) node;
+                    model.updateCrdRootNode(crd, false, () -> {});
                 }
                 if (node instanceof CrdKindNode) {
                     var kind = (CrdKindNode) node;
@@ -195,12 +195,12 @@ public class NocalhostTree extends Tree implements Disposable {
     private void _locateCrdKind(@NotNull ApplicationNode node, @NotNull NocalhostContext context) {
         for (int i = 0, j = model.getChildCount(node); i < j; i++) {
             var child = (MutableTreeNode) model.getChild(node, i);
-            if (child instanceof CrdNode) {
-                var crdNode = (CrdNode) child;
-                model.updateCrdNode(crdNode, true, () -> {
+            if (child instanceof CrdRootNode) {
+                var crdRootNode = (CrdRootNode) child;
+                model.updateCrdRootNode(crdRootNode, true, () -> {
                     var group = context.getServiceType().replaceFirst("^([a-zA-Z0-9]+)\\.([a-zA-Z0-9]+)\\.", "");
-                    for (int a = 0, b = model.getChildCount(crdNode); a < b; a++) {
-                        var crdGroupNode = (CrdGroupNode) model.getChild(crdNode, a);
+                    for (int a = 0, b = model.getChildCount(crdRootNode); a < b; a++) {
+                        var crdGroupNode = (CrdGroupNode) model.getChild(crdRootNode, a);
                         if (StringUtils.equals(crdGroupNode.getName(), group)) {
                             for (int x = 0, y = model.getChildCount(crdGroupNode); x < y; x++) {
                                 var kind = (CrdKindNode) model.getChild(crdGroupNode, x);

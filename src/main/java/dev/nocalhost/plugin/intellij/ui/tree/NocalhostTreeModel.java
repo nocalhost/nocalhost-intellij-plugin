@@ -45,7 +45,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdKindNode;
-import dev.nocalhost.plugin.intellij.ui.tree.node.CrdNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdRootNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -410,7 +410,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         for (Pair<String, List<String>> pair : RESOURCE_GROUP_TYPE) {
             String group = pair.first;
             if (StringUtils.equals(group, "CustomResources")) {
-                applicationNode.add(new CrdNode(group));
+                applicationNode.add(new CrdRootNode(group));
                 continue;
             }
             ResourceGroupNode resourceGroupNode = new ResourceGroupNode(group);
@@ -426,9 +426,9 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     private void updateApplications(ApplicationNode applicationNode) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             for (int i = 0; i < getChildCount(applicationNode); i++) {
-                if (getChild(applicationNode, i) instanceof CrdNode) {
-                    var crd = (CrdNode) getChild(applicationNode, i);
-                    updateCrdNode(crd, false, () -> {});
+                if (getChild(applicationNode, i) instanceof CrdRootNode) {
+                    var crd = (CrdRootNode) getChild(applicationNode, i);
+                    updateCrdRootNode(crd, false, () -> {});
                     continue;
                 }
                 ResourceGroupNode resourceGroupNode = (ResourceGroupNode) getChild(applicationNode, i);
@@ -441,7 +441,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         });
     }
 
-    void updateCrdNode(CrdNode node, boolean force, @NotNull Runnable next) {
+    void updateCrdRootNode(CrdRootNode node, boolean force, @NotNull Runnable next) {
         if (force || tree.isExpanded(new TreePath(getPathToRoot(node)))) {
             var config = node.getNamespaceNode().getClusterNode().getRawKubeConfig();
             var parser = TypeToken.getParameterized(List.class, NhctlCrdKind.class).getType();

@@ -25,7 +25,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdKindNode;
-import dev.nocalhost.plugin.intellij.ui.tree.node.CrdNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdRootNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -104,8 +104,8 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             setToolTipText(node.getName());
         }
 
-        if (value instanceof CrdNode) {
-            var node = (CrdNode) value;
+        if (value instanceof CrdRootNode) {
+            var node = (CrdRootNode) value;
             append(node.getName());
             setToolTipText(node.getName());
         }

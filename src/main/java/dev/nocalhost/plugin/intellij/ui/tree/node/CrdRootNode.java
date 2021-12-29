@@ -5,10 +5,10 @@ import org.jetbrains.annotations.NotNull;
 import lombok.Getter;
 
 @Getter
-public class CrdNode extends DefaultMutableTreeNode {
+public class CrdRootNode extends DefaultMutableTreeNode {
     private final String name;
 
-    public CrdNode(@NotNull String name) {
+    public CrdRootNode(@NotNull String name) {
         this.name = name;
     }
 
