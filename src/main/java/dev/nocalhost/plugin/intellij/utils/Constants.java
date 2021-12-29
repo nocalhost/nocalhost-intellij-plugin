@@ -26,8 +26,8 @@ public class Constants {
             WORKLOAD_TYPE_DEPLOYMENT,
             WORKLOAD_TYPE_STATEFULSET,
             WORKLOAD_TYPE_DAEMONSET,
-            WORKLOAD_TYPE_JOB,
             WORKLOAD_TYPE_CRONJOB,
+            WORKLOAD_TYPE_JOB,
             WORKLOAD_TYPE_POD
     );
 
