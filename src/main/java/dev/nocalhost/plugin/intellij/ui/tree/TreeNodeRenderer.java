@@ -23,6 +23,9 @@ import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Condition;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Status;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdKindNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdRootNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -100,6 +103,24 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             setToolTipText(node.getName());
         }
 
+        if (value instanceof CrdRootNode) {
+            var node = (CrdRootNode) value;
+            append(node.getName());
+            setToolTipText(node.getName());
+        }
+
+        if (value instanceof CrdGroupNode) {
+            var node = (CrdGroupNode) value;
+            append(node.getName());
+            setToolTipText(node.getName());
+        }
+
+        if (value instanceof CrdKindNode) {
+            var node = (CrdKindNode) value;
+            append(node.getName());
+            setToolTipText(node.getName());
+        }
+
         if (value instanceof ResourceNode) {
             ResourceNode node = (ResourceNode) value;
             append(node.getKubeResource().getMetadata().getName());
@@ -110,7 +131,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             }
 
             String tips = node.getKubeResource().getMetadata().getName();
-            if (StringUtils.equals(node.getKubeResource().getKind().toLowerCase(), WORKLOAD_TYPE_JOB)) {
+            if (StringUtils.equalsIgnoreCase(node.controllerType(), WORKLOAD_TYPE_JOB)) {
                 tips += "(" + getJobStatus(node) + ")";
             }
             setToolTipText(tips);
@@ -118,8 +139,8 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
     }
 
     private Icon getWorkloadIcon(ResourceNode node) {
-        String resourceType = node.getKubeResource().getKind().toLowerCase();
-        if (!ALL_WORKLOAD_TYPES.contains(resourceType)) {
+        String resourceType = node.controllerType().toLowerCase();
+        if (!ALL_WORKLOAD_TYPES.contains(resourceType) && !node.isCrd()) {
             return null;
         }
 
@@ -192,12 +213,15 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
             return ServiceStatus.DEVELOPING;
         }
+        if (node.getKubeResource().getStatus() == null) {
+            return status;
+        }
+
         boolean available = false;
         boolean progressing = false;
-        List<Condition> conditions = node.getKubeResource().getStatus()
-                .getConditions();
+        List<Condition> conditions = node.getKubeResource().getStatus().getConditions();
         if (conditions != null) {
-            switch (node.getKubeResource().getKind().toLowerCase()) {
+            switch (node.controllerType().toLowerCase()) {
                 case WORKLOAD_TYPE_DEPLOYMENT:
                     for (Condition condition : conditions) {
                         if (StringUtils.equals(condition.getType(), "Available")

@@ -61,7 +61,7 @@ public class OpenProjectAction extends DumbAwareAction {
                 NhctlDevAssociateOptions opts = new NhctlDevAssociateOptions(kubeConfigPath, namespace);
                 opts.setLocalSync(projectPath);
                 opts.setDeployment(node.resourceName());
-                opts.setControllerType(node.getKubeResource().getKind());
+                opts.setControllerType(node.controllerType());
                 nhctlCommand.devAssociate(node.applicationName(), opts);
 
                 openProject(projectPath);
