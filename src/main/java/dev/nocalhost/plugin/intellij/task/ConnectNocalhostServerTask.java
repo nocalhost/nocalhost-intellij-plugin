@@ -14,10 +14,9 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
-import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
 
-public class ConnectNocalhostServerTask extends Task.Backgroundable {
+public class ConnectNocalhostServerTask extends Task.Modal {
     private final NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
     private final NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(
             NocalhostSettings.class);
@@ -25,15 +24,21 @@ public class ConnectNocalhostServerTask extends Task.Backgroundable {
     private final String server;
     private final String username;
     private final String password;
+    private final Runnable onSuccess;
+    private final Runnable onFailure;
 
     public ConnectNocalhostServerTask(Project project,
                                       String server,
                                       String username,
-                                      String password) {
-        super(project, "Connecting to Nocalhost server");
+                                      String password,
+                                      Runnable onSuccess,
+                                      Runnable onFailure) {
+        super(project, "Connecting to Nocalhost Server", false);
         this.server = server;
         this.username = username;
         this.password = password;
+        this.onSuccess = onSuccess;
+        this.onFailure = onFailure;
     }
 
     @SneakyThrows
@@ -48,19 +53,21 @@ public class ConnectNocalhostServerTask extends Task.Backgroundable {
     @Override
     public void onSuccess() {
         super.onSuccess();
+        ApplicationManager.getApplication().invokeLater(onSuccess);
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
         NocalhostNotifier.getInstance(getProject()).notifySuccess(
-                "Connecting to Nocalhost server success",
+                "Connected to Nocalhost server successfully",
                 "");
     }
 
     @Override
     public void onThrowable(@NotNull Throwable ex) {
         ApplicationManager.getApplication().invokeLater(() -> {
+            onFailure.run();
             NocalhostNotifier
                     .getInstance(getProject())
-                    .notifyError("Connecting to Nocalhost server error", "Error occurs while connecting to Nocalhost server", ex.getMessage());
+                    .notifyError("Failed to connect to Nocalhost server", "Error occurred while connecting to Nocalhost server", ex.getMessage());
         });
     }
 }

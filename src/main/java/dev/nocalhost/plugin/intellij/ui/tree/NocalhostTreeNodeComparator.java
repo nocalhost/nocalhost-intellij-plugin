@@ -8,6 +8,8 @@ import javax.swing.tree.TreeNode;
 
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
+import dev.nocalhost.plugin.intellij.ui.tree.node.CrdKindNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
@@ -45,6 +47,18 @@ public class NocalhostTreeNodeComparator implements Comparator<TreeNode> {
             ResourceNode n2 = (ResourceNode) o2;
             return n1.getKubeResource().getMetadata().getName()
                     .compareTo(n2.getKubeResource().getMetadata().getName());
+        }
+
+        if (o1 instanceof CrdGroupNode && o2 instanceof CrdGroupNode) {
+            var a = (CrdGroupNode) o1;
+            var b = (CrdGroupNode) o2;
+            return a.getName().compareTo(b.getName());
+        }
+
+        if (o1 instanceof CrdKindNode && o2 instanceof CrdKindNode) {
+            var a = (CrdKindNode) o1;
+            var b = (CrdKindNode) o2;
+            return a.getName().compareTo(b.getName());
         }
 
         throw new ClassCastException();

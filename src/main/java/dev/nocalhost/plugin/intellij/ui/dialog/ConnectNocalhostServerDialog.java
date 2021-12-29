@@ -53,7 +53,7 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
             return new ValidationInfo("Server cannot be empty", serverTextField);
         }
         if (!StringUtils.isNotEmpty(getUsername())) {
-            return new ValidationInfo("Username cannot be empty", usernameTextField);
+            return new ValidationInfo("Email address cannot be empty", usernameTextField);
         }
         if (!StringUtils.isNotEmpty(getPassword())) {
             return new ValidationInfo("Password cannot be empty", passwordField);
@@ -84,9 +84,15 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
-        ProgressManager.getInstance().run(new ConnectNocalhostServerTask(project, getServer(),
-                getUsername(), getPassword()));
-        super.doOKAction();
+        setOKActionEnabled(false);
+        ProgressManager.getInstance().run(new ConnectNocalhostServerTask(
+                project,
+                getServer(),
+                getUsername(),
+                getPassword(),
+                () -> close(OK_EXIT_CODE),
+                () -> setOKActionEnabled(true))
+        );
     }
 
     public JComponent getPanel() {

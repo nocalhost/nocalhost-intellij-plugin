@@ -77,7 +77,7 @@ public class ConfigAction extends DumbAwareAction {
             public void runTask(@NotNull ProgressIndicator indicator) {
                 NhctlConfigOptions nhctlConfigOptions = new NhctlConfigOptions(kubeConfigPath, namespace, this);
                 nhctlConfigOptions.setDeployment(node.resourceName());
-                nhctlConfigOptions.setControllerType(node.getKubeResource().getKind());
+                nhctlConfigOptions.setControllerType(node.controllerType());
                 config = nhctlCommand.getConfig(node.applicationName(), nhctlConfigOptions);
             }
         });
@@ -88,7 +88,7 @@ public class ConfigAction extends DumbAwareAction {
             var x = new URIBuilder("https://nocalhost.dev/tools");
             x.addParameter("from", "daemon");
             x.addParameter("name", node.resourceName());
-            x.addParameter("type", node.getKubeResource().getKind());
+            x.addParameter("type", node.controllerType());
             x.addParameter("namespace", namespace);
             x.addParameter("kubeconfig", kubeConfigPath.toString());
             x.addParameter("application", node.applicationName());

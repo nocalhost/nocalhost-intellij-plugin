@@ -64,7 +64,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
                 cmd.setKubeConfig(kubeConfigPath);
                 cmd.setDeployment(node.resourceName());
                 cmd.setApplication(node.applicationName());
-                cmd.setControllerType(node.getKubeResource().getKind());
+                cmd.setControllerType(node.controllerType());
                 containers = DataUtils.GSON.fromJson(cmd.execute(), TypeToken.getParameterized(List.class, String.class).getType());
 
                 ApplicationManager.getApplication().invokeLater(() -> {
@@ -103,7 +103,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
                 opts.setLocalSync(dir.toString());
                 opts.setContainer(container.get());
                 opts.setDeployment(node.resourceName());
-                opts.setControllerType(node.getKubeResource().getKind());
+                opts.setControllerType(node.controllerType());
                 project.getService(OutputCapturedNhctlCommand.class).devAssociate(node.applicationName(), opts);
             }
         });

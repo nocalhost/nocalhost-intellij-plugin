@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 public class ResourceTypeNode extends DefaultMutableTreeNode {
-    private String name;
+    private final String name;
 
     public ResourceTypeNode(String name) {
         this.name = name;

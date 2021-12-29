@@ -58,7 +58,7 @@ public class ResetAction extends DumbAwareAction {
             public void runTask(@NotNull ProgressIndicator indicator) {
                 NhctlResetServiceOptions opts = new NhctlResetServiceOptions(kubeConfigPath, namespace, this);
                 opts.setDeployment(node.resourceName());
-                opts.setControllerType(node.getKubeResource().getKind());
+                opts.setControllerType(node.controllerType());
                 outputCapturedNhctlCommand.resetService(node.applicationName(), opts);
             }
         });
