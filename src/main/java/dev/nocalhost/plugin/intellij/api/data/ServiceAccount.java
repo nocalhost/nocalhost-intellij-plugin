@@ -10,8 +10,6 @@ import lombok.Data;
 
 @Data
 public class ServiceAccount {
-    public static String V_CLUSTER = "vcluster";
-    public static String CLUSTER_IP = "ClusterIP";
 
     @SerializedName("cluster_id")
     private long clusterId;
@@ -72,6 +70,10 @@ public class ServiceAccount {
     }
 
     public boolean isVirtualCluster() {
-        return StringUtils.equals(kubeConfigType, ServiceAccount.V_CLUSTER) && StringUtils.equals(virtualCluster.getType(), ServiceAccount.CLUSTER_IP);
+        return StringUtils.equals(kubeConfigType, "vcluster");
+    }
+
+    public boolean isClusterIP() {
+        return virtualCluster != null && StringUtils.equals(virtualCluster.getType(), "ClusterIP");
     }
 }

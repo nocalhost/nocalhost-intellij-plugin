@@ -131,7 +131,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     List<ServiceAccount> sas = nocalhostApi.listServiceAccount(na.getServer(), na.getJwt());
                     for (var sa : sas) {
                         KubeConfig kubeConfig = DataUtils.fromYaml(sa.getKubeConfig(), KubeConfig.class);
-                        if (sa.isVirtualCluster()) {
+                        if (sa.isVirtualCluster() && sa.isClusterIP()) {
                             var path = KubeConfigUtil.kubeConfigPath(sa.getKubeConfig());
                             if (NhctlKubeConfigRenderCommand.isAlive(path.toString())) {
                                 var conf = NhctlKubeConfigRenderCommand.getConf(path.toString());
