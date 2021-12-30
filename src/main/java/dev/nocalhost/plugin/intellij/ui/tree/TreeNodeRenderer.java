@@ -21,6 +21,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Condition;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Status;
+import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
@@ -120,6 +121,14 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             var node = (CrdKindNode) value;
             append(node.getName());
             setToolTipText(node.getName());
+        }
+        // https://nocalhost.coding.net/p/nocalhost/assignments/issues/913/detail
+        if (value instanceof AccountNode) {
+            var node = (AccountNode) value;
+            append(node.getName());
+            append("  Unable to Connect", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
+            setIcon(node.getIcon());
+            setToolTipText(node.getTooltip());
         }
 
         if (value instanceof ResourceNode) {
