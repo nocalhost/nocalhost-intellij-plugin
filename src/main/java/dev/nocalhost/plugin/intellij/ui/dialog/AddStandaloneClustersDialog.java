@@ -11,33 +11,31 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.DocumentAdapter;
-import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBTextArea;
+import com.intellij.ui.components.JBTextField;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
-import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigCheckCommand;
-import dev.nocalhost.plugin.intellij.task.AddStandaloneClusterTask;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.SneakyThrows;
 
@@ -45,9 +43,10 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     private final Project project;
 
     private JPanel dialogPanel;
-
+    private JLabel lblMessage;
+    private JBTextField txtNamespace;
+    private JComboBox<KubeContext> cmbContexts;
     private JTabbedPane tabbedPane;
-    private JBList<KubeContext> contextList;
     private TextFieldWithBrowseButton kubeconfigFileSelectTextField;
     private JBTextArea kubeconfigFilePasteTextField;
 
@@ -58,6 +57,15 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         setTitle("Connect to Cluster");
         setOKButtonText("Add");
 
+        txtNamespace.getEmptyText().setText("Type in a correct namespace");
+        cmbContexts.setRenderer(new KubeContextRender());
+        cmbContexts.addItemListener(e -> {
+            if (ItemEvent.SELECTED == e.getStateChange()) {
+                var item = (KubeContext) e.getItem();
+                txtNamespace.setText(item.getContext().getNamespace());
+            }
+        });
+
         tabbedPane.addChangeListener(e -> {
             switch (tabbedPane.getSelectedIndex()) {
                 case 0:
@@ -67,7 +75,6 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                     setContextsForKubeconfigFilePasteTextField();
                     break;
                 default:
-                    contextList.setListData(new KubeContext[0]);
                     break;
             }
         });
@@ -86,18 +93,6 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             @Override
             protected void textChanged(DocumentEvent e) {
                 setContextsForKubeconfigFilePasteTextField();
-            }
-        });
-
-        contextList.setCellRenderer(new ListItemCheckBox());
-        contextList.setSelectionModel(new DefaultListSelectionModel() {
-            @Override
-            public void setSelectionInterval(int index0, int index1) {
-                if (super.isSelectedIndex(index0)) {
-                    super.removeSelectionInterval(index0, index1);
-                } else {
-                    super.addSelectionInterval(index0, index1);
-                }
             }
         });
 
@@ -121,21 +116,21 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         switch (tabbedPane.getSelectedIndex()) {
             case 0:
                 if (!StringUtils.isNotEmpty(kubeconfigFileSelectTextField.getText())) {
-                    return new ValidationInfo("Must select kubeconfig file",
+                    return new ValidationInfo("Please select KubeConfig file",
                             kubeconfigFileSelectTextField);
                 }
                 break;
             case 1:
                 if (!StringUtils.isNotEmpty(kubeconfigFilePasteTextField.getText())) {
-                    return new ValidationInfo("Must paste kubeconfig text",
+                    return new ValidationInfo("Please paste KubeConfig text",
                             kubeconfigFilePasteTextField);
                 }
                 break;
             default:
                 break;
         }
-        if (contextList.getSelectedValuesList().size() == 0) {
-            return new ValidationInfo("Must select at least ONE context", contextList);
+        if (cmbContexts.getSelectedIndex() == -1) {
+            return new ValidationInfo("Context is required", cmbContexts);
         }
         return null;
     }
@@ -170,15 +165,15 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             @Override
             @SneakyThrows
             public void run(@NotNull ProgressIndicator indicator) {
-                var config = getRawKubeConfig();
-                var contexts = contextList.getSelectedValuesList();
-                // check and show warning
-                var cmd = new NhctlKubeConfigCheckCommand(project);
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(config));
-                cmd.setContexts(contexts.stream().map(KubeContext::getName).collect(Collectors.toList()));
-                cmd.execute();
-                // https://nocalhost.coding.net/p/nocalhost/subtasks/issues/702/detail
-                ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, config, contexts));
+//                var config = getRawKubeConfig();
+//                var contexts = contextList.getSelectedValuesList();
+//                // check and show warning
+//                var cmd = new NhctlKubeConfigCheckCommand(project);
+//                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(config));
+//                cmd.setContexts(contexts.stream().map(KubeContext::getName).collect(Collectors.toList()));
+//                cmd.execute();
+//                // https://nocalhost.coding.net/p/nocalhost/subtasks/issues/702/detail
+//                ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, config, contexts));
             }
         });
     }
@@ -213,43 +208,40 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     }
 
     private void setContextsForKubeconfigFileSelectTextField() {
-        contextList.setListData(new KubeContext[0]);
+        cmbContexts.removeAllItems();
         String text = kubeconfigFileSelectTextField.getText();
         if (StringUtils.isNotEmpty(text)) {
-            List<KubeContext> contexts = resolveContexts(Paths.get(text));
-            contextList.setListData(contexts.toArray(new KubeContext[0]));
+            var contexts = resolveContexts(Paths.get(text));
+            contexts.forEach(x -> cmbContexts.addItem(x));
+
             if (contexts.size() == 1) {
-                contextList.setSelectedIndex(0);
+                cmbContexts.setSelectedIndex(0);
             }
         }
     }
 
     private void setContextsForKubeconfigFilePasteTextField() {
-        contextList.setListData(new KubeContext[0]);
+        cmbContexts.removeAllItems();
         String text = kubeconfigFilePasteTextField.getText();
         if (StringUtils.isNotEmpty(text)) {
-            List<KubeContext> contexts = resolveContexts(text);
-            contextList.setListData(contexts.toArray(new KubeContext[0]));
+            var contexts = resolveContexts(text);
+            contexts.forEach(x -> cmbContexts.addItem(x));
+
             if (contexts.size() == 1) {
-                contextList.setSelectedIndex(0);
+                cmbContexts.setSelectedIndex(0);
             }
         }
     }
 
-    private static class ListItemCheckBox extends JCheckBox
-            implements ListCellRenderer<KubeContext> {
-        public ListItemCheckBox() {
+    private static class KubeContextRender extends JLabel implements ListCellRenderer<KubeContext> {
+
+        public KubeContextRender() {
             super();
         }
 
         @Override
-        public Component getListCellRendererComponent(JList<? extends KubeContext> list,
-                                                      KubeContext value,
-                                                      int index,
-                                                      boolean isSelected,
-                                                      boolean cellHasFocus) {
-            this.setText(value.getName());
-            this.setSelected(isSelected);
+        public Component getListCellRendererComponent(JList<? extends KubeContext> list, KubeContext value, int index, boolean isSelected, boolean cellHasFocus) {
+            setText(value.getName());
             return this;
         }
     }
