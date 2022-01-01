@@ -242,6 +242,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     private void setContextsForKubeconfigFileSelectTextField() {
         lblMessage.setText("");
         cmbContexts.removeAllItems();
+        cmbContexts.setSelectedItem(null);
         String text = kubeconfigFileSelectTextField.getText();
         if (StringUtils.isNotEmpty(text)) {
             var contexts = resolveContexts(Paths.get(text));
@@ -256,6 +257,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     private void setContextsForKubeconfigFilePasteTextField() {
         lblMessage.setText("");
         cmbContexts.removeAllItems();
+        cmbContexts.setSelectedItem(null);
         String text = kubeconfigFilePasteTextField.getText();
         if (StringUtils.isNotEmpty(text)) {
             var contexts = resolveContexts(text);
@@ -275,9 +277,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
 
         @Override
         public Component getListCellRendererComponent(JList<? extends KubeContext> list, KubeContext value, int index, boolean isSelected, boolean cellHasFocus) {
-            if (value != null) {
-                setText(value.getName());
-            }
+            setText(value == null ? "" : value.getName());
             return this;
         }
     }
