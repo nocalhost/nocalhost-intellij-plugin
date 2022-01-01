@@ -225,6 +225,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     }
 
     private void setContextsForKubeconfigFileSelectTextField() {
+        lblMessage.setText("");
         cmbContexts.removeAllItems();
         String text = kubeconfigFileSelectTextField.getText();
         if (StringUtils.isNotEmpty(text)) {
@@ -238,6 +239,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     }
 
     private void setContextsForKubeconfigFilePasteTextField() {
+        lblMessage.setText("");
         cmbContexts.removeAllItems();
         String text = kubeconfigFilePasteTextField.getText();
         if (StringUtils.isNotEmpty(text)) {
