@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
-import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlOutputUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
@@ -35,6 +34,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public abstract class BaseCommand {
+    protected Process process;
     protected boolean console;
     protected Project project;
     protected Path kubeConfig;
@@ -107,7 +107,6 @@ public abstract class BaseCommand {
         String cmd = commandLine.getCommandLineString();
         print("[cmd] " + cmd);
 
-        Process process;
         try {
             process = commandLine.createProcess();
             if (sudoPassword != null) {

@@ -12,7 +12,6 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.DocumentAdapter;
-import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.JBTextField;
 
@@ -22,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,7 +33,7 @@ import javax.swing.event.DocumentEvent;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigCheckCommand;
-import dev.nocalhost.plugin.intellij.task.AddStandaloneClusterTask;
+import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
@@ -46,6 +44,7 @@ import lombok.SneakyThrows;
 public class AddStandaloneClustersDialog extends DialogWrapper {
     private final Project project;
 
+    private Process process;
     private JPanel dialogPanel;
     private JBTextArea lblMessage;
     private JBTextField txtNamespace;
@@ -68,6 +67,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             if (ItemEvent.SELECTED == e.getStateChange()) {
                 var item = (KubeContext) e.getItem();
                 txtNamespace.setText(item.getContext().getNamespace());
+                doCheck(item);
             }
         });
 
@@ -96,7 +96,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
 
         kubeconfigFilePasteTextField.getDocument().addDocumentListener(new DocumentAdapter() {
             @Override
-            protected void textChanged(DocumentEvent e) {
+            protected void textChanged(@NotNull DocumentEvent e) {
                 setContextsForKubeconfigFilePasteTextField();
             }
         });
@@ -106,9 +106,9 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 kubeconfigFilePasteTextField);
 
         try {
-            Path defaultKubeConfig = Paths.get(System.getProperty("user.home"), ".kube/config");
-            if (Files.exists(defaultKubeConfig)) {
-                kubeconfigFileSelectTextField.setText(defaultKubeConfig.toString());
+            Path preset = Paths.get(System.getProperty("user.home"), ".kube/config");
+            if (Files.exists(preset)) {
+                kubeconfigFileSelectTextField.setText(preset.toString());
             }
         } catch (Exception ignore) {
         }
@@ -145,21 +145,27 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         return dialogPanel;
     }
 
-    @Override
-    protected void doOKAction() {
-        ProgressManager.getInstance().run(new Task.Modal(project, "Adding", false) {
+    private void doCheck(@NotNull KubeContext context) {
+        setOKActionEnabled(false);
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Checking", true) {
             @Override
             public void onSuccess() {
                 super.onSuccess();
             }
 
             @Override
-            public void onThrowable(@NotNull Throwable ex) {
-                ErrorUtil.dealWith(project, "Failed to add clusters",
-                        "Error occurred while adding clusters", ex);
+            public void onCancel() {
+                NhctlKubeConfigCheckCommand.destroy();
             }
 
-            private String getRawKubeConfig() throws IOException {
+            @Override
+            public void onThrowable(@NotNull Throwable ex) {
+                ErrorUtil.dealWith(project, "Failed to check KubeConfig",
+                        "Error occurred while checking KubeConfig", ex);
+            }
+
+            @SneakyThrows
+            private String getRawKubeConfig() {
                 if (tabbedPane.getSelectedIndex() == 0) {
                     return Files.readString(Paths.get(kubeconfigFileSelectTextField.getText()), StandardCharsets.UTF_8);
                 }
@@ -170,11 +176,6 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             @SneakyThrows
             public void run(@NotNull ProgressIndicator indicator) {
                 lblMessage.setText("");
-                var context = (KubeContext) cmbContexts.getSelectedItem();
-                if (context == null) {
-                    return;
-                }
-                // https://nocalhost.coding.net/p/nocalhost/subtasks/issues/839/detail
                 var raw = getRawKubeConfig();
                 var cmd = new NhctlKubeConfigCheckCommand(project);
                 cmd.setContext(context.getName());
@@ -186,13 +187,29 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 }
                 var result = results.get(0);
                 if (StringUtils.equals("SUCCESS", result.getStatus())) {
-                    ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, raw, Lists.newArrayList(context)));
-                    AddStandaloneClustersDialog.super.doOKAction();
-                    return;
+                    AddStandaloneClustersDialog.this.setOKActionEnabled(true);
+                } else {
+                    lblMessage.setText(result.getTips());
                 }
-                lblMessage.setText(result.getTips());
+//                if (StringUtils.equals("SUCCESS", result.getStatus())) {
+//                    ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, raw, Lists.newArrayList(context)));
+//                    AddStandaloneClustersDialog.super.doOKAction();
+//                    return;
+//                }
             }
         });
+    }
+
+    @Override
+    protected void doOKAction() {
+        // TODO
+    }
+
+    @Override
+    public void doCancelAction() {
+        NhctlKubeConfigCheckCommand.destroy();
+        super.doCancelAction();
+
     }
 
     @Override
