@@ -1,6 +1,7 @@
 package dev.nocalhost.plugin.intellij.ui.dialog;
 
 import com.google.common.collect.Lists;
+import com.google.gson.reflect.TypeToken;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -11,6 +12,7 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.JBTextField;
 
@@ -20,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,9 +34,12 @@ import javax.swing.event.DocumentEvent;
 
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigCheckCommand;
+import dev.nocalhost.plugin.intellij.task.AddStandaloneClusterTask;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.SneakyThrows;
 
@@ -43,7 +47,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     private final Project project;
 
     private JPanel dialogPanel;
-    private JLabel lblMessage;
+    private JBTextArea lblMessage;
     private JBTextField txtNamespace;
     private JComboBox<KubeContext> cmbContexts;
     private JTabbedPane tabbedPane;
@@ -54,10 +58,11 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         super(project, true);
         this.project = project;
 
+        setResizable(false);
         setTitle("Connect to Cluster");
         setOKButtonText("Add");
 
-        txtNamespace.getEmptyText().setText("Type in a correct namespace");
+        txtNamespace.getEmptyText().setText("Enter a namespace if you don't have cluster-level role");
         cmbContexts.setRenderer(new KubeContextRender());
         cmbContexts.addItemListener(e -> {
             if (ItemEvent.SELECTED == e.getStateChange()) {
@@ -79,7 +84,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             }
         });
 
-        kubeconfigFileSelectTextField.addBrowseFolderListener("Select kubeconfig file", "",
+        kubeconfigFileSelectTextField.addBrowseFolderListener("Select KubeConfig File", "",
                 null, FileChooseUtil.singleFileChooserDescriptor());
         kubeconfigFileSelectTextField.getTextField().getDocument().addDocumentListener(
                 new DocumentAdapter() {
@@ -146,7 +151,6 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             @Override
             public void onSuccess() {
                 super.onSuccess();
-                AddStandaloneClustersDialog.super.doOKAction();
             }
 
             @Override
@@ -165,15 +169,28 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             @Override
             @SneakyThrows
             public void run(@NotNull ProgressIndicator indicator) {
-//                var config = getRawKubeConfig();
-//                var contexts = contextList.getSelectedValuesList();
-//                // check and show warning
-//                var cmd = new NhctlKubeConfigCheckCommand(project);
-//                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(config));
-//                cmd.setContexts(contexts.stream().map(KubeContext::getName).collect(Collectors.toList()));
-//                cmd.execute();
-//                // https://nocalhost.coding.net/p/nocalhost/subtasks/issues/702/detail
-//                ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, config, contexts));
+                lblMessage.setText("");
+                var context = (KubeContext) cmbContexts.getSelectedItem();
+                if (context == null) {
+                    return;
+                }
+                // https://nocalhost.coding.net/p/nocalhost/subtasks/issues/839/detail
+                var raw = getRawKubeConfig();
+                var cmd = new NhctlKubeConfigCheckCommand(project);
+                cmd.setContext(context.getName());
+                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(raw));
+                var token = TypeToken.getParameterized(List.class, NhctlKubeConfigCheckCommand.Result.class).getType();
+                List<NhctlKubeConfigCheckCommand.Result> results = DataUtils.GSON.fromJson(cmd.execute(), token);
+                if (results == null || results.size() == 0) {
+                    return;
+                }
+                var result = results.get(0);
+                if (StringUtils.equals("SUCCESS", result.getStatus())) {
+                    ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, raw, Lists.newArrayList(context)));
+                    AddStandaloneClustersDialog.super.doOKAction();
+                    return;
+                }
+                lblMessage.setText(result.getTips());
             }
         });
     }
@@ -241,7 +258,9 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
 
         @Override
         public Component getListCellRendererComponent(JList<? extends KubeContext> list, KubeContext value, int index, boolean isSelected, boolean cellHasFocus) {
-            setText(value.getName());
+            if (value != null) {
+                setText(value.getName());
+            }
             return this;
         }
     }

@@ -118,14 +118,6 @@
               <text value="Namespace:"/>
             </properties>
           </component>
-          <component id="c1fb0" class="javax.swing.JLabel" binding="lblMessage">
-            <constraints>
-              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value=""/>
-            </properties>
-          </component>
           <vspacer id="7034b">
             <constraints>
               <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
@@ -151,6 +143,20 @@
               </component>
             </children>
           </grid>
+          <component id="1d9a9" class="com.intellij.ui.components.JBTextArea" binding="lblMessage">
+            <constraints>
+              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="50"/>
+              </grid>
+            </constraints>
+            <properties>
+              <background color="-12828863"/>
+              <editable value="false"/>
+              <enabled value="true"/>
+              <foreground color="-39836"/>
+              <lineWrap value="true"/>
+            </properties>
+          </component>
         </children>
       </grid>
     </children>
