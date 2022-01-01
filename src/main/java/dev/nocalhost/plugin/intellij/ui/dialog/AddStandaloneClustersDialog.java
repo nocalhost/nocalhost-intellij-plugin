@@ -30,21 +30,19 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
+import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
+import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
+import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
+import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigCheckCommand;
-import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
-import dev.nocalhost.plugin.intellij.utils.DataUtils;
-import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
-import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
-import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
-import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.SneakyThrows;
 
 public class AddStandaloneClustersDialog extends DialogWrapper {
     private final Project project;
 
-    private Process process;
     private JPanel dialogPanel;
     private JBTextArea lblMessage;
     private JBTextField txtNamespace;
