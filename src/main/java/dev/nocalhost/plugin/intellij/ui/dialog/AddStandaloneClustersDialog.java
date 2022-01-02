@@ -3,6 +3,7 @@ package dev.nocalhost.plugin.intellij.ui.dialog;
 import com.google.common.collect.Lists;
 import com.google.gson.reflect.TypeToken;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -11,6 +12,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.ui.AnimatedIcon;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.JBTextField;
@@ -43,8 +45,9 @@ import lombok.SneakyThrows;
 public class AddStandaloneClustersDialog extends DialogWrapper {
     private final Project project;
 
+    private JLabel lblMark;
     private JPanel dialogPanel;
-    private JBTextArea lblMessage;
+    private JBTextArea lblHint;
     private JBTextField txtNamespace;
     private JComboBox<KubeContext> cmbContexts;
     private JTabbedPane tabbedPane;
@@ -173,7 +176,8 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             @Override
             @SneakyThrows
             public void run(@NotNull ProgressIndicator indicator) {
-                lblMessage.setText("");
+                lblHint.setText("");
+                lblMark.setIcon(new AnimatedIcon.Default());
                 var raw = getRawKubeConfig();
                 var cmd = new NhctlKubeConfigCheckCommand(project);
                 cmd.setContext(context.getName());
@@ -183,12 +187,15 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 if (results == null || results.size() == 0) {
                     return;
                 }
-                var result = results.get(0);
-                if (StringUtils.equals("SUCCESS", result.getStatus())) {
-                    AddStandaloneClustersDialog.this.setOKActionEnabled(true);
-                } else {
-                    lblMessage.setText(result.getTips());
+                for (var item : results) {
+                    if ( ! StringUtils.equals("SUCCESS", item.getStatus())) {
+                        lblHint.setText(item.getTips());
+                        lblMark.setIcon(AllIcons.General.Warning);
+                        return;
+                    }
                 }
+                lblMark.setIcon(AllIcons.Actions.Commit);
+                AddStandaloneClustersDialog.this.setOKActionEnabled(true);
 //                if (StringUtils.equals("SUCCESS", result.getStatus())) {
 //                    ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, raw, Lists.newArrayList(context)));
 //                    AddStandaloneClustersDialog.super.doOKAction();
@@ -240,7 +247,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     }
 
     private void setContextsForKubeconfigFileSelectTextField() {
-        lblMessage.setText("");
+        lblHint.setText("");
         cmbContexts.removeAllItems();
         cmbContexts.setSelectedItem(null);
         String text = kubeconfigFileSelectTextField.getText();
@@ -255,7 +262,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     }
 
     private void setContextsForKubeconfigFilePasteTextField() {
-        lblMessage.setText("");
+        lblHint.setText("");
         cmbContexts.removeAllItems();
         cmbContexts.setSelectedItem(null);
         String text = kubeconfigFilePasteTextField.getText();
