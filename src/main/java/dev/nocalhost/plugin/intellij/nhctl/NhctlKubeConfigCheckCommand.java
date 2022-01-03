@@ -1,7 +1,9 @@
 package dev.nocalhost.plugin.intellij.nhctl;
 
 import com.google.common.collect.Lists;
+
 import com.intellij.openapi.project.Project;
+import com.intellij.execution.process.OSProcessUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -47,7 +49,7 @@ public class NhctlKubeConfigCheckCommand extends BaseCommand {
 
     public static void destroy() {
         if (prev != null) {
-            prev.destroy();
+            OSProcessUtil.killProcessTree(prev);
         }
     }
 
