@@ -264,6 +264,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         var accountNode = (AccountNode) child;
                         if (accountNode.getAccount().equals(((AccountNode) item).getAccount())) {
                             match = true;
+                            break;
                         }
                     }
                 }
