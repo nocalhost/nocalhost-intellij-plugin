@@ -271,9 +271,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     }
                 } else {
                     List<NhctlGetResource> nhctlGetResources = nhctlCommand.getResources("namespaces", nhctlGetOptions);
-                    if (nhctlGetResources == null || nhctlGetResources.isEmpty()) {
-                        namespaceNodes = Lists.newArrayList(new NamespaceNode(clusterNode.getKubeConfig().getContexts().get(0).getContext().getNamespace()));
-                    } else {
+                    if (nhctlGetResources != null) {
                         namespaceNodes = nhctlGetResources.stream()
                                 .map(e -> new NamespaceNode(e.getKubeResource().getMetadata().getName()))
                                 .collect(Collectors.toList());
