@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -39,6 +41,7 @@ import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
+import dev.nocalhost.plugin.intellij.task.AddStandaloneClusterTask;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigCheckCommand;
 import lombok.SneakyThrows;
 
@@ -69,6 +72,21 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 var item = (KubeContext) e.getItem();
                 txtNamespace.setText(item.getContext().getNamespace());
                 doCheck(item);
+            }
+        });
+
+        txtNamespace.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                // do nothing
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                var ctx = (KubeContext) cmbContexts.getSelectedItem();
+                if (ctx != null) {
+                    doCheck(ctx);
+                }
             }
         });
 
@@ -146,14 +164,32 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         return dialogPanel;
     }
 
+    private String getRawKubeConfig(@NotNull KubeContext context) throws Exception {
+        var raw = "";
+        if (tabbedPane.getSelectedIndex() == 0) {
+            raw = Files.readString(Paths.get(kubeconfigFileSelectTextField.getText()), StandardCharsets.UTF_8);
+        } else {
+            raw = kubeconfigFilePasteTextField.getText();
+        }
+
+        if (StringUtils.isNotEmpty(txtNamespace.getText())) {
+            KubeConfig kubeConfig = DataUtils.YAML.loadAs(raw, KubeConfig.class);
+            kubeConfig
+                    .getContexts()
+                    .stream()
+                    .filter(x -> StringUtils.equals(x.getName(), context.getName()))
+                    .findFirst()
+                    .ifPresent(x -> x.getContext().setNamespace(txtNamespace.getText()));
+
+            kubeConfig.setCurrentContext(context.getName());
+            return DataUtils.toYaml(kubeConfig);
+        }
+        return raw;
+    }
+
     private void doCheck(@NotNull KubeContext context) {
         setOKActionEnabled(false);
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Checking", true) {
-            @Override
-            public void onSuccess() {
-                super.onSuccess();
-            }
-
             @Override
             public void onCancel() {
                 NhctlKubeConfigCheckCommand.destroy();
@@ -165,20 +201,13 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                         "Error occurred while checking KubeConfig", ex);
             }
 
-            @SneakyThrows
-            private String getRawKubeConfig() {
-                if (tabbedPane.getSelectedIndex() == 0) {
-                    return Files.readString(Paths.get(kubeconfigFileSelectTextField.getText()), StandardCharsets.UTF_8);
-                }
-                return kubeconfigFilePasteTextField.getText();
-            }
-
             @Override
             @SneakyThrows
             public void run(@NotNull ProgressIndicator indicator) {
                 lblHint.setText("");
                 lblMark.setIcon(new AnimatedIcon.Default());
-                var raw = getRawKubeConfig();
+
+                var raw = getRawKubeConfig(context);
                 var cmd = new NhctlKubeConfigCheckCommand(project);
                 cmd.setContext(context.getName());
                 cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(raw));
@@ -196,25 +225,29 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 }
                 lblMark.setIcon(AllIcons.Actions.Commit);
                 AddStandaloneClustersDialog.this.setOKActionEnabled(true);
-//                if (StringUtils.equals("SUCCESS", result.getStatus())) {
-//                    ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, raw, Lists.newArrayList(context)));
-//                    AddStandaloneClustersDialog.super.doOKAction();
-//                    return;
-//                }
             }
         });
     }
 
     @Override
     protected void doOKAction() {
-        // TODO
+        try {
+            var ctx = (KubeContext) cmbContexts.getSelectedItem();
+            if (ctx != null) {
+                var raw = getRawKubeConfig(ctx);
+                ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, raw, Lists.newArrayList(ctx)));
+                super.doOKAction();
+            }
+        } catch (Exception ex) {
+            ErrorUtil.dealWith(project, "Failed to add KubeConfig",
+                    "Error occurred while adding KubeConfig", ex);
+        }
     }
 
     @Override
     public void doCancelAction() {
         NhctlKubeConfigCheckCommand.destroy();
         super.doCancelAction();
-
     }
 
     @Override
