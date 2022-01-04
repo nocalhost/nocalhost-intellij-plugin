@@ -443,6 +443,10 @@ public class NhctlCommand {
             args.add("--svc");
             args.add(opts.getSvc());
         }
+        if (StringUtils.isNotEmpty(opts.getControllerType())) {
+            args.add("--controller-type");
+            args.add(opts.getControllerType());
+        }
         args.add("--json");
         String output = execute(args, opts);
         return DataUtils.GSON.fromJson(output, TypeToken.getParameterized(List.class, NhctlPVCItem.class).getType());
