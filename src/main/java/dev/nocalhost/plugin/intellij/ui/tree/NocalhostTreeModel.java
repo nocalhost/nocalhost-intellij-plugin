@@ -552,11 +552,12 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             for (int i = getChildCount(node) - 1; i >= 0; i--) {
                 var child = (ResourceNode) getChild(node, i);
                 if (hash.containsKey(child.resourceName())) {
-                    var describe = hash.get(child.resourceName()).getNhctlDescribeService();
+                    var resource = hash.get(child.resourceName());
+                    var describe = resource.getNhctlDescribeService();
                     if (describe == null) {
                         describe = new NhctlDescribeService();
                     }
-                    var other = new ResourceNode(hash.get(child.resourceName()).getKubeResource(), describe, true);
+                    var other = new ResourceNode(resource.getKubeResource(), describe, resource.getVpn(), true);
                     child.updateFrom(other);
                     nodeChanged(child);
                 } else {
@@ -579,7 +580,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     if (describe == null) {
                         describe = new NhctlDescribeService();
                     }
-                    var insert = new ResourceNode(v.getKubeResource(), describe, true);
+                    var insert = new ResourceNode(v.getKubeResource(), describe,  v.getVpn(),true);
                     insertNode(insert, node);
                 }
             });
@@ -677,7 +678,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     if (nhctlDescribeService == null) {
                         nhctlDescribeService = new NhctlDescribeService();
                     }
-                    return new ResourceNode(e.getKubeResource(), nhctlDescribeService);
+                    return new ResourceNode(e.getKubeResource(), nhctlDescribeService, e.getVpn());
                 })
                 .collect(Collectors.toList());
     }
