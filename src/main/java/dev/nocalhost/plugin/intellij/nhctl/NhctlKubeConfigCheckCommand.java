@@ -43,7 +43,7 @@ public class NhctlKubeConfigCheckCommand extends BaseCommand {
     }
 
     @Override
-    protected void consume(@NotNull Process process) {
+    protected void onInput(@NotNull Process process) {
         prev = process;
     }
 
