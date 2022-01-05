@@ -134,8 +134,12 @@ public class TreeMouseListener extends MouseAdapter {
 
         if (namespaceNode.getClusterNode().getNocalhostAccount() != null) {
             actionGroup.add(new InstallApplicationAction(project, namespaceNode));
-            actionGroup.add(SEPARATOR);
-            actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
+
+            // https://nocalhost.coding.net/p/nocalhost/assignments/issues/1089/detail
+            if ( ! namespaceNode.getClusterNode().getServiceAccount().isVirtualCluster()) {
+                actionGroup.add(SEPARATOR);
+                actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
+            }
         } else {
             actionGroup.add(new InstallStandaloneApplicationAction(project, namespaceNode));
         }
