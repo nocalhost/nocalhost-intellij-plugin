@@ -2,9 +2,11 @@ package dev.nocalhost.plugin.intellij.ui.tree.node;
 
 import org.apache.commons.lang3.StringUtils;
 
+import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
+import icons.NocalhostIcons;
 import lombok.Getter;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.PRIVILEGE_TYPE_CLUSTER_ADMIN;
@@ -72,5 +74,26 @@ public class NamespaceNode extends DefaultMutableTreeNode {
     public void updateFrom(NamespaceNode o) {
         this.namespace = o.namespace;
         this.namespacePack = o.namespacePack;
+    }
+
+    public boolean isDevSpace() {
+        return namespacePack != null;
+    }
+
+    public boolean isAsleep() {
+        if (namespacePack != null) {
+            return StringUtils.equals("asleep", namespacePack.getSleepStatus());
+        }
+        return false;
+    }
+
+    public Icon getIcon() {
+        if (isAsleep()) {
+            return NocalhostIcons.DevSpaceAsleep;
+        }
+        if (isDevSpaceViewer()) {
+            return NocalhostIcons.DevSpaceViewer;
+        }
+        return NocalhostIcons.DevSpace;
     }
 }

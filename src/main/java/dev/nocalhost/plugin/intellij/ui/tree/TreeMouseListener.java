@@ -26,10 +26,12 @@ import dev.nocalhost.plugin.intellij.ui.action.application.UpgradeAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.RemoveClusterAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.RenameClusterAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.ViewClusterKubeConfigAction;
+import dev.nocalhost.plugin.intellij.ui.action.namespace.AsleepAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.CleanDevSpacePersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallApplicationAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallStandaloneApplicationAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.ResetDevSpaceAction;
+import dev.nocalhost.plugin.intellij.ui.action.namespace.WakeupAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
@@ -140,6 +142,14 @@ public class TreeMouseListener extends MouseAdapter {
         if (namespaceNode.getClusterNode().getNocalhostAccount() != null) {
             actionGroup.add(new InstallApplicationAction(project, namespaceNode));
             actionGroup.add(SEPARATOR);
+            if (namespaceNode.isDevSpace()) {
+                if (namespaceNode.isAsleep()) {
+                    actionGroup.add(new WakeupAction(project, namespaceNode));
+                } else {
+                    actionGroup.add(new AsleepAction(project, namespaceNode));
+                }
+                actionGroup.add(SEPARATOR);
+            }
             actionGroup.add(new ResetDevSpaceAction(project, namespaceNode));
         } else {
             actionGroup.add(new InstallStandaloneApplicationAction(project, namespaceNode));

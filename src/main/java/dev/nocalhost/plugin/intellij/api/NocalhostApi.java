@@ -82,6 +82,56 @@ public class NocalhostApi {
         }
     }
 
+    public void forceAsleep(String server, String jwt, long devSpaceId) throws NocalhostApiException, IOException {
+        String url = String.format("%s/v2/dev_space/%s/sleep", server, devSpaceId);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("authorization", "Bearer " + jwt)
+                .post(RequestBody.create("".getBytes()))
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            if ( ! response.isSuccessful()) {
+                throw new NocalhostApiException(url, "sleep", response.code(), "");
+            }
+            var body = response.body();
+            if (body != null) {
+                var text = CharStreams.toString(new InputStreamReader(body.byteStream(), Charsets.UTF_8));
+                NocalhostApiResponse<Object> resp = DataUtils.GSON.fromJson(
+                        text,
+                        TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType()
+                );
+                if (resp.getCode() != 0) {
+                    throw new NocalhostApiException(url, "sleep", response.code(), resp.getMessage());
+                }
+            }
+        }
+    }
+
+    public void forceWakeup(String server, String jwt, long devSpaceId) throws IOException, NocalhostApiException {
+        String url = String.format("%s/v2/dev_space/%s/wakeup", server, devSpaceId);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("authorization", "Bearer " + jwt)
+                .post(RequestBody.create("".getBytes()))
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            if ( ! response.isSuccessful()) {
+                throw new NocalhostApiException(url, "wakeup", response.code(), "");
+            }
+            var body = response.body();
+            if (body != null) {
+                var text = CharStreams.toString(new InputStreamReader(body.byteStream(), Charsets.UTF_8));
+                NocalhostApiResponse<Object> resp = DataUtils.GSON.fromJson(
+                        text,
+                        TypeToken.getParameterized(NocalhostApiResponse.class, Object.class).getType()
+                );
+                if (resp.getCode() != 0) {
+                    throw new NocalhostApiException(url, "wakeup", response.code(), resp.getMessage());
+                }
+            }
+        }
+    }
+
     public List<ServiceAccount> listServiceAccount(String server, String jwt) throws NocalhostApiException, IOException {
         String url = NocalhostApiUrl.serviceAccounts(server);
         Request request = new Request.Builder()
