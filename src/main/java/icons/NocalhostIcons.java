@@ -14,7 +14,6 @@ public interface NocalhostIcons {
     }
 
     interface Status {
-        Icon Normal = IconLoader.getIcon("/icons/status_normal.svg", NocalhostIcons.class);
         Icon Running = IconLoader.getIcon("/icons/status_running.svg", NocalhostIcons.class);
         Icon Unknown = IconLoader.getIcon("/icons/status_unknown.svg", NocalhostIcons.class);
         Icon Failed = IconLoader.getIcon("/icons/status-failed.svg", NocalhostIcons.class);
@@ -41,5 +40,12 @@ public interface NocalhostIcons {
     interface Menu {
         Icon Asleep = IconLoader.getIcon("/icons/menu_asleep.svg", NocalhostIcons.class);
         Icon Wakeup = IconLoader.getIcon("/icons/menu_wakeup.svg", NocalhostIcons.class);
+    }
+  
+    interface VPN {
+        Icon Others = IconLoader.getIcon("/icons/vpn_others.svg", NocalhostIcons.class);
+        Icon Healthy = IconLoader.getIcon("/icons/vpn_healthy.svg", NocalhostIcons.class);
+        Icon Unhealthy = IconLoader.getIcon("/icons/vpn_unhealthy.svg", NocalhostIcons.class);
+        Icon Disconnect = IconLoader.getIcon("/icons/vpn_disconnect.svg", NocalhostIcons.class);
     }
 }

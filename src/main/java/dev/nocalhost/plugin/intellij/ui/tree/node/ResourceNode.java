@@ -3,23 +3,27 @@ package dev.nocalhost.plugin.intellij.ui.tree.node;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
+import dev.nocalhost.plugin.intellij.commands.data.NhctlProxy;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import lombok.Getter;
 
 @Getter
 public class ResourceNode extends DefaultMutableTreeNode {
     private final boolean crd;
+
+    private NhctlProxy vpn;
     private KubeResource kubeResource;
     private NhctlDescribeService nhctlDescribeService;
 
-    public ResourceNode(KubeResource kubeResource, NhctlDescribeService nhctlDescribeService, boolean crd) {
+    public ResourceNode(KubeResource kubeResource, NhctlDescribeService nhctlDescribeService, NhctlProxy vpn) {
+        this(kubeResource, nhctlDescribeService, vpn, false);
+    }
+
+    public ResourceNode(KubeResource kubeResource, NhctlDescribeService nhctlDescribeService, NhctlProxy vpn, boolean crd) {
+        this.vpn = vpn;
         this.crd = crd;
         this.kubeResource = kubeResource;
         this.nhctlDescribeService = nhctlDescribeService;
-    }
-
-    public ResourceNode(KubeResource kubeResource, NhctlDescribeService nhctlDescribeService) {
-        this(kubeResource, nhctlDescribeService, false);
     }
 
     public String resourceName() {
@@ -67,6 +71,7 @@ public class ResourceNode extends DefaultMutableTreeNode {
     }
 
     public void updateFrom(ResourceNode o) {
+        this.vpn = o.vpn;
         this.kubeResource = o.kubeResource;
         this.nhctlDescribeService = o.nhctlDescribeService;
     }
