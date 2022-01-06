@@ -36,8 +36,9 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigRemoveCommand;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigRenderCommand;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlCrdListCommand;
-import dev.nocalhost.plugin.intellij.nhctl.NhctlDeleteKubeConfigCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
@@ -121,27 +122,50 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 }
             }
 
-            for (NocalhostAccount nocalhostAccount : settings.getNocalhostAccounts()) {
-                if ( ! TokenUtil.isValid(nocalhostAccount.getJwt())) {
+            for (var na : settings.getNocalhostAccounts()) {
+                if ( ! TokenUtil.isValid(na.getJwt())) {
                     continue;
                 }
 
                 try {
-                    List<ServiceAccount> serviceAccounts = nocalhostApi.listServiceAccount(
-                            nocalhostAccount.getServer(), nocalhostAccount.getJwt());
-                    for (ServiceAccount serviceAccount : serviceAccounts) {
-                        KubeConfig kubeConfig = DataUtils.fromYaml(serviceAccount.getKubeConfig(), KubeConfig.class);
-                        clusterNodes.add(new ClusterNode(nocalhostAccount, serviceAccount, serviceAccount.getKubeConfig(), kubeConfig));
+                    List<ServiceAccount> sas = nocalhostApi.listServiceAccount(na.getServer(), na.getJwt());
+                    for (var sa : sas) {
+                        KubeConfig kubeConfig = DataUtils.fromYaml(sa.getKubeConfig(), KubeConfig.class);
+                        if (sa.isVirtualCluster() && sa.isClusterIP()) {
+                            var path = KubeConfigUtil.kubeConfigPath(sa.getKubeConfig());
+                            if (NhctlKubeConfigRenderCommand.isAlive(path.toString())) {
+                                var conf = NhctlKubeConfigRenderCommand.getConf(path.toString());
+                                if (StringUtils.isNotEmpty(conf)) {
+                                    clusterNodes.add(new ClusterNode(na, sa, conf, DataUtils.fromYaml(conf, KubeConfig.class)));
+                                }
+                            } else {
+                                var cmd = new NhctlKubeConfigRenderCommand(project);
+                                cmd.setPort(sa.getVirtualCluster().getPort());
+                                cmd.setAddress(sa.getVirtualCluster().getAddress());
+                                cmd.setContext(sa.getVirtualCluster().getContext());
+                                cmd.setNamespace(sa.getVirtualCluster().getNamespace());
+                                cmd.setKubeConfig(path);
 
-                        var key = computeKey(nocalhostAccount, serviceAccount);
-                        map.put(key, serviceAccount.getKubeConfig());
-                        notifyToNhctl(key, serviceAccount.getKubeConfig());
+                                if (project.isDisposed()) {
+                                    return;
+                                }
+
+                                var conf = cmd.execute();
+                                clusterNodes.add(new ClusterNode(na, sa, conf, DataUtils.fromYaml(conf, KubeConfig.class)));
+                            }
+                        } else {
+                            clusterNodes.add(new ClusterNode(na, sa, sa.getKubeConfig(), kubeConfig));
+                        }
+
+                        var key = computeKey(na, sa);
+                        map.put(key, sa.getKubeConfig());
+                        notifyToNhctl(key, sa.getKubeConfig());
                     }
                 } catch (Exception ex) {
                     var summary = String.format(
                             "Error occurred while loading cluster from server: %s, account: %s",
-                            nocalhostAccount.getServer(),
-                            nocalhostAccount.getUsername()
+                            na.getServer(),
+                            na.getUsername()
                     );
                     ErrorUtil.console(project, summary, ex);
                 }
@@ -176,8 +200,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         try {
             var map = previous.get();
             if (map.containsKey(key) && !StringUtils.equals(map.get(key), value)) {
-                var cmd = new NhctlDeleteKubeConfigCommand(project);
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(map.get(key)));
+                var path = KubeConfigUtil.kubeConfigPath(map.get(key));
+                NhctlKubeConfigRenderCommand.destroy(path.toString());
+                var cmd = new NhctlKubeConfigRemoveCommand(project);
+                cmd.setKubeConfig(path);
                 cmd.execute();
             }
         } catch (Exception ex) {

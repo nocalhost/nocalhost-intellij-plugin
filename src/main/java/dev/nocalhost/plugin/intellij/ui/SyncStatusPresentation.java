@@ -109,12 +109,17 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
             var command = new NhctlAssociateQueryerCommand(project);
             command.setLocalSync(Paths.get(path).toString());
 
-            while ( ! project.isDisposed()) {
+            while (true) {
                 var json = "";
                 try {
                     json = command.execute();
                     List<NhctlDevAssociateQueryResult> results = DataUtils.GSON.fromJson(json, token);
                     services.set(results);
+
+                    if (project.isDisposed()) {
+                        return;
+                    }
+
                     project
                             .getMessageBus()
                             .syncPublisher(NocalhostSyncUpdateNotifier.NOCALHOST_SYNC_UPDATE_NOTIFIER_TOPIC)

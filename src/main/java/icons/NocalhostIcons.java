@@ -30,8 +30,12 @@ public interface NocalhostIcons {
 
     Icon CloudUpload = IconLoader.getIcon("/icons/cloud_upload.svg", NocalhostIcons.class);
 
-    Icon ClusterActive = IconLoader.getIcon("/icons/cluster_active.svg", NocalhostIcons.class);
-    Icon ClusterWarning = IconLoader.getIcon("/icons/cluster_warning.svg", NocalhostIcons.class);
+    interface Cluster {
+        Icon ClusterActive = IconLoader.getIcon("/icons/cluster_active.svg", NocalhostIcons.class);
+        Icon ClusterWarning = IconLoader.getIcon("/icons/cluster_warning.svg", NocalhostIcons.class);
+        Icon VirtualClusterActive = IconLoader.getIcon("/icons/vcluster_active.svg", NocalhostIcons.class);
+        Icon VirtualClusterWarning = IconLoader.getIcon("/icons/vcluster_warning.svg", NocalhostIcons.class);
+    }
 
     Icon DevSpace = IconLoader.getIcon("/icons/devspace.svg", NocalhostIcons.class);
     Icon DevSpaceAsleep = IconLoader.getIcon("/icons/devspace_sleep.svg", NocalhostIcons.class);

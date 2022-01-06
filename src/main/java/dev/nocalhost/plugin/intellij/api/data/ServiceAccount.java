@@ -2,12 +2,15 @@ package dev.nocalhost.plugin.intellij.api.data;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.List;
 
 import lombok.Data;
 
 @Data
 public class ServiceAccount {
+
     @SerializedName("cluster_id")
     private long clusterId;
 
@@ -22,6 +25,12 @@ public class ServiceAccount {
 
     @SerializedName("namespace_packs")
     private List<NamespacePack> namespacePacks;
+
+    @SerializedName("kubeconfig_type")
+    private String kubeConfigType;
+
+    @SerializedName("virtual_cluster")
+    private VirtualCluster virtualCluster;
 
     private boolean privilege;
 
@@ -43,5 +52,31 @@ public class ServiceAccount {
 
         @SerializedName("sleep_status")
         private String SleepStatus;
+    }
+
+    @Data
+    public static class VirtualCluster {
+        @SerializedName("service_type")
+        private String type;
+
+        @SerializedName("service_port")
+        private String port;
+
+        @SerializedName("host_cluster_context")
+        private String context;
+
+        @SerializedName("service_address")
+        private String address;
+
+        @SerializedName("service_namespace")
+        private String namespace;
+    }
+
+    public boolean isVirtualCluster() {
+        return StringUtils.equals(kubeConfigType, "vcluster");
+    }
+
+    public boolean isClusterIP() {
+        return virtualCluster != null && StringUtils.equals(virtualCluster.getType(), "ClusterIP");
     }
 }

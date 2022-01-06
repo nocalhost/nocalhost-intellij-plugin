@@ -6,9 +6,9 @@ import com.intellij.openapi.project.Project;
 
 import java.util.List;
 
-public class NhctlDeleteKubeConfigCommand extends BaseCommand {
+public class NhctlKubeConfigRemoveCommand extends BaseCommand {
 
-    public NhctlDeleteKubeConfigCommand(Project project) {
+    public NhctlKubeConfigRemoveCommand(Project project) {
         super(project);
     }
 

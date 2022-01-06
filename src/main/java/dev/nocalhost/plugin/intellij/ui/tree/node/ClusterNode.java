@@ -2,11 +2,13 @@ package dev.nocalhost.plugin.intellij.ui.tree.node;
 
 import org.apache.commons.lang3.StringUtils;
 
+import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import dev.nocalhost.plugin.intellij.api.data.ServiceAccount;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
+import icons.NocalhostIcons;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -34,12 +36,24 @@ public class ClusterNode extends DefaultMutableTreeNode {
         this.kubeConfig = kubeConfig;
     }
 
-    public String getName() {
-        String name = kubeConfig.getClusters().get(0).getName();
-        if (serviceAccount != null && StringUtils.isNotEmpty(serviceAccount.getClusterName())) {
-            name = serviceAccount.getClusterName();
+    public Icon getIcon() {
+        if (isActive()) {
+            return serviceAccount != null && serviceAccount.isVirtualCluster()
+                    ? NocalhostIcons.Cluster.VirtualClusterActive
+                    : NocalhostIcons.Cluster.ClusterActive;
         }
-        return name;
+        return serviceAccount != null && serviceAccount.isVirtualCluster()
+                ? NocalhostIcons.Cluster.VirtualClusterWarning
+                : NocalhostIcons.Cluster.ClusterWarning;
+    }
+
+    public String getName() {
+        return kubeConfig.getContexts()
+            .stream()
+            .filter(x -> StringUtils.equals(x.getName(),kubeConfig.getCurrentContext()))
+            .map(x -> x.getContext().getCluster())
+            .findFirst()
+            .orElseGet(() -> kubeConfig.getClusters().get(0).getName());
     }
 
     public String getAccountInfo() {

@@ -59,9 +59,9 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             ClusterNode node = (ClusterNode) value;
             append(node.getName());
             append("  ");
+            setIcon(node.getIcon());
             if (node.isActive()) {
                 append("ACTIVE", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
-                setIcon(NocalhostIcons.ClusterActive);
                 String accountInfo = node.getAccountInfo();
                 if (StringUtils.isNotEmpty(accountInfo)) {
                     setToolTipText(node.getName() + " [" + accountInfo + "]");
@@ -70,7 +70,6 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                 }
             } else {
                 append("Unable to Connect", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
-                setIcon(NocalhostIcons.ClusterWarning);
                 setToolTipText(node.getInfo());
             }
         }
