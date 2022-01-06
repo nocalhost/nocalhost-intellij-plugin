@@ -13,4 +13,6 @@ public class NhctlGetResource {
     private NhctlDescribeService nhctlDescribeService;
     @SerializedName("info")
     private KubeResource kubeResource;
+    @SerializedName("vpn")
+    private NhctlProxy vpn;
 }

@@ -26,10 +26,12 @@ import dev.nocalhost.plugin.intellij.ui.action.application.UpgradeAppAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.RemoveClusterAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.RenameClusterAction;
 import dev.nocalhost.plugin.intellij.ui.action.cluster.ViewClusterKubeConfigAction;
+import dev.nocalhost.plugin.intellij.ui.action.namespace.AsleepAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.CleanDevSpacePersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallApplicationAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.InstallStandaloneApplicationAction;
 import dev.nocalhost.plugin.intellij.ui.action.namespace.ResetDevSpaceAction;
+import dev.nocalhost.plugin.intellij.ui.action.namespace.WakeupAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.AssociateLocalDirectoryAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ClearPersistentDataAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ConfigAction;
@@ -40,9 +42,12 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.EndDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.LogsAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.OpenProjectAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.PortForwardAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.ProxyDisconnectAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.ProxyReconnectAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ResetAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.RunAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.StartDevelopAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.ProxyConnectAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.TerminalAction;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
@@ -54,9 +59,11 @@ import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
 import static dev.nocalhost.plugin.intellij.utils.Constants.DEV_MODE_DUPLICATE;
+import static dev.nocalhost.plugin.intellij.utils.Constants.VPN_UNHEALTHY;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DAEMONSET;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_SERVICE;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_STATEFULSET;
 
 public class TreeMouseListener extends MouseAdapter {
@@ -134,7 +141,14 @@ public class TreeMouseListener extends MouseAdapter {
 
         if (namespaceNode.getClusterNode().getNocalhostAccount() != null) {
             actionGroup.add(new InstallApplicationAction(project, namespaceNode));
-
+            actionGroup.add(SEPARATOR);
+            if (namespaceNode.isDevSpace()) {
+                if (namespaceNode.isAsleep()) {
+                    actionGroup.add(new WakeupAction(project, namespaceNode));
+                } else {
+                    actionGroup.add(new AsleepAction(project, namespaceNode));
+                }
+            }
             // https://nocalhost.coding.net/p/nocalhost/assignments/issues/1089/detail
             if ( ! namespaceNode.getClusterNode().getServiceAccount().isVirtualCluster()) {
                 actionGroup.add(SEPARATOR);
@@ -176,12 +190,32 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     private void renderWorkloadAction(MouseEvent event, ResourceNode resourceNode) {
-        String resourceType = resourceNode.controllerType().toLowerCase();
-        if (!ALL_WORKLOAD_TYPES.contains(resourceType) && !resourceNode.isCrd()) {
+        String kind = resourceNode.controllerType().toLowerCase();
+        if (!ALL_WORKLOAD_TYPES.contains(kind) && !resourceNode.isCrd()) {
             return;
         }
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
+
+        // the workload is in proxy mode
+        var vpn = resourceNode.getVpn();
+        if (vpn != null) {
+            if (vpn.isBelongsToMe() && StringUtils.equals(vpn.getStatus(), VPN_UNHEALTHY)) {
+                actionGroup.add(new ProxyReconnectAction(project, resourceNode));
+            }
+            actionGroup.add(new ProxyDisconnectAction(project, resourceNode));
+
+            ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
+            JBPopupMenu.showByEvent(event, menu.getComponent());
+            return;
+        }
+
+        if (StringUtils.equals(kind, WORKLOAD_TYPE_SERVICE)) {
+            actionGroup.add(new ProxyConnectAction(project, resourceNode));
+            ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
+            JBPopupMenu.showByEvent(event, menu.getComponent());
+            return;
+        }
 
         NhctlDescribeService nhctlDescribeService = resourceNode.getNhctlDescribeService();
         if (NhctlDescribeServiceUtil.isDeveloping(nhctlDescribeService)) {
@@ -190,13 +224,20 @@ public class TreeMouseListener extends MouseAdapter {
             if ( ! nhctlDescribeService.isPossess()) {
                 actionGroup.add(new StartDevelopAction(project, resourceNode, DEV_MODE_DUPLICATE));
             }
+            actionGroup.add(new RunAction(project, resourceNode));
+            actionGroup.add(new DebugAction(project, resourceNode));
+            actionGroup.add(SEPARATOR);
         } else {
             actionGroup.add(new StartDevelopAction(project, resourceNode, ""));
             actionGroup.add(new StartDevelopAction(project, resourceNode, DEV_MODE_DUPLICATE));
+            actionGroup.add(new RunAction(project, resourceNode));
+            actionGroup.add(new DebugAction(project, resourceNode));
+            actionGroup.add(SEPARATOR);
+            if (proxyable(kind)) {
+                actionGroup.add(new ProxyConnectAction(project, resourceNode));
+                actionGroup.add(SEPARATOR);
+            }
         }
-        actionGroup.add(new RunAction(project, resourceNode));
-        actionGroup.add(new DebugAction(project, resourceNode));
-        actionGroup.add(SEPARATOR);
 
         actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
         actionGroup.add(new ConfigAction(project, resourceNode));
@@ -231,5 +272,15 @@ public class TreeMouseListener extends MouseAdapter {
         actionGroup.add(new LogsAction(project, resourceNode));
         ActionPopupMenu menu = ActionManager.getInstance().createActionPopupMenu("Nocalhost.Workload.Actions", actionGroup);
         JBPopupMenu.showByEvent(event, menu.getComponent());
+    }
+
+    private boolean proxyable(String kind) {
+        return Lists.newArrayList(
+                WORKLOAD_TYPE_DEPLOYMENT,
+                WORKLOAD_TYPE_STATEFULSET,
+                WORKLOAD_TYPE_DAEMONSET,
+                WORKLOAD_TYPE_SERVICE,
+                WORKLOAD_TYPE_POD
+        ).contains(kind);
     }
 }

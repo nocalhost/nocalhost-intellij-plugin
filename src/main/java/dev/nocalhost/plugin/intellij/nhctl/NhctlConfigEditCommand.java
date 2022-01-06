@@ -41,11 +41,11 @@ public class NhctlConfigEditCommand extends BaseCommand {
     }
 
     @Override
-    protected void consume(@NotNull Process process) {
-        var output = process.getOutputStream();
-        try (output) {
-            output.write(yaml.getBytes(StandardCharsets.UTF_8));
-            output.flush();
+    protected void onInput(@NotNull Process process) {
+        var stream = process.getOutputStream();
+        try (stream) {
+            stream.write(yaml.getBytes(StandardCharsets.UTF_8));
+            stream.flush();
         } catch (Exception ex) {
             LOG.error("Failed to write dev config to stdin", ex);
         }

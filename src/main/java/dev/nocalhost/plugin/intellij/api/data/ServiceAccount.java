@@ -49,6 +49,9 @@ public class ServiceAccount {
 
         @SerializedName("space_own_type")
         private String spaceOwnType;
+
+        @SerializedName("sleep_status")
+        private String SleepStatus;
     }
 
     @Data

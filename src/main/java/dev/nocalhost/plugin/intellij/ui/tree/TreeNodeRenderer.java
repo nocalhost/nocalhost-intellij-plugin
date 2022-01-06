@@ -34,6 +34,7 @@ import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import icons.NocalhostIcons;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
+import static dev.nocalhost.plugin.intellij.utils.Constants.VPN_UNHEALTHY;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_JOB;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
@@ -76,12 +77,8 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (value instanceof NamespaceNode) {
             NamespaceNode node = (NamespaceNode) value;
             append(node.getName());
+            setIcon(node.getIcon());
             setToolTipText(node.getName());
-            if (node.isDevSpaceViewer()) {
-                setIcon(NocalhostIcons.DevSpaceViewer);
-            } else {
-                setIcon(NocalhostIcons.DevSpace);
-            }
         }
 
         if (value instanceof ApplicationNode) {
@@ -142,6 +139,16 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         String resourceType = node.controllerType().toLowerCase();
         if (!ALL_WORKLOAD_TYPES.contains(resourceType) && !node.isCrd()) {
             return null;
+        }
+
+        if (node.getVpn() != null) {
+            if (node.getVpn().isBelongsToMe()) {
+                if (StringUtils.equals(node.getVpn().getStatus(), VPN_UNHEALTHY)) {
+                    return NocalhostIcons.VPN.Unhealthy;
+                }
+                return NocalhostIcons.VPN.Healthy;
+            }
+            return NocalhostIcons.VPN.Others;
         }
 
         NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();
