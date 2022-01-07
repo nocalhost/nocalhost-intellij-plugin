@@ -131,6 +131,9 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
 
                 try {
                     sas = nocalhostApi.listServiceAccount(na.getServer(), na.getJwt());
+                    if (sas.isEmpty()) {
+                        clusterNodes.add(new AccountNode(na, " Cluster not found"));
+                    }
                 } catch (Exception ex) {
                     var summary = String.format(
                             "Error occurred while loading cluster from server: %s, account: %s",
@@ -138,7 +141,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                             na.getUsername()
                     );
                     ErrorUtil.console(project, summary, ex);
-                    clusterNodes.add(new AccountNode(na));
+                    clusterNodes.add(new AccountNode(na, " Unable to connect"));
                 }
 
                 for (var sa : sas) {
@@ -213,7 +216,10 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         var match = updates.stream().anyMatch(x -> {
                             if (x instanceof AccountNode) {
                                 var b = (AccountNode) x;
-                                return a.getAccount().equals(b.getAccount());
+                                if (a.getAccount().equals(b.getAccount())) {
+                                    a.updateFrom(b);
+                                    return true;
+                                }
                             }
                             return false;
                         });

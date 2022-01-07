@@ -9,12 +9,15 @@ import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import icons.NocalhostIcons;
 
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public class AccountNode extends DefaultMutableTreeNode {
+    private String extra;
     private final NocalhostAccount account;
 
-    public AccountNode(@NotNull NocalhostAccount na) {
+    public AccountNode(@NotNull NocalhostAccount na, @NotNull String extra) {
+        this.extra = extra;
         this.account = na;
     }
 
@@ -23,7 +26,11 @@ public class AccountNode extends DefaultMutableTreeNode {
     }
 
     public String getName() {
-        return "unknown";
+        return account.getUsername();
+    }
+
+    public void updateFrom(AccountNode other) {
+        extra = other.getExtra();
     }
 
     public String getTooltip() {

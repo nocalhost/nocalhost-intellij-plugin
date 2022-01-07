@@ -6,6 +6,7 @@ import java.util.Comparator;
 
 import javax.swing.tree.TreeNode;
 
+import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
@@ -18,6 +19,17 @@ import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_
 public class NocalhostTreeNodeComparator implements Comparator<TreeNode> {
     @Override
     public int compare(TreeNode o1, TreeNode o2) {
+        if (o1 instanceof AccountNode && o2 instanceof ClusterNode) {
+            return 1;
+        }
+        if (o1 instanceof ClusterNode && o2 instanceof AccountNode) {
+            return -1;
+        }
+        if (o1 instanceof AccountNode && o2 instanceof AccountNode) {
+            AccountNode a = (AccountNode) o1;
+            AccountNode b = (AccountNode) o2;
+            return a.getAccount().equals(b.getAccount()) ? 0 : -1;
+        }
         if (o1 instanceof ClusterNode && o2 instanceof ClusterNode) {
             ClusterNode n1 = (ClusterNode) o1;
             ClusterNode n2 = (ClusterNode) o2;

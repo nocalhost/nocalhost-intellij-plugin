@@ -126,7 +126,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (value instanceof AccountNode) {
             var node = (AccountNode) value;
             append(node.getName());
-            append("  Unable to Connect", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
+            append(node.getExtra(), SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
             setIcon(node.getIcon());
             setToolTipText(node.getTooltip());
         }
