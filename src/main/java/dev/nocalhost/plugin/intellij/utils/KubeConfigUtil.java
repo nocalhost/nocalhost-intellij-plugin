@@ -1,21 +1,18 @@
 package dev.nocalhost.plugin.intellij.utils;
 
-import com.google.common.collect.Maps;
-
+import org.jetbrains.annotations.NotNull;
 import com.intellij.openapi.util.SystemInfo;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 
-import org.apache.commons.codec.binary.StringUtils;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.util.Set;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 public class KubeConfigUtil {
     private static final Path KUBE_CONFIGS_DIR = Paths.get(
@@ -25,39 +22,30 @@ public class KubeConfigUtil {
     private static final FileAttribute<Set<PosixFilePermission>> FILE_MODE = PosixFilePermissions
             .asFileAttribute(PosixFilePermissions.fromString("rw-------"));
 
-    private static final Map<String, Path> kubeConfigPathMap = Maps.newHashMap();
-
-    public static Path kubeConfigPath(String kubeConfig) {
-        synchronized (kubeConfigPathMap) {
-            try {
-                if (!kubeConfigPathMap.containsKey(kubeConfig)) {
-                    Path path;
-                    while (true) {
-                        path = KUBE_CONFIGS_DIR.resolve(UUID.randomUUID().toString() + "_config");
-                        if (!Files.exists(path)) {
-                            kubeConfigPathMap.put(kubeConfig, path);
-                            break;
-                        }
-                    }
-                }
-                Path path = kubeConfigPathMap.get(kubeConfig);
-                if (!Files.exists(path)) {
-                    Files.createDirectories(path.getParent());
-                    if (!SystemInfo.isWindows) {
-                        Files.createFile(path, FILE_MODE);
-                    }
+    public synchronized static Path kubeConfigPath(String kubeConfig) {
+        try {
+            var hex = DigestUtils.md5Hex(compress(kubeConfig));
+            var path = KUBE_CONFIGS_DIR.resolve(hex + "_config");
+            if (Files.exists(path)) {
+                var text = new String(Files.readAllBytes(path));
+                if ( ! StringUtils.equals(text, kubeConfig)) {
                     Files.write(path, kubeConfig.getBytes(StandardCharsets.UTF_8));
-                    path.toFile().deleteOnExit();
-                } else {
-                    String content = new String(Files.readAllBytes(path));
-                    if (!StringUtils.equals(content, kubeConfig)) {
-                        Files.write(path, kubeConfig.getBytes(StandardCharsets.UTF_8));
-                    }
                 }
-                return path.toAbsolutePath();
-            } catch (Exception e) {
-                throw new RuntimeException("Preparing kubeconfig file error", e);
+            } else {
+                Files.createDirectories(path.getParent());
+                if ( ! SystemInfo.isWindows) {
+                    Files.createFile(path, FILE_MODE);
+                }
+                Files.write(path, kubeConfig.getBytes(StandardCharsets.UTF_8));
+                path.toFile().deleteOnExit();
             }
+            return path.toAbsolutePath();
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to resolve path for KubeConfig", ex);
         }
+    }
+
+    public static @NotNull String compress(@NotNull String raw) {
+        return raw.replaceAll("[\\s\\t\\n\\r]", "");
     }
 }
