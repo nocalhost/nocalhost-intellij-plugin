@@ -28,7 +28,7 @@ public class CleanDevSpacePersistentDataAction extends DumbAwareAction {
     public CleanDevSpacePersistentDataAction(Project project, NamespaceNode node) {
         super("Clear PVC");
         this.project = project;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespace();
     }
 

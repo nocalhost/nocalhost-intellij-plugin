@@ -96,7 +96,7 @@ public class StartDevelopAction extends DumbAwareAction {
         this.mode = mode;
         this.action = action;
         this.project = project;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
         outputCapturedGitCommand = project.getService(OutputCapturedGitCommand.class);
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);

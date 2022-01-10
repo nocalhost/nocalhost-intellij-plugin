@@ -52,7 +52,7 @@ public class ConfigFile extends VirtualFile {
         this.content = content;
         this.project = project;
 
-        kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         namespace = node.getNamespaceNode().getNamespace();
     }
 

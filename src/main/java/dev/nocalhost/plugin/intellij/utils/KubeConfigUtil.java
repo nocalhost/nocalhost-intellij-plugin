@@ -22,7 +22,7 @@ public class KubeConfigUtil {
     private static final FileAttribute<Set<PosixFilePermission>> FILE_MODE = PosixFilePermissions
             .asFileAttribute(PosixFilePermissions.fromString("rw-------"));
 
-    public synchronized static Path kubeConfigPath(String kubeConfig) {
+    public synchronized static Path toPath(String kubeConfig) {
         try {
             var hex = DigestUtils.md5Hex(compress(kubeConfig));
             var path = KUBE_CONFIGS_DIR.resolve(hex + "_config");

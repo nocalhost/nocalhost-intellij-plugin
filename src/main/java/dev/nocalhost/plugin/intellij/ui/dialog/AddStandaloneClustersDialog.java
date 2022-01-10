@@ -174,7 +174,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 var contexts = contextList.getSelectedValuesList();
                 // check and show warning
                 var cmd = new NhctlKubeConfigCheckCommand(project);
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(config));
+                cmd.setKubeConfig(KubeConfigUtil.toPath(config));
                 cmd.setContexts(contexts.stream().map(KubeContext::getName).collect(Collectors.toList()));
                 cmd.execute();
                 // https://nocalhost.coding.net/p/nocalhost/subtasks/issues/702/detail

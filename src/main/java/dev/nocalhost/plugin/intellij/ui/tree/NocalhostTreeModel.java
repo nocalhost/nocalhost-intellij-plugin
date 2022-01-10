@@ -155,7 +155,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 var nodes = clusters.get();
                 for (ClusterNode clusterNode : nodes) {
                     try {
-                        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(clusterNode.getRawKubeConfig());
+                        Path kubeConfigPath = KubeConfigUtil.toPath(clusterNode.getRawKubeConfig());
                         NhctlCheckClusterOptions opts = new NhctlCheckClusterOptions(kubeConfigPath);
                         ClusterStatus clusterStatus = nhctlCommand.checkCluster(opts);
                         clusterNode.setActive(clusterStatus.getCode() == 200);
@@ -177,7 +177,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             var map = previous.get();
             if (map.containsKey(key) && !StringUtils.equals(map.get(key), value)) {
                 var cmd = new NhctlDeleteKubeConfigCommand(project);
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(map.get(key)));
+                cmd.setKubeConfig(KubeConfigUtil.toPath(map.get(key)));
                 cmd.execute();
             }
         } catch (Exception ex) {
@@ -238,7 +238,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 List<NamespaceNode> namespaceNodes = Lists.newArrayList();
-                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(clusterNode.getRawKubeConfig());
+                Path kubeConfigPath = KubeConfigUtil.toPath(clusterNode.getRawKubeConfig());
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, "");
                 if (clusterNode.getServiceAccount() != null) {
                     if (clusterNode.getServiceAccount().isPrivilege()) {
@@ -341,7 +341,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ClusterNode clusterNode = namespaceNode.getClusterNode();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                Path path = KubeConfigUtil.kubeConfigPath(
+                Path path = KubeConfigUtil.toPath(
                         clusterNode.getRawKubeConfig());
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(path, namespaceNode.getNamespace());
                 List<ApplicationNode> applicationNodes = Lists.newArrayList();
@@ -448,7 +448,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
                     var cmd = new NhctlCrdListCommand(project);
-                    cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(config));
+                    cmd.setKubeConfig(KubeConfigUtil.toPath(config));
                     List<NhctlCrdKind> results = DataUtils.GSON.fromJson(cmd.execute(), parser);
 
                     ApplicationManager.getApplication().invokeLater(() -> {
@@ -519,7 +519,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 var appNode = node.getApplicationNode();
-                var path = KubeConfigUtil.kubeConfigPath(appNode.getClusterNode().getRawKubeConfig());
+                var path = KubeConfigUtil.toPath(appNode.getClusterNode().getRawKubeConfig());
                 var options = new NhctlGetOptions(path, appNode.getNamespaceNode().getNamespace());
                 options.setApplication(appNode.getName());
                 var results = nhctlCommand.getResources(node.getResourceType(), options);
@@ -660,7 +660,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             throws InterruptedException, NocalhostExecuteCmdException, IOException {
         ApplicationNode applicationNode = resourceTypeNode.getApplicationNode();
         String applicationName = applicationNode.getName();
-        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(applicationNode.getClusterNode().getRawKubeConfig());
+        Path kubeConfigPath = KubeConfigUtil.toPath(applicationNode.getClusterNode().getRawKubeConfig());
         String namespace = applicationNode.getNamespaceNode().getNamespace();
 
         String kubeResourceType = resourceTypeNode.getName().replaceAll(" ", "");

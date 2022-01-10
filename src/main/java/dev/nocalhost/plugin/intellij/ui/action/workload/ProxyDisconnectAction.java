@@ -33,7 +33,7 @@ public class ProxyDisconnectAction extends DumbAwareAction {
                 cmd.setAction("disconnect");
                 cmd.setWorkload(node.getKubeResource().getKind() + "/" + node.resourceName());
                 cmd.setNamespace(node.getNamespaceNode().getNamespace());
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig()));
+                cmd.setKubeConfig(KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig()));
                 cmd.execute();
             } catch (Exception ex) {
                 ErrorUtil.dealWith(project, "Failed to stop proxy", "Error occurred while stopping proxy.", ex);
