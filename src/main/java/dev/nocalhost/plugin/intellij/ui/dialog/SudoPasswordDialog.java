@@ -22,7 +22,7 @@ public class SudoPasswordDialog extends DialogWrapper {
     public SudoPasswordDialog(Project project, String command) {
         super(project);
         setTitle("Sudo Password");
-        messageLabel.setText(command.trim() + " wants to make changes. Type your password to allow this.");
+        messageLabel.setText(command.trim() + " wants to make changes. Type your admin password to allow this.");
         TextUiUtil.setCutCopyPastePopup(passwordField);
         init();
     }

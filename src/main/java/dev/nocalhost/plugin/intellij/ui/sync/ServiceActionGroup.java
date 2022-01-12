@@ -78,6 +78,7 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
         var status = result.getSyncthingStatus().getStatus();
         var context = NocalhostContextManager.getInstance(project).getContext();
 
+        actions.add(new Separator("[" + result.getServer() + "]"));
         if (context == null || !StringUtils.equals(context.getSha(), result.getSha())) {
             actions.add(new SwitchAsCurrentAction(project, result));
         }
@@ -95,9 +96,6 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
             default:
                 actions.add(new OverrideSyncAction(project, result));
                 break;
-        }
-        if ( ! actions.isEmpty()) {
-            actions.add(0, new Separator("[" + result.getServer() + "]"));
         }
         return actions.toArray(new AnAction[0]);
     }

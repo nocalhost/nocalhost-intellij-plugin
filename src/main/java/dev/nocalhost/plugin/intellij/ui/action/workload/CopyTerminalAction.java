@@ -61,7 +61,7 @@ public class CopyTerminalAction extends DumbAwareAction {
             try {
                 NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
                 opts.setDeployment(node.resourceName());
-                opts.setType(node.getKubeResource().getKind());
+                opts.setType(node.controllerType());
                 NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
                         node.applicationName(), opts, NhctlDescribeService.class);
                 if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
@@ -69,7 +69,7 @@ public class CopyTerminalAction extends DumbAwareAction {
                     return;
                 }
 
-                if (StringUtils.equalsIgnoreCase(node.getKubeResource().getKind(), WORKLOAD_TYPE_POD)) {
+                if (StringUtils.equalsIgnoreCase(node.controllerType(), WORKLOAD_TYPE_POD)) {
                     selectContainer(node.getKubeResource());
                     return;
                 }
@@ -109,7 +109,7 @@ public class CopyTerminalAction extends DumbAwareAction {
                 "--deployment", node.resourceName(),
                 "--kubeconfig", PathsUtil.backslash(kubeConfigPath.toString()),
                 "--namespace", namespace,
-                "--controller-type", node.getKubeResource().getKind(),
+                "--controller-type", node.controllerType(),
                 "--container", "nocalhost-dev"
         ));
 
