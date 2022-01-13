@@ -129,7 +129,7 @@ public class NocalhostTree extends Tree implements Disposable {
         );
         project.getMessageBus().connect(project).subscribe(
                 NocalhostTreeExpandNotifier.NOCALHOST_TREE_EXPAND_NOTIFIER_TOPIC,
-                this::expendWorkloadNode
+                this::expandWorkloadNode
         );
     }
 
@@ -139,7 +139,7 @@ public class NocalhostTree extends Tree implements Disposable {
         ).action();
     }
 
-    private void expendWorkloadNode() {
+    private void expandWorkloadNode() {
         try {
             var context = NocalhostContextManager.getInstance(project).getContext();
             if (context == null) {
@@ -153,7 +153,7 @@ public class NocalhostTree extends Tree implements Disposable {
                 try {
                     for (int i = 0; i < model.getChildCount(root); i++) {
                         ClusterNode clusterNode = (ClusterNode) model.getChild(root, i);
-                        if (KubeConfigUtil.isSame(clusterNode.getRawKubeConfig(), rawKubeConfig)) {
+                        if (clusterNode.isActive() && KubeConfigUtil.isSame(clusterNode.getRawKubeConfig(), rawKubeConfig)) {
                             model.updateNamespaces(clusterNode, true, () -> _locateNamespace(clusterNode, context));
                             break;
                         }
