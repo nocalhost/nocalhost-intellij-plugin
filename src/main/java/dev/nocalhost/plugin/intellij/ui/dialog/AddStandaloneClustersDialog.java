@@ -96,6 +96,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         });
 
         tabbedPane.addChangeListener(e -> {
+            lblMark.setIcon(AllIcons.Nodes.EmptyNode);
             switch (tabbedPane.getSelectedIndex()) {
                 case 0:
                     setContextsFormKubeConfigFileSelectTextField();
