@@ -5,6 +5,7 @@ import com.google.common.io.CharStreams;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.execution.process.OSProcessUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
@@ -20,6 +21,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
@@ -41,6 +43,7 @@ public abstract class BaseCommand {
     protected String namespace;
     protected String deployment;
 
+    protected AtomicBoolean silent = new AtomicBoolean(false);
     protected AtomicReference<String> stderr = new AtomicReference<>("");
 
     protected BaseCommand(Project project) {
@@ -147,6 +150,9 @@ public abstract class BaseCommand {
         int code = process.waitFor();
         if (code != 0) {
             print(stderr.get());
+            if (silent.get()) {
+                return "";
+            }
             throw new NhctlCommandException(cmd, code, stdout.toString(), stderr.get());
         }
         return stdout.toString();
@@ -158,6 +164,13 @@ public abstract class BaseCommand {
                     .getMessageBus()
                     .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC)
                     .action(text + System.lineSeparator());
+        }
+    }
+
+    public void destroy() {
+        silent.compareAndSet(false, true);
+        if (process != null) {
+            OSProcessUtil.killProcessTree(process);
         }
     }
 }

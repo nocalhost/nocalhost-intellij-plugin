@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
@@ -30,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -46,16 +49,18 @@ import dev.nocalhost.plugin.intellij.nhctl.NhctlKubeConfigCheckCommand;
 import lombok.SneakyThrows;
 
 public class AddStandaloneClustersDialog extends DialogWrapper {
+    private final AtomicReference<NhctlKubeConfigCheckCommand> command = new AtomicReference<>(null);
     private final Project project;
 
+    private Timer timer;
     private JLabel lblMark;
     private JPanel dialogPanel;
-    private JBTextArea lblHint;
+    private JBTextArea txtHint;
+    private JTabbedPane tabbedPane;
     private JBTextField txtNamespace;
     private JComboBox<KubeContext> cmbContexts;
-    private JTabbedPane tabbedPane;
-    private TextFieldWithBrowseButton kubeconfigFileSelectTextField;
     private JBTextArea kubeconfigFilePasteTextField;
+    private TextFieldWithBrowseButton kubeconfigFileSelectTextField;
 
     public AddStandaloneClustersDialog(Project project) {
         super(project, true);
@@ -93,10 +98,10 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         tabbedPane.addChangeListener(e -> {
             switch (tabbedPane.getSelectedIndex()) {
                 case 0:
-                    setContextsForKubeconfigFileSelectTextField();
+                    setContextsFormKubeConfigFileSelectTextField();
                     break;
                 case 1:
-                    setContextsForKubeconfigFilePasteTextField();
+                    setContextsFormKubeConfigFilePasteTextField();
                     break;
                 default:
                     break;
@@ -105,18 +110,25 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
 
         kubeconfigFileSelectTextField.addBrowseFolderListener("Select KubeConfig File", "",
                 null, FileChooseUtil.singleFileChooserDescriptor());
-        kubeconfigFileSelectTextField.getTextField().getDocument().addDocumentListener(
-                new DocumentAdapter() {
-                    @Override
-                    protected void textChanged(@NotNull DocumentEvent e) {
-                        setContextsForKubeconfigFileSelectTextField();
-                    }
-                });
+        kubeconfigFileSelectTextField.getTextField().getDocument().addDocumentListener(new DocumentAdapter() {
+            @Override
+            protected void textChanged(@NotNull DocumentEvent e) {
+                setContextsFormKubeConfigFileSelectTextField();
+            }
+        });
 
         kubeconfigFilePasteTextField.getDocument().addDocumentListener(new DocumentAdapter() {
             @Override
             protected void textChanged(@NotNull DocumentEvent e) {
-                setContextsForKubeconfigFilePasteTextField();
+                cancelCommand();
+                timer = new Timer(100, new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        setContextsFormKubeConfigFilePasteTextField();
+                    }
+                });
+                timer.setRepeats(false);
+                timer.start();
             }
         });
 
@@ -187,12 +199,20 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         return raw;
     }
 
+    private void cancelCommand() {
+        if (timer != null) {
+            timer.stop();
+        }
+        if (command.get() != null) {
+            command.get().destroy();
+        }
+    }
+
     private void doCheck(@NotNull KubeContext context) {
-        setOKActionEnabled(false);
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Checking", true) {
             @Override
             public void onCancel() {
-                NhctlKubeConfigCheckCommand.destroy();
+                cancelCommand();
             }
 
             @Override
@@ -204,13 +224,17 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             @Override
             @SneakyThrows
             public void run(@NotNull ProgressIndicator indicator) {
-                lblHint.setText("");
-                lblMark.setIcon(new AnimatedIcon.Default());
+                cancelCommand();
 
-                var raw = getRawKubeConfig(context);
                 var cmd = new NhctlKubeConfigCheckCommand(project);
                 cmd.setContext(context.getName());
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(raw));
+                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(getRawKubeConfig(context)));
+
+                command.set(cmd);
+                txtHint.setText("");
+                lblMark.setIcon(new AnimatedIcon.Default());
+                setOKActionEnabled(false);
+
                 var token = TypeToken.getParameterized(List.class, NhctlKubeConfigCheckCommand.Result.class).getType();
                 List<NhctlKubeConfigCheckCommand.Result> results = DataUtils.GSON.fromJson(cmd.execute(), token);
                 if (results == null || results.size() == 0) {
@@ -218,13 +242,14 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 }
                 for (var item : results) {
                     if ( ! StringUtils.equals("SUCCESS", item.getStatus())) {
-                        lblHint.setText(item.getTips());
+                        txtHint.setText(item.getTips());
                         lblMark.setIcon(AllIcons.General.Warning);
                         return;
                     }
                 }
+
                 lblMark.setIcon(AllIcons.Actions.Commit);
-                AddStandaloneClustersDialog.this.setOKActionEnabled(true);
+                setOKActionEnabled(true);
             }
         });
     }
@@ -235,7 +260,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             var ctx = (KubeContext) cmbContexts.getSelectedItem();
             if (ctx != null) {
                 var raw = getRawKubeConfig(ctx);
-                ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, raw, Lists.newArrayList(ctx)));
+                ProgressManager.getInstance().run(new AddStandaloneClusterTask(project, raw, ctx));
                 super.doOKAction();
             }
         } catch (Exception ex) {
@@ -246,7 +271,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
 
     @Override
     public void doCancelAction() {
-        NhctlKubeConfigCheckCommand.destroy();
+        cancelCommand();
         super.doCancelAction();
     }
 
@@ -273,16 +298,18 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     private List<KubeContext> resolveContexts(String text) {
         try {
             KubeConfig kubeConfig = DataUtils.YAML.loadAs(text, KubeConfig.class);
-            return kubeConfig.getContexts();
+            if (kubeConfig.getContexts() != null) {
+                return kubeConfig.getContexts();
+            }
         } catch (Exception ignore) {
         }
         return Lists.newArrayList();
     }
 
-    private void setContextsForKubeconfigFileSelectTextField() {
-        lblHint.setText("");
-        cmbContexts.removeAllItems();
+    private void setContextsFormKubeConfigFileSelectTextField() {
+        txtHint.setText("");
         cmbContexts.setSelectedItem(null);
+        cmbContexts.removeAllItems();
         String text = kubeconfigFileSelectTextField.getText();
         if (StringUtils.isNotEmpty(text)) {
             var contexts = resolveContexts(Paths.get(text));
@@ -294,10 +321,10 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         }
     }
 
-    private void setContextsForKubeconfigFilePasteTextField() {
-        lblHint.setText("");
-        cmbContexts.removeAllItems();
+    private void setContextsFormKubeConfigFilePasteTextField() {
+        txtHint.setText("");
         cmbContexts.setSelectedItem(null);
+        cmbContexts.removeAllItems();
         String text = kubeconfigFilePasteTextField.getText();
         if (StringUtils.isNotEmpty(text)) {
             var contexts = resolveContexts(text);

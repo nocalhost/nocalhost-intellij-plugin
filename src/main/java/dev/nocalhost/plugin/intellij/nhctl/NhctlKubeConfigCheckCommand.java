@@ -6,19 +6,14 @@ import com.intellij.openapi.project.Project;
 import com.intellij.execution.process.OSProcessUtil;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.List;
-
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 public class NhctlKubeConfigCheckCommand extends BaseCommand {
-    private static Process prev;
     private String context;
 
     public NhctlKubeConfigCheckCommand(Project project) {
@@ -34,23 +29,6 @@ public class NhctlKubeConfigCheckCommand extends BaseCommand {
         }
         args.add("-i");
         return fulfill(args);
-    }
-
-    @Override
-    public String execute() throws IOException, NocalhostExecuteCmdException, InterruptedException {
-        destroy();
-        return super.execute();
-    }
-
-    @Override
-    protected void onInput(@NotNull Process process) {
-        prev = process;
-    }
-
-    public static void destroy() {
-        if (prev != null) {
-            OSProcessUtil.killProcessTree(prev);
-        }
     }
 
     @Getter
