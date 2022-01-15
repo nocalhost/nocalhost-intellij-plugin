@@ -21,6 +21,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Condition;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Status;
+import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
@@ -34,6 +35,7 @@ import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import icons.NocalhostIcons;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
+import static dev.nocalhost.plugin.intellij.utils.Constants.VPN_UNHEALTHY;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_JOB;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
@@ -121,6 +123,14 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             append(node.getName());
             setToolTipText(node.getName());
         }
+        // https://nocalhost.coding.net/p/nocalhost/assignments/issues/913/detail
+        if (value instanceof AccountNode) {
+            var node = (AccountNode) value;
+            append(node.getName());
+            append(node.getExtra(), SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
+            setIcon(node.getIcon());
+            setToolTipText(node.getTooltip());
+        }
 
         if (value instanceof ResourceNode) {
             ResourceNode node = (ResourceNode) value;
@@ -143,6 +153,16 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         String resourceType = node.controllerType().toLowerCase();
         if (!ALL_WORKLOAD_TYPES.contains(resourceType) && !node.isCrd()) {
             return null;
+        }
+
+        if (node.getVpn() != null) {
+            if (node.getVpn().isBelongsToMe()) {
+                if (StringUtils.equals(node.getVpn().getStatus(), VPN_UNHEALTHY)) {
+                    return NocalhostIcons.VPN.Unhealthy;
+                }
+                return NocalhostIcons.VPN.Healthy;
+            }
+            return NocalhostIcons.VPN.Others;
         }
 
         NhctlDescribeService nhctlDescribeService = node.getNhctlDescribeService();

@@ -11,14 +11,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.Optional;
-
-import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeCluster;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
-import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeUser;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlCreateKubeConfigCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
@@ -34,58 +28,50 @@ public class AddStandaloneClusterTask extends Task.Backgroundable {
             NocalhostSettings.class);
 
     private final String rawKubeConfig;
-    private final List<KubeContext> kubeContexts;
+    private final KubeContext kubeContext;
 
     public AddStandaloneClusterTask(@Nullable Project project,
                                     String rawKubeConfig,
-                                    List<KubeContext> kubeContexts) {
+                                    KubeContext kubeContext) {
         super(project, "Adding standalone clusters");
+        this.kubeContext = kubeContext;
         this.rawKubeConfig = rawKubeConfig;
-        this.kubeContexts = kubeContexts;
     }
 
     @SneakyThrows
     @Override
     public void run(@NotNull ProgressIndicator indicator) {
-        KubeConfig srcKubeConfig = DataUtils.YAML.loadAs(rawKubeConfig, KubeConfig.class);
-        for (KubeContext kubeContext : kubeContexts) {
-            KubeConfig outKubeConfig = new KubeConfig();
-            outKubeConfig.setCurrentContext(kubeContext.getName());
-            outKubeConfig.setContexts(Lists.newArrayList(kubeContext));
+        var srcKubeConfig = DataUtils.YAML.loadAs(rawKubeConfig, KubeConfig.class);
+        var outKubeConfig = new KubeConfig();
+        outKubeConfig.setCurrentContext(kubeContext.getName());
 
-            Optional<KubeCluster> kubeClusterOptional = srcKubeConfig.getClusters().stream()
-                    .filter(e -> StringUtils.equals(
-                            e.getName(),
-                            kubeContext.getContext().getCluster())
-                    )
-                    .findFirst();
-            if (kubeClusterOptional.isEmpty()) {
-                throw new IllegalArgumentException(MessageFormat.format(
-                        "No cluster found for context {0}",
-                        DataUtils.GSON.toJson(kubeContext)));
-            }
-            outKubeConfig.setClusters(Lists.newArrayList(kubeClusterOptional.get()));
+        srcKubeConfig
+                .getContexts()
+                .stream()
+                .filter(x -> StringUtils.equals(x.getName(), kubeContext.getName()))
+                .findFirst()
+                .ifPresent(x -> outKubeConfig.setContexts(Lists.newArrayList(x)));
 
-            Optional<KubeUser> kubeUserOptional = srcKubeConfig.getUsers().stream()
-                    .filter(e -> StringUtils.equals(
-                            e.getName(),
-                            kubeContext.getContext().getUser())
-                    )
-                    .findFirst();
-            if (kubeUserOptional.isEmpty()) {
-                throw new IllegalArgumentException(MessageFormat.format(
-                        "No user found for context {0}",
-                        DataUtils.GSON.toJson(kubeContext)));
-            }
-            outKubeConfig.setUsers(Lists.newArrayList(kubeUserOptional.get()));
+        srcKubeConfig
+                .getClusters()
+                .stream()
+                .filter(x -> StringUtils.equals(x.getName(), kubeContext.getContext().getCluster()))
+                .findFirst()
+                .ifPresent(x -> outKubeConfig.setClusters(Lists.newArrayList(x)));
 
-            String kubeConfigText = DataUtils.toYaml(outKubeConfig);
-            nocalhostSettings.updateStandaloneCluster(new StandaloneCluster(kubeConfigText));
+        srcKubeConfig
+                .getUsers()
+                .stream()
+                .filter(x -> StringUtils.equals(x.getName(), kubeContext.getContext().getUser()))
+                .findFirst()
+                .ifPresent(x -> outKubeConfig.setUsers(Lists.newArrayList(x)));
 
-            var cmd = new NhctlCreateKubeConfigCommand(getProject());
-            cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(kubeConfigText));
-            cmd.execute();
-        }
+        var kubeConfigText = DataUtils.toYaml(outKubeConfig);
+        nocalhostSettings.updateStandaloneCluster(new StandaloneCluster(kubeConfigText));
+
+        var cmd = new NhctlCreateKubeConfigCommand(getProject());
+        cmd.setKubeConfig(KubeConfigUtil.toPath(kubeConfigText));
+        cmd.execute();
     }
 
     @Override

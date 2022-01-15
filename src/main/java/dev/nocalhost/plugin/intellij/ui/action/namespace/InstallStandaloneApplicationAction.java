@@ -69,7 +69,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
     public InstallStandaloneApplicationAction(Project project, NamespaceNode node) {
         super("Deploy Application", "", AllIcons.Actions.Install);
         this.project = project;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespace();
 
         outputCapturedGitCommand = project.getService(OutputCapturedGitCommand.class);

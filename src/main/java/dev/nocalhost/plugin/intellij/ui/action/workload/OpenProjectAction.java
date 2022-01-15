@@ -37,7 +37,7 @@ public class OpenProjectAction extends DumbAwareAction {
         super("Open Project", "", AllIcons.Actions.MenuOpen);
         this.project = project;
         this.node = node;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
     }
 
