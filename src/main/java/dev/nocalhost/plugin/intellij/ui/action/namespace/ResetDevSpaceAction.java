@@ -38,7 +38,7 @@ public class ResetDevSpaceAction extends DumbAwareAction {
         super("Reset", "", AllIcons.General.Reset);
         this.project = project;
         this.node = node;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespace();
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
