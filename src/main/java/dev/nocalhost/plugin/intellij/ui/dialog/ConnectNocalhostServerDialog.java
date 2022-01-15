@@ -49,13 +49,13 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
 
     @Override
     protected @Nullable ValidationInfo doValidate() {
-        if (!StringUtils.isNotEmpty(getServer())) {
+        if (StringUtils.isEmpty(getServer())) {
             return new ValidationInfo("Server cannot be empty", serverTextField);
         }
-        if (!StringUtils.isNotEmpty(getUsername())) {
+        if (StringUtils.isEmpty(getUsername())) {
             return new ValidationInfo("Email address cannot be empty", usernameTextField);
         }
-        if (!StringUtils.isNotEmpty(getPassword())) {
+        if (StringUtils.isEmpty(getPassword())) {
             return new ValidationInfo("Password cannot be empty", passwordField);
         }
         return null;
@@ -112,12 +112,12 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
     }
 
     public static void fixUrl(JTextField textField) {
-        String text = textField.getText();
-        if (text.endsWith("/")) {
-            text = text.substring(0, text.length() - 1);
+        String text = textField.getText().trim();
+        if (!text.isEmpty() && !text.startsWith("/") && !text.startsWith("http:") && !text.startsWith("https:")) {
+            text = "http" + "://" + text;
         }
-        if (!text.isEmpty() && !text.contains("://")) {
-            text = "http://" + text;
+        if (text.endsWith("/") && !text.endsWith(":/") && !text.endsWith("://")) {
+            text = text.substring(0, text.length() - 1);
         }
         textField.setText(text);
     }
