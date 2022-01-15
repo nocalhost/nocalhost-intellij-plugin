@@ -31,7 +31,7 @@ public class ClearAppPersisentDataAction extends DumbAwareAction {
     public ClearAppPersisentDataAction(Project project, ApplicationNode node) {
         super("Clear PVC");
         this.project = project;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
         this.applicationName = node.getName();
     }

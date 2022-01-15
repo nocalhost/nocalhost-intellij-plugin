@@ -42,7 +42,7 @@ public class EndDevelopAction extends DumbAwareAction {
         super("End DevMode", "", NocalhostIcons.Status.DevEnd);
         this.project = project;
         this.node = node;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }

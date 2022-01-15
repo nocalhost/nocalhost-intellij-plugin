@@ -50,7 +50,7 @@ public class RemoveClusterAction extends DumbAwareAction {
             @SneakyThrows
             public void run(@NotNull ProgressIndicator indicator) {
                 var cmd = new NhctlDeleteKubeConfigCommand(project);
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(node.getRawKubeConfig()));
+                cmd.setKubeConfig(KubeConfigUtil.toPath(node.getRawKubeConfig()));
                 cmd.execute();
 
                 nocalhostSettings.removeStandaloneCluster(

@@ -1,5 +1,6 @@
 package dev.nocalhost.plugin.intellij.utils;
 
+import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
@@ -11,6 +12,7 @@ import com.intellij.util.EnvironmentUtil;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.introspector.Property;
+import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.Tag;
@@ -51,6 +53,15 @@ public class DataUtils {
                 return super.representJavaBean(properties, javaBean);
             }
         };
+        representer.setPropertyUtils(new PropertyUtils() {
+            @Override
+            public Property getProperty(Class<?> type, String name) {
+                if (name.indexOf('-') != -1) {
+                    name = CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL, name);
+                }
+                return super.getProperty(type, name);
+            }
+        });
         representer.getPropertyUtils().setSkipMissingProperties(true);
 
         DumperOptions dumperOptions = new DumperOptions();

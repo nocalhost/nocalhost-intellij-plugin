@@ -173,7 +173,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     if (item instanceof ClusterNode) {
                         var clusterNode = (ClusterNode) item;
                         try {
-                            Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(clusterNode.getRawKubeConfig());
+                            Path kubeConfigPath = KubeConfigUtil.toPath(clusterNode.getRawKubeConfig());
                             NhctlCheckClusterOptions opts = new NhctlCheckClusterOptions(kubeConfigPath);
                             ClusterStatus clusterStatus = nhctlCommand.checkCluster(opts);
                             clusterNode.setActive(clusterStatus.getCode() == 200);
@@ -196,7 +196,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             var map = previous.get();
             if (map.containsKey(key) && !StringUtils.equals(map.get(key), value)) {
                 var cmd = new NhctlDeleteKubeConfigCommand(project);
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(map.get(key)));
+                cmd.setKubeConfig(KubeConfigUtil.toPath(map.get(key)));
                 cmd.execute();
             }
         } catch (Exception ex) {
@@ -292,7 +292,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 List<NamespaceNode> namespaceNodes = Lists.newArrayList();
-                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(clusterNode.getRawKubeConfig());
+                Path kubeConfigPath = KubeConfigUtil.toPath(clusterNode.getRawKubeConfig());
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, "");
                 if (clusterNode.getServiceAccount() != null) {
                     if (clusterNode.getServiceAccount().isPrivilege()) {
@@ -325,9 +325,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     }
                 } else {
                     List<NhctlGetResource> nhctlGetResources = nhctlCommand.getResources("namespaces", nhctlGetOptions);
-                    if (nhctlGetResources == null || nhctlGetResources.isEmpty()) {
-                        namespaceNodes = Lists.newArrayList(new NamespaceNode(clusterNode.getKubeConfig().getContexts().get(0).getContext().getNamespace()));
-                    } else {
+                    if (nhctlGetResources != null) {
                         namespaceNodes = nhctlGetResources.stream()
                                 .map(e -> new NamespaceNode(e.getKubeResource().getMetadata().getName()))
                                 .collect(Collectors.toList());
@@ -397,7 +395,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ClusterNode clusterNode = namespaceNode.getClusterNode();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                Path path = KubeConfigUtil.kubeConfigPath(
+                Path path = KubeConfigUtil.toPath(
                         clusterNode.getRawKubeConfig());
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(path, namespaceNode.getNamespace());
                 List<ApplicationNode> applicationNodes = Lists.newArrayList();
@@ -481,12 +479,13 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     private void updateApplications(ApplicationNode applicationNode) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             for (int i = 0; i < getChildCount(applicationNode); i++) {
-                if (getChild(applicationNode, i) instanceof CrdRootNode) {
-                    var crd = (CrdRootNode) getChild(applicationNode, i);
+                var child = getChild(applicationNode, i);
+                if (child instanceof CrdRootNode) {
+                    var crd = (CrdRootNode) child;
                     updateCrdRootNode(crd, false, () -> {});
                     continue;
                 }
-                ResourceGroupNode resourceGroupNode = (ResourceGroupNode) getChild(applicationNode, i);
+                ResourceGroupNode resourceGroupNode = (ResourceGroupNode) child;
                 for (int j = 0; j < getChildCount(resourceGroupNode); j++) {
                     ResourceTypeNode resourceTypeNode = (ResourceTypeNode) getChild(
                             resourceGroupNode, j);
@@ -503,61 +502,65 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
                     var cmd = new NhctlCrdListCommand(project);
-                    cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(config));
+                    cmd.setKubeConfig(KubeConfigUtil.toPath(config));
                     List<NhctlCrdKind> results = DataUtils.GSON.fromJson(cmd.execute(), parser);
 
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        synchronized (node) {
-                            removeLoadingNode(node);
-
-                            if (results == null) {
-                                return;
-                            }
-
-                            var hash = results
-                                    .stream()
-                                    .filter(x -> x.getInfo().isNamespaced())
-                                    .collect(Collectors.toMap(
-                                            x -> x.getInfo().getGroup(),
-                                            x -> Lists.newArrayList(x.getInfo()),
-                                            (a, b) -> {
-                                                a.addAll(b);
-                                                return a;
-                                            }
-                                    ));
-                            for (int i = getChildCount(node) - 1; i >= 0; i--) {
-                                var child = (CrdGroupNode) getChild(node, i);
-                                if (hash.containsKey(child.getName())) {
-                                    for (int j = getChildCount(child) - 1; j >= 0; j--) {
-                                        updateCrdKindNode((CrdKindNode) getChild(child, j), false, () -> {});
-                                    }
-                                } else {
-                                    removeNode(child);
-                                }
-                            }
-                            hash.forEach((k, v) -> {
-                                var exist = false;
-                                for (int i = getChildCount(node) - 1; i >= 0; i--) {
-                                    if (getChild(node, i) instanceof CrdGroupNode) {
-                                        var child = (CrdGroupNode) getChild(node, i);
-                                        if (StringUtils.equals(child.getName(), k)) {
-                                            exist = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if ( ! exist) {
-                                    var group = new CrdGroupNode(k);
-                                    v.forEach(x -> group.add(new CrdKindNode(x)));
-                                    insertNode(group, node);
-                                }
-                            });
-                        }
+                        refreshCrdRootNode(node, results);
                         next.run();
                     });
                 } catch (Exception ex) {
                     ErrorUtil.dealWith(project, "Failed to refresh CRD kinds",
                             "Error occurred while loading CRD kinds", ex);
+                }
+            });
+        }
+    }
+
+    void refreshCrdRootNode(CrdRootNode node, List<NhctlCrdKind> results) {
+        synchronized (node) {
+            removeLoadingNode(node);
+
+            if (results == null) {
+                return;
+            }
+
+            var hash = results
+                    .stream()
+                    .filter(x -> x.getInfo().isNamespaced())
+                    .collect(Collectors.toMap(
+                            x -> x.getInfo().getGroup(),
+                            x -> Lists.newArrayList(x.getInfo()),
+                            (a, b) -> {
+                                a.addAll(b);
+                                return a;
+                            }
+                    ));
+            for (int i = getChildCount(node) - 1; i >= 0; i--) {
+                var child = (CrdGroupNode) getChild(node, i);
+                if (hash.containsKey(child.getName())) {
+                    for (int j = getChildCount(child) - 1; j >= 0; j--) {
+                        updateCrdKindNode((CrdKindNode) getChild(child, j), false, () -> {});
+                    }
+                } else {
+                    removeNode(child);
+                }
+            }
+            hash.forEach((k, v) -> {
+                var exist = false;
+                for (int i = getChildCount(node) - 1; i >= 0; i--) {
+                    if (getChild(node, i) instanceof CrdGroupNode) {
+                        var child = (CrdGroupNode) getChild(node, i);
+                        if (StringUtils.equals(child.getName(), k)) {
+                            exist = true;
+                            break;
+                        }
+                    }
+                }
+                if ( ! exist) {
+                    var group = new CrdGroupNode(k);
+                    v.forEach(x -> group.add(new CrdKindNode(x)));
+                    insertNode(group, node);
                 }
             });
         }
@@ -570,60 +573,13 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 var appNode = node.getApplicationNode();
-                var path = KubeConfigUtil.kubeConfigPath(appNode.getClusterNode().getRawKubeConfig());
+                var path = KubeConfigUtil.toPath(appNode.getClusterNode().getRawKubeConfig());
                 var options = new NhctlGetOptions(path, appNode.getNamespaceNode().getNamespace());
                 options.setApplication(appNode.getName());
                 var results = nhctlCommand.getResources(node.getResourceType(), options);
 
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    synchronized (node) {
-                        removeLoadingNode(node);
-
-                        if (results == null) {
-                            return;
-                        }
-
-                        var hash = results
-                                .stream()
-                                .collect(Collectors.toMap(
-                                        x -> x.getKubeResource().getMetadata().getName(),
-                                        x -> x
-                                ));
-                        for (int i = getChildCount(node) - 1; i >= 0; i--) {
-                            var child = (ResourceNode) getChild(node, i);
-                            if (hash.containsKey(child.resourceName())) {
-                                var describe = hash.get(child.resourceName()).getNhctlDescribeService();
-                                if (describe == null) {
-                                    describe = new NhctlDescribeService();
-                                }
-                                var other = new ResourceNode(hash.get(child.resourceName()).getKubeResource(), describe, true);
-                                child.updateFrom(other);
-                                nodeChanged(child);
-                            } else {
-                                removeNode(child);
-                            }
-                        }
-                        hash.forEach((k, v) -> {
-                            var exist = false;
-                            for (int i = getChildCount(node) - 1; i >= 0; i--) {
-                                if (getChild(node, i) instanceof ResourceNode) {
-                                    var child = (ResourceNode) getChild(node, i);
-                                    if (StringUtils.equals(child.resourceName(), k)) {
-                                        exist = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if ( ! exist) {
-                                var describe = v.getNhctlDescribeService();
-                                if (describe == null) {
-                                    describe = new NhctlDescribeService();
-                                }
-                                var insert = new ResourceNode(v.getKubeResource(), describe, true);
-                                insertNode(insert, node);
-                            }
-                        });
-                    }
+                    refreshCrdKindNode(node, results);
                     next.run();
                 });
             } catch (Exception e) {
@@ -631,6 +587,58 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         "Error occurs while loading CRD resources", e);
             }
         });
+    }
+
+    void refreshCrdKindNode(CrdKindNode node, List<NhctlGetResource> results) {
+        synchronized (node) {
+            removeLoadingNode(node);
+
+            if (results == null) {
+                return;
+            }
+
+            var hash = results
+                    .stream()
+                    .collect(Collectors.toMap(
+                            x -> x.getKubeResource().getMetadata().getName(),
+                            x -> x
+                    ));
+            for (int i = getChildCount(node) - 1; i >= 0; i--) {
+                var child = (ResourceNode) getChild(node, i);
+                if (hash.containsKey(child.resourceName())) {
+                    var resource = hash.get(child.resourceName());
+                    var describe = resource.getNhctlDescribeService();
+                    if (describe == null) {
+                        describe = new NhctlDescribeService();
+                    }
+                    var other = new ResourceNode(resource.getKubeResource(), describe, resource.getVpn(), true);
+                    child.updateFrom(other);
+                    nodeChanged(child);
+                } else {
+                    removeNode(child);
+                }
+            }
+            hash.forEach((k, v) -> {
+                var exist = false;
+                for (int i = getChildCount(node) - 1; i >= 0; i--) {
+                    if (getChild(node, i) instanceof ResourceNode) {
+                        var child = (ResourceNode) getChild(node, i);
+                        if (StringUtils.equals(child.resourceName(), k)) {
+                            exist = true;
+                            break;
+                        }
+                    }
+                }
+                if ( ! exist) {
+                    var describe = v.getNhctlDescribeService();
+                    if (describe == null) {
+                        describe = new NhctlDescribeService();
+                    }
+                    var insert = new ResourceNode(v.getKubeResource(), describe,  v.getVpn(),true);
+                    insertNode(insert, node);
+                }
+            });
+        }
     }
 
     void updateResources(ResourceTypeNode resourceTypeNode) {
@@ -706,7 +714,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             throws InterruptedException, NocalhostExecuteCmdException, IOException {
         ApplicationNode applicationNode = resourceTypeNode.getApplicationNode();
         String applicationName = applicationNode.getName();
-        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(applicationNode.getClusterNode().getRawKubeConfig());
+        Path kubeConfigPath = KubeConfigUtil.toPath(applicationNode.getClusterNode().getRawKubeConfig());
         String namespace = applicationNode.getNamespaceNode().getNamespace();
 
         String kubeResourceType = resourceTypeNode.getName().replaceAll(" ", "");
@@ -724,7 +732,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     if (nhctlDescribeService == null) {
                         nhctlDescribeService = new NhctlDescribeService();
                     }
-                    return new ResourceNode(e.getKubeResource(), nhctlDescribeService);
+                    return new ResourceNode(e.getKubeResource(), nhctlDescribeService, e.getVpn());
                 })
                 .collect(Collectors.toList());
     }
