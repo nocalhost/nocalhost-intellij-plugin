@@ -33,7 +33,7 @@ public class ProxyReconnectAction extends DumbAwareAction {
                 cmd.setAction("reconnect");
                 cmd.setWorkload(node.getKubeResource().getKind() + "/" + node.resourceName());
                 cmd.setNamespace(node.getNamespaceNode().getNamespace());
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig()));
+                cmd.setKubeConfig(KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig()));
                 cmd.execute();
             } catch (Exception ex) {
                 ErrorUtil.dealWith(project, "Failed to resume proxy", "Error occurred while resuming proxy.", ex);

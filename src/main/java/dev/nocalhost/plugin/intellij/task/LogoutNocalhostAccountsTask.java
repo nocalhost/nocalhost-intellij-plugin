@@ -53,7 +53,7 @@ public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
     private void notifyToNhctl(@NotNull String kubeConfig) {
         try {
             var cmd = new NhctlDeleteKubeConfigCommand(getProject());
-            cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(kubeConfig));
+            cmd.setKubeConfig(KubeConfigUtil.toPath(kubeConfig));
             cmd.execute();
         } catch (Exception ex) {
             ErrorUtil.dealWith(getProject(), "Failed to notify nhctl", "Error occurs while notify nhctl.", ex);

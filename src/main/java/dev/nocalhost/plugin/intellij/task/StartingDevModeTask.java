@@ -57,7 +57,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
         super(project, "Starting DevMode", true);
         this.project = project;
         this.devModeService = devModeService;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(devModeService.getRawKubeConfig());
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
     }
 
@@ -109,7 +109,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
         if (StringUtils.isEmpty(action)) {
             return true;
         }
-        var path = KubeConfigUtil.kubeConfigPath(devModeService.getRawKubeConfig());
+        var path = KubeConfigUtil.toPath(devModeService.getRawKubeConfig());
         var opts = new NhctlConfigOptions(path, devModeService.getNamespace());
         opts.setDeployment(devModeService.getServiceName());
         opts.setControllerType(devModeService.getServiceType());

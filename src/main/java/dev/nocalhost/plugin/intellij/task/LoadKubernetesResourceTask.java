@@ -36,7 +36,7 @@ public class LoadKubernetesResourceTask extends BaseBackgroundTask {
     public LoadKubernetesResourceTask(Project project, ResourceNode node) {
         super(project, "Loading kubernetes resource");
         this.node = node;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
     }
 

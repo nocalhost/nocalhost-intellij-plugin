@@ -84,7 +84,7 @@ public class ExecutionTask extends Task.Backgroundable {
         associate(project.getBasePath());
         NocalhostContextManager.getInstance(project).refresh();
         // check sync status
-        var path = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
+        var path = KubeConfigUtil.toPath(service.getRawKubeConfig());
         var opts = new NhctlSyncStatusOptions(path, service.getNamespace());
         opts.setWait(true);
         opts.setTimeout(600);
@@ -157,7 +157,7 @@ public class ExecutionTask extends Task.Backgroundable {
 
     private @Nullable String getDebugPort(@NotNull DevModeService service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
         var cmd = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        var path = KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig());
+        var path = KubeConfigUtil.toPath(service.getRawKubeConfig());
         var opts = new NhctlConfigOptions(path, service.getNamespace());
         opts.setDeployment(service.getServiceName());
         opts.setControllerType(service.getServiceType());
@@ -173,7 +173,7 @@ public class ExecutionTask extends Task.Backgroundable {
 
     private void associate(String path) throws IOException, NocalhostExecuteCmdException, InterruptedException {
         var cmd = new NhctlDevAssociateCommand(project);
-        cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(service.getRawKubeConfig()));
+        cmd.setKubeConfig(KubeConfigUtil.toPath(service.getRawKubeConfig()));
         cmd.setNamespace(service.getNamespace());
         cmd.setLocalSync(Paths.get(path).toString());
         cmd.setContainer(service.getContainerName());

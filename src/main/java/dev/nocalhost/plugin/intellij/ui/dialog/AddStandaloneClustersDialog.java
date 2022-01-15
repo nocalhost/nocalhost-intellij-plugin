@@ -229,7 +229,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
 
                 var cmd = new NhctlKubeConfigCheckCommand(project);
                 cmd.setContext(context.getName());
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(getRawKubeConfig(context)));
+                cmd.setKubeConfig(KubeConfigUtil.toPath(getRawKubeConfig(context)));
 
                 command.set(cmd);
                 txtHint.setText("");

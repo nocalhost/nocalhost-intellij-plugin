@@ -85,7 +85,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
         this.node = node;
         this.project = project;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
 
         outputCapturedNhctlCommand = project.getService(OutputCapturedNhctlCommand.class);
