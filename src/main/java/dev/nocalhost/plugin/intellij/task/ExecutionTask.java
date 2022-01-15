@@ -53,7 +53,7 @@ public class ExecutionTask extends Task.Backgroundable {
     private final String action;
     private final Project project;
     private final DevModeService service;
-    private final Map<String, Class<? extends ConfigurationType>> hash = new HashMap<>() {
+    private final Map<String, Class<? extends ConfigurationType>> code2conf = new HashMap<>() {
         {
             put("GO", NocalhostGoConfigurationType.class);
             put("PS", NocalhostPhpConfigurationType.class);
@@ -61,6 +61,16 @@ public class ExecutionTask extends Task.Backgroundable {
             put("IC", NocalhostJavaConfigurationType.class);
             put("IU", NocalhostJavaConfigurationType.class);
             put("PY", NocalhostPythonConfigurationType.class);
+        }
+    };
+
+    private final Map<String, Class<? extends ConfigurationType>> lang2conf = new HashMap<>() {
+        {
+            put("go", NocalhostGoConfigurationType.class);
+            put("php", NocalhostPhpConfigurationType.class);
+            put("node", NocalhostNodeConfigurationType.class);
+            put("java", NocalhostJavaConfigurationType.class);
+            put("python", NocalhostPythonConfigurationType.class);
         }
     };
 
@@ -126,9 +136,6 @@ public class ExecutionTask extends Task.Backgroundable {
         RunnerAndConfigurationSettings conf;
         var manager = RunManager.getInstance(project);
         var type = getConfType();
-        if (type == null) {
-            throw new ExecutionException("Cannot find the corresponding `ConfigurationType`.");
-        }
         var list = manager.getConfigurationSettingsList(type);
         if (list.isEmpty()) {
             conf = manager.createConfiguration("Nocalhost", type);
@@ -138,7 +145,7 @@ public class ExecutionTask extends Task.Backgroundable {
         }
         // Python
         if (conf.getType() instanceof NocalhostPythonConfigurationType) {
-            var port = getDebugPort(service);
+            var port = getDebugPort();
             if (StringUtils.isEmpty(port)) {
                 throw new ExecutionException("The remote debug port is not configured.");
             }
@@ -150,25 +157,52 @@ public class ExecutionTask extends Task.Backgroundable {
         return conf;
     }
 
-    private @Nullable Class<? extends ConfigurationType> getConfType() {
-        var ide = ApplicationInfo.getInstance().getBuild().getProductCode();
-        return hash.getOrDefault(ide, null);
-    }
-
-    private @Nullable String getDebugPort(@NotNull DevModeService service) throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
-        var cmd = ApplicationManager.getApplication().getService(NhctlCommand.class);
+    private @Nullable NhctlRawConfig getDevConfig() throws IOException, NocalhostExecuteCmdException, InterruptedException {
         var path = KubeConfigUtil.toPath(service.getRawKubeConfig());
         var opts = new NhctlConfigOptions(path, service.getNamespace());
         opts.setDeployment(service.getServiceName());
         opts.setControllerType(service.getServiceType());
-        var config = cmd.getConfig(service.getApplicationName(), opts, NhctlRawConfig.class);
-        var bucket = config.getContainers();
-        var container = bucket.isEmpty() ? null : bucket.get(0);
-        try {
-            return container.getDev().getDebug().getRemoteDebugPort();
-        } catch (Exception ex) {
-            throw new ExecutionException("Cannot resolve remoteDebugPort.");
+        return ApplicationManager
+                .getApplication()
+                .getService(NhctlCommand.class)
+                .getConfig(service.getApplicationName(), opts, NhctlRawConfig.class);
+    }
+
+    private @Nullable Class<? extends ConfigurationType> getConfType() throws IOException, NocalhostExecuteCmdException, InterruptedException, ExecutionException {
+        var config = getDevConfig();
+        if (config != null && config.getContainers().size() > 0) {
+            String lang = "";
+            try {
+                lang = config.getContainers().get(0).getDev().getDebug().getLanguage().toLowerCase();
+            } catch (Exception ex) {
+                // ignore
+            }
+            if (StringUtils.isNotEmpty(lang)) {
+                var conf = lang2conf.getOrDefault(lang, null);
+                if (conf == null) {
+                    throw new ExecutionException(String.format("Failed to create configuration, language: %s.", lang));
+                }
+                return conf;
+            }
         }
+        var code = ApplicationInfo.getInstance().getBuild().getProductCode();
+        var conf = code2conf.getOrDefault(code, null);
+        if (conf == null) {
+            throw new ExecutionException(String.format("Failed to create configuration, IDE: %s.", code));
+        }
+        return conf;
+    }
+
+    private @Nullable String getDebugPort() throws ExecutionException, InterruptedException, NocalhostExecuteCmdException, IOException {
+        var config = getDevConfig();
+        if (config != null && config.getContainers().size() > 0) {
+            try {
+                return config.getContainers().get(0).getDev().getDebug().getRemoteDebugPort();
+            } catch (Exception ex) {
+                // ignore
+            }
+        }
+        throw new ExecutionException("Cannot resolve remoteDebugPort.");
     }
 
     private void associate(String path) throws IOException, NocalhostExecuteCmdException, InterruptedException {
