@@ -168,7 +168,7 @@ public class ExecutionTask extends Task.Backgroundable {
                 .getConfig(service.getApplicationName(), opts, NhctlRawConfig.class);
     }
 
-    private @Nullable Class<? extends ConfigurationType> getConfType() throws IOException, NocalhostExecuteCmdException, InterruptedException, ExecutionException {
+    private @NotNull Class<? extends ConfigurationType> getConfType() throws IOException, NocalhostExecuteCmdException, InterruptedException, ExecutionException {
         var config = getDevConfig();
         if (config != null && config.getContainers().size() > 0) {
             String lang = "";
