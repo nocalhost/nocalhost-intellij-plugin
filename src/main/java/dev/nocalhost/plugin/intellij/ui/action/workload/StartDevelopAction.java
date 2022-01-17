@@ -32,8 +32,6 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlProfileGetOptions;
@@ -55,6 +53,7 @@ import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 import icons.NocalhostIcons;
 
@@ -111,27 +110,22 @@ public class StartDevelopAction extends DumbAwareAction {
                 devStartOptions.setAuthCheck(true);
                 nhctlCommand.devStart(node.applicationName(), devStartOptions);
 
-                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
-                opts.setDeployment(node.resourceName());
-                opts.setType(node.controllerType());
-                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                        node.applicationName(), opts, NhctlDescribeService.class);
-
-                if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
+                var desService = NhctlUtil.getDescribeService(project, node.resourceName(), node.controllerType(), namespace, node.applicationName(), kubeConfigPath);
+                if (NhctlDescribeServiceUtil.developStarted(desService)) {
                     // remote run | remote debug
                     if (StringUtils.isNotEmpty(action)) {
-                        if (PathsUtil.isSame(project.getBasePath(), nhctlDescribeService.getAssociate())) {
+                        if (PathsUtil.isSame(project.getBasePath(), desService.getAssociate())) {
                             ProgressManager
                                     .getInstance()
                                     .run(new ExecutionTask(project, makeDevModeService(project.getBasePath()), action));
                             return;
                         }
                         // https://nocalhost.coding.net/p/nocalhost/assignments/issues/624/detail
-                        startDevelop(nhctlDescribeService.getAssociate());
+                        startDevelop(desService.getAssociate());
                         return;
                     }
                     // the service in the `duplicate` mode currently
-                    if (StringUtils.equals(nhctlDescribeService.getDevModeType(), DEV_MODE_DUPLICATE)) {
+                    if (StringUtils.equals(desService.getDevModeType(), DEV_MODE_DUPLICATE)) {
                         ApplicationManager.getApplication().invokeLater(() ->
                                 Messages.showMessageDialog(
                                         "Dev mode has been started.",

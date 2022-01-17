@@ -54,9 +54,27 @@ public final class NhctlUtil {
         }
     }
 
+    public static @NotNull NhctlDescribeService getDescribeService(@NotNull Project project, @NotNull String name, String kind, String namespace, String application, Path kubeConfig) throws ExecutionException {
+        try {
+            var cmd = new NhctlGetCommand(project);
+            cmd.setName(name);
+            cmd.setKind(kind);
+            cmd.setNamespace(namespace);
+            cmd.setKubeConfig(kubeConfig);
+            cmd.setApplication(application);
+            var resource = cmd.execute(NhctlGetResource.class);
+            if (resource != null) {
+                return resource.getNhctlDescribeService();
+            }
+        } catch (Exception ex) {
+            throw new ExecutionException(ex);
+        }
+        throw new ExecutionException("Failed to get resource.");
+    }
+
     public static @NotNull NhctlDescribeService getDescribeService(@NotNull Project project, @NotNull NocalhostContext context) throws ExecutionException {
         try {
-            NhctlGetCommand cmd = new NhctlGetCommand(project);
+            var cmd = new NhctlGetCommand(project);
             cmd.setName(context.getServiceName());
             cmd.setKind(context.getServiceType());
             cmd.setNamespace(context.getNamespace());

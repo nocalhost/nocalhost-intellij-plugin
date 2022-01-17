@@ -10,15 +10,11 @@ import com.intellij.openapi.ui.MessageDialogBuilder;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
@@ -26,11 +22,11 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import icons.NocalhostIcons;
 import lombok.SneakyThrows;
 
 public class EndDevelopAction extends DumbAwareAction {
-    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final Project project;
@@ -51,18 +47,17 @@ public class EndDevelopAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
-                opts.setDeployment(node.resourceName());
-                opts.setType(node.controllerType());
-                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                        node.applicationName(), opts, NhctlDescribeService.class);
+                var desService = NhctlUtil.getDescribeService(
+                        project, node.resourceName(), node.controllerType(),
+                        namespace, node.applicationName(), kubeConfigPath
+                );
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    if (NhctlDescribeServiceUtil.developStarting(nhctlDescribeService)) {
+                    if (NhctlDescribeServiceUtil.developStarting(desService)) {
                         endDevelop();
                         return;
                     }
 
-                    if (nhctlDescribeService.isPossess()) {
+                    if (desService.isPossess()) {
                         endDevelop();
                     } else {
                         if (MessageDialogBuilder.yesNo(
@@ -73,9 +68,9 @@ public class EndDevelopAction extends DumbAwareAction {
                         }
                     }
                 });
-            } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                ErrorUtil.dealWith(project, "Check service status error",
-                        "Error occurred while checking service status", e);
+            } catch (Exception ex) {
+                ErrorUtil.dealWith(project, "Failed to load service status",
+                        "Error occurred while loading service status.", ex);
             }
         });
     }
