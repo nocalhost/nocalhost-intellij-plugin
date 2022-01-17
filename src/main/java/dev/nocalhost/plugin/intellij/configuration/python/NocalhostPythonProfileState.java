@@ -60,9 +60,6 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         }
 
         var desService = NhctlUtil.getDescribeService(project, context);
-        if (desService == null) {
-            throw new ExecutionException("Failed to get resource.");
-        }
         if (!NhctlDescribeServiceUtil.developStarted(desService)) {
             throw new ExecutionException("Service is not in dev mode.");
         }

@@ -91,9 +91,6 @@ public class NocalhostProfileState extends CommandLineState {
             }
 
             var desService = NhctlUtil.getDescribeService(project, context);
-            if (desService == null) {
-                throw new ExecutionException("Failed to get resource.");
-            }
             if ( ! NhctlDescribeServiceUtil.developStarted(desService)) {
                 throw new ExecutionException("Service is not in dev mode.");
             }
@@ -217,12 +214,8 @@ public class NocalhostProfileState extends CommandLineState {
             nhctlPortForwardStartOptions.setPod(podName);
             nhctlCommand.startPortForward(context.getApplicationName(), nhctlPortForwardStartOptions);
 
-            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(context.getKubeConfigPath(), context.getNamespace());
-            nhctlDescribeOptions.setDeployment(context.getServiceName());
-            nhctlDescribeOptions.setType(context.getServiceType());
-            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(context.getApplicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
-
-            for (NhctlPortForward pf : nhctlDescribeService.getDevPortForwardList()) {
+            var desService = NhctlUtil.getDescribeService(getEnvironment().getProject(), context);
+            for (NhctlPortForward pf : desService.getDevPortForwardList()) {
                 if (StringUtils.equals(pf.getRemoteport(), remotePort)) {
                     return pf.getLocalport();
                 }

@@ -7,7 +7,6 @@ import com.intellij.openapi.util.SystemInfo;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,7 +54,7 @@ public final class NhctlUtil {
         }
     }
 
-    public static @Nullable NhctlDescribeService getDescribeService(@NotNull Project project, @NotNull NocalhostContext context) throws ExecutionException {
+    public static @NotNull NhctlDescribeService getDescribeService(@NotNull Project project, @NotNull NocalhostContext context) throws ExecutionException {
         try {
             NhctlGetCommand cmd = new NhctlGetCommand(project);
             cmd.setName(context.getServiceName());
@@ -70,7 +69,7 @@ public final class NhctlUtil {
         } catch (Exception ex) {
             throw new ExecutionException(ex);
         }
-        return null;
+        throw new ExecutionException("Failed to get resource.");
     }
 
     public static @NotNull String getDevPodName(Project project, @NotNull NocalhostContext context) throws ExecutionException {
