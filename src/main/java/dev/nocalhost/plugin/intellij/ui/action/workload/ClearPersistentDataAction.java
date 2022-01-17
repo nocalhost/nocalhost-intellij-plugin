@@ -7,14 +7,12 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
-import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.ui.dialog.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -43,13 +41,14 @@ public class ClearPersistentDataAction extends DumbAwareAction {
                 NhctlListPVCOptions opts = new NhctlListPVCOptions(kubeConfigPath, namespace);
                 opts.setApp(node.applicationName());
                 opts.setSvc(node.resourceName());
+                opts.setControllerType(node.controllerType());
                 List<NhctlPVCItem> nhctlPVCItems = nhctlCommand.listPVC(opts);
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems).showAndGet();
+                    var dialog = new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems);
+                    dialog.showAndGet();
                 });
-            } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                ErrorUtil.dealWith(project, "Listing PVC error",
-                        "Error occurred while listing PVC", e);
+            } catch (Exception ex) {
+                ErrorUtil.dealWith(project, "Failed to list PVC", "Error occurred while listing PVC", ex);
             }
         });
 

@@ -56,7 +56,7 @@ public class LoadKubernetesResourceTask extends BaseBackgroundTask {
     @Override
     public void runTask(@NotNull ProgressIndicator indicator) {
         NhctlGetOptions opts = new NhctlGetOptions(kubeConfigPath, namespace, this);
-        String output = nhctlCommand.get(node.getKubeResource().getKind(), opts);
+        String output = nhctlCommand.get(node.controllerType(), opts);
         JsonElement resources = DataUtils.GSON.fromJson(output, JsonElement.class);
         JsonObject selectedResource = null;
         for (JsonElement resource : resources.getAsJsonArray()) {

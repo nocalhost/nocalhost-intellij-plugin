@@ -10,6 +10,7 @@ import lombok.Setter;
 public class NhctlListPVCOptions extends NhctlGlobalOptions {
     private String app;
     private String svc;
+    private String controllerType;
 
     public NhctlListPVCOptions(Path kubeConfigPath, String namespace) {
         super(kubeConfigPath, namespace);
