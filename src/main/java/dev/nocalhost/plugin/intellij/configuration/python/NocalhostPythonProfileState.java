@@ -138,19 +138,11 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     public void startup() throws ExecutionException, IOException, NocalhostExecuteCmdException, InterruptedException {
         NocalhostRunnerContext dev = refContext.get();
         if (dev == null) {
-            throw new ExecutionException("Call prepare() before this method");
+            throw new ExecutionException("Please call NocalhostPythonProfileState#prepare() before NocalhostPythonProfileState#startup().");
         }
-        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(dev.getContext().getKubeConfigPath(), dev.getContext().getNamespace());
-        nhctlDescribeOptions.setDeployment(dev.getContext().getServiceName());
-        nhctlDescribeOptions.setType(dev.getContext().getServiceType());
 
-        NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        NhctlDescribeService nhctlDescribeService = command.describe(
-                dev.getContext().getApplicationName(),
-                nhctlDescribeOptions,
-                NhctlDescribeService.class);
-
-        if (!NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
+        var desService = NhctlUtil.getDescribeService(getEnvironment().getProject(), dev.getContext());
+        if (!NhctlDescribeServiceUtil.developStarted(desService)) {
             throw new ExecutionException("Service is not in dev mode.");
         }
 
