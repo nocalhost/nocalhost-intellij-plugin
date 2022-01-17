@@ -42,8 +42,6 @@ import javax.swing.border.CompoundBorder;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
@@ -132,12 +130,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             @Override
             @SneakyThrows
             public void exec(@NotNull ProgressIndicator indicator) {
-                var opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
-                opts.setTask(this);
-                opts.setDeployment(node.resourceName());
-                opts.setType(node.controllerType());
-                devPortForwardList = nhctlCommand
-                        .describe(node.applicationName(), opts, NhctlDescribeService.class)
+                devPortForwardList = NhctlUtil
+                        .getDescribeService(project, node.resourceName(), node.controllerType(), namespace, node.applicationName(), kubeConfigPath)
                         .getDevPortForwardList();
             }
         });
