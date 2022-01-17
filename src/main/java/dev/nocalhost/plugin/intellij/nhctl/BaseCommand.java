@@ -105,6 +105,10 @@ public abstract class BaseCommand {
         return DataUtils.GSON.fromJson(output, type);
     }
 
+    public String execute() throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        return doExecute(compute(), null);
+    }
+
     public String execute(String password) throws IOException, NocalhostExecuteCmdException, InterruptedException {
         return doExecute(compute(), password);
     }
