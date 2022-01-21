@@ -35,6 +35,7 @@ public class NhctlDevAssociateQueryResult {
     @Getter
     @Setter
     public class SyncthingStatus {
+        private String gui;
         private String status;
         @SerializedName("msg")
         private String message;

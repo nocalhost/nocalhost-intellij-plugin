@@ -11,9 +11,7 @@ import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlSyncStatusCommand;
-import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
-import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 public class OverrideSyncAction extends DumbAwareAction {
     private final Project project;
