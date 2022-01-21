@@ -1,8 +1,8 @@
 package dev.nocalhost.plugin.intellij.configuration;
 
 import com.intellij.execution.ExecutionException;
+import com.intellij.execution.process.KillableProcessHandler;
 import com.intellij.execution.configurations.GeneralCommandLine;
-import com.intellij.execution.process.KillableColoredProcessHandler;
 import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.runners.ExecutionEnvironment;
@@ -13,6 +13,7 @@ import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import com.intellij.execution.ui.RunContentManager;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.util.io.BaseOutputReader;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,7 +22,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
 
-public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
+public class NocalhostDevProcessHandler extends KillableProcessHandler {
     private static final Logger LOG = Logger.getInstance(NocalhostDevProcessHandler.class);
 
     private final ExecutionEnvironment executionEnvironment;
@@ -70,7 +71,7 @@ public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
 
     @Override
     protected void notifyProcessTerminated(int exitCode) {
-        print(MessageFormat.format("\\nProcess finished with exit code {0}.", exitCode),
+        print(MessageFormat.format("\nProcess finished with exit code {0}.", exitCode),
                 ConsoleViewContentType.SYSTEM_OUTPUT);
 
         super.notifyProcessTerminated(exitCode);
@@ -92,5 +93,15 @@ public class NocalhostDevProcessHandler extends KillableColoredProcessHandler {
             console = (ConsoleView) contentDescriptor.getExecutionConsole();
         }
         return console;
+    }
+
+    @Override
+    protected @NotNull BaseOutputReader.Options readerOptions() {
+        return new BaseOutputReader.Options() {
+            @Override
+            public boolean splitToLines() {
+                return false;
+            }
+        };
     }
 }
