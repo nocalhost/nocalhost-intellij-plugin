@@ -97,6 +97,9 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
                 actions.add(new OverrideSyncAction(project, result));
                 break;
         }
+        if (StringUtils.isNotEmpty(result.getSyncthingStatus().getGui())) {
+            actions.add(new OpenDashboardAction(project, result));
+        }
         return actions.toArray(new AnAction[0]);
     }
 
