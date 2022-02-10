@@ -76,7 +76,7 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     @Override
-    public void mouseReleased(MouseEvent event) {
+    public void mousePressed(MouseEvent event) {
         if (event.getButton() == MouseEvent.BUTTON3) {
             TreePath treePath = tree.getClosestPathForLocation(event.getX(), event.getY());
             if (treePath == null) {
