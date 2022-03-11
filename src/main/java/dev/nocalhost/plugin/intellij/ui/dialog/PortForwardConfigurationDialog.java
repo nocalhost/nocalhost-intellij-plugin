@@ -42,8 +42,6 @@ import javax.swing.border.CompoundBorder;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
@@ -132,12 +130,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             @Override
             @SneakyThrows
             public void exec(@NotNull ProgressIndicator indicator) {
-                var opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
-                opts.setTask(this);
-                opts.setDeployment(node.resourceName());
-                opts.setType(node.controllerType());
-                devPortForwardList = nhctlCommand
-                        .describe(node.applicationName(), opts, NhctlDescribeService.class)
+                devPortForwardList = NhctlUtil
+                        .getDescribeService(project, node.resourceName(), node.controllerType(), namespace, node.applicationName(), kubeConfigPath)
                         .getDevPortForwardList();
             }
         });
@@ -218,11 +212,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
         List<KubeResource> pods = null;
 
         try {
-            var opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
-            opts.setDeployment(node.resourceName());
-            opts.setType(node.controllerType());
-            var service = nhctlCommand.describe(node.applicationName(), opts, NhctlDescribeService.class);
-            isDevMode = NhctlDescribeServiceUtil.developStarted(service);
+            var desService = NhctlUtil.getDescribeService(project, node.resourceName(), node.controllerType(), namespace, node.applicationName(), kubeConfigPath);
+            isDevMode = NhctlDescribeServiceUtil.developStarted(desService);
         } catch (Exception ex) {
             ErrorUtil.dealWith(project, "Failed to port forward",
                     "Error occurred while describe service", ex);
@@ -282,14 +273,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             @SneakyThrows
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, namespace);
-                nhctlDescribeOptions.setDeployment(node.resourceName());
-                nhctlDescribeOptions.setType(node.controllerType());
-                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                        node.applicationName(),
-                        nhctlDescribeOptions,
-                        NhctlDescribeService.class);
-                List<String> existedPortForwards = nhctlDescribeService
+                var desService = NhctlUtil.getDescribeService(project, node.resourceName(), node.controllerType(), namespace, node.applicationName(), kubeConfigPath);
+                List<String> existedPortForwards = desService
                         .getDevPortForwardList()
                         .stream()
                         .map(NhctlPortForward::portForwardStr)
