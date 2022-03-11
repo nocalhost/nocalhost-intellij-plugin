@@ -24,11 +24,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.HotReload;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostRunnerContext;
@@ -48,17 +44,18 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         super(project, env);
     }
 
-    protected ProcessHandler startProcess() {
+    protected @NotNull ProcessHandler startProcess() {
         return new NocalhostPythonDevProcessHandler(getEnvironment(), this);
     }
 
     public void prepare() throws ExecutionException {
-        var context = NocalhostContextManager.getInstance(getEnvironment().getProject()).getContext();
+        var project = getEnvironment().getProject();
+        var context = NocalhostContextManager.getInstance(project).getContext();
         if (context == null) {
             throw new ExecutionException("Nocalhost context is null.");
         }
 
-        var desService = NhctlUtil.getDescribeService(context);
+        var desService = NhctlUtil.getDescribeService(project, context);
         if (!NhctlDescribeServiceUtil.developStarted(desService)) {
             throw new ExecutionException("Service is not in dev mode.");
         }
@@ -137,19 +134,11 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     public void startup() throws ExecutionException, IOException, NocalhostExecuteCmdException, InterruptedException {
         NocalhostRunnerContext dev = refContext.get();
         if (dev == null) {
-            throw new ExecutionException("Call prepare() before this method");
+            throw new ExecutionException("Please call NocalhostPythonProfileState#prepare() before NocalhostPythonProfileState#startup().");
         }
-        NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(dev.getContext().getKubeConfigPath(), dev.getContext().getNamespace());
-        nhctlDescribeOptions.setDeployment(dev.getContext().getServiceName());
-        nhctlDescribeOptions.setType(dev.getContext().getServiceType());
 
-        NhctlCommand command = ApplicationManager.getApplication().getService(NhctlCommand.class);
-        NhctlDescribeService nhctlDescribeService = command.describe(
-                dev.getContext().getApplicationName(),
-                nhctlDescribeOptions,
-                NhctlDescribeService.class);
-
-        if (!NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
+        var desService = NhctlUtil.getDescribeService(getEnvironment().getProject(), dev.getContext());
+        if (!NhctlDescribeServiceUtil.developStarted(desService)) {
             throw new ExecutionException("Service is not in dev mode.");
         }
 

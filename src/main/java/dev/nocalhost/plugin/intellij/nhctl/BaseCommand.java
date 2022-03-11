@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlOutputUtil;
 import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
@@ -103,8 +104,13 @@ public abstract class BaseCommand {
         }
     }
 
+    public <T> T execute(Class<T> type) throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        var output = doExecute(compute());
+        return DataUtils.GSON.fromJson(output, type);
+    }
+
     public String execute() throws IOException, NocalhostExecuteCmdException, InterruptedException {
-        return doExecute(compute());
+        return doExecute(compute(), null);
     }
 
     public String execute(String password) throws IOException, NocalhostExecuteCmdException, InterruptedException {
