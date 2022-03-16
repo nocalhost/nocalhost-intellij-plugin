@@ -15,6 +15,7 @@ import lombok.Setter;
 @Setter
 public class NhctlDevAssociateCommand extends BaseCommand{
     private boolean deAssociate;
+    private String nid;
     private String localSync;
     private String container;
     private String controllerType;
@@ -41,6 +42,10 @@ public class NhctlDevAssociateCommand extends BaseCommand{
         }
         if (deAssociate) {
             args.add("--de-associate");
+        }
+        if (StringUtils.isNotEmpty(nid)) {
+            args.add("--nid");
+            args.add(nid);
         }
         return fulfill(args);
     }

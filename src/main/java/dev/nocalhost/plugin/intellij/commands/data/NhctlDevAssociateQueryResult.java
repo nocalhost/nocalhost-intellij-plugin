@@ -21,6 +21,7 @@ public class NhctlDevAssociateQueryResult {
     @Getter
     @Setter
     public class ServicePack {
+        private String nid;
         @SerializedName("ns")
         private String namespace;
         @SerializedName("app")
