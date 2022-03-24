@@ -54,14 +54,14 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.PathsUtil;
 
-import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
-import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
-import static dev.nocalhost.plugin.intellij.utils.Constants.DEV_MODE_DUPLICATE;
 import static dev.nocalhost.plugin.intellij.utils.Constants.VPN_UNHEALTHY;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
+import static dev.nocalhost.plugin.intellij.utils.Constants.ALL_WORKLOAD_TYPES;
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEV_MODE_DUPLICATE;
+import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_SERVICE;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DAEMONSET;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_DEPLOYMENT;
-import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
-import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_SERVICE;
+import static dev.nocalhost.plugin.intellij.utils.Constants.DEFAULT_APPLICATION_NAME;
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_STATEFULSET;
 
 public class TreeMouseListener extends MouseAdapter {
@@ -76,7 +76,7 @@ public class TreeMouseListener extends MouseAdapter {
     }
 
     @Override
-    public void mouseReleased(MouseEvent event) {
+    public void mousePressed(MouseEvent event) {
         if (event.getButton() == MouseEvent.BUTTON3) {
             TreePath treePath = tree.getClosestPathForLocation(event.getX(), event.getY());
             if (treePath == null) {
@@ -220,7 +220,7 @@ public class TreeMouseListener extends MouseAdapter {
             actionGroup.add(new RunAction(project, resourceNode));
             actionGroup.add(new DebugAction(project, resourceNode));
             actionGroup.add(SEPARATOR);
-            if (proxyable(kind)) {
+            if (proxyable(resourceNode, kind)) {
                 actionGroup.add(new ProxyConnectAction(project, resourceNode));
                 actionGroup.add(SEPARATOR);
             }
@@ -261,7 +261,11 @@ public class TreeMouseListener extends MouseAdapter {
         JBPopupMenu.showByEvent(event, menu.getComponent());
     }
 
-    private boolean proxyable(String kind) {
+    private boolean proxyable(ResourceNode node, String kind) {
+        if (node.isCrd()) {
+            return true;
+        }
+
         return Lists.newArrayList(
                 WORKLOAD_TYPE_DEPLOYMENT,
                 WORKLOAD_TYPE_STATEFULSET,

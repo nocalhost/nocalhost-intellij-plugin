@@ -21,6 +21,7 @@ public class NhctlDevAssociateQueryResult {
     @Getter
     @Setter
     public class ServicePack {
+        private String nid;
         @SerializedName("ns")
         private String namespace;
         @SerializedName("app")
@@ -35,6 +36,7 @@ public class NhctlDevAssociateQueryResult {
     @Getter
     @Setter
     public class SyncthingStatus {
+        private String gui;
         private String status;
         @SerializedName("msg")
         private String message;

@@ -34,6 +34,7 @@ public class DisassociateAction extends DumbAwareAction {
                 try {
                     var cmd = new NhctlDevAssociateCommand(project);
                     cmd.setDeAssociate(true);
+                    cmd.setNid(result.getServicePack().getNid());
                     cmd.setLocalSync(Paths.get(basePath).toString());
                     cmd.setKubeConfig(Paths.get(result.getKubeconfigPath()));
                     cmd.setNamespace(result.getServicePack().getNamespace());

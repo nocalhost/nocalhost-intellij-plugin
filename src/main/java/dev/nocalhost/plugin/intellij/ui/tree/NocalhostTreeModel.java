@@ -41,6 +41,7 @@ import dev.nocalhost.plugin.intellij.nhctl.NhctlDeleteKubeConfigCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
+import dev.nocalhost.plugin.intellij.ui.tree.node.AccountNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
@@ -90,7 +91,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private final NocalhostSettings settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
     private final AtomicReference<Map<String, String>> previous = new AtomicReference<>(Maps.newHashMap());
-    private final AtomicReference<List<ClusterNode>> clusters = new AtomicReference<>(Lists.newArrayList());
+    private final AtomicReference<List<MutableTreeNode>> clusters = new AtomicReference<>(Lists.newArrayList());
 
 
     private final Project project;
@@ -110,7 +111,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
     private void updateClusters() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             Map<String, String> map = Maps.newHashMap();
-            List<ClusterNode> clusterNodes = Lists.newArrayList();
+            List<MutableTreeNode> clusterNodes = Lists.newArrayList();
 
             for (StandaloneCluster standaloneCluster : settings.getStandaloneClusters()) {
                 try {
@@ -121,29 +122,44 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 }
             }
 
-            for (NocalhostAccount nocalhostAccount : settings.getNocalhostAccounts()) {
-                if ( ! TokenUtil.isValid(nocalhostAccount.getJwt())) {
+            for (var na : settings.getNocalhostAccounts()) {
+                if ( ! TokenUtil.isValid(na.getJwt())) {
                     continue;
                 }
 
-                try {
-                    List<ServiceAccount> serviceAccounts = nocalhostApi.listServiceAccount(
-                            nocalhostAccount.getServer(), nocalhostAccount.getJwt());
-                    for (ServiceAccount serviceAccount : serviceAccounts) {
-                        KubeConfig kubeConfig = DataUtils.fromYaml(serviceAccount.getKubeConfig(), KubeConfig.class);
-                        clusterNodes.add(new ClusterNode(nocalhostAccount, serviceAccount, serviceAccount.getKubeConfig(), kubeConfig));
+                List<ServiceAccount> sas = Lists.newArrayList();
 
-                        var key = computeKey(nocalhostAccount, serviceAccount);
-                        map.put(key, serviceAccount.getKubeConfig());
-                        notifyToNhctl(key, serviceAccount.getKubeConfig());
+                try {
+                    sas = nocalhostApi.listServiceAccount(na.getServer(), na.getJwt());
+                    if (sas.isEmpty()) {
+                        clusterNodes.add(new AccountNode(na, " Cluster not found"));
                     }
                 } catch (Exception ex) {
                     var summary = String.format(
                             "Error occurred while loading cluster from server: %s, account: %s",
-                            nocalhostAccount.getServer(),
-                            nocalhostAccount.getUsername()
+                            na.getServer(),
+                            na.getUsername()
                     );
                     ErrorUtil.console(project, summary, ex);
+                    clusterNodes.add(new AccountNode(na, " Unable to connect"));
+                }
+
+                for (var sa : sas) {
+                    try {
+                        KubeConfig kubeConfig = DataUtils.fromYaml(sa.getKubeConfig(), KubeConfig.class);
+                        clusterNodes.add(new ClusterNode(na, sa, sa.getKubeConfig(), kubeConfig));
+
+                        var key = computeKey(na, sa);
+                        map.put(key, sa.getKubeConfig());
+                        notifyToNhctl(key, sa.getKubeConfig());
+                    } catch (Exception ex) {
+                        var summary = String.format(
+                                "Error occurred while resolve service account, server: %s, cluster: %s",
+                                na.getServer(),
+                                sa.getClusterName()
+                        );
+                        ErrorUtil.console(project, summary, ex);
+                    }
                 }
             }
 
@@ -153,14 +169,17 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
 
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 var nodes = clusters.get();
-                for (ClusterNode clusterNode : nodes) {
-                    try {
-                        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(clusterNode.getRawKubeConfig());
-                        NhctlCheckClusterOptions opts = new NhctlCheckClusterOptions(kubeConfigPath);
-                        ClusterStatus clusterStatus = nhctlCommand.checkCluster(opts);
-                        clusterNode.setActive(clusterStatus.getCode() == 200);
-                        clusterNode.setInfo(clusterStatus.getInfo());
-                    } catch (Exception ignore) {
+                for (var item : nodes) {
+                    if (item instanceof ClusterNode) {
+                        var clusterNode = (ClusterNode) item;
+                        try {
+                            Path kubeConfigPath = KubeConfigUtil.toPath(clusterNode.getRawKubeConfig());
+                            NhctlCheckClusterOptions opts = new NhctlCheckClusterOptions(kubeConfigPath);
+                            ClusterStatus clusterStatus = nhctlCommand.checkCluster(opts);
+                            clusterNode.setActive(clusterStatus.getCode() == 200);
+                            clusterNode.setInfo(clusterStatus.getInfo());
+                        } catch (Exception ignore) {
+                        }
                     }
                 }
                 ApplicationManager.getApplication().invokeLater(() -> refreshClusterNodes((MutableTreeNode) root, nodes));
@@ -177,7 +196,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             var map = previous.get();
             if (map.containsKey(key) && !StringUtils.equals(map.get(key), value)) {
                 var cmd = new NhctlDeleteKubeConfigCommand(project);
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(map.get(key)));
+                cmd.setKubeConfig(KubeConfigUtil.toPath(map.get(key)));
                 cmd.execute();
             }
         } catch (Exception ex) {
@@ -185,43 +204,78 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         }
     }
 
-    private void refreshClusterNodes(MutableTreeNode parent,
-                                     List<ClusterNode> pendingClusterNodes) {
+    private void refreshClusterNodes(MutableTreeNode parent, List<MutableTreeNode> updates) {
         synchronized (parent) {
             removeLoadingNode(parent);
 
             if (getChildCount(parent) > 0) {
                 for (int i = getChildCount(parent) - 1; i >= 0; i--) {
-                    ClusterNode clusterNode = (ClusterNode) getChild(parent, i);
-                    Optional<ClusterNode> pendingClusterNodeOptional = pendingClusterNodes.stream()
-                            .filter(e -> clusterNodeEquals(e, clusterNode))
-                            .findFirst();
-                    if (pendingClusterNodeOptional.isPresent()) {
-                        clusterNode.updateFrom(pendingClusterNodeOptional.get());
-                        if (clusterNode.isActive()) {
-                            nodeChanged(clusterNode);
-                            updateNamespaces(clusterNode);
-                        } else {
-                            nodeChanged(clusterNode);
-                            removeAllChildren(clusterNode);
+                    var item = getChild(parent, i);
+                    if (item instanceof AccountNode) {
+                        var a = (AccountNode) item;
+                        var match = updates.stream().anyMatch(x -> {
+                            if (x instanceof AccountNode) {
+                                var b = (AccountNode) x;
+                                if (a.getAccount().equals(b.getAccount())) {
+                                    a.updateFrom(b);
+                                    return true;
+                                }
+                            }
+                            return false;
+                        });
+                        if ( ! match) {
+                            removeNode(a);
                         }
-                    } else {
-                        removeNode(clusterNode);
+                    }
+                    if (item instanceof ClusterNode) {
+                        ClusterNode clusterNode = (ClusterNode) item;
+                        updates
+                                .stream()
+                                .filter(x -> {
+                                    if (x instanceof ClusterNode) {
+                                        return clusterNodeEquals((ClusterNode) x, clusterNode);
+                                    }
+                                    return false;
+                                })
+                                .map(x -> (ClusterNode) x)
+                                .findFirst()
+                                .ifPresentOrElse(x -> {
+                                    clusterNode.updateFrom(x);
+                                    if (clusterNode.isActive()) {
+                                        nodeChanged(clusterNode);
+                                        updateNamespaces(clusterNode);
+                                    } else {
+                                        nodeChanged(clusterNode);
+                                        removeAllChildren(clusterNode);
+                                    }
+                                }, () -> {
+                                    removeNode(clusterNode);
+                                });
                     }
                 }
             }
 
-            for (ClusterNode pendingClusterNode : pendingClusterNodes) {
-                boolean existed = false;
+            for (var item : updates) {
+                var match = false;
                 for (int i = 0; i < getChildCount(parent); i++) {
-                    ClusterNode clusterNode = (ClusterNode) getChild(parent, i);
-                    if (clusterNodeEquals(pendingClusterNode, clusterNode)) {
-                        existed = true;
-                        break;
+                    var child = getChild(parent, i);
+                    if (item instanceof ClusterNode && child instanceof ClusterNode) {
+                        var clusterNode = (ClusterNode) child;
+                        if (clusterNodeEquals(clusterNode, (ClusterNode) item)) {
+                            match = true;
+                            break;
+                        }
+                    }
+                    if (item instanceof AccountNode && child instanceof AccountNode) {
+                        var accountNode = (AccountNode) child;
+                        if (accountNode.getAccount().equals(((AccountNode) item).getAccount())) {
+                            match = true;
+                            break;
+                        }
                     }
                 }
-                if (!existed) {
-                    insertNode(pendingClusterNode, parent);
+                if ( ! match) {
+                    insertNode(item, parent);
                 }
             }
         }
@@ -238,7 +292,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 List<NamespaceNode> namespaceNodes = Lists.newArrayList();
-                Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(clusterNode.getRawKubeConfig());
+                Path kubeConfigPath = KubeConfigUtil.toPath(clusterNode.getRawKubeConfig());
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(kubeConfigPath, "");
                 if (clusterNode.getServiceAccount() != null) {
                     if (clusterNode.getServiceAccount().isPrivilege()) {
@@ -341,7 +395,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ClusterNode clusterNode = namespaceNode.getClusterNode();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                Path path = KubeConfigUtil.kubeConfigPath(
+                Path path = KubeConfigUtil.toPath(
                         clusterNode.getRawKubeConfig());
                 NhctlGetOptions nhctlGetOptions = new NhctlGetOptions(path, namespaceNode.getNamespace());
                 List<ApplicationNode> applicationNodes = Lists.newArrayList();
@@ -448,7 +502,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
                     var cmd = new NhctlCrdListCommand(project);
-                    cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(config));
+                    cmd.setKubeConfig(KubeConfigUtil.toPath(config));
                     List<NhctlCrdKind> results = DataUtils.GSON.fromJson(cmd.execute(), parser);
 
                     ApplicationManager.getApplication().invokeLater(() -> {
@@ -519,7 +573,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 var appNode = node.getApplicationNode();
-                var path = KubeConfigUtil.kubeConfigPath(appNode.getClusterNode().getRawKubeConfig());
+                var path = KubeConfigUtil.toPath(appNode.getClusterNode().getRawKubeConfig());
                 var options = new NhctlGetOptions(path, appNode.getNamespaceNode().getNamespace());
                 options.setApplication(appNode.getName());
                 var results = nhctlCommand.getResources(node.getResourceType(), options);
@@ -660,7 +714,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
             throws InterruptedException, NocalhostExecuteCmdException, IOException {
         ApplicationNode applicationNode = resourceTypeNode.getApplicationNode();
         String applicationName = applicationNode.getName();
-        Path kubeConfigPath = KubeConfigUtil.kubeConfigPath(applicationNode.getClusterNode().getRawKubeConfig());
+        Path kubeConfigPath = KubeConfigUtil.toPath(applicationNode.getClusterNode().getRawKubeConfig());
         String namespace = applicationNode.getNamespaceNode().getNamespace();
 
         String kubeResourceType = resourceTypeNode.getName().replaceAll(" ", "");

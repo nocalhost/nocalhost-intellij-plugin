@@ -4,15 +4,18 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 
 import com.intellij.execution.ExecutionException;
+import com.intellij.execution.Executor;
 import com.intellij.execution.configurations.CommandLineState;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.terminal.TerminalExecutionConsole;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -25,8 +28,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
@@ -83,14 +84,20 @@ public class NocalhostProfileState extends CommandLineState {
         return dev.getDebug().getLocalPort();
     }
 
+    @Override
+    protected @NotNull ConsoleView createConsole(@NotNull Executor executor) {
+        return new TerminalExecutionConsole(getEnvironment().getProject(), null);
+    }
+
     public void prepare() throws ExecutionException {
         try {
-            var context = NocalhostContextManager.getInstance(getEnvironment().getProject()).getContext();
+            var project = getEnvironment().getProject();
+            var context = NocalhostContextManager.getInstance(project).getContext();
             if (context == null) {
                 throw new ExecutionException("Nocalhost context is null.");
             }
 
-            var desService = NhctlUtil.getDescribeService(context);
+            var desService = NhctlUtil.getDescribeService(project, context);
             if ( ! NhctlDescribeServiceUtil.developStarted(desService)) {
                 throw new ExecutionException("Service is not in dev mode.");
             }
@@ -214,12 +221,8 @@ public class NocalhostProfileState extends CommandLineState {
             nhctlPortForwardStartOptions.setPod(podName);
             nhctlCommand.startPortForward(context.getApplicationName(), nhctlPortForwardStartOptions);
 
-            NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(context.getKubeConfigPath(), context.getNamespace());
-            nhctlDescribeOptions.setDeployment(context.getServiceName());
-            nhctlDescribeOptions.setType(context.getServiceType());
-            NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(context.getApplicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
-
-            for (NhctlPortForward pf : nhctlDescribeService.getDevPortForwardList()) {
+            var desService = NhctlUtil.getDescribeService(getEnvironment().getProject(), context);
+            for (NhctlPortForward pf : desService.getDevPortForwardList()) {
                 if (StringUtils.equals(pf.getRemoteport(), remotePort)) {
                     return pf.getLocalport();
                 }
@@ -256,8 +259,7 @@ public class NocalhostProfileState extends CommandLineState {
 
     private boolean isSyncStatusIdle() throws IOException, NocalhostExecuteCmdException, InterruptedException {
         NocalhostContext nocalhostContext = NocalhostContextManager.getInstance(getEnvironment().getProject()).getContext();
-        final NhctlCommand nhctlCommand = ApplicationManager.getApplication()
-                .getService(NhctlCommand.class);
+        final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
         NhctlSyncStatusOptions opts = new NhctlSyncStatusOptions(nocalhostContext.getKubeConfigPath(),
                 nocalhostContext.getNamespace());
         opts.setDeployment(nocalhostContext.getServiceName());

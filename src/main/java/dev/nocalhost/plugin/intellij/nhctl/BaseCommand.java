@@ -5,6 +5,7 @@ import com.google.common.io.CharStreams;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.execution.process.OSProcessUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
@@ -20,10 +21,12 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlOutputUtil;
 import dev.nocalhost.plugin.intellij.exception.NhctlCommandException;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
@@ -34,12 +37,14 @@ import lombok.Setter;
 @Getter
 @Setter
 public abstract class BaseCommand {
+    protected Process process;
     protected boolean console;
     protected Project project;
     protected Path kubeConfig;
     protected String namespace;
     protected String deployment;
 
+    protected AtomicBoolean silent = new AtomicBoolean(false);
     protected AtomicReference<String> stderr = new AtomicReference<>("");
 
     protected BaseCommand(Project project) {
@@ -99,8 +104,13 @@ public abstract class BaseCommand {
         }
     }
 
+    public <T> T execute(Class<T> type) throws IOException, NocalhostExecuteCmdException, InterruptedException {
+        var output = doExecute(compute());
+        return DataUtils.GSON.fromJson(output, type);
+    }
+
     public String execute() throws IOException, NocalhostExecuteCmdException, InterruptedException {
-        return doExecute(compute());
+        return doExecute(compute(), null);
     }
 
     public String execute(String password) throws IOException, NocalhostExecuteCmdException, InterruptedException {
@@ -120,7 +130,6 @@ public abstract class BaseCommand {
         String cmd = commandLine.getCommandLineString();
         print("[cmd] " + cmd);
 
-        Process process;
         try {
             process = commandLine.createProcess();
             if (sudoPassword != null) {
@@ -147,6 +156,9 @@ public abstract class BaseCommand {
         int code = process.waitFor();
         if (code != 0) {
             print(stderr.get());
+            if (silent.get()) {
+                return "";
+            }
             throw new NhctlCommandException(cmd, code, stdout.toString(), stderr.get());
         }
         return stdout.toString();
@@ -158,6 +170,13 @@ public abstract class BaseCommand {
                     .getMessageBus()
                     .syncPublisher(NocalhostOutputAppendNotifier.NOCALHOST_OUTPUT_APPEND_NOTIFIER_TOPIC)
                     .action(text + System.lineSeparator());
+        }
+    }
+
+    public void destroy() {
+        silent.compareAndSet(false, true);
+        if (process != null) {
+            OSProcessUtil.killProcessTree(process);
         }
     }
 }

@@ -31,9 +31,9 @@ public class ProxyDisconnectAction extends DumbAwareAction {
             try {
                 var cmd = new NhctlProxyCommand(project);
                 cmd.setAction("disconnect");
-                cmd.setWorkload(node.getKubeResource().getKind() + "/" + node.resourceName());
+                cmd.setWorkload(node.controllerType() + "/" + node.resourceName());
                 cmd.setNamespace(node.getNamespaceNode().getNamespace());
-                cmd.setKubeConfig(KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig()));
+                cmd.setKubeConfig(KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig()));
                 cmd.execute();
             } catch (Exception ex) {
                 ErrorUtil.dealWith(project, "Failed to stop proxy", "Error occurred while stopping proxy.", ex);

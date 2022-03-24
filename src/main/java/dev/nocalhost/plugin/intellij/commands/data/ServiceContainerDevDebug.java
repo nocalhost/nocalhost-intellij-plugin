@@ -7,4 +7,5 @@ import lombok.Setter;
 @Setter
 public class ServiceContainerDevDebug {
     private String remoteDebugPort;
+    private String language;
 }

@@ -228,7 +228,7 @@ public class NocalhostBinService {
            return "nhctl-darwin-" + arch();
         }
         if (SystemInfo.isLinux) {
-            return "nhctl-linux-amd64";
+            return "nhctl-linux-" + arch();
         }
         if (SystemInfo.isWindows) {
             return "nhctl-windows-amd64.exe";

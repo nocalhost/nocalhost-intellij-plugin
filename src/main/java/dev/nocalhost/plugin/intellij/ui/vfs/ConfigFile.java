@@ -22,8 +22,6 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Date;
 
-import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlConfigEditCommand;
@@ -31,11 +29,10 @@ import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
+import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import lombok.SneakyThrows;
 
 public class ConfigFile extends VirtualFile {
-    private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
-
     private final String name;
     private final String path;
     private String content;
@@ -52,7 +49,7 @@ public class ConfigFile extends VirtualFile {
         this.content = content;
         this.project = project;
 
-        kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         namespace = node.getNamespaceNode().getNamespace();
     }
 
@@ -110,12 +107,8 @@ public class ConfigFile extends VirtualFile {
     protected void saveContent(String newContent) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                NhctlDescribeOptions nhctlDescribeOptions = new NhctlDescribeOptions(kubeConfigPath, namespace);
-                nhctlDescribeOptions.setDeployment(node.resourceName());
-                nhctlDescribeOptions.setType(node.controllerType());
-                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(node.applicationName(), nhctlDescribeOptions, NhctlDescribeService.class);
-
-                if (isReadonly(nhctlDescribeService)) {
+                var desService = NhctlUtil.getDescribeService(project, node.resourceName(), node.controllerType(), namespace, node.applicationName(), kubeConfigPath);
+                if (isReadonly(desService)) {
                     Messages.showMessageDialog("Config cannot be modified.", "Modify Config", null);
                     return;
                 }

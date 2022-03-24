@@ -9,7 +9,6 @@ import com.intellij.util.concurrency.Semaphore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.service.ProgressProcessManager;

@@ -21,13 +21,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeOptions;
-import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.nhctl.NhctlGetCommand;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -51,7 +50,7 @@ public class CopyTerminalAction extends DumbAwareAction {
         super("Copy Terminal Exec Command");
         this.project = project;
         this.node = node;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
     }
 
@@ -59,12 +58,11 @@ public class CopyTerminalAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                NhctlDescribeOptions opts = new NhctlDescribeOptions(kubeConfigPath, namespace);
-                opts.setDeployment(node.resourceName());
-                opts.setType(node.controllerType());
-                NhctlDescribeService nhctlDescribeService = nhctlCommand.describe(
-                        node.applicationName(), opts, NhctlDescribeService.class);
-                if (NhctlDescribeServiceUtil.developStarted(nhctlDescribeService)) {
+                var desService = NhctlUtil.getDescribeService(
+                        project, node.resourceName(), node.controllerType(),
+                        namespace, node.applicationName(), kubeConfigPath
+                );
+                if (NhctlDescribeServiceUtil.developStarted(desService)) {
                     copyDevTerminal();
                     return;
                 }
@@ -94,9 +92,9 @@ public class CopyTerminalAction extends DumbAwareAction {
                     return;
                 }
                 selectContainer(pods.get(0));
-            } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading service status error",
-                        "Error occurs while loading service status", e);
+            } catch (Exception ex) {
+                ErrorUtil.dealWith(project, "Failed to load service status",
+                        "Error occurred while loading service status.", ex);
             }
         });
     }

@@ -39,7 +39,7 @@ public class ConfigAction extends DumbAwareAction {
         super("Dev Config", "", AllIcons.Nodes.Editorconfig);
         this.project = project;
         this.node = node;
-        this.kubeConfigPath = KubeConfigUtil.kubeConfigPath(node.getClusterNode().getRawKubeConfig());
+        this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
     }
 
