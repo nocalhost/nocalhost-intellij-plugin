@@ -209,14 +209,16 @@ public class TreeMouseListener extends MouseAdapter {
             actionGroup.add(new EndDevelopAction(project, resourceNode));
 
             if ( ! nhctlDescribeService.isPossess()) {
-                actionGroup.add(new StartDevelopAction(project, resourceNode, DEV_MODE_DUPLICATE));
+                actionGroup.add(StartDevelopAction.duplicate(project, resourceNode));
+                actionGroup.add(StartDevelopAction.duplicateMesh(project, resourceNode));
             }
             actionGroup.add(new RunAction(project, resourceNode));
             actionGroup.add(new DebugAction(project, resourceNode));
             actionGroup.add(SEPARATOR);
         } else {
-            actionGroup.add(new StartDevelopAction(project, resourceNode, ""));
-            actionGroup.add(new StartDevelopAction(project, resourceNode, DEV_MODE_DUPLICATE));
+            actionGroup.add(new StartDevelopAction(project, resourceNode));
+            actionGroup.add(StartDevelopAction.duplicate(project, resourceNode));
+            actionGroup.add(StartDevelopAction.duplicateMesh(project, resourceNode));
             actionGroup.add(new RunAction(project, resourceNode));
             actionGroup.add(new DebugAction(project, resourceNode));
             actionGroup.add(SEPARATOR);
