@@ -2,9 +2,9 @@ name: build
 
 on:
   push:
-    branches: [dev]
+    branches: [ dev ]
   pull_request:
-    branches: [dev]
+    branches: [ dev ]
   workflow_dispatch:
 
 jobs:
@@ -13,31 +13,31 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform-version: [203, 211, 212, 213, 221]
+        platform-version: [ 203, 211, 212, 213, 221 ]
     env:
       ORG_GRADLE_PROJECT_platformVersion: ${{ matrix.platform-version }}
 
     steps:
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-      - name: Setup Java JDK
-        uses: actions/setup-java@v1.4.3
-        with:
-          java-version: 11
+    - name: Setup Java JDK
+      uses: actions/setup-java@v1.4.3
+      with:
+        java-version: 11
 
-      - name: Get config
-        run: |
-          echo "SERVER_VERSION=${{ secrets.MINIMUNM_VERSION_REQUIREMENT }}" | sed 's/v//g' >> $GITHUB_ENV
+    - name: Get config
+      run: |
+        echo "SERVER_VERSION=${{ secrets.MINIMUNM_VERSION_REQUIREMENT }}" | sed 's/v//g' >> $GITHUB_ENV
 
-      - name: Build
-        run: |
-          sed -i "s/sentryDsn=/sentryDsn=${{secrets.INTELLIJ_PLUGIN_SENTRY_DSN}}/g" src/main/resources/config.properties
-          sed -i -E "s/serverVersion=(.+)/serverVersion=${{ env.SERVER_VERSION }}/g" src/main/resources/config.properties
-          ./gradlew clean buildPlugin
+    - name: Build
+      run: |
+        sed -i "s/sentryDsn=/sentryDsn=${{secrets.INTELLIJ_PLUGIN_SENTRY_DSN}}/g" src/main/resources/config.properties
+        sed -i -E "s/serverVersion=(.+)/serverVersion=${{ env.SERVER_VERSION }}/g" src/main/resources/config.properties
+        ./gradlew clean buildPlugin
 
-      - name: Push to Coding Artifacts
-        run: |
-          cd build/distributions/
-          PLUGIN_ZIP=$(ls | grep nocalhost-intellij-plugin-)
-          PLUGIN_VERSION="$(git rev-parse --short HEAD)-${{ matrix.platform-version }}"
-          curl -T ${PLUGIN_ZIP} -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://nocalhost-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${PLUGIN_VERSION}"
+    - name: Push to Coding Artifacts
+      run: |
+        cd build/distributions/
+        PLUGIN_ZIP=$(ls | grep nocalhost-intellij-plugin-)
+        PLUGIN_VERSION="$(git rev-parse --short HEAD)-${{ matrix.platform-version }}"
+        curl -T ${PLUGIN_ZIP} -u ${{ secrets.CODING_ARTIFACTS_USER }}:${{ secrets.CODING_ARTIFACTS_PASS }} "https://nocalhost-generic.pkg.coding.net/nocalhost/plugins/nocalhost-intellij-plugin.zip?version=${PLUGIN_VERSION}"
