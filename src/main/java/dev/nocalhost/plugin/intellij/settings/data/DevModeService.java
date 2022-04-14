@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class DevModeService {
     private String mode;
     private String image;
+    private String header;
     private String action;
     private String server;
     private String username;
