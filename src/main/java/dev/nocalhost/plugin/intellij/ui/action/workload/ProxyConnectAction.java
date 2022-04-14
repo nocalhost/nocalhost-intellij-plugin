@@ -19,7 +19,7 @@ public class ProxyConnectAction extends DumbAwareAction {
     private final ResourceNode node;
 
     public ProxyConnectAction(@NotNull Project project, @NotNull ResourceNode node) {
-        super("Start ProxyMode (Beta)", "", NocalhostIcons.VPN.Healthy);
+        super("Start ProxyMode", "", NocalhostIcons.VPN.Healthy);
         this.node = node;
         this.project = project;
     }

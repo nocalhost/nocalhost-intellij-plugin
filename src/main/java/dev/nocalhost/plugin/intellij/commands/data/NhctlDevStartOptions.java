@@ -14,6 +14,7 @@ public class NhctlDevStartOptions extends NhctlGlobalOptions {
     private String mode;
     private String deployment;
     private String image;
+    private String header;
     private String localSync;
     private String sidecarImage;
     private String storageClass;

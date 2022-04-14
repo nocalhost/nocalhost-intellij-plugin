@@ -156,6 +156,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
         nhctlDevStartOptions.setWithoutTerminal(true);
         nhctlDevStartOptions.setMode(devModeService.getMode());
         nhctlDevStartOptions.setImage(devModeService.getImage());
+        nhctlDevStartOptions.setHeader(devModeService.getHeader());
         outputCapturedNhctlCommand.devStart(devModeService.getApplicationName(),
                 nhctlDevStartOptions);
     }
