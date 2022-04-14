@@ -219,13 +219,13 @@ public class TreeMouseListener extends MouseAdapter {
             actionGroup.add(new StartDevelopAction(project, resourceNode));
             actionGroup.add(StartDevelopAction.duplicate(project, resourceNode));
             actionGroup.add(StartDevelopAction.duplicateMesh(project, resourceNode));
+            if (proxyable(resourceNode, kind)) {
+                actionGroup.add(new ProxyConnectAction(project, resourceNode));
+            }
+            actionGroup.add(SEPARATOR);
             actionGroup.add(new RunAction(project, resourceNode));
             actionGroup.add(new DebugAction(project, resourceNode));
             actionGroup.add(SEPARATOR);
-            if (proxyable(resourceNode, kind)) {
-                actionGroup.add(new ProxyConnectAction(project, resourceNode));
-                actionGroup.add(SEPARATOR);
-            }
         }
 
         actionGroup.add(new AssociateLocalDirectoryAction(project, resourceNode));
