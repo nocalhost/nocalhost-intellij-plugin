@@ -163,6 +163,10 @@ public class NhctlCommand {
             args.add("--image");
             args.add(opts.getImage());
         }
+        if (StringUtils.isNotEmpty(opts.getHeader())) {
+            args.add("--header");
+            args.add(opts.getHeader());
+        }
         if (StringUtils.isNotEmpty(opts.getLocalSync())) {
             args.add("--local-sync");
             args.add(opts.getLocalSync());

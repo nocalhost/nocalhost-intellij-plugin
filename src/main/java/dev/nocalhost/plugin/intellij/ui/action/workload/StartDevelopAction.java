@@ -67,6 +67,7 @@ public class StartDevelopAction extends DumbAwareAction {
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     private final String mode;
+    private final boolean mesh;
     private final Project project;
     private final ResourceNode node;
     private final Path kubeConfigPath;
@@ -78,21 +79,49 @@ public class StartDevelopAction extends DumbAwareAction {
 
     private final String action;
 
-    public StartDevelopAction(Project project, ResourceNode node, String mode) {
+    private String header = "";
+
+    public StartDevelopAction(Project project, ResourceNode node) {
         this(
-                StringUtils.equals(mode, DEV_MODE_DUPLICATE) ? "Start DevMode (Duplicate)" : "Start DevMode",
+                "Start DevMode",
                 project,
                 node,
-                StringUtils.equals(mode, DEV_MODE_DUPLICATE) ? NocalhostIcons.Status.DevCopy : NocalhostIcons.Status.DevStart,
-                mode,
-                ""
+                NocalhostIcons.Status.DevStart,
+                "",
+                "",
+                false
         );
     }
 
-    public StartDevelopAction(String title, Project project, ResourceNode node, Icon icon, String mode, String action) {
+    public static StartDevelopAction duplicate(Project project, ResourceNode node) {
+        return new StartDevelopAction(
+                "Start DevMode (Duplicate)",
+                project,
+                node,
+                NocalhostIcons.Status.DevCopy,
+                DEV_MODE_DUPLICATE,
+                "",
+                false
+        );
+    }
+
+    public static StartDevelopAction duplicateMesh(Project project, ResourceNode node) {
+        return new StartDevelopAction(
+                "Start Mesh (Duplicate)",
+                project,
+                node,
+                NocalhostIcons.Status.DevCopy,
+                DEV_MODE_DUPLICATE,
+                "",
+                true
+        );
+    }
+
+    public StartDevelopAction(String title, Project project, ResourceNode node, Icon icon, String mode, String action, boolean mesh) {
         super(title, "", icon);
         this.node = node;
         this.mode = mode;
+        this.mesh = mesh;
         this.action = action;
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -354,6 +383,10 @@ public class StartDevelopAction extends DumbAwareAction {
                 opts.setKey("image");
                 String image = nhctlCommand.profileGet(node.applicationName(), opts);
                 if (StringUtils.isNotEmpty(image)) {
+                    if (mesh) {
+                        getHeader();
+                        return;
+                    }
                     startDevelop(projectPathReference.get());
                     return;
                 }
@@ -361,6 +394,20 @@ public class StartDevelopAction extends DumbAwareAction {
             } catch (Exception e) {
                 ErrorUtil.dealWith(project, "Loading dev image",
                         "Error occurs while loading dev image", e);
+            }
+        });
+    }
+
+    private void getHeader() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            header = Messages.showInputDialog(
+                    project,
+                    "Please input header, eg: foo=bar",
+                    "Start DevMode",
+                    null
+            );
+            if (StringUtils.isNotEmpty(header)) {
+                startDevelop(projectPathReference.get());
             }
         });
     }
@@ -392,6 +439,10 @@ public class StartDevelopAction extends DumbAwareAction {
                         opts.setValue(imageChooseDialog.getSelectedImage());
                         outputCapturedNhctlCommand.profileSet(node.applicationName(), opts);
                         selectedImage.set(imageChooseDialog.getSelectedImage());
+                        if (mesh) {
+                            getHeader();
+                            return;
+                        }
                         startDevelop(projectPathReference.get());
                     } catch (Exception e) {
                         ErrorUtil.dealWith(project, "Setting dev image",
@@ -417,6 +468,7 @@ public class StartDevelopAction extends DumbAwareAction {
                     .image(selectedImage.get())
                     .projectPath(Paths.get(openProjectPath).toString())
                     .action(action)
+                    .header(header)
                     .mode(mode)
                     .build();
         }
@@ -431,6 +483,7 @@ public class StartDevelopAction extends DumbAwareAction {
              .image(selectedImage.get())
              .projectPath(Paths.get(openProjectPath).toString())
              .action(action)
+             .header(header)
              .mode(mode)
              .build();
     }
