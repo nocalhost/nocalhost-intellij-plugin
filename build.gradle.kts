@@ -7,8 +7,8 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 group = "dev.nocalhost"
@@ -38,8 +38,8 @@ dependencies {
         exclude("org.slf4j")
     }
 
-    annotationProcessor("org.projectlombok:lombok:1.18.16")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.16")
+    annotationProcessor("org.projectlombok:lombok:1.18.24")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.24")
 
     testImplementation("junit", "junit", "4.12")
 }
