@@ -1,4 +1,4 @@
-package src;
+package dev.nocalhost.plugin.intellij.exception;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.event.HyperlinkEvent;
 
 import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
+import icons.NocalhostIcons;
 
 public class NocalhostNotifier {
 
@@ -30,11 +31,11 @@ public class NocalhostNotifier {
     public static final NotificationGroup NOCALHOST_NOTIFICATION =
             NotificationGroup.create(
                     "Nocalhost.Notification", NotificationDisplayType.BALLOON, false, "Nocalhost",
-                    "Nocalhost", PluginId.getId("dev.nocalhost.nocalhost-intellij-plugin"));
+                    NocalhostIcons.Logo, "Nocalhost", PluginId.getId("dev.nocalhost.nocalhost-intellij-plugin"));
     public static final NotificationGroup NOCALHOST_ERROR_NOTIFICATION =
             NotificationGroup.create(
                     "Nocalhost.Notification.Error", NotificationDisplayType.STICKY_BALLOON, true, "Nocalhost",
-                    "Nocalhost", PluginId.getId("dev.nocalhost.nocalhost-intellij-plugin"));
+                    NocalhostIcons.Logo, "Nocalhost", PluginId.getId("dev.nocalhost.nocalhost-intellij-plugin"));
 
     private final Project project;
 

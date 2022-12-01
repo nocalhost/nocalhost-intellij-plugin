@@ -1,4 +1,6 @@
-package src;
+package dev.nocalhost.plugin.intellij.utils;
+
+import com.google.common.io.Files;
 
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;

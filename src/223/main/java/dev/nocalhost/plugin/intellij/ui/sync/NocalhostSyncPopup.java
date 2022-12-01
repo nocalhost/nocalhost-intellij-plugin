@@ -1,4 +1,4 @@
-package src;
+package dev.nocalhost.plugin.intellij.ui.sync;
 
 import com.intellij.dvcs.ui.BranchActionGroupPopup;
 import com.intellij.ide.DataManager;
