@@ -86,8 +86,8 @@ public class OpenProjectAction extends DumbAwareAction {
                 }
             }
 
-            var task = new OpenProjectTask();
-            RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(projectPath), task.withRunConfigurators());
+            var task = OpenProjectTask.build();
+            RecentProjectsManagerBase.getInstanceEx().openProjectSync(Paths.get(projectPath), task.withRunConfigurators());
         });
     }
 }
