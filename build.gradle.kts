@@ -1,14 +1,14 @@
 plugins {
-    id("org.jetbrains.intellij") version "1.1.3"
+    id("org.jetbrains.intellij") version "1.12.0"
     java
-    kotlin("jvm") version "1.4.21"
+    kotlin("jvm") version "1.7.21"
     id("io.franzbecker.gradle-lombok") version "2.1"
     id("net.saliman.properties") version "1.5.1"
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.valueOf(prop("javaCompatibility"))
+    targetCompatibility = JavaVersion.valueOf(prop("javaCompatibility"))
 }
 
 group = "dev.nocalhost"
@@ -85,6 +85,7 @@ sourceSets {
     }
 }
 
+//Install other ide at your local and config these paths if you want to run other ide: RunGoland and so on
 tasks.runIde {
     if (baseIDE == "IC") {
         ideDir.set(File("/Applications/IntelliJ IDEA CE.app/Contents"))

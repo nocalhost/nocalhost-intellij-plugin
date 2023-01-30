@@ -122,7 +122,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
 
                     Thread.sleep(3000);
                 } catch (Exception ex) {
-                    LOG.error("Failed to refresh service list: 【" + json + "】", ex);
+                    LOG.error("Failed to refresh service list: [" + json + "]", ex);
                 }
             }
         });
