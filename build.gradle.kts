@@ -7,8 +7,8 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.valueOf(prop("javaCompatibility"))
+    targetCompatibility = JavaVersion.valueOf(prop("javaCompatibility"))
 }
 
 group = "dev.nocalhost"
