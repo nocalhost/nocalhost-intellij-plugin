@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform-version: [ 203, 211, 212, 213, 221 ]
+        platform-version: [ 203, 211, 212, 213, 221, 222, 223 ]
     env:
       ORG_GRADLE_PROJECT_platformVersion: ${{ matrix.platform-version }}
 
@@ -23,7 +23,7 @@ jobs:
     - name: Setup Java JDK
       uses: actions/setup-java@v1.4.3
       with:
-        java-version: 11
+        java-version: 17
 
     - name: Get config
       run: |

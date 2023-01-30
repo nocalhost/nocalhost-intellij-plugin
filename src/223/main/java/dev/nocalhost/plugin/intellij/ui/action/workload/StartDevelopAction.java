@@ -519,9 +519,8 @@ public class StartDevelopAction extends DumbAwareAction {
             }
 
             nocalhostSettings.setDevModeServiceToProjectPath(devModeService);
-
-            var task = new OpenProjectTask();
-            RecentProjectsManagerBase.getInstanceEx().openProject(Paths.get(path), task.withRunConfigurators());
+            var task = OpenProjectTask.build();
+            RecentProjectsManagerBase.getInstanceEx().openProjectSync(Paths.get(path), task.withRunConfigurators());
         });
     }
 
