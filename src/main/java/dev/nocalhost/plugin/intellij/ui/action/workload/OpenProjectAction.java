@@ -1,8 +1,6 @@
 package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.ide.RecentProjectsManagerBase;
-import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbAwareAction;
@@ -15,7 +13,6 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
@@ -86,8 +83,7 @@ public class OpenProjectAction extends DumbAwareAction {
                 }
             }
 
-            var task = OpenProjectTask.build();
-            RecentProjectsManagerBase.getInstanceEx().openProjectSync(Paths.get(projectPath), task.withRunConfigurators());
+            OpenProjectExecutor.open(projectPath);
         });
     }
 }
