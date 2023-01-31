@@ -2,8 +2,6 @@ package dev.nocalhost.plugin.intellij.ui.action.workload;
 
 import com.intellij.ide.BrowserUtil;
 import com.google.gson.reflect.TypeToken;
-import com.intellij.ide.RecentProjectsManagerBase;
-import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressManager;
@@ -519,8 +517,7 @@ public class StartDevelopAction extends DumbAwareAction {
             }
 
             nocalhostSettings.setDevModeServiceToProjectPath(devModeService);
-            var task = OpenProjectTask.build();
-            RecentProjectsManagerBase.getInstanceEx().openProjectSync(Paths.get(path), task.withRunConfigurators());
+            OpenProjectExecutor.open(path);
         });
     }
 
