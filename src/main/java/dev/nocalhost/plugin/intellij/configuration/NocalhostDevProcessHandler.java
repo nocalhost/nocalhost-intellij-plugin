@@ -59,6 +59,10 @@ public class NocalhostDevProcessHandler extends KillableProcessHandler {
         super.doDestroyProcess();
     }
 
+    public String getRunProfileName() {
+        return this.executionEnvironment.getRunProfile().getName();
+    }
+
     private void sendCtrlC() {
         OutputStream outputStream = this.getProcess().getOutputStream();
         try {
