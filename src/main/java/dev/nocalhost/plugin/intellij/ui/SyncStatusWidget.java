@@ -14,7 +14,6 @@ public class SyncStatusWidget implements StatusBarWidget {
 
     private final StatusBar statusBar;
     private final Project project;
-    private final SyncStatusPresentation syncStatusPresentation;
     private Thread updateThread = null;
     private boolean forceExit = false;
 
@@ -22,7 +21,6 @@ public class SyncStatusWidget implements StatusBarWidget {
     public SyncStatusWidget(Project project) {
         this.statusBar = WindowManager.getInstance().getStatusBar(project);
         this.project = project;
-        syncStatusPresentation = new SyncStatusPresentation(project, statusBar, this);
     }
 
     @Override
@@ -33,7 +31,7 @@ public class SyncStatusWidget implements StatusBarWidget {
 
     @Override
     public @Nullable WidgetPresentation getPresentation() {
-        return syncStatusPresentation;
+        return new SyncStatusPresentation(project, statusBar, this);
     }
 
     @Override
