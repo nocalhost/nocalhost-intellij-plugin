@@ -24,3 +24,5 @@ Refer to <a href="https://nocalhost.dev/">nocalhost.dev</a> for more Nocalhost i
 
 Restart IDE.
 
+## Develop
+- use "Run configurations" -> "nocalhost-intellij-plugin [runIde]" in gradle, to start the ide with plugin installed 
