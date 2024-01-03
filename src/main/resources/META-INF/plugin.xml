@@ -50,7 +50,7 @@
 
         <statusBarWidgetFactory
                 implementation="dev.nocalhost.plugin.intellij.ui.SyncStatusWidgetFactory"
-                order="first"/>
+                order="first" id="Nocalhost Sync Status"/>
         <errorHandler
                 implementation="dev.nocalhost.plugin.intellij.exception.report.NocalhostErrorReportSubmitter"/>
 
