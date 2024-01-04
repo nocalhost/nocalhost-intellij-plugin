@@ -8,6 +8,7 @@ import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.execution.configurations.ConfigurationType;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.executors.DefaultRunExecutor;
+import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
@@ -15,6 +16,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
+import dev.nocalhost.plugin.intellij.configuration.NocalhostDevProcessHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -115,12 +117,21 @@ public class ExecutionTask extends Task.Backgroundable {
         return DefaultRunExecutor.getRunExecutorInstance();
     }
 
+    private void destroy(ProcessHandler handler) {
+        if (handler instanceof NocalhostDevProcessHandler) {
+            NocalhostDevProcessHandler processHandler = (NocalhostDevProcessHandler) handler;
+            if (processHandler.getRunProfileName().equals(this.service.getServiceName())) {
+                handler.destroyProcess();
+            }
+        }
+    }
+
     @SneakyThrows
     protected void doRun() {
         // kill active session
         var processes = ExecutionManager.getInstance(project).getRunningProcesses();
         if (processes.length > 0) {
-            Arrays.stream(processes).forEach(x -> x.destroyProcess());
+            Arrays.stream(processes).forEach(this::destroy);    // Arrays.stream(processes).forEach(x -> x.destroyProcess());
             Thread.sleep(1000);
         }
 
@@ -136,13 +147,16 @@ public class ExecutionTask extends Task.Backgroundable {
         RunnerAndConfigurationSettings conf;
         var manager = RunManager.getInstance(project);
         var type = getConfType();
-        var list = manager.getConfigurationSettingsList(type);
+        var list = manager.getConfigurationSettingsList(type).stream()
+                .filter(settings -> settings.getConfiguration().getName().equals(this.service.getServiceName()))
+                .toList();
         if (list.isEmpty()) {
-            conf = manager.createConfiguration("Nocalhost", type);
+            conf = manager.createConfiguration(this.service.getServiceName(), type);
             manager.addConfiguration(conf);
         } else {
             conf = list.get(0);
         }
+
         // Python
         if (conf.getType() instanceof NocalhostPythonConfigurationType) {
             var port = getDebugPort();
