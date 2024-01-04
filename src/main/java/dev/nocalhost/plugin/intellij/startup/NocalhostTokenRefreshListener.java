@@ -16,6 +16,9 @@ import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.utils.TokenUtil;
 
+// Todo fix this deprecated interface according to
+//  https://youtrack.jetbrains.com/issue/GO-16024/com.intellij.diagnostic.PluginException-Override-execute
+//  https://github.com/JetBrains/intellij-platform-plugin-template/blob/main/src/main/kotlin/org/jetbrains/plugins/template/listeners/MyApplicationActivationListener.kt
 public class NocalhostTokenRefreshListener implements ApplicationInitializedListener {
     private static final Logger LOG = Logger.getInstance(NocalhostTokenRefreshListener.class);
 

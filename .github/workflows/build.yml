@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform-version: [ 203, 211, 212, 213, 221, 222, 223, 231, 232 ]
+        platform-version: [ 203, 211, 212, 213, 221, 222, 223, 231, 232, 233 ]
     env:
       ORG_GRADLE_PROJECT_platformVersion: ${{ matrix.platform-version }}
 
