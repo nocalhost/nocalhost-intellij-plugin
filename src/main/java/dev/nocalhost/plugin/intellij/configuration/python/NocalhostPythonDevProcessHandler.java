@@ -9,7 +9,7 @@ import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.ui.RunContentDescriptor;
 import com.intellij.execution.ui.RunContentManager;
 import com.intellij.openapi.application.ApplicationManager;
-import com.jetbrains.python.debugger.remote.PyRemoteDebugCommandLineState;
+import com.intellij.python.pro.debugger.remote.PyRemoteDebugCommandLineState;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

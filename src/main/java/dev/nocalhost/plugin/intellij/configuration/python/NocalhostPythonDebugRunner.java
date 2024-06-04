@@ -9,10 +9,10 @@ import com.intellij.execution.configurations.RunnerSettings;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ProgramRunner;
+import com.intellij.python.pro.debugger.remote.PyRemoteDebugConfiguration;
 import com.intellij.util.PathMappingSettings;
 import com.intellij.xdebugger.XDebugProcessStarter;
 import com.intellij.xdebugger.XDebuggerManager;
-import com.jetbrains.python.debugger.remote.PyRemoteDebugConfiguration;
 
 import org.jetbrains.annotations.NotNull;
 
