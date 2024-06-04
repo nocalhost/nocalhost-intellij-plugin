@@ -3,7 +3,7 @@
     <ExternalSystemSettings>
       <option name="env">
         <map>
-          <entry key="ORG_GRADLE_PROJECT_platformVersion" value="233" />
+          <entry key="ORG_GRADLE_PROJECT_platformVersion" value="241" />
         </map>
       </option>
       <option name="executionName" />
@@ -24,6 +24,7 @@
     <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
     <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
     <DebugAllEnabled>false</DebugAllEnabled>
+    <RunAsTest>false</RunAsTest>
     <method v="2" />
   </configuration>
 </component>

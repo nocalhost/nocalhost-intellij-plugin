@@ -2,12 +2,12 @@ package dev.nocalhost.plugin.intellij.configuration.python;
 
 import com.intellij.execution.ExecutionResult;
 import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.python.pro.debugger.remote.PyRemoteDebugConfiguration;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugProcessStarter;
 import com.intellij.xdebugger.XDebugSession;
 import com.jetbrains.python.debugger.PyDebugRunner;
 import com.jetbrains.python.debugger.PyRemoteDebugProcess;
-import com.jetbrains.python.debugger.remote.PyRemoteDebugConfiguration;
 import com.jetbrains.python.debugger.remote.vfs.PyRemotePositionConverter;
 
 import org.jetbrains.annotations.NotNull;
