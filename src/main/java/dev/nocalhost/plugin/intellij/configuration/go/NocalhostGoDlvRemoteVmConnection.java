@@ -8,7 +8,7 @@ import com.googlecode.jsonrpc4j.JsonRpcClient;
 import com.intellij.openapi.util.Condition;
 import com.intellij.util.io.socketConnection.ConnectionStatus;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.AsyncPromise;

@@ -7,7 +7,7 @@ import com.google.gson.reflect.TypeToken;
 import com.github.zafarkhaja.semver.Version;
 
 import org.apache.commons.compress.utils.Lists;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
