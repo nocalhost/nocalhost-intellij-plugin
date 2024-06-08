@@ -41,12 +41,17 @@
         <notificationGroup id="Nocalhost.Notification" displayType="BALLOON" toolWindowId="Nocalhost"/>
         <notificationGroup id="Nocalhost.Notification.Error" displayType="STICKY_BALLOON" toolWindowId="Nocalhost"/>
 
-        <postStartupActivity id="NocalhostStartupActivity"
-                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostStartupActivity"/>
+
+        <postStartupActivity implementation="dev.nocalhost.plugin.intellij.startup.NhctlAutoUpgradeActivity"
+                             id="NhctlAutoUpgradeActivity" order="before NocalhostContextActivity"/>
+
         <postStartupActivity id="NocalhostContextActivity" order="before NocalhostTreeExpandActivity"
                 implementation="dev.nocalhost.plugin.intellij.startup.NocalhostContextActivity"/>
         <postStartupActivity id="NocalhostTreeExpandActivity" order="before NocalhostStartupActivity"
                 implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTreeExpandActivity"/>
+        <postStartupActivity id="NocalhostStartupActivity"
+                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostStartupActivity"/>
+
 
         <statusBarWidgetFactory
                 implementation="dev.nocalhost.plugin.intellij.ui.SyncStatusWidgetFactory"
@@ -56,14 +61,13 @@
 
         <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostRunner" order="first"/>
 
-        <applicationInitializedListener id="NhctlAutoUpgradeListener"
-                implementation="dev.nocalhost.plugin.intellij.startup.NhctlAutoUpgradeListener"/>
-        <applicationInitializedListener id="NocalhostTokenRefreshListener"
-                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTokenRefreshListener"
-                order="after NhctlAutoUpgradeListener"/>
-        <applicationInitializedListener
-                implementation="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"
-                order="after NocalhostTokenRefreshListener"/>
+
+<!--todo fix this after 2024.1   -->
+<!--        <applicationInitializedListener id="NocalhostTokenRefreshListener"-->
+<!--                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTokenRefreshListener"/>-->
+<!--        <applicationInitializedListener-->
+<!--                implementation="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"-->
+<!--                order="after NocalhostTokenRefreshListener"/>-->
 
     </extensions>
 
