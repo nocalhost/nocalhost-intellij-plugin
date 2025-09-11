@@ -1,7 +1,6 @@
 plugins {
-    id("org.jetbrains.intellij") version "1.12.0"
+    id("org.jetbrains.intellij.platform") version "2.9.0"
     java
-    kotlin("jvm") version "1.7.21"
     id("io.franzbecker.gradle-lombok") version "2.1"
     id("net.saliman.properties") version "1.5.1"
 }
@@ -15,12 +14,12 @@ group = "dev.nocalhost"
 
 repositories {
     mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 dependencies {
-    implementation(kotlin("stdlib", "1.5.10"))
-
-
     implementation("com.squareup.okhttp3:okhttp:4.9.0")
     implementation("com.auth0:java-jwt:3.12.0")
     implementation("com.google.code.gson:gson:2.8.9")
@@ -53,7 +52,7 @@ val ideaVersion = prop("ideaVersion")
 val nocalhostVersion = prop("version")
 val changelogVersion = nocalhostVersion.replace("(\\d+\\.\\d+\\.)(\\d+)".toRegex(), "$1x")
 
-val terminalPlugin = "terminal"
+val terminalPlugin = "org.jetbrains.plugins.terminal"
 var javascriptPlugin = "JavaScript"
 var javascriptDebuggerPlugin = "JavaScriptDebugger"
 val javaPlugin = "com.intellij.java"
@@ -64,19 +63,28 @@ var pythonPlugin = "Pythonid:" + prop("pythonPluginVersion")
 version = "$nocalhostVersion-$platformVersion"
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
-intellij {
-    version.set(ideaVersion)
-    plugins.set(mutableListOf(
-        javascriptDebuggerPlugin,
-        javascriptPlugin,
-        terminalPlugin,
-        pythonPlugin,
-        javaPlugin,
-        phpPlugin,
-        goPlugin
-    ))
-    pluginName.set("nocalhost-intellij-plugin")
-    updateSinceUntilBuild.set(true)
+intellijPlatform {
+    pluginConfiguration {
+        name = "nocalhost-intellij-plugin"
+    }
+//    updateSinceUntilBuild.set(true)
+}
+dependencies {
+    intellijPlatform {
+        intellijIdeaUltimate(ideaVersion)
+        plugins(listOf(
+            pythonPlugin,
+            phpPlugin,
+            goPlugin,
+        ))
+        bundledPlugins(listOf(
+            javascriptDebuggerPlugin,
+            javascriptPlugin,
+            javaPlugin,
+            terminalPlugin,
+            "Git4Idea"
+        ))
+    }
 }
 
 sourceSets {
@@ -86,6 +94,7 @@ sourceSets {
 }
 
 //Install other ide at your local and config these paths if you want to run other ide: RunGoland and so on
+/*
 tasks.runIde {
     if (baseIDE == "IC") {
         ideDir.set(File("/Applications/IntelliJ IDEA CE.app/Contents"))
@@ -103,6 +112,7 @@ tasks.runIde {
         ideDir.set(File("/Applications/PhpStorm.app/Contents"))
     }
 }
+*/
 
 tasks {
     patchPluginXml {
