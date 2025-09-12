@@ -147,6 +147,18 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         set("KubeConfigMap", DataUtils.GSON.toJson(map));
     }
 
+    public @NotNull Boolean getCheckNhctlVersion() {
+        var json = get("checkNhctlVersion");
+        if (StringUtils.isNotEmpty(json)) {
+            return DataUtils.GSON.fromJson(json, Boolean.class);
+        }
+        return true;
+    }
+
+    public synchronized void setCheckNhctlVersion(boolean checkNhctlVersion) {
+        set("checkNhctlVersion", DataUtils.GSON.toJson(checkNhctlVersion));
+    }
+
     public String get(String key) {
         return hash.get(key);
     }

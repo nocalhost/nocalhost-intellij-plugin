@@ -28,6 +28,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedCpuArchitectureException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedOperatingSystemException;
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
@@ -38,6 +39,7 @@ public class NocalhostBinService {
     private static final Pattern NHCTL_VERSION_PATTERN = Pattern.compile("Version:\\sv(.+)");
 
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
+    private static NocalhostSettings settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
 
     private final String nhctlVersion;
     private final File nocalhostBin;
@@ -77,6 +79,9 @@ public class NocalhostBinService {
     }
 
     public void checkVersion() {
+        if (!settings.getCheckNhctlVersion()) {
+            return;
+        }
         try {
             Matcher matcher = NHCTL_VERSION_PATTERN.matcher(nhctlCommand.version());
             if (!matcher.find()) {
