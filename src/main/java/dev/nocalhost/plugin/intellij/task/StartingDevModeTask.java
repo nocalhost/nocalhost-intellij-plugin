@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.ide.BrowserUtil;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -138,7 +140,12 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                     .notifyError(
                             "Nocalhost",
                             "Please configure the <a href=\"https://nocalhost.dev/docs/reference/nh-config\">run/debug</a> command first.",
-                            (notification, event) -> BrowserUtil.browse("https://nocalhost.dev/docs/reference/nh-config/")
+                            new AnAction() {
+                                @Override
+                                public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+                                    BrowserUtil.browse("https://nocalhost.dev/docs/reference/nh-config/");
+                                }
+                            }
                     );
             indicator.cancel();
             return;

@@ -66,12 +66,11 @@
                 instance="dev.nocalhost.plugin.intellij.ui.ApplicationSettingsConfigurable"
                 id="dev.nocalhost.plugin.intellij.ui.ApplicationSettingsConfigurable"
                 displayName="Nocalhost"/>
-<!--todo fix this after 2024.1   -->
-<!--        <applicationInitializedListener id="NocalhostTokenRefreshListener"-->
-<!--                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTokenRefreshListener"/>-->
-<!--        <applicationInitializedListener-->
-<!--                implementation="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"-->
-<!--                order="after NocalhostTokenRefreshListener"/>-->
+        <applicationInitializedListener id="NocalhostTokenRefreshListener"
+                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTokenRefreshListener"/>
+        <applicationInitializedListener
+                implementation="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"
+                order="after NocalhostTokenRefreshListener"/>
 
     </extensions>
 

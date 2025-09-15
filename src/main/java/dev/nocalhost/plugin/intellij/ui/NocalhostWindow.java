@@ -44,7 +44,7 @@ public class NocalhostWindow implements Disposable {
 
     private void init() {
         tree = new NocalhostTree(project);
-        new TreeSpeedSearch(tree);
+        TreeSpeedSearch.installOn(tree);
         tree.updateDevSpaces();
         StatusText emptyText = tree.getEmptyText();
         emptyText.setCenterAlignText(false);
