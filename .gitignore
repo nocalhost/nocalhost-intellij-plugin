@@ -220,5 +220,6 @@ gradle-app.setting
 
 ### Gradle Patch ###
 **/build/
+.intellijPlatform
 
 # End of https://www.toptal.com/developers/gitignore/api/java,gradle,kotlin,jetbrains+all,osx,linux,windows
