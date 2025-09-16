@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+
 plugins {
     id("org.jetbrains.intellij.platform") version "2.9.0"
     java
@@ -45,10 +47,6 @@ dependencies {
     testImplementation("junit", "junit", "4.12")
 }
 
-var baseIDE = "IU"
-if (project.hasProperty("baseIDE")) {
-    baseIDE = project.property("baseIDE") as String
-}
 val platformVersion = prop("platformVersion").toInt()
 val ideaVersion = prop("ideaVersion")
 val nocalhostVersion = prop("version")
@@ -96,25 +94,21 @@ sourceSets {
 }
 
 //Install other ide at your local and config these paths if you want to run other ide: RunGoland and so on
-/*
-tasks.runIde {
-    if (baseIDE == "IC") {
-        ideDir.set(File("/Applications/IntelliJ IDEA CE.app/Contents"))
-    }
-    if (baseIDE == "GO") {
-        ideDir.set(File("/Applications/GoLand.app/Contents"))
-    }
-    if (baseIDE == "Node") {
-        ideDir.set(File("/Applications/WebStorm.app/Contents"))
-    }
-    if (baseIDE == "Python") {
-        ideDir.set(File("/Applications/PyCharm.app/Contents"))
-    }
-    if (baseIDE == "PHP") {
-        ideDir.set(File("/Applications/PhpStorm.app/Contents"))
-    }
+val runIC by intellijPlatformTesting.runIde.registering {
+    type = IntelliJPlatformType.IntellijIdeaCommunity
 }
-*/
+val runGoland by intellijPlatformTesting.runIde.registering {
+    type = IntelliJPlatformType.GoLand
+}
+val runWebStorm by intellijPlatformTesting.runIde.registering {
+    type = IntelliJPlatformType.WebStorm
+}
+val runPyCharm by intellijPlatformTesting.runIde.registering {
+    type = IntelliJPlatformType.PyCharmCommunity
+}
+val runPhpStorm by intellijPlatformTesting.runIde.registering {
+    type = IntelliJPlatformType.PhpStorm
+}
 
 tasks {
     patchPluginXml {
