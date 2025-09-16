@@ -58,9 +58,6 @@ val terminalPlugin = "org.jetbrains.plugins.terminal"
 var javascriptPlugin = "JavaScript"
 var javascriptDebuggerPlugin = "JavaScriptDebugger"
 val javaPlugin = "com.intellij.java"
-val phpPlugin = "com.jetbrains.php:" + prop("phpPluginVersion")
-val goPlugin = "org.jetbrains.plugins.go:" + prop("goPluginVersion")
-var pythonPlugin = "Pythonid:" + prop("pythonPluginVersion")
 
 version = "$nocalhostVersion-$platformVersion"
 
@@ -74,11 +71,14 @@ intellijPlatform {
 dependencies {
     intellijPlatform {
         intellijIdeaUltimate(ideaVersion)
-        plugins(listOf(
-            pythonPlugin,
-            phpPlugin,
-            goPlugin,
-        ))
+        compatiblePlugins(
+            "Pythonid",
+            "com.jetbrains.php",
+            "org.jetbrains.plugins.go",
+        )
+        if (!ideaVersion.startsWith("2024.1")) {
+            compatiblePlugins("PythonCore") // PythonCore new from 2024.2
+        }
         bundledPlugins(listOf(
             javascriptDebuggerPlugin,
             javascriptPlugin,
