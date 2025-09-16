@@ -1,50 +1,48 @@
-package dev.nocalhost.plugin.intellij.startup;
+package dev.nocalhost.plugin.intellij.startup
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupActivity;
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.startup.ProjectActivity
+import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings
+import dev.nocalhost.plugin.intellij.task.StartingDevModeTask
+import org.apache.commons.lang3.StringUtils
+import java.nio.file.Paths
 
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
-
-import java.nio.file.Paths;
-
-import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
-import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
-import dev.nocalhost.plugin.intellij.task.StartingDevModeTask;
-
-public final class NocalhostStartupActivity implements StartupActivity {
-    private static final Logger LOG = Logger.getInstance(NocalhostStartupActivity.class);
-
-    @Override
-    public void runActivity(@NotNull Project project) {
-        devStart(project);
+class NocalhostStartupActivity : ProjectActivity {
+    override suspend fun execute(project: Project) {
+        devStart(project)
     }
 
-    private void devStart(Project project) {
-        var path = project.getBasePath();
+    private fun devStart(project: Project) {
+        val path = project.basePath
         if (StringUtils.isEmpty(path)) {
-            return;
+            return
         }
-        var settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
-        String projectPath = Paths.get(path).toString();
-        DevModeService devModeService = settings.getDevModeServiceByProjectPath(projectPath);
+        val settings = ApplicationManager.getApplication()
+            .getService(NocalhostSettings::class.java)
+        val projectPath = Paths.get(path).toString()
+        val devModeService = settings.getDevModeServiceByProjectPath(projectPath)
         if (devModeService != null) {
             try {
-                ProgressManager.getInstance().run(new StartingDevModeTask(project, devModeService));
-            } catch (Exception e) {
-                LOG.error("error occurred while starting develop", e);
+                ProgressManager.getInstance().run(StartingDevModeTask(project, devModeService))
+            } catch (e: Exception) {
+                LOG.error("error occurred while starting develop", e)
                 NocalhostNotifier.getInstance(project).notifyError(
-                        "Nocalhost starting dev mode error",
-                        "Error occurred while starting dev mode",
-                        e.getMessage());
+                    "Nocalhost starting dev mode error",
+                    "Error occurred while starting dev mode",
+                    e.message!!
+                )
             } finally {
-                settings.removeDevModeServiceByProjectPath(projectPath);
+                settings.removeDevModeServiceByProjectPath(projectPath)
             }
         }
+    }
+
+
+    companion object {
+        private val LOG = Logger.getInstance(NocalhostStartupActivity::class.java)
     }
 }

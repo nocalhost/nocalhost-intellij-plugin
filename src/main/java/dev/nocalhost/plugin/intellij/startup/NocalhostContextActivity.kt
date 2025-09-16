@@ -1,15 +1,11 @@
-package dev.nocalhost.plugin.intellij.startup;
+package dev.nocalhost.plugin.intellij.startup
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupActivity;
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.startup.ProjectActivity
+import dev.nocalhost.plugin.intellij.service.NocalhostContextManager
 
-import org.jetbrains.annotations.NotNull;
-
-import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
-
-public final class NocalhostContextActivity implements StartupActivity {
-    @Override
-    public void runActivity(@NotNull Project project) {
-        NocalhostContextManager.getInstance(project).refresh();
+class NocalhostContextActivity : ProjectActivity {
+    override suspend fun execute(project: Project) {
+        NocalhostContextManager.getInstance(project).refresh()
     }
 }

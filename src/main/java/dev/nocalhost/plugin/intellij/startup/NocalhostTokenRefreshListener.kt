@@ -1,78 +1,82 @@
-package dev.nocalhost.plugin.intellij.startup;
+package dev.nocalhost.plugin.intellij.startup
 
-import com.intellij.ide.ApplicationInitializedListener;
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.ide.ApplicationInitializedListener
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
+import dev.nocalhost.plugin.intellij.api.NocalhostApi
+import dev.nocalhost.plugin.intellij.settings.NocalhostSettings
+import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount
+import dev.nocalhost.plugin.intellij.utils.TokenUtil
+import kotlinx.coroutines.CoroutineScope
+import java.text.MessageFormat
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-
-import dev.nocalhost.plugin.intellij.api.NocalhostApi;
-import dev.nocalhost.plugin.intellij.api.data.TokenResponse;
-import dev.nocalhost.plugin.intellij.api.data.UserInfo;
-import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
-import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
-import dev.nocalhost.plugin.intellij.utils.TokenUtil;
-
-// Todo fix this deprecated interface according to
-//  https://youtrack.jetbrains.com/issue/GO-16024/com.intellij.diagnostic.PluginException-Override-execute
-//  https://github.com/JetBrains/intellij-platform-plugin-template/blob/main/src/main/kotlin/org/jetbrains/plugins/template/listeners/MyApplicationActivationListener.kt
-public class NocalhostTokenRefreshListener implements ApplicationInitializedListener {
-    private static final Logger LOG = Logger.getInstance(NocalhostTokenRefreshListener.class);
-
-    private static final long NOCALHOST_TOKEN_REFRESH_INTERVAL_MILLIS = 10 * 1000; // 10 seconds
-
-    @Override
-    public void componentsInitialized() {
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            while (!ApplicationManager.getApplication().isDisposed()) {
-                checkAndRefreshTokens();
+class NocalhostTokenRefreshListener : ApplicationInitializedListener {
+    override suspend fun execute(asyncScope: CoroutineScope) {
+        ApplicationManager.getApplication().executeOnPooledThread(Runnable {
+            while (!ApplicationManager.getApplication().isDisposed) {
+                checkAndRefreshTokens()
                 try {
-                    Thread.sleep(NOCALHOST_TOKEN_REFRESH_INTERVAL_MILLIS);
-                } catch (InterruptedException ignore) {
+                    Thread.sleep(NOCALHOST_TOKEN_REFRESH_INTERVAL_MILLIS)
+                } catch (ignore: InterruptedException) {
                 }
-                Application application = ApplicationManager.getApplication();
-                if (application.isDisposed()) {
-                    return;
+                val application = ApplicationManager.getApplication()
+                if (application.isDisposed) {
+                    return@Runnable
                 }
             }
-        });
+        })
     }
 
-    public void checkAndRefreshTokens() {
-        NocalhostSettings nocalhostSettings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
-        NocalhostApi nocalhostApi = ApplicationManager.getApplication().getService(NocalhostApi.class);
+    fun checkAndRefreshTokens() {
+        val nocalhostSettings = ApplicationManager.getApplication()
+            .getService(NocalhostSettings::class.java)
+        val nocalhostApi =
+            ApplicationManager.getApplication().getService(NocalhostApi::class.java)
 
-        List<NocalhostAccount> nocalhostAccounts = new ArrayList<>(nocalhostSettings.getNocalhostAccounts());
+        val nocalhostAccounts: MutableList<NocalhostAccount> =
+            ArrayList(nocalhostSettings.getNocalhostAccounts())
 
-        for (NocalhostAccount nocalhostAccount : nocalhostAccounts) {
+        for (nocalhostAccount in nocalhostAccounts) {
             if (!TokenUtil.needRefresh(nocalhostAccount.getJwt())) {
-                continue;
+                continue
             }
 
             try {
-                TokenResponse tokenResponse = nocalhostApi.refreshToken(
-                        nocalhostAccount.getServer(),
-                        nocalhostAccount.getJwt(),
-                        nocalhostAccount.getRefreshToken());
-                UserInfo userInfo = nocalhostApi.getUserInfo(nocalhostAccount.getServer(),
-                        tokenResponse.getToken());
-                nocalhostSettings.updateNocalhostAccount(new NocalhostAccount(
+                val tokenResponse = nocalhostApi.refreshToken(
+                    nocalhostAccount.getServer(),
+                    nocalhostAccount.getJwt(),
+                    nocalhostAccount.getRefreshToken()
+                )
+                val userInfo = nocalhostApi.getUserInfo(
+                    nocalhostAccount.getServer(),
+                    tokenResponse.getToken()
+                )
+                nocalhostSettings.updateNocalhostAccount(
+                    NocalhostAccount(
                         nocalhostAccount.getServer(),
                         nocalhostAccount.getUsername(),
                         tokenResponse.getToken(),
                         tokenResponse.getRefreshToken(),
-                        userInfo));
-
-            } catch (Exception e) {
-                LOG.error(MessageFormat.format(
+                        userInfo
+                    )
+                )
+            } catch (e: Exception) {
+                LOG.error(
+                    MessageFormat.format(
                         "Error occurs while refresh token {0} on {1}",
                         nocalhostAccount.getUsername(),
-                        nocalhostAccount.getServer()),
-                        e);
+                        nocalhostAccount.getServer()
+                    ),
+                    e
+                )
             }
         }
+    }
+
+    companion object {
+        private val LOG = Logger.getInstance(NocalhostTokenRefreshListener::class.java)
+
+        private const val NOCALHOST_TOKEN_REFRESH_INTERVAL_MILLIS = (10 * 1000 // 10 seconds
+                ).toLong()
     }
 }

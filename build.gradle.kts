@@ -1,6 +1,8 @@
 plugins {
     id("org.jetbrains.intellij.platform") version "2.9.0"
     java
+    kotlin("jvm") version "1.9.22"
+    kotlin("plugin.lombok") version "1.9.22"
     id("io.franzbecker.gradle-lombok") version "2.1"
     id("net.saliman.properties") version "1.5.1"
 }

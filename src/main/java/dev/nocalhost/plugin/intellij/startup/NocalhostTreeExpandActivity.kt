@@ -1,16 +1,13 @@
-package dev.nocalhost.plugin.intellij.startup;
+package dev.nocalhost.plugin.intellij.startup
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupActivity;
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.startup.ProjectActivity
+import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier
 
-import org.jetbrains.annotations.NotNull;
-
-import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
-
-public class NocalhostTreeExpandActivity implements StartupActivity {
-    @Override
-    public void runActivity(@NotNull Project project) {
-        project.getMessageBus().syncPublisher(
-                NocalhostTreeExpandNotifier.NOCALHOST_TREE_EXPAND_NOTIFIER_TOPIC).action();
+class NocalhostTreeExpandActivity : ProjectActivity {
+    override suspend fun execute(project: Project) {
+        project.messageBus.syncPublisher(
+            NocalhostTreeExpandNotifier.NOCALHOST_TREE_EXPAND_NOTIFIER_TOPIC
+        ).action()
     }
 }
