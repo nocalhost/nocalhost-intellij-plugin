@@ -61,13 +61,16 @@
 
         <programRunner implementation="dev.nocalhost.plugin.intellij.configuration.NocalhostRunner" order="first"/>
 
-
-<!--todo fix this after 2024.1   -->
-<!--        <applicationInitializedListener id="NocalhostTokenRefreshListener"-->
-<!--                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTokenRefreshListener"/>-->
-<!--        <applicationInitializedListener-->
-<!--                implementation="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"-->
-<!--                order="after NocalhostTokenRefreshListener"/>-->
+        <applicationConfigurable
+                parentId="tools"
+                instance="dev.nocalhost.plugin.intellij.ui.ApplicationSettingsConfigurable"
+                id="dev.nocalhost.plugin.intellij.ui.ApplicationSettingsConfigurable"
+                displayName="Nocalhost"/>
+        <applicationInitializedListener id="NocalhostTokenRefreshListener"
+                implementation="dev.nocalhost.plugin.intellij.startup.NocalhostTokenRefreshListener"/>
+        <applicationInitializedListener
+                implementation="dev.nocalhost.plugin.intellij.startup.DevSpaceTreeAutoRefreshListener"
+                order="after NocalhostTokenRefreshListener"/>
 
     </extensions>
 

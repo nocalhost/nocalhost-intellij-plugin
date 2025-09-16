@@ -35,13 +35,6 @@ public abstract class BaseBackgroundTask extends Task.Backgroundable {
         super(project, title, canBeCancelled);
     }
 
-    public BaseBackgroundTask(@Nullable Project project,
-                              @NlsContexts.ProgressTitle @NotNull String title,
-                              boolean canBeCancelled,
-                              @Nullable PerformInBackgroundOption backgroundOption) {
-        super(project, title, canBeCancelled, backgroundOption);
-    }
-
     @Override
     public void onCancel() {
         super.onCancel();

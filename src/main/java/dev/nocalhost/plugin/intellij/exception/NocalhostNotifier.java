@@ -4,8 +4,9 @@ import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
-import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.options.ShowSettingsUtil;
@@ -64,9 +65,9 @@ public class NocalhostNotifier {
                                     @NlsContexts.NotificationContent @NotNull String message,
                                     @NotNull String eMessage) {
         String content = String.format("<html>%s <a href=\"nocalhost.show\">Show More</a></html>", message);
-        return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, content, NotificationType.ERROR, new NotificationListener.Adapter() {
+        return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, content, NotificationType.ERROR, new AnAction() {
             @Override
-            protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
+            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
                     project.getMessageBus().syncPublisher(NocalhostExceptionPrintNotifier.NOCALHOST_EXCEPTION_PRINT_NOTIFIER_TOPIC)
                            .action(title, message, eMessage);
@@ -77,9 +78,9 @@ public class NocalhostNotifier {
 
     public void notifyBinaryNotFound(String binary) {
         String content = String.format("<html>%s binary not found. <a href=\"nocalhost.setting\">Setting</a></html>", binary);
-        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new NotificationListener.Adapter() {
+        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new AnAction() {
             @Override
-            protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
+            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 ShowSettingsUtil showSettingsUtil = ApplicationManager.getApplication().getService(ShowSettingsUtil.class);
                 showSettingsUtil.showSettingsDialog(project, "Nocalhost");
             }
@@ -88,9 +89,9 @@ public class NocalhostNotifier {
 
     public void notifyVersionTips() {
         String content = "<html>nocalhost plugin need upgrade. <a href=\"nocalhost.setting\">upgrade plugin</a></html>";
-        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new NotificationListener.Adapter() {
+        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new AnAction() {
             @Override
-            protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
+            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 BrowserUtil.browse("https://plugins.jetbrains.com/plugin/16058-nocalhost/versions");
             }
         });
@@ -100,8 +101,8 @@ public class NocalhostNotifier {
     @NotNull
     public Notification notifyError(@NlsContexts.NotificationTitle @NotNull String title,
                                     @NlsContexts.NotificationContent @NotNull String message,
-                                    @Nullable NotificationListener listener) {
-        return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, message, NotificationType.ERROR, listener);
+                                    @Nullable AnAction action) {
+        return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, message, NotificationType.ERROR, action);
     }
 
     @NotNull
@@ -113,8 +114,8 @@ public class NocalhostNotifier {
     @NotNull
     public Notification notifySuccess(@NlsContexts.NotificationTitle @NotNull String title,
                                       @NlsContexts.NotificationContent @NotNull String message,
-                                      @Nullable NotificationListener listener) {
-        return notify(NOCALHOST_NOTIFICATION, NOCALHOST_NOTIFICATION_ID, title, message, NotificationType.INFORMATION, listener);
+                                      @Nullable AnAction action) {
+        return notify(NOCALHOST_NOTIFICATION, NOCALHOST_NOTIFICATION_ID, title, message, NotificationType.INFORMATION, action);
     }
 
     @NotNull
@@ -123,8 +124,8 @@ public class NocalhostNotifier {
                                 @NlsContexts.NotificationTitle @NotNull String title,
                                 @NlsContexts.NotificationContent @NotNull String message,
                                 @NotNull NotificationType type,
-                                @Nullable NotificationListener listener) {
-        Notification notification = createNotification(notificationGroup, displayId, title, message, type, listener);
+                                @Nullable AnAction action) {
+        Notification notification = createNotification(notificationGroup, displayId, title, message, type, action);
         return notify(notification);
     }
 
@@ -133,15 +134,15 @@ public class NocalhostNotifier {
                                                    @NlsContexts.NotificationTitle @NotNull String title,
                                                    @NlsContexts.NotificationContent @NotNull String message,
                                                    @NotNull NotificationType type,
-                                                   @Nullable NotificationListener listener) {
+                                                   @Nullable AnAction action) {
 
         if (StringUtils.isBlank(message)) {
             message = title;
             title = "";
         }
         Notification notification = notificationGroup.createNotification(title, message, type);
-        if (listener != null) {
-            notification.setListener(listener);
+        if (action != null) {
+            notification.addAction(action);
         }
         notification.setDisplayId(StringUtils.trimToEmpty(displayId));
         return notification;

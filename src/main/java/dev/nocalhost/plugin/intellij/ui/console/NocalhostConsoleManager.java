@@ -50,7 +50,7 @@ public final class NocalhostConsoleManager {
 
             ApplicationManager.getApplication().invokeLater(() -> {
                 toolWindow.activate(() -> {
-                    Content content = ContentFactory.SERVICE.getInstance().createContent(logs,
+                    Content content = ContentFactory.getInstance().createContent(logs,
                             title, false);
                     content.setDisposer(logs);
 
