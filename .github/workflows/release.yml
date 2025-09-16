@@ -31,7 +31,7 @@ jobs:
     needs: create-release
     strategy:
       matrix:
-        platform-version: [ 241, 242, 243, 251 ]
+        platform-version: [ 241, 242, 243, 251, 252 ]
     env:
       ORG_GRADLE_PROJECT_platformVersion: ${{ matrix.platform-version }}
 
