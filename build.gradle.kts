@@ -1,4 +1,5 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("org.jetbrains.intellij.platform") version "2.9.0"
@@ -12,6 +13,12 @@ plugins {
 java {
     sourceCompatibility = JavaVersion.valueOf(prop("javaCompatibility"))
     targetCompatibility = JavaVersion.valueOf(prop("javaCompatibility"))
+}
+
+kotlin {
+    compilerOptions.jvmTarget.set(JvmTarget.fromTarget(
+        JavaVersion.valueOf(prop("javaCompatibility")).toString()
+    ))
 }
 
 group = "dev.nocalhost"
