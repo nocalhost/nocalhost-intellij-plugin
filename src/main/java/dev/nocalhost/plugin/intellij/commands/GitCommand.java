@@ -20,6 +20,8 @@ import java.util.Map;
 
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class GitCommand {
     private static final String GIT_COMMAND = "git";
 
@@ -52,7 +54,7 @@ public class GitCommand {
             throw new NocalhostExecuteCmdException(cmd, -1, e.getMessage());
         }
 
-        try (InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8)) {
+        try (InputStreamReader reader = new InputStreamReader(process.getInputStream(), UTF_8)) {
             String output = CharStreams.toString(reader);
             int exitCode = process.waitFor();
             if (exitCode != 0) {

@@ -34,6 +34,8 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import lombok.Getter;
 import lombok.Setter;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 @Getter
 @Setter
 public abstract class BaseCommand {
@@ -97,7 +99,7 @@ public abstract class BaseCommand {
     }
 
     protected void onError(@NotNull Process process) {
-        try (var reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8)) {
+        try (var reader = new InputStreamReader(process.getErrorStream(), UTF_8)) {
             stderr.set(CharStreams.toString(reader));
         } catch (IOException ex) {
             // ignore
@@ -143,7 +145,7 @@ public abstract class BaseCommand {
         ApplicationManager.getApplication().executeOnPooledThread(() -> onInput(process));
 
         var stdout = new StringBuilder();
-        var reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);
+        var reader = new InputStreamReader(process.getInputStream(), UTF_8);
         try (var br = new BufferedReader(reader)) {
             String line;
             while ((line = br.readLine()) != null) {

@@ -25,6 +25,8 @@ import java.util.Set;
 
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class DataUtils {
     public static final Gson GSON = new Gson();
 
@@ -76,13 +78,13 @@ public class DataUtils {
         ).withEnvironment(EnvironmentUtil.getEnvironmentMap()).withRedirectErrorStream(true);
         Process process = commandLine.createProcess();
 
-        PrintWriter out = new PrintWriter(process.getOutputStream(), false, Charsets.UTF_8);
+        PrintWriter out = new PrintWriter(process.getOutputStream(), false, UTF_8);
         out.write(yaml);
         out.flush();
         out.close();
 
         String output = CharStreams.toString(new InputStreamReader(process.getInputStream(),
-                Charsets.UTF_8));
+                UTF_8));
         int exitCode = process.waitFor();
         if (exitCode != 0) {
             throw new NocalhostExecuteCmdException(commandLine.getCommandLineString(), exitCode,
@@ -97,13 +99,13 @@ public class DataUtils {
         ).withEnvironment(EnvironmentUtil.getEnvironmentMap()).withRedirectErrorStream(true);
         Process process = commandLine.createProcess();
 
-        PrintWriter out = new PrintWriter(process.getOutputStream(), false, Charsets.UTF_8);
+        PrintWriter out = new PrintWriter(process.getOutputStream(), false, UTF_8);
         out.write(GSON.toJson(src));
         out.flush();
         out.close();
 
         String output = CharStreams.toString(new InputStreamReader(process.getInputStream(),
-                Charsets.UTF_8));
+                UTF_8));
         int exitCode = process.waitFor();
         if (exitCode != 0) {
             throw new NocalhostExecuteCmdException(commandLine.getCommandLineString(), exitCode,
