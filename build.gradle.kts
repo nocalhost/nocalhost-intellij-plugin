@@ -70,8 +70,11 @@ version = "$nocalhostVersion-$platformVersion"
 intellijPlatform {
     pluginConfiguration {
         name = "nocalhost-intellij-plugin"
+        ideaVersion {
+            sinceBuild = prop("sinceBuild")
+            untilBuild = prop("untilBuild")
+        }
     }
-//    updateSinceUntilBuild.set(true)
 }
 dependencies {
     intellijPlatform {
