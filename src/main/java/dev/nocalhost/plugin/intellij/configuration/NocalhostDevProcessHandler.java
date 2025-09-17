@@ -3,8 +3,8 @@ package dev.nocalhost.plugin.intellij.configuration;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.process.KillableProcessHandler;
 import com.intellij.execution.configurations.GeneralCommandLine;
-import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
+import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
@@ -34,7 +34,7 @@ public class NocalhostDevProcessHandler extends KillableProcessHandler {
     ) throws ExecutionException {
         super(commandLine);
         this.executionEnvironment = environment;
-        this.addProcessListener(new ProcessAdapter() {
+        this.addProcessListener(new ProcessListener() {
             @Override
             public void startNotified(@NotNull ProcessEvent event) {
                 ApplicationManager.getApplication().executeOnPooledThread(() -> {

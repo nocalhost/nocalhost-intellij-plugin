@@ -61,6 +61,8 @@ import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class NhctlCommand {
     public String install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
         List<String> args = Lists.newArrayList(getNhctlCmd(), "install", name);
@@ -719,14 +721,14 @@ public class NhctlCommand {
 
         final AtomicReference<String> errorOutput = new AtomicReference<>();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            InputStreamReader reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
+            InputStreamReader reader = new InputStreamReader(process.getErrorStream(), UTF_8);
             try {
                 errorOutput.set(CharStreams.toString(reader));
             } catch (Exception ignore) {
             }
         });
 
-        try (InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8)) {
+        try (InputStreamReader reader = new InputStreamReader(process.getInputStream(), UTF_8)) {
             String output = CharStreams.toString(reader);
             int exitCode = process.waitFor();
             if (exitCode != 0) {

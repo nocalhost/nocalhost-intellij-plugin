@@ -45,6 +45,8 @@ import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class NocalhostProfileState extends CommandLineState {
     private static final Logger LOG = Logger.getInstance(NocalhostProfileState.class);
 
@@ -76,7 +78,7 @@ public class NocalhostProfileState extends CommandLineState {
                 "--kubeconfig", context.getKubeConfigPath().toString(),
                 "--namespace", context.getNamespace()
         );
-        return new NocalhostDevProcessHandler(new GeneralCommandLine(commandLine).withCharset(Charsets.UTF_8), getEnvironment(), this);
+        return new NocalhostDevProcessHandler(new GeneralCommandLine(commandLine).withCharset(UTF_8), getEnvironment(), this);
     }
 
     public String getDebugPort() {
@@ -188,7 +190,7 @@ public class NocalhostProfileState extends CommandLineState {
         disposables.add(() -> process.destroy());
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             StringBuilder sb = new StringBuilder();
-            InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);
+            InputStreamReader reader = new InputStreamReader(process.getInputStream(), UTF_8);
             try (BufferedReader br = new BufferedReader(reader)) {
                 String line;
                 while ((line = br.readLine()) != null) {
