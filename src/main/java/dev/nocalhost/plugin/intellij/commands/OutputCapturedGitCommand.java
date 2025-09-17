@@ -17,6 +17,8 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class OutputCapturedGitCommand extends GitCommand {
     private final Project project;
 
@@ -46,7 +48,7 @@ public class OutputCapturedGitCommand extends GitCommand {
 
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                process.getInputStream(), Charsets.UTF_8))) {
+                process.getInputStream(), UTF_8))) {
             String line;
             String previousLine = "";
             while ((line = br.readLine()) != null) {

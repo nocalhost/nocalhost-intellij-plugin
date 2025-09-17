@@ -33,6 +33,8 @@ import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class HotReload implements Disposable {
     private static final Logger LOG = Logger.getInstance(HotReload.class);
 
@@ -113,7 +115,7 @@ public class HotReload implements Disposable {
         process = cmd.createProcess();
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            var reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);
+            var reader = new InputStreamReader(process.getInputStream(), UTF_8);
             try (var br = new BufferedReader(reader)) {
                 String line;
                 while ((line = br.readLine()) != null) {

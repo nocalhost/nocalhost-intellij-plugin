@@ -21,6 +21,8 @@ import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 import lombok.Getter;
 import lombok.Setter;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 @Getter
 @Setter
 public class NhctlProxyCommand extends BaseCommand {
@@ -45,7 +47,7 @@ public class NhctlProxyCommand extends BaseCommand {
     protected void onError(@NotNull Process process) {
         int b;
         var output = new StringBuilder();
-        var reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
+        var reader = new InputStreamReader(process.getErrorStream(), UTF_8);
         try (var br = new BufferedReader(reader)) {
             while ((b = br.read()) != -1) {
                 output.append((char) b);
