@@ -68,6 +68,7 @@ version = "$nocalhostVersion-$platformVersion"
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellijPlatform {
+    buildSearchableOptions = false
     pluginConfiguration {
         ideaVersion {
             sinceBuild = prop("sinceBuild")
