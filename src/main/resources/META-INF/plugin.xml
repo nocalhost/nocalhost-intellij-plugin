@@ -1,5 +1,5 @@
 <idea-plugin>
-    <name>Nocalhost</name>
+    <name>Nocalhost for Kubernetes</name>
     <vendor url="https://nocalhost.dev/">Nocalhost</vendor>
 
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
