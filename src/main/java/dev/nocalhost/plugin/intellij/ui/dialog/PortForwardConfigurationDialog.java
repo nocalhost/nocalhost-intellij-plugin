@@ -411,7 +411,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     private static class StartButton extends ColorButton {
         private final Color BlueColor = new JBColor(0x669ED5, 0x5E91C3);
-        private final Color BackgroundColor = new JBColor(() -> JBColor.isBright() ? UIUtil.getListBackground() : new Color(0x313335));
+        private final Color BackgroundColor = JBColor.lazy(() -> JBColor.isBright() ? UIUtil.getListBackground() : new Color(0x313335));
         private final Color ForegroundColor = BlueColor;
         private final Color BorderColor = BlueColor;
         private final Color FocusedBackground = new Color(0xBEDBFD);
@@ -431,7 +431,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     private static class StopButton extends ColorButton {
         private final Color RedColor = new JBColor(0xC06362, 0xAC5D52);
-        private final Color BackgroundColor = new JBColor(() -> JBColor.isBright() ? UIUtil.getListBackground() : new Color(0x313335));
+        private final Color BackgroundColor = JBColor.lazy(() -> JBColor.isBright() ? UIUtil.getListBackground() : new Color(0x313335));
         private final Color ForegroundColor = RedColor;
         private final Color BorderColor = RedColor;
         private final Color FocusedBackground = new Color(0xF1BAC5);

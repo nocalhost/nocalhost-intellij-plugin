@@ -25,6 +25,8 @@ import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.utils.NhctlOutputUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public final class OutputCapturedNhctlCommand extends NhctlCommand {
     private final Project project;
 
@@ -67,7 +69,7 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
 
         final AtomicReference<String> errorOutput = new AtomicReference<>();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            InputStreamReader reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
+            InputStreamReader reader = new InputStreamReader(process.getErrorStream(), UTF_8);
             try {
                 errorOutput.set(CharStreams.toString(reader));
             } catch (Exception ignore) {
@@ -76,7 +78,7 @@ public final class OutputCapturedNhctlCommand extends NhctlCommand {
 
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                process.getInputStream(), Charsets.UTF_8))) {
+                process.getInputStream(), UTF_8))) {
             String line;
             String previousLine = "";
             while ((line = br.readLine()) != null) {

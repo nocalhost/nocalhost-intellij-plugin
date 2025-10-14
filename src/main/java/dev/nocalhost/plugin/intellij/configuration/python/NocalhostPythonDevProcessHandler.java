@@ -1,15 +1,14 @@
 package dev.nocalhost.plugin.intellij.configuration.python;
 
-import com.intellij.execution.ExecutionException;
-import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
+import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.ui.RunContentDescriptor;
 import com.intellij.execution.ui.RunContentManager;
 import com.intellij.openapi.application.ApplicationManager;
-import com.jetbrains.python.debugger.remote.PyRemoteDebugCommandLineState;
+import com.intellij.python.pro.debugger.remote.PyRemoteDebugCommandLineState;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,7 +26,7 @@ public class NocalhostPythonDevProcessHandler extends PyRemoteDebugCommandLineSt
             @NotNull NocalhostPythonProfileState state
     ) {
         this.environment = environment;
-        this.addProcessListener(new ProcessAdapter() {
+        this.addProcessListener(new ProcessListener() {
             @Override
             @SneakyThrows
             public void startNotified(@NotNull ProcessEvent event) {

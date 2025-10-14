@@ -217,7 +217,7 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
 
     private static class StopButton extends ColorButton {
         private final Color RedColor = new JBColor(0xC06362, 0xAC5D52);
-        private final Color BackgroundColor = new JBColor(() -> JBColor.isBright() ? UIUtil.getListBackground() : new Color(0x313335));
+        private final Color BackgroundColor = JBColor.lazy(() -> JBColor.isBright() ? UIUtil.getListBackground() : new Color(0x313335));
         private final Color ForegroundColor = RedColor;
         private final Color BorderColor = RedColor;
         private final Color FocusedBackground = new Color(0xF1BAC5);

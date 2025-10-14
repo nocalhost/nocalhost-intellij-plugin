@@ -11,7 +11,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.jetbrains.python.debugger.remote.PyRemoteDebugCommandLineState;
+import com.intellij.python.pro.debugger.remote.PyRemoteDebugCommandLineState;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +33,8 @@ import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     private static final String DEFAULT_SHELL = "sh";
@@ -202,7 +204,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         var process = cmd.createProcess();
         disposables.add(() -> process.destroy());
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            var reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);
+            var reader = new InputStreamReader(process.getInputStream(), UTF_8);
             try (var br = new BufferedReader(reader)) {
                 String line;
                 while ((line = br.readLine()) != null) {
@@ -237,7 +239,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             }
         });
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            var reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8);
+            var reader = new InputStreamReader(process.getInputStream(), UTF_8);
             try (var br = new BufferedReader(reader)) {
                 String line;
                 while ((line = br.readLine()) != null) {

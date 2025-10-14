@@ -1,6 +1,6 @@
 package dev.nocalhost.plugin.intellij.commands.data;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import lombok.Getter;
 import lombok.Setter;

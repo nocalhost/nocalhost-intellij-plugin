@@ -32,6 +32,7 @@ import dev.nocalhost.plugin.intellij.utils.KubeResourceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 
 import static dev.nocalhost.plugin.intellij.utils.Constants.WORKLOAD_TYPE_POD;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class LogsAction extends DumbAwareAction {
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
@@ -143,7 +144,7 @@ public class LogsAction extends DumbAwareAction {
                                 "--container", containerName,
                                 "--kubeconfig", kubeConfigPath.toString(),
                                 "--namespace", namespace
-                        )).withCharset(Charsets.UTF_8))
+                        )).withCharset(UTF_8))
                 );
     }
 }

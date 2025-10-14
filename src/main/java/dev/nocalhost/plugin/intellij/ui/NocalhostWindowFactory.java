@@ -16,7 +16,7 @@ public class NocalhostWindowFactory implements ToolWindowFactory, DumbAware {
         NocalhostWindow nocalhostWindow = new NocalhostWindow(project);
 
         ContentManager contentManager = toolWindow.getContentManager();
-        Content content = ContentFactory.SERVICE.getInstance().createContent(nocalhostWindow.getPanel(), "", false);
+        Content content = ContentFactory.getInstance().createContent(nocalhostWindow.getPanel(), "", false);
         contentManager.addContent(content);
         contentManager.setSelectedContent(content);
     }

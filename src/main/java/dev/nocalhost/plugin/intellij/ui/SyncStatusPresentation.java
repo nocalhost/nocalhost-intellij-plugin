@@ -192,7 +192,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
     }
 
     @Override
-    public @Nullable("null means the widget is unable to show the popup") ListPopup getPopupStep() {
+    public @Nullable("null means the widget is unable to show the popup") ListPopup getPopup() {
         return NocalhostSyncPopup.getInstance(project, createActions()).asListPopup();
     }
 

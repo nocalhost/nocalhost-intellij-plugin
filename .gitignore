@@ -40,6 +40,7 @@ hs_err_pid*
 
 # Generated files
 .idea/**/contentModel.xml
+.idea/codeStyles/Project.xml
 
 # Sensitive or high-churn files
 .idea/**/dataSources/
@@ -219,5 +220,6 @@ gradle-app.setting
 
 ### Gradle Patch ###
 **/build/
+.intellijPlatform
 
 # End of https://www.toptal.com/developers/gitignore/api/java,gradle,kotlin,jetbrains+all,osx,linux,windows

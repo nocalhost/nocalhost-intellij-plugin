@@ -10,7 +10,6 @@ import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.Alarm;
-import com.intellij.util.AlarmFactory;
 import com.intellij.util.EnvironmentUtil;
 
 import org.apache.commons.lang3.StringUtils;
@@ -61,6 +60,8 @@ import dev.nocalhost.plugin.intellij.service.ProgressProcessManager;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.utils.SudoUtil;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class NhctlCommand {
     public String install(String name, NhctlInstallOptions opts) throws IOException, InterruptedException, NocalhostExecuteCmdException {
@@ -714,21 +715,20 @@ public class NhctlCommand {
         }
 
         if (args.size() > 0 && StringUtils.equals(args.get(1), "get")) {
-            AlarmFactory.getInstance()
-                        .create(Alarm.ThreadToUse.POOLED_THREAD, ApplicationManager.getApplication())
-                        .addRequest(process::destroy, 10 * 1000);
+            new Alarm(Alarm.ThreadToUse.POOLED_THREAD, ApplicationManager.getApplication())
+                    .addRequest(process::destroy, 10 * 1000);
         }
 
         final AtomicReference<String> errorOutput = new AtomicReference<>();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            InputStreamReader reader = new InputStreamReader(process.getErrorStream(), Charsets.UTF_8);
+            InputStreamReader reader = new InputStreamReader(process.getErrorStream(), UTF_8);
             try {
                 errorOutput.set(CharStreams.toString(reader));
             } catch (Exception ignore) {
             }
         });
 
-        try (InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charsets.UTF_8)) {
+        try (InputStreamReader reader = new InputStreamReader(process.getInputStream(), UTF_8)) {
             String output = CharStreams.toString(reader);
             int exitCode = process.waitFor();
             if (exitCode != 0) {
