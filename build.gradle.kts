@@ -75,6 +75,11 @@ intellijPlatform {
             untilBuild = prop("untilBuild")
         }
     }
+    pluginVerification {
+      ides {
+        recommended()
+      }
+    }
 }
 dependencies {
     intellijPlatform {
