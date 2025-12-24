@@ -2,7 +2,7 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    id("org.jetbrains.intellij.platform") version "2.9.0"
+    id("org.jetbrains.intellij.platform") version "2.10.5"
     java
     kotlin("jvm") version "2.1.10"
     kotlin("plugin.lombok") version "2.1.10"
@@ -75,10 +75,17 @@ intellijPlatform {
             untilBuild = prop("untilBuild")
         }
     }
+    pluginVerification {
+        ides { recommended() }
+    }
 }
 dependencies {
     intellijPlatform {
-        intellijIdeaUltimate(ideaVersion)
+        if (platformVersion >= 253) {
+            intellijIdea(ideaVersion)
+        } else {
+            intellijIdeaUltimate(ideaVersion)
+        }
         compatiblePlugins(
             "Pythonid",
             "com.jetbrains.php",
@@ -87,6 +94,8 @@ dependencies {
         if (!ideaVersion.startsWith("2024.1")) {
             compatiblePlugins("PythonCore") // PythonCore new from 2024.2
         }
+        if (platformVersion >= 253)
+            bundledModule("intellij.platform.scriptDebugger.ui")
         bundledPlugins(listOf(
             javascriptDebuggerPlugin,
             javascriptPlugin,
@@ -105,7 +114,7 @@ sourceSets {
 
 //Install other ide at your local and config these paths if you want to run other ide: RunGoland and so on
 val runIC by intellijPlatformTesting.runIde.registering {
-    type = IntelliJPlatformType.IntellijIdeaCommunity
+    type = if (platformVersion >= 253) IntelliJPlatformType.IntellijIdea else IntelliJPlatformType.IntellijIdeaCommunity
 }
 val runGoland by intellijPlatformTesting.runIde.registering {
     type = IntelliJPlatformType.GoLand
@@ -114,7 +123,7 @@ val runWebStorm by intellijPlatformTesting.runIde.registering {
     type = IntelliJPlatformType.WebStorm
 }
 val runPyCharm by intellijPlatformTesting.runIde.registering {
-    type = IntelliJPlatformType.PyCharmCommunity
+   type = if (platformVersion >= 253) IntelliJPlatformType.PyCharm else IntelliJPlatformType.PyCharmCommunity
 }
 val runPhpStorm by intellijPlatformTesting.runIde.registering {
     type = IntelliJPlatformType.PhpStorm
@@ -131,7 +140,7 @@ tasks {
                 <a href="https://nocalhost.dev/docs/changelogs/$changelogVersion/">https://nocalhost.dev/docs/changelogs/$changelogVersion</a>
             </p>
             """
-        );
+        )
     }
 
     publishPlugin {
