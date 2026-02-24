@@ -4,8 +4,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id("org.jetbrains.intellij.platform") version "2.10.5"
     java
-    kotlin("jvm") version "2.1.10"
-    kotlin("plugin.lombok") version "2.1.10"
+    kotlin("jvm") version "2.2.20"
+    kotlin("plugin.lombok") version "2.2.20"
     id("io.franzbecker.gradle-lombok") version "2.1"
     id("net.saliman.properties") version "1.5.1"
 }
