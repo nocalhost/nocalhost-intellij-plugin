@@ -1,0 +1,22 @@
+# Normalize text files to LF in the repository (regardless of platform)
+* text=auto
+
+# Force LF in the working copy for source/config files (avoids
+# "LF will be replaced by CRLF" warnings and keeps diffs clean)
+*.java    text eol=lf
+*.kt      text eol=lf
+*.kts     text eol=lf
+*.groovy  text eol=lf
+*.gradle  text eol=lf
+*.xml     text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.properties text eol=lf
+*.md      text eol=lf
+*.html    text eol=lf
+*.json    text eol=lf
+*.sh      text eol=lf
+
+# Windows batch files: keep bytes exactly as committed (no normalization)
+*.bat     -text
+*.cmd     -text

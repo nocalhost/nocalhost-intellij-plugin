@@ -18,7 +18,6 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBEmptyBorder;
 import com.intellij.util.ui.UIUtil;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -232,7 +231,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                 ErrorUtil.dealWith(project, "Failed to port forward error",
                         "Error occurred while get resources", ex);
             }
-            if (CollectionUtils.isNotEmpty(pods)) {
+            if (pods != null && !pods.isEmpty()) {
                 List<String> names = pods.stream()
                                               .map(r -> r.getMetadata().getName())
                                               .collect(Collectors.toList());

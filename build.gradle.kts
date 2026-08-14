@@ -1,21 +1,40 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+// IDEA 2026.2 (platform 262) bundles Kotlin 2.4.0, whose class metadata can only be read
+// by Kotlin compiler >= 2.3. Use Kotlin 2.4.0 for platform 262+, keep 2.2.20 for older platforms
+// so their generated class metadata stays readable by the older IDE-bundled stdlib.
+// The Kotlin version must be chosen dynamically, so it is wired via buildscript classpath + apply.
+buildscript {
+    val platformVersionNumber: Int =
+        (project.findProperty("platformVersion") as? String)?.toIntOrNull() ?: 262
+    val kotlinVersion: String = if (platformVersionNumber >= 262) "2.4.0" else "2.2.20"
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath("org.jetbrains.kotlin:kotlin-lombok:$kotlinVersion")
+    }
+}
+
 plugins {
     id("org.jetbrains.intellij.platform") version "2.10.5"
     java
-    kotlin("jvm") version "2.2.20"
-    kotlin("plugin.lombok") version "2.2.20"
     id("io.franzbecker.gradle-lombok") version "2.1"
     id("net.saliman.properties") version "1.5.1"
 }
+
+apply(plugin = "org.jetbrains.kotlin.jvm")
+apply(plugin = "org.jetbrains.kotlin.plugin.lombok")
 
 java {
     sourceCompatibility = JavaVersion.valueOf(prop("javaCompatibility"))
     targetCompatibility = JavaVersion.valueOf(prop("javaCompatibility"))
 }
 
-kotlin {
+configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
     compilerOptions.jvmTarget.set(JvmTarget.fromTarget(
         JavaVersion.valueOf(prop("javaCompatibility")).toString()
     ))
@@ -48,8 +67,8 @@ dependencies {
         exclude("org.slf4j")
     }
 
-    annotationProcessor("org.projectlombok:lombok:1.18.32")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.32")
+    annotationProcessor("org.projectlombok:lombok:1.18.46")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.46")
 
     testImplementation("junit", "junit", "4.12")
 }
@@ -96,6 +115,13 @@ dependencies {
         }
         if (platformVersion >= 253)
             bundledModule("intellij.platform.scriptDebugger.ui")
+        if (platformVersion >= 262) {
+            // IDEA 2026.2 moved these off the default compile classpath; add them explicitly.
+            bundledModule("intellij.platform.util.commonsLangV2Shim")
+            bundledModule("intellij.platform.vcs.dvcs.impl")
+            bundledModule("intellij.platform.vcs.impl")
+            bundledModule("intellij.platform.scriptDebugger.backend")
+        }
         bundledPlugins(listOf(
             javascriptDebuggerPlugin,
             javascriptPlugin,

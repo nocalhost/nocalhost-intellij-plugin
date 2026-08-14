@@ -7,7 +7,6 @@ import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.EmptyIcon;
 import com.intellij.util.ui.UIUtil;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -186,20 +185,20 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                     return NocalhostIcons.Status.DevCopyWithPortForwarding;
                 }
                 if (nhctlDescribeService.isPossess()) {
-                    if (CollectionUtils.isNotEmpty(nhctlPortForwards)) {
+                    if (!nhctlPortForwards.isEmpty()) {
                         return NocalhostIcons.Status.DevPortForwarding;
                     } else {
                         return NocalhostIcons.Status.DevStart;
                     }
                 } else {
-                    if (CollectionUtils.isNotEmpty(nhctlPortForwards)) {
+                    if (!nhctlPortForwards.isEmpty()) {
                         return NocalhostIcons.Status.DevPortForwardingOther;
                     } else {
                         return NocalhostIcons.Status.DevOther;
                     }
                 }
             case RUNNING:
-                if (CollectionUtils.isNotEmpty(nhctlPortForwards)) {
+                if (!nhctlPortForwards.isEmpty()) {
                     return NocalhostIcons.Status.NormalPortForwarding;
                 } else {
                     return NocalhostIcons.Status.Running;

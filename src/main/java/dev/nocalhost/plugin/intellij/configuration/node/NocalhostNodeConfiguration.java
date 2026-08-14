@@ -1,40 +1,37 @@
 package dev.nocalhost.plugin.intellij.configuration.node;
 
+import com.intellij.execution.ExecutionResult;
+import com.intellij.execution.Executor;
 import com.intellij.execution.configurations.ConfigurationFactory;
+import com.intellij.execution.configurations.LocatableConfigurationBase;
+import com.intellij.execution.configurations.RunConfiguration;
+import com.intellij.execution.configurations.RunProfileState;
+import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.execution.runners.RunConfigurationWithSuppressedDefaultRunAction;
+import com.intellij.javascript.JSRunProfileWithCompileBeforeLaunchOption;
 import com.intellij.javascript.debugger.LocalFileSystemFileFinder;
 import com.intellij.javascript.debugger.RemoteDebuggingFileFinder;
 import com.intellij.javascript.debugger.RemoteDebuggingFileFinderKt;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
-
+import com.intellij.xdebugger.XDebugProcess;
+import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
 import com.jetbrains.debugger.wip.BrowserChromeDebugProcess;
 import com.jetbrains.debugger.wip.JSRemoteDebugConfiguration;
-
+import com.jetbrains.debugger.wip.WipWithExclusiveWebsocketChannelVmConnection;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostConfiguration;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostSettingsEditor;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-
-import com.intellij.xdebugger.XDebugProcess;
-import com.intellij.execution.ExecutionResult;
-import com.intellij.xdebugger.XDebugSession;
-import java.net.InetSocketAddress;
-import com.intellij.execution.configurations.RunProfileState;
-import com.intellij.execution.runners.ExecutionEnvironment;
-import com.intellij.execution.Executor;
-import com.intellij.execution.configurations.RunConfiguration;
-import com.intellij.openapi.options.SettingsEditor;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.debugger.DebuggableRunConfiguration;
-import com.intellij.javascript.JSRunProfileWithCompileBeforeLaunchOption;
-import com.intellij.execution.runners.RunConfigurationWithSuppressedDefaultRunAction;
-import com.intellij.execution.configurations.LocatableConfigurationBase;
-import com.jetbrains.debugger.wip.WipWithExclusiveWebsocketChannelVmConnection;
+
+import java.net.InetSocketAddress;
 
 public class NocalhostNodeConfiguration
         extends LocatableConfigurationBase<NocalhostNodeConfiguration>
@@ -66,9 +63,29 @@ public class NocalhostNodeConfiguration
         return conf.computeDebugAddress(state);
     }
 
+    /**
+     * IDEA 2026.2 (platform 262) added a required {@code Project} parameter to the
+     * {@link WipWithExclusiveWebsocketChannelVmConnection} constructor, while older platforms
+     * only have the no-arg constructor. Resolve the constructor reflectively so the same
+     * source compiles and runs on all supported platform versions.
+     */
+    @NotNull
+    private static WipWithExclusiveWebsocketChannelVmConnection createVmConnection(@NotNull final Project project) {
+        final Class<WipWithExclusiveWebsocketChannelVmConnection> clazz = WipWithExclusiveWebsocketChannelVmConnection.class;
+        try {
+            try {
+                return clazz.getConstructor(Project.class).newInstance(project);
+            } catch (NoSuchMethodException e) {
+                return clazz.getConstructor().newInstance();
+            }
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to create " + clazz.getName(), e);
+        }
+    }
+
     @NotNull
     public XDebugProcess createDebugProcess(@NotNull final InetSocketAddress socketAddress, @NotNull final XDebugSession session, @Nullable final ExecutionResult executionResult, @NotNull final ExecutionEnvironment environment) {
-        final WipWithExclusiveWebsocketChannelVmConnection connection = new WipWithExclusiveWebsocketChannelVmConnection();
+        final WipWithExclusiveWebsocketChannelVmConnection connection = createVmConnection(getProject());
         final RemoteDebuggingFileFinder finder = new RemoteDebuggingFileFinder(RemoteDebuggingFileFinderKt.createUrlToLocalMap(conf.getMappings()), new LocalFileSystemFileFinder());
         final BrowserChromeDebugProcess process = new BrowserChromeDebugProcess(session, finder, connection, executionResult);
         var future = ApplicationManager.getApplication().executeOnPooledThread(() -> {

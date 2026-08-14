@@ -31,17 +31,28 @@ jobs:
     needs: create-release
     strategy:
       matrix:
-        platform-version: [ 241, 242, 243, 251, 252, 253 ]
+        platform-version: [ 241, 242, 243, 251, 252, 253, 261, 262 ]
+        include:
+          # IDEA 2025.3+ (platform 253/261) platform jars target Java 21;
+          # IDEA 2026.2 (platform 262) targets Java 25; older platforms build with Java 17
+          - platform-version: 253
+            java-version: 21
+          - platform-version: 261
+            java-version: 21
+          - platform-version: 262
+            java-version: 25
     env:
       ORG_GRADLE_PROJECT_platformVersion: ${{ matrix.platform-version }}
+      JETBRAINS_TOKEN: ${{ secrets.JETBRAINS_TOKEN }}
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Setup Java JDK
-      uses: actions/setup-java@v1.4.3
+      uses: actions/setup-java@v4
       with:
-        java-version: 17
+        distribution: temurin
+        java-version: ${{ matrix.java-version || 17 }}
 
     - name: Get tag
       run: |
@@ -51,14 +62,16 @@ jobs:
         echo "SERVER_VERSION=${{ secrets.MINIMUNM_VERSION_REQUIREMENT }}" | sed 's/v//g' >> $GITHUB_ENV
 
     - name: Build
-      env:
-        JETBRAINS_TOKEN: ${{ secrets.JETBRAINS_TOKEN }}
       run: |
         sed -i "s/sentryDsn=/sentryDsn=${{secrets.INTELLIJ_PLUGIN_SENTRY_DSN}}/g" src/main/resources/config.properties
         sed -i -E "s/nhctlVersion=(.+)/nhctlVersion=${{ env.NHCTL_VERSION }}/g" src/main/resources/config.properties
         sed -i -E "s/serverVersion=(.+)/serverVersion=${{ env.SERVER_VERSION }}/g" src/main/resources/config.properties
         sed -i -E "s/version=(.+)/version=${{ env.PLUGIN_VERSION }}/g" gradle.properties
-        ./gradlew clean publishPlugin
+        ./gradlew clean buildPlugin
+
+    - name: Publish to JetBrains Marketplace
+      if: ${{ env.JETBRAINS_TOKEN != '' }}
+      run: ./gradlew publishPlugin
 
     - name: Rename package
       run: |
