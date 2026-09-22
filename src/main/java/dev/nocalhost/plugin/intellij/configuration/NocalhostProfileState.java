@@ -1,6 +1,5 @@
 package dev.nocalhost.plugin.intellij.configuration;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 
 import com.intellij.execution.ExecutionException;
@@ -45,6 +44,7 @@ import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.ProgressUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -93,6 +93,20 @@ public class NocalhostProfileState extends CommandLineState {
     }
 
     public void prepare() throws ExecutionException {
+        // prepare() 是在 EDT 上被调用的（ExecutionManager.startRunProfile 的回调），而它内部是一串
+        // 阻塞的 nhctl 子进程调用（nhctl get / sync status / dev pod / port-forward start），
+        // 直接在 EDT 上执行会被诊断成 "Freeze in EDT"。
+        // 放到模态进度框里执行，真正的工作跑在后台线程上，事件队列继续响应。
+        ProgressUtil.<Void, ExecutionException>runWithModalProgress(
+                getEnvironment().getProject(),
+                NocalhostI18n.get("progress.prepareRunEnvironment"),
+                () -> {
+                    doPrepare();
+                    return null;
+                });
+    }
+
+    private void doPrepare() throws ExecutionException {
         try {
             var project = getEnvironment().getProject();
             var context = NocalhostContextManager.getInstance(project).getContext();
