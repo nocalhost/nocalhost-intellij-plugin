@@ -12,6 +12,7 @@ import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.NlsContexts;
+import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 
 import org.apache.commons.lang3.StringUtils;
@@ -19,11 +20,8 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.event.HyperlinkEvent;
-
 import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
-import icons.NocalhostIcons;
 
 public class NocalhostNotifier {
 
@@ -65,21 +63,27 @@ public class NocalhostNotifier {
     public Notification notifyError(@NlsContexts.NotificationTitle @NotNull String title,
                                     @NlsContexts.NotificationContent @NotNull String message,
                                     @NotNull String eMessage) {
-        String content = String.format("<html>%s <a href=\"nocalhost.show\">%s</a></html>", message, NocalhostI18n.get("notify.showMore"));
-        return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, content, NotificationType.ERROR, new AnAction() {
+        // 注意：Notification 正文里的 <a href> 只有在注册了 NotificationListener 时才会响应点击，
+        // 这里改为给 AnAction 一个可见文案，点击该按钮才会展开详情。
+        return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, message, NotificationType.ERROR,
+                new AnAction(NocalhostI18n.get("notify.showMore")) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
-                    project.getMessageBus().syncPublisher(NocalhostExceptionPrintNotifier.NOCALHOST_EXCEPTION_PRINT_NOTIFIER_TOPIC)
-                           .action(title, message, eMessage);
-                });
+                ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console");
+                if (toolWindow == null) {
+                    return;
+                }
+                toolWindow.activate(() -> project.getMessageBus()
+                        .syncPublisher(NocalhostExceptionPrintNotifier.NOCALHOST_EXCEPTION_PRINT_NOTIFIER_TOPIC)
+                        .action(title, message, eMessage));
             }
         });
     }
 
     public void notifyBinaryNotFound(String binary) {
         String content = NocalhostI18n.format("notify.binaryNotFound", binary);
-        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new AnAction() {
+        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR,
+                new AnAction(NocalhostI18n.get("notify.binaryNotFound.action")) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 ShowSettingsUtil showSettingsUtil = ApplicationManager.getApplication().getService(ShowSettingsUtil.class);
@@ -90,7 +94,8 @@ public class NocalhostNotifier {
 
     public void notifyVersionTips() {
         String content = NocalhostI18n.get("notify.versionTips");
-        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new AnAction() {
+        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR,
+                new AnAction(NocalhostI18n.get("notify.versionTips.action")) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 BrowserUtil.browse("https://plugins.jetbrains.com/plugin/16058-nocalhost/versions");
