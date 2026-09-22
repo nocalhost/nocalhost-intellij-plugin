@@ -165,6 +165,21 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         set("checkNhctlVersion", DataUtils.GSON.toJson(checkNhctlVersion));
     }
 
+    /**
+     * 调试连接断开时是否自动重连（attach 回仍在运行的远端 JVM），默认开启。
+     */
+    public boolean getAutoReconnectDebug() {
+        var json = get("autoReconnectDebug");
+        if (StringUtils.isNotEmpty(json)) {
+            return Boolean.TRUE.equals(DataUtils.GSON.fromJson(json, Boolean.class));
+        }
+        return true;
+    }
+
+    public synchronized void setAutoReconnectDebug(boolean autoReconnectDebug) {
+        set("autoReconnectDebug", DataUtils.GSON.toJson(autoReconnectDebug));
+    }
+
     public String get(String key) {
         return hash.get(key);
     }

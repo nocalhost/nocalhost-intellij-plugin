@@ -31,6 +31,7 @@
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand" />
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.exception.NocalhostNotifier"/>
         <projectService serviceImplementation="dev.nocalhost.plugin.intellij.service.NocalhostContextManager"/>
+        <projectService serviceImplementation="dev.nocalhost.plugin.intellij.service.NocalhostDebugReconnectService"/>
 
         <toolWindow id="Nocalhost" anchor="right" icon="NocalhostIcons.Logo"
                     factoryClass="dev.nocalhost.plugin.intellij.ui.NocalhostWindowFactory"/>
@@ -83,6 +84,12 @@
             <action id="NocalhostEditPaste" class="com.intellij.openapi.editor.actions.PasteAction"
                     use-shortcut-of="$Paste" icon="AllIcons.Actions.MenuPaste" text="Paste"/>
         </group>
+
+        <!-- 调试断线重连：网络断开后重新 attach 回仍在运行的远端 JVM，不再重启远端进程 -->
+        <action id="NocalhostReconnectDebug"
+                class="dev.nocalhost.plugin.intellij.ui.action.workload.ReconnectDebugAction">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
     </actions>
 
 </idea-plugin>

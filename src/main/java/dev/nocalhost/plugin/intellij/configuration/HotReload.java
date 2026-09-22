@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
+import dev.nocalhost.plugin.intellij.service.NocalhostDebugReconnectService;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
@@ -123,6 +124,9 @@ public class HotReload implements Disposable {
                     if (hasFileChanged.get()) {
                         var parsed = DataUtils.GSON.fromJson(line, NhctlSyncStatus.class);
                         if ("idle".equals(parsed.getStatus())) {
+                            NocalhostDebugReconnectService
+                                    .getInstance(environment.getProject())
+                                    .suppressAutoReconnect("hot reload restart");
                             ExecutionManager.getInstance(environment.getProject()).restartRunProfile(environment);
                             break;
                         }

@@ -46,6 +46,7 @@ import dev.nocalhost.plugin.intellij.ui.action.workload.ResetAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.RunAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.StartDevelopAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.ProxyConnectAction;
+import dev.nocalhost.plugin.intellij.ui.action.workload.ReconnectDebugAction;
 import dev.nocalhost.plugin.intellij.ui.action.workload.TerminalAction;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
@@ -214,6 +215,7 @@ public class TreeMouseListener extends MouseAdapter {
             }
             actionGroup.add(new RunAction(project, resourceNode));
             actionGroup.add(new DebugAction(project, resourceNode));
+            actionGroup.add(new ReconnectDebugAction(project, resourceNode.resourceName()));
             actionGroup.add(SEPARATOR);
         } else {
             actionGroup.add(new StartDevelopAction(project, resourceNode));

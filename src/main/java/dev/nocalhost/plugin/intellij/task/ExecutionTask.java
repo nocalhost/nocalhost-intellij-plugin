@@ -17,6 +17,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
 import dev.nocalhost.plugin.intellij.configuration.NocalhostDevProcessHandler;
+import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,6 +44,7 @@ import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevAssociateCommand;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
+import dev.nocalhost.plugin.intellij.service.NocalhostDebugReconnectService;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -124,11 +126,21 @@ public class ExecutionTask extends Task.Backgroundable {
             if (processHandler.getRunProfileName().equals(this.service.getServiceName())) {
                 handler.destroyProcess();
             }
+            return;
+        }
+        // attach-only（断线重连）会话用的是平台的 RemoteDebugProcessHandler，
+        // 这里通过挂在 ProcessHandler 上的运行配置名识别是不是同一个服务的会话。
+        String runProfileName = handler.getUserData(NocalhostProfileState.KEY_RUN_PROFILE_NAME);
+        if (StringUtils.isNotEmpty(runProfileName)
+                && StringUtils.equals(runProfileName, this.service.getServiceName())) {
+            handler.destroyProcess();
         }
     }
 
     @SneakyThrows
     protected void doRun() {
+        // 用户显式发起新的调试/运行：让自动重连让路，避免和这次重启打架
+        NocalhostDebugReconnectService.getInstance(project).suppressAutoReconnect("run profile restart");
         // kill active session
         var processes = ExecutionManager.getInstance(project).getRunningProcesses();
         if (processes.length > 0) {

@@ -24,6 +24,8 @@ public class ApplicationSettingsConfigurable implements SearchableConfigurable {
     private JLabel checkNhctlVersionDescription;
     private JComboBox<String> languageComboBox;
     private JLabel languageLabel;
+    private JCheckBox autoReconnectDebug;
+    private JLabel autoReconnectDebugDescription;
 
     public ApplicationSettingsConfigurable() {
         checkNhctlVersion.setSelected(settings.getCheckNhctlVersion());
@@ -33,6 +35,9 @@ public class ApplicationSettingsConfigurable implements SearchableConfigurable {
         languageLabel.setText(NocalhostI18n.get("settings.language"));
         checkNhctlVersion.setText(NocalhostI18n.get("settings.checkNhctlVersion"));
         checkNhctlVersionDescription.setText(NocalhostI18n.get("settings.checkNhctlVersion.description"));
+        autoReconnectDebug.setSelected(settings.getAutoReconnectDebug());
+        autoReconnectDebug.setText(NocalhostI18n.get("settings.autoReconnectDebug"));
+        autoReconnectDebugDescription.setText(NocalhostI18n.get("settings.autoReconnectDebug.description"));
     }
 
     @Override
@@ -53,12 +58,14 @@ public class ApplicationSettingsConfigurable implements SearchableConfigurable {
     @Override
     public boolean isModified() {
         return settings.getCheckNhctlVersion() != checkNhctlVersion.isSelected()
+                || settings.getAutoReconnectDebug() != autoReconnectDebug.isSelected()
                 || !LANGUAGES[languageComboBox.getSelectedIndex()].equals(settings.getLanguage());
     }
 
     @Override
     public void apply() throws ConfigurationException {
         settings.setCheckNhctlVersion(checkNhctlVersion.isSelected());
+        settings.setAutoReconnectDebug(autoReconnectDebug.isSelected());
         String language = LANGUAGES[languageComboBox.getSelectedIndex()];
         if (!language.equals(settings.getLanguage())) {
             settings.setLanguage(language);
@@ -75,5 +82,6 @@ public class ApplicationSettingsConfigurable implements SearchableConfigurable {
         checkNhctlVersion.setSelected(settings.getCheckNhctlVersion());
         languageComboBox.setSelectedIndex(
                 NocalhostI18n.LANG_ZH.equals(settings.getLanguage()) ? 1 : 0);
+        autoReconnectDebug.setSelected(settings.getAutoReconnectDebug());
     }
 }

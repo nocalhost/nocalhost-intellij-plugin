@@ -20,6 +20,7 @@ import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.service.NocalhostDebugReconnectService;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
@@ -77,6 +78,8 @@ public class EndDevelopAction extends DumbAwareAction {
     }
 
     private void endDevelop() {
+        NocalhostDebugReconnectService.getInstance(project).suppressAutoReconnect("end dev mode", 120_000L);
+        // 退出 DevMode 时远端 JVM 会消失（且耗时可能较长），这段时间不要自动重连
         ProgressManager.getInstance().run(new BaseBackgroundTask(null, NocalhostI18n.get("progress.endDevMode")) {
             @Override
             public void onSuccess() {
