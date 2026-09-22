@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlConfigOptions;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ConfigFile;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -36,7 +37,7 @@ public class ConfigAction extends DumbAwareAction {
     private final String namespace;
 
     public ConfigAction(Project project, ResourceNode node) {
-        super("Dev Config", "", AllIcons.Nodes.Editorconfig);
+        super(NocalhostI18n.get("action.devConfig"), "", AllIcons.Nodes.Editorconfig);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -45,7 +46,7 @@ public class ConfigAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Loading config") {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, NocalhostI18n.get("progress.loadingConfig")) {
             private String config;
 
             @Override
@@ -58,8 +59,8 @@ public class ConfigAction extends DumbAwareAction {
                 fileEditorManager.openTextEditor(openFileDescriptor, true);
 
                 var yes = MessageDialogBuilder.yesNo(
-                        "Dev Config",
-                        "Do you want to open the browser to edit config?"
+                        NocalhostI18n.get("action.devConfig"),
+                        NocalhostI18n.get("confirm.openDevConfigTools")
                 ).ask(project);
                 if (yes) {
                     openDevConfigTools();
@@ -68,8 +69,8 @@ public class ConfigAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Getting application config error",
-                        "Error occurred while getting application config", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.getAppConfig"),
+                        NocalhostI18n.get("error.getAppConfig.content"), e);
             }
 
             @SneakyThrows
@@ -94,8 +95,8 @@ public class ConfigAction extends DumbAwareAction {
             x.addParameter("application", node.applicationName());
             BrowserUtil.browse(x.build().toString());
         } catch (Exception ex) {
-            ErrorUtil.dealWith(project, "Failed to open browser",
-                    "Error occurred while opening browser", ex);
+            ErrorUtil.dealWith(project, NocalhostI18n.get("error.openBrowser"),
+                    NocalhostI18n.get("error.openBrowser.content"), ex);
         }
     }
 }

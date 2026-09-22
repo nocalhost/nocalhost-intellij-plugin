@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import icons.NocalhostIcons;
 
 public class NocalhostGoConfigurationType implements ConfigurationType {
@@ -22,7 +23,7 @@ public class NocalhostGoConfigurationType implements ConfigurationType {
     @Override
     @Nls(capitalization = Nls.Capitalization.Sentence)
     public String getConfigurationTypeDescription() {
-        return "Run and debug go application with nocalhost";
+        return NocalhostI18n.get("config.go.description");
     }
 
     @Override

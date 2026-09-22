@@ -7,13 +7,14 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.dialog.AddStandaloneClustersDialog;
 
 public class AddStandaloneClustersAction extends DumbAwareAction {
     private final Project project;
 
     public AddStandaloneClustersAction(Project project) {
-        super("Connect to Cluster", "", AllIcons.General.Add);
+        super(NocalhostI18n.get("action.connectCluster"), "", AllIcons.General.Add);
         this.project = project;
     }
 

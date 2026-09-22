@@ -28,6 +28,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.exception.NocalhostServerVersionOutDatedException;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.task.InstallApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
@@ -61,7 +62,7 @@ public class InstallApplicationAction extends DumbAwareAction {
     private final String namespace;
 
     public InstallApplicationAction(Project project, NamespaceNode node) {
-        super("Deploy Application", "", AllIcons.Actions.Install);
+        super(NocalhostI18n.get("action.deployApplication"), "", AllIcons.Actions.Install);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -98,15 +99,15 @@ public class InstallApplicationAction extends DumbAwareAction {
                 } else {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showInfoMessage(
                             project,
-                            "No application found. Please configure your applications in Nocalhost Service Dashboard.",
-                            "Deploy Application"));
+                            NocalhostI18n.get("common.noApplicationFound"),
+                            NocalhostI18n.get("action.deployApplication")));
                 }
 
             } catch (NocalhostServerVersionOutDatedException e) {
-                NocalhostNotifier.getInstance(project).notifyError("Server version out-dated", e.getMessage());
+                NocalhostNotifier.getInstance(project).notifyError(NocalhostI18n.get("common.serverVersionOutDated"), e.getMessage());
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Check application status error",
-                        "Error occurs while checking application status", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.checkAppStatus"),
+                        NocalhostI18n.get("error.checkAppStatus.content"), e);
             }
         });
     }
@@ -114,7 +115,7 @@ public class InstallApplicationAction extends DumbAwareAction {
     private void selectApplication(List<Application> applications) {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (applications.isEmpty()) {
-                Messages.showMessageDialog("All applications are deployed.", "Deploy Application", null);
+                Messages.showMessageDialog(NocalhostI18n.get("common.allApplicationsDeployed"), NocalhostI18n.get("action.deployApplication"), null);
                 return;
             }
 
@@ -136,8 +137,8 @@ public class InstallApplicationAction extends DumbAwareAction {
                 try {
                     installApp(applicationOptional.get());
                 } catch (Exception e) {
-                    ErrorUtil.dealWith(project, "Application deployment error",
-                            "Error occurs while deploying application", e);
+                    ErrorUtil.dealWith(project, NocalhostI18n.get("error.deployApplication"),
+                            NocalhostI18n.get("error.deployApplication.content"), e);
                 }
             }
         });
@@ -153,7 +154,7 @@ public class InstallApplicationAction extends DumbAwareAction {
         List<String> resourceDirs = Lists.newArrayList(context.getResourceDir());
 
         if (Set.of(MANIFEST_TYPE_HELM_LOCAL, MANIFEST_TYPE_RAW_MANIFEST_LOCAL, MANIFEST_TYPE_KUSTOMIZE_LOCAL).contains(installType)) {
-            Path localPath = FileChooseUtil.chooseSingleDirectory(project, "", "Choose local directory");
+            Path localPath = FileChooseUtil.chooseSingleDirectory(project, "", NocalhostI18n.get("common.chooseLocalDirectory"));
             if (localPath == null) {
                 return;
             }
@@ -234,32 +235,32 @@ public class InstallApplicationAction extends DumbAwareAction {
     }
 
     private AppInstallOrUpgradeOption askAndGetInstallOption(String installType, Application app) {
-        final String title = "Deploy Application: " + app.getContext().getApplicationName();
+        final String title = NocalhostI18n.get("action.deployApplication") + ": " + app.getContext().getApplicationName();
         AppInstallOrUpgradeOptionDialog dialog;
         if (StringUtils.equals(installType, MANIFEST_TYPE_HELM_REPO)) {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,
-                    "Which version to deploy?",
-                    "Default Version",
-                    "Input the version of chart",
-                    "Chart version cannot be empty");
+                    NocalhostI18n.get("prompt.whichVersion"),
+                    NocalhostI18n.get("common.defaultVersion"),
+                    NocalhostI18n.get("common.inputChartVersion"),
+                    NocalhostI18n.get("common.chartVersionEmpty"));
         } else if (StringUtils.equals(installType, "kustomizeGit")) {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,
-                    "Which branch to install(Kustomize in Git Repo)?",
-                    "Default Branch",
-                    "Input the branch of repository",
-                    "Git ref cannot be empty");
+                    NocalhostI18n.get("prompt.whichBranchKustomize"),
+                    NocalhostI18n.get("common.defaultBranch"),
+                    NocalhostI18n.get("common.inputBranch"),
+                    NocalhostI18n.get("common.gitRefEmpty"));
         } else {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,
-                    "Which branch to deploy(Manifests in Git Repo)?",
-                    "Default Branch",
-                    "Input the branch of repository",
-                    "Git ref cannot be empty");
+                    NocalhostI18n.get("prompt.whichBranchManifest"),
+                    NocalhostI18n.get("common.defaultBranch"),
+                    NocalhostI18n.get("common.inputBranch"),
+                    NocalhostI18n.get("common.gitRefEmpty"));
         }
 
         if (!dialog.showAndGet()) {
@@ -270,7 +271,7 @@ public class InstallApplicationAction extends DumbAwareAction {
     }
 
     private Path selectConfig(Path configDirectory, Set<String> files) {
-        ListChooseDialog dialog = new ListChooseDialog(project, "Please select your configuration file",
+        ListChooseDialog dialog = new ListChooseDialog(project, NocalhostI18n.get("common.selectConfigFile"),
                 Lists.newArrayList(files));
         dialog.showAndGet();
         String configFile = dialog.getSelectedValue();

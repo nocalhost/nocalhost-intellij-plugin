@@ -13,8 +13,11 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
+
 public class InstallApplicationChooseDialog extends DialogWrapper {
     private JPanel dialogPanel;
+    private JLabel chooseAppLabel;
     private JScrollPane scrollPane;
     private JBList<String> applicationList;
 
@@ -22,7 +25,9 @@ public class InstallApplicationChooseDialog extends DialogWrapper {
 
     public InstallApplicationChooseDialog(List<String> apps) {
         super(true);
-        setTitle("Choose Application");
+
+        setTitle(NocalhostI18n.get("dialog.chooseApplication"));
+        chooseAppLabel.setText(NocalhostI18n.get("prompt.chooseApplicationToDeploy"));
         scrollPane.setBorder(new LineBorder(new JBColor(0xD5D5D5, 0x323232), 1));
 
         applicationList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);

@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlSyncCommand;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -20,7 +21,7 @@ public class ResumeSyncAction extends DumbAwareAction {
     private final NhctlDevAssociateQueryResult result;
 
     public ResumeSyncAction(@NotNull Project project, @NotNull NhctlDevAssociateQueryResult result) {
-        super("Resume File Sync");
+        super(NocalhostI18n.get("action.resumeSync"));
         this.result = result;
         this.project = project;
     }
@@ -39,7 +40,7 @@ public class ResumeSyncAction extends DumbAwareAction {
                 cmd.setApplicationName(result.getServicePack().getApplicationName());
                 cmd.execute();
             } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Failed to resume sync", "Error occurred while resume sync.", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.resumeSync"), NocalhostI18n.get("error.resumeSync.content"), ex);
             }
         });
     }

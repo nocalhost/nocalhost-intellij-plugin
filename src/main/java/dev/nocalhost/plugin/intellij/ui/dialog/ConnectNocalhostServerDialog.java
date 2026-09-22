@@ -17,6 +17,7 @@ import java.awt.event.FocusEvent;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.ConnectNocalhostServerTask;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 
@@ -24,6 +25,9 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
     private final Project project;
 
     private JPanel dialogPanel;
+    private JLabel serverLabel;
+    private JLabel emailLabel;
+    private JLabel passwordLabel;
     private JBTextField serverTextField;
     private JBTextField usernameTextField;
     private JBPasswordField passwordField;
@@ -32,7 +36,10 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
         super(true);
         this.project = project;
 
-        setTitle("Connect to Nocalhost Server");
+        setTitle(NocalhostI18n.get("dialog.connectNocalhostServer"));
+        serverLabel.setText(NocalhostI18n.get("common.server"));
+        emailLabel.setText(NocalhostI18n.get("common.emailAddress"));
+        passwordLabel.setText(NocalhostI18n.get("common.password"));
 
         serverTextField.addFocusListener(new FocusAdapter() {
             @Override
@@ -40,7 +47,7 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
                 fixUrl(serverTextField);
             }
         });
-        setOKButtonText("Connect");
+        setOKButtonText(NocalhostI18n.get("button.connect"));
 
         TextUiUtil.setCutCopyPastePopup(serverTextField, usernameTextField, passwordField);
 
@@ -50,13 +57,13 @@ public class ConnectNocalhostServerDialog extends DialogWrapper {
     @Override
     protected @Nullable ValidationInfo doValidate() {
         if (StringUtils.isEmpty(getServer())) {
-            return new ValidationInfo("Server cannot be empty", serverTextField);
+            return new ValidationInfo(NocalhostI18n.get("validation.serverEmpty"), serverTextField);
         }
         if (StringUtils.isEmpty(getUsername())) {
-            return new ValidationInfo("Email address cannot be empty", usernameTextField);
+            return new ValidationInfo(NocalhostI18n.get("validation.emailEmpty"), usernameTextField);
         }
         if (StringUtils.isEmpty(getPassword())) {
-            return new ValidationInfo("Password cannot be empty", passwordField);
+            return new ValidationInfo(NocalhostI18n.get("validation.passwordEmpty"), passwordField);
         }
         return null;
     }

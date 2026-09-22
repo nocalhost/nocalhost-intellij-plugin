@@ -25,6 +25,7 @@ import dev.nocalhost.plugin.intellij.configuration.NocalhostConfiguration;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostSettingsEditor;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.jetbrains.annotations.NotNull;
@@ -98,7 +99,7 @@ public class NocalhostNodeConfiguration
                 if (System.currentTimeMillis() - timestamp > POLL_TIMEOUT) {
                     NocalhostNotifier
                             .getInstance(environment.getProject())
-                            .notifyError("NocalhostNodeConfiguration", "The attempt to connect to the remote debug port timed out.");
+                            .notifyError("NocalhostNodeConfiguration", NocalhostI18n.get("error.debugPortTimeout"));
                     session.stop();
                     break;
                 }

@@ -25,6 +25,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.data.nocalhostconfig.Application;
 import dev.nocalhost.plugin.intellij.data.nocalhostconfig.NocalhostConfig;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.InstallDemoTask;
 import dev.nocalhost.plugin.intellij.task.InstallStandaloneApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
@@ -67,7 +68,7 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
     private final AtomicReference<Path> configPath = new AtomicReference<>();
 
     public InstallStandaloneApplicationAction(Project project, NamespaceNode node) {
-        super("Deploy Application", "", AllIcons.Actions.Install);
+        super(NocalhostI18n.get("action.deployApplication"), "", AllIcons.Actions.Install);
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespace();
@@ -79,14 +80,14 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         int installTypeSelectedByUser = Messages.showDialog(
                 project,
-                "Please select the application deployment source",
-                "Deploy Application",
+                NocalhostI18n.get("common.selectDeploySource"),
+                NocalhostI18n.get("action.deployApplication"),
                 new String[]{
-                        "Open Local Directory",
-                        "Clone from Git",
-                        "Helm Repo",
-                        "Deploy Demo",
-                        "Cancel"},
+                        NocalhostI18n.get("common.openLocalDirectory"),
+                        NocalhostI18n.get("common.cloneFromGit"),
+                        NocalhostI18n.get("common.helmRepo"),
+                        NocalhostI18n.get("common.deployDemo"),
+                        NocalhostI18n.get("common.cancel")},
                 0,
                 Messages.getQuestionIcon());
         this.installTypeSelectedByUser.set(installTypeSelectedByUser);
@@ -94,8 +95,8 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
             case OPTION_OPEN_LOCAL_DIRECTORY:
                 Path localPath = FileChooseUtil.chooseSingleDirectory(
                         project,
-                        "Deploy Application",
-                        "Select local directory which contains application configuration");
+                        NocalhostI18n.get("action.deployApplication"),
+                        NocalhostI18n.get("common.selectLocalDir"));
                 if (localPath == null) {
                     return;
                 }
@@ -139,8 +140,8 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                 localPath.set(tempDir);
                 resolveConfig();
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Cloning git repository error",
-                        "Error occurs while cloning git repository", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.cloneGitRepo"),
+                        NocalhostI18n.get("error.cloneGitRepo.content"), e);
             }
         });
     }
@@ -151,12 +152,12 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                 Path nocalhostConfigDirectory = localPath.get().resolve(".nocalhost");
                 if (!Files.exists(nocalhostConfigDirectory)) {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(
-                            project, ".nocalhost directory not found.", "Install Standalone Application"));
+                            project, NocalhostI18n.get("common.nocalhostDirNotFound"), NocalhostI18n.get("action.installStandaloneApp")));
                 }
                 List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigDirectory, kubeConfigPath, namespace);
                 if (configs.size() == 0) {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(
-                            project, "No nocalhost config found.", "Install Standalone Application"));
+                            project, NocalhostI18n.get("common.noNocalhostConfig"), NocalhostI18n.get("action.installStandaloneApp")));
                 } else if (configs.size() == 1) {
                     configPath.set(configs.get(0));
                     checkInstallType();
@@ -166,15 +167,15 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                             configs.stream().map(e -> e.getFileName().toString()).collect(Collectors.toSet()));
                 }
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Scanning config files error",
-                        "Error occurs while scanning config files", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.scanConfigFiles"),
+                        NocalhostI18n.get("error.scanConfigFiles.content"), e);
             }
         });
     }
 
     private void selectConfig(Path configDirectory, Set<String> files) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            ListChooseDialog dialog = new ListChooseDialog(project, "Please select your configuration file",
+            ListChooseDialog dialog = new ListChooseDialog(project, NocalhostI18n.get("common.selectConfigFile"),
                     Lists.newArrayList(files));
             dialog.showAndGet();
             String configFile = dialog.getSelectedValue();
@@ -204,8 +205,8 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                         ).contains(installType)) {
                             Messages.showErrorDialog(
                                     project,
-                                    "Manifest type " + installType + " is not supported.",
-                                    "Deploy Standalone Application");
+                                    NocalhostI18n.format("common.manifestTypeUnsupported", installType),
+                                    NocalhostI18n.get("dialog.deployStandaloneApp"));
                             return;
                         }
                         break;
@@ -218,8 +219,8 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                         ).contains(installType)) {
                             Messages.showErrorDialog(
                                     project,
-                                    "Manifest type " + installType + " is not supported.",
-                                    "Deploy Standalone Application");
+                                    NocalhostI18n.format("common.manifestTypeUnsupported", installType),
+                                    NocalhostI18n.get("dialog.deployStandaloneApp"));
                             return;
                         }
                         break;
@@ -227,15 +228,15 @@ public class InstallStandaloneApplicationAction extends DumbAwareAction {
                     default:
                         Messages.showErrorDialog(
                                 project,
-                                "Manifest type " + installType + " is not supported.",
-                                "Deploy Standalone Application");
+                                NocalhostI18n.format("common.manifestTypeUnsupported", installType),
+                                NocalhostI18n.get("dialog.deployStandaloneApp"));
                         return;
                 }
 
                 moreConfig(application);
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading nocalhost config error",
-                        "Error occurs while loading nocalhost config", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.loadNocalhostConfig"),
+                        NocalhostI18n.get("error.loadNocalhostConfig.content"), e);
             }
         });
     }

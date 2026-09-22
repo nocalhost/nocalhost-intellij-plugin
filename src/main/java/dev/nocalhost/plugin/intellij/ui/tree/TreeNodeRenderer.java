@@ -25,6 +25,7 @@ import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdGroupNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdKindNode;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.tree.node.CrdRootNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceGroupNode;
@@ -51,7 +52,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         if (value instanceof LoadingNode) {
             if (!selected) setForeground(UIUtil.getInactiveTextColor());
             setIcon(JBUIScale.scaleIcon(EmptyIcon.create(8, 16)));
-            setToolTipText("loading...");
+            setToolTipText(NocalhostI18n.get("tree.loading"));
             return;
         }
 
@@ -60,7 +61,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
             append(node.getName());
             append("  ");
             if (node.isActive()) {
-                append("ACTIVE", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
+                append(NocalhostI18n.get("tree.active"), SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
                 setIcon(NocalhostIcons.ClusterActive);
                 String accountInfo = node.getAccountInfo();
                 if (StringUtils.isNotEmpty(accountInfo)) {
@@ -69,7 +70,7 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
                     setToolTipText(node.getName());
                 }
             } else {
-                append("Unable to Connect", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
+                append(NocalhostI18n.get("tree.unableToConnect"), SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES);
                 setIcon(NocalhostIcons.ClusterWarning);
                 setToolTipText(node.getInfo());
             }
@@ -216,11 +217,11 @@ public class TreeNodeRenderer extends ColoredTreeCellRenderer {
         ServiceStatus status = getServiceStatus(node);
         switch (status) {
             case RUNNING:
-                return "complete";
+                return NocalhostI18n.get("job.complete");
             case FAILED:
-                return "failed";
+                return NocalhostI18n.get("job.failed");
             default:
-                return "unknown";
+                return NocalhostI18n.get("job.unknown");
         }
     }
 

@@ -31,6 +31,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostApiException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
@@ -56,7 +57,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
     private final DevModeService devModeService;
 
     public StartingDevModeTask(Project project, DevModeService devModeService) {
-        super(project, "Starting DevMode", true);
+        super(project, NocalhostI18n.get("progress.startDevMode"), true);
         this.project = project;
         this.devModeService = devModeService;
         this.kubeConfigPath = KubeConfigUtil.toPath(devModeService.getRawKubeConfig());
@@ -92,7 +93,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
 
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
-        NocalhostNotifier.getInstance(project).notifySuccess("DevMode started", "");
+        NocalhostNotifier.getInstance(project).notifySuccess(NocalhostI18n.get("success.devModeStarted"), "");
 
         if (StringUtils.isNotEmpty(devModeService.getAction())) {
             ProgressManager
@@ -103,8 +104,8 @@ public class StartingDevModeTask extends BaseBackgroundTask {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Nocalhost starting dev mode error",
-                "Error occurred while starting dev mode", e);
+        ErrorUtil.dealWith(this.getProject(), NocalhostI18n.get("error.startDevMode"),
+                NocalhostI18n.get("error.startDevMode.content"), e);
     }
 
     private boolean canStart(String action) throws InterruptedException, NocalhostExecuteCmdException, IOException {
@@ -139,7 +140,7 @@ public class StartingDevModeTask extends BaseBackgroundTask {
                     .getInstance(project)
                     .notifyError(
                             "Nocalhost",
-                            "Please configure the <a href=\"https://nocalhost.dev/docs/reference/nh-config\">run/debug</a> command first.",
+                            NocalhostI18n.get("error.configureRunDebug"),
                             new AnAction() {
                                 @Override
                                 public void actionPerformed(@NotNull AnActionEvent anActionEvent) {

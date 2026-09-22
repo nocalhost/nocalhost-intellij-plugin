@@ -27,6 +27,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
 import dev.nocalhost.plugin.intellij.exception.NocalhostServerVersionOutDatedException;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
@@ -53,7 +54,7 @@ public class UpgradeAppAction extends DumbAwareAction {
     private final String applicationName;
 
     public UpgradeAppAction(Project project, ApplicationNode node) {
-        super("Upgrade Application");
+        super(NocalhostI18n.get("action.upgradeApp"));
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -82,22 +83,22 @@ public class UpgradeAppAction extends DumbAwareAction {
                         try {
                             upgradeApp(applicationOptional.get());
                         } catch (IOException e) {
-                            ErrorUtil.dealWith(project, "Upgrading application error",
-                                    "Error occurred while upgrading application", e);
+                            ErrorUtil.dealWith(project, NocalhostI18n.get("error.upgradeApplication"),
+                                    NocalhostI18n.get("error.upgradeApplication.content"), e);
                         }
                     });
                 } else {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         NocalhostNotifier.getInstance(project).notifyError(
-                                "Application '" + applicationName + "' not found", "");
+                                NocalhostI18n.format("error.appNotFound", applicationName), "");
                     });
                 }
 
             } catch (NocalhostServerVersionOutDatedException e) {
-                NocalhostNotifier.getInstance(project).notifyError("Server version out-dated", e.getMessage());
+                NocalhostNotifier.getInstance(project).notifyError(NocalhostI18n.get("common.serverVersionOutDated"), e.getMessage());
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading application status error",
-                        "Error occurs while loading application status", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.loadAppStatus"),
+                        NocalhostI18n.get("error.loadAppStatus.content"), e);
             }
         });
     }
@@ -111,8 +112,8 @@ public class UpgradeAppAction extends DumbAwareAction {
 
         if (Set.of("helmLocal", "rawManifestLocal").contains(installType)) {
             String message = StringUtils.equals(installType, "rawManifestLocal")
-                    ? "Please choose application manifest root directory"
-                    : "Please choose unpacked application helm chart root directory";
+                    ? NocalhostI18n.get("common.chooseManifestRoot")
+                    : NocalhostI18n.get("common.chooseHelmChartRoot");
 
             Path localPath = FileChooseUtil.chooseSingleDirectory(project, "", message);
             if (localPath == null) {
@@ -123,11 +124,11 @@ public class UpgradeAppAction extends DumbAwareAction {
             Path nocalhostConfigPath = localPath.resolve(".nocalhost");
             List<Path> configs = getAllConfig(nocalhostConfigPath);
             if (configs.size() == 0) {
-                Messages.showErrorDialog("Not found config.yaml", "");
+                Messages.showErrorDialog(NocalhostI18n.get("common.notFoundConfigYaml"), "");
             } else if (configs.size() == 1) {
                 configPath = configs.get(0);
             } else if (configs.size() > 1) {
-                configPath = FileChooseUtil.chooseSingleFile(project, "Please select your configuration file", nocalhostConfigPath, CONFIG_FILE_EXTENSIONS);
+                configPath = FileChooseUtil.chooseSingleFile(project, NocalhostI18n.get("common.selectConfigFile"), nocalhostConfigPath, CONFIG_FILE_EXTENSIONS);
             }
             if (configPath == null) {
                 return;
@@ -184,20 +185,20 @@ public class UpgradeAppAction extends DumbAwareAction {
         }
         opts.setResourcesPath(resourceDirs);
 
-        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Upgrading application: " + applicationName) {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, NocalhostI18n.format("progress.upgradeApp", applicationName)) {
             @Override
             public void onSuccess() {
                 super.onSuccess();
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(
                         NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
-                NocalhostNotifier.getInstance(project).notifySuccess("Application " + applicationName + " upgraded", "");
+                NocalhostNotifier.getInstance(project).notifySuccess(NocalhostI18n.format("success.upgradeApp", applicationName), "");
             }
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Nocalhost upgrade application error",
-                        "Error occurred while upgrading application", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.nocalhostUpgrade"),
+                        NocalhostI18n.get("error.upgradeApplication.content"), e);
             }
 
             @SneakyThrows
@@ -211,32 +212,32 @@ public class UpgradeAppAction extends DumbAwareAction {
     }
 
     private AppInstallOrUpgradeOption askAndGetUpgradeOption(String installType) {
-        final String title = "Upgrade DevSpace: " + applicationName;
+        final String title = NocalhostI18n.format("progress.upgradeDevSpace", applicationName);
         AppInstallOrUpgradeOptionDialog dialog;
         if (StringUtils.equals(installType, "helmRepo")) {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,
-                    "Which version to upgrade?",
-                    "Latest Version",
-                    "Input the version of chart",
-                    "Chart version cannot be empty");
+                    NocalhostI18n.get("prompt.whichVersionUpgrade"),
+                    NocalhostI18n.get("common.latestVersion"),
+                    NocalhostI18n.get("common.inputChartVersion"),
+                    NocalhostI18n.get("common.chartVersionEmpty"));
         } else if (StringUtils.equals(installType, "kustomizeGit")) {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,
-                    "Which branch to upgrade(Kustomize in Git Repo)?",
-                    "Default Branch",
-                    "Input the branch of repository",
-                    "Git ref cannot be empty");
+                    NocalhostI18n.get("prompt.whichBranchUpgradeKustomize"),
+                    NocalhostI18n.get("common.defaultBranch"),
+                    NocalhostI18n.get("common.inputBranch"),
+                    NocalhostI18n.get("common.gitRefEmpty"));
         } else {
             dialog = new AppInstallOrUpgradeOptionDialog(
                     project,
                     title,
-                    "Which branch to upgrade(Manifests in Git Repo)?",
-                    "Default Branch",
-                    "Input the branch of repository",
-                    "Git ref cannot be empty");
+                    NocalhostI18n.get("prompt.whichBranchUpgradeManifest"),
+                    NocalhostI18n.get("common.defaultBranch"),
+                    NocalhostI18n.get("common.inputBranch"),
+                    NocalhostI18n.get("common.gitRefEmpty"));
         }
 
         if (!dialog.showAndGet()) {

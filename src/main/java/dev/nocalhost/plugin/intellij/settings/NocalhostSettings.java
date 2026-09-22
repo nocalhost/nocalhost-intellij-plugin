@@ -36,6 +36,12 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
     private String standaloneClustersJson;
     private String nocalhostAccountsJson;
 
+    /**
+     * UI language for Nocalhost's own prompts, one of {@code en} / {@code zh}.
+     * Kubernetes resource terms (Deployment, CronJob, ...) are never translated.
+     */
+    private String language = "en";
+
     private Map<String, String> hash = Maps.newHashMap();
     private Map<String, String> devModeProjectPathServiceMap = Maps.newHashMap();
 
@@ -157,6 +163,36 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
 
     public synchronized void setCheckNhctlVersion(boolean checkNhctlVersion) {
         set("checkNhctlVersion", DataUtils.GSON.toJson(checkNhctlVersion));
+    }
+
+    /**
+     * 调试连接断开时是否自动重连（attach 回仍在运行的远端 JVM），默认开启。
+     */
+    public boolean getAutoReconnectDebug() {
+        var json = get("autoReconnectDebug");
+        if (StringUtils.isNotEmpty(json)) {
+            return Boolean.TRUE.equals(DataUtils.GSON.fromJson(json, Boolean.class));
+        }
+        return true;
+    }
+
+    public synchronized void setAutoReconnectDebug(boolean autoReconnectDebug) {
+        set("autoReconnectDebug", DataUtils.GSON.toJson(autoReconnectDebug));
+    }
+
+    /**
+     * nhctl 版本覆盖（兜底用）。
+     *
+     * <p>留空表示使用插件内置的 {@code config.properties: nhctlVersion}。
+     * 如果内置版本在 nocalhost release 里已经不存在（下载始终失败），
+     * 用户可以在这里填写一个可用版本（例如 {@code 0.6.34}），不用重装插件就能恢复。
+     */
+    public String getNhctlVersionOverride() {
+        return StringUtils.trimToEmpty(get("nhctlVersionOverride"));
+    }
+
+    public synchronized void setNhctlVersionOverride(String nhctlVersionOverride) {
+        set("nhctlVersionOverride", StringUtils.trimToEmpty(nhctlVersionOverride));
     }
 
     public String get(String key) {

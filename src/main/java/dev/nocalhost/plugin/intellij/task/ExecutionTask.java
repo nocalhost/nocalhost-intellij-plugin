@@ -8,6 +8,7 @@ import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.execution.configurations.ConfigurationType;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.executors.DefaultRunExecutor;
+import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
@@ -15,6 +16,8 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 
+import dev.nocalhost.plugin.intellij.configuration.NocalhostDevProcessHandler;
+import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,8 +41,10 @@ import dev.nocalhost.plugin.intellij.configuration.php.NocalhostPhpConfiguration
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfiguration;
 import dev.nocalhost.plugin.intellij.configuration.python.NocalhostPythonConfigurationType;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevAssociateCommand;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
+import dev.nocalhost.plugin.intellij.service.NocalhostDebugReconnectService;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -75,7 +80,7 @@ public class ExecutionTask extends Task.Backgroundable {
     };
 
     public ExecutionTask(Project project, DevModeService service, String action) {
-        super(project, String.format("Starting `%s`", action), true);
+        super(project, NocalhostI18n.format("progress.starting", action), true);
         this.action = action;
         this.project = project;
         this.service = service;
@@ -83,8 +88,8 @@ public class ExecutionTask extends Task.Backgroundable {
 
     @Override
     public void onThrowable(@NotNull Throwable ex) {
-        ErrorUtil.dealWith(this.getProject(), "Failed to start " + action,
-                String.format("Error occurred while starting `%s`", action), ex);
+        ErrorUtil.dealWith(this.getProject(), NocalhostI18n.format("error.startAction", action),
+                NocalhostI18n.format("error.startAction.content", action), ex);
     }
 
     @Override
@@ -115,12 +120,31 @@ public class ExecutionTask extends Task.Backgroundable {
         return DefaultRunExecutor.getRunExecutorInstance();
     }
 
+    private void destroy(ProcessHandler handler) {
+        if (handler instanceof NocalhostDevProcessHandler) {
+            NocalhostDevProcessHandler processHandler = (NocalhostDevProcessHandler) handler;
+            if (processHandler.getRunProfileName().equals(this.service.getServiceName())) {
+                handler.destroyProcess();
+            }
+            return;
+        }
+        // attach-only（断线重连）会话用的是平台的 RemoteDebugProcessHandler，
+        // 这里通过挂在 ProcessHandler 上的运行配置名识别是不是同一个服务的会话。
+        String runProfileName = handler.getUserData(NocalhostProfileState.KEY_RUN_PROFILE_NAME);
+        if (StringUtils.isNotEmpty(runProfileName)
+                && StringUtils.equals(runProfileName, this.service.getServiceName())) {
+            handler.destroyProcess();
+        }
+    }
+
     @SneakyThrows
     protected void doRun() {
+        // 用户显式发起新的调试/运行：让自动重连让路，避免和这次重启打架
+        NocalhostDebugReconnectService.getInstance(project).suppressAutoReconnect("run profile restart");
         // kill active session
         var processes = ExecutionManager.getInstance(project).getRunningProcesses();
         if (processes.length > 0) {
-            Arrays.stream(processes).forEach(x -> x.destroyProcess());
+            Arrays.stream(processes).forEach(this::destroy);    // Arrays.stream(processes).forEach(x -> x.destroyProcess());
             Thread.sleep(1000);
         }
 
@@ -136,18 +160,21 @@ public class ExecutionTask extends Task.Backgroundable {
         RunnerAndConfigurationSettings conf;
         var manager = RunManager.getInstance(project);
         var type = getConfType();
-        var list = manager.getConfigurationSettingsList(type);
+        var list = manager.getConfigurationSettingsList(type).stream()
+                .filter(settings -> settings.getConfiguration().getName().equals(this.service.getServiceName()))
+                .toList();
         if (list.isEmpty()) {
-            conf = manager.createConfiguration("Nocalhost", type);
+            conf = manager.createConfiguration(this.service.getServiceName(), type);
             manager.addConfiguration(conf);
         } else {
             conf = list.get(0);
         }
+
         // Python
         if (conf.getType() instanceof NocalhostPythonConfigurationType) {
             var port = getDebugPort();
             if (StringUtils.isEmpty(port)) {
-                throw new ExecutionException("The remote debug port is not configured.");
+                throw new ExecutionException(NocalhostI18n.get("error.theRemoteDebugPortNotConfigured"));
             }
             var pyconf = (NocalhostPythonConfiguration) conf.getConfiguration();
             pyconf.setPort(port);
@@ -180,7 +207,7 @@ public class ExecutionTask extends Task.Backgroundable {
             if (StringUtils.isNotEmpty(lang)) {
                 var conf = lang2conf.getOrDefault(lang, null);
                 if (conf == null) {
-                    throw new ExecutionException(String.format("Failed to create configuration, language: %s.", lang));
+                    throw new ExecutionException(NocalhostI18n.format("error.createConfigurationLanguage", lang));
                 }
                 return conf;
             }
@@ -188,7 +215,7 @@ public class ExecutionTask extends Task.Backgroundable {
         var code = ApplicationInfo.getInstance().getBuild().getProductCode();
         var conf = code2conf.getOrDefault(code, null);
         if (conf == null) {
-            throw new ExecutionException(String.format("Failed to create configuration, IDE: %s.", code));
+            throw new ExecutionException(NocalhostI18n.format("error.createConfigurationIde", code));
         }
         return conf;
     }
@@ -202,7 +229,7 @@ public class ExecutionTask extends Task.Backgroundable {
                 // ignore
             }
         }
-        throw new ExecutionException("Cannot resolve remoteDebugPort.");
+        throw new ExecutionException(NocalhostI18n.get("error.resolveRemoteDebugPort"));
     }
 
     private void associate(String path) throws IOException, NocalhostExecuteCmdException, InterruptedException {

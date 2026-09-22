@@ -36,6 +36,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatus;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlSyncStatusOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlAssociateQueryerCommand;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostSyncUpdateNotifier;
@@ -173,7 +174,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         var context = NocalhostContextManager.getInstance(project).getContext();
 
         if (context != null) {
-            actions.addSeparator("Current Service");
+            actions.addSeparator(NocalhostI18n.get("sync.currentService"));
             results
                     .stream()
                     .filter(x -> StringUtils.equals(x.getSha(), context.getSha()))
@@ -185,7 +186,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
                     .collect(Collectors.toList());
         }
         if ( ! results.isEmpty()) {
-            actions.addSeparator("Related Service");
+            actions.addSeparator(NocalhostI18n.get("sync.relatedService"));
             results.forEach(x -> actions.add(new ServiceActionGroup(project, x)));
         }
         return actions;
@@ -201,7 +202,7 @@ public class SyncStatusPresentation implements StatusBarWidget.MultipleTextValue
         if (nhctlSyncStatus.get() != null) {
             return " " + nhctlSyncStatus.get().getMsg();
         }
-        return " Waiting for enter DevMode";
+        return " " + NocalhostI18n.get("sync.waitingForDevMode");
     }
 
     @Override

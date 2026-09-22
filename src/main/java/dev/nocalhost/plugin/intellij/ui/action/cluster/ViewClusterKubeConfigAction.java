@@ -9,6 +9,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ClusterNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.ReadOnlyVirtualFile;
 
@@ -17,7 +18,7 @@ public class ViewClusterKubeConfigAction extends DumbAwareAction {
     private final ClusterNode node;
 
     public ViewClusterKubeConfigAction(Project project, ClusterNode node) {
-        super("View KubeConfig");
+        super(NocalhostI18n.get("action.viewKubeConfig"));
         this.project = project;
         this.node = node;
     }

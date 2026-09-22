@@ -24,6 +24,7 @@ import java.util.Date;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDescribeService;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlConfigEditCommand;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -109,22 +110,22 @@ public class ConfigFile extends VirtualFile {
             try {
                 var desService = NhctlUtil.getDescribeService(project, node.resourceName(), node.controllerType(), namespace, node.applicationName(), kubeConfigPath);
                 if (isReadonly(desService)) {
-                    Messages.showMessageDialog("Config cannot be modified.", "Modify Config", null);
+                    Messages.showMessageDialog(NocalhostI18n.get("error.configReadonly"), NocalhostI18n.get("dialog.modifyConfig"), null);
                     return;
                 }
 
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    ProgressManager.getInstance().run(new BaseBackgroundTask(null, "Saving " + name) {
+                    ProgressManager.getInstance().run(new BaseBackgroundTask(null, NocalhostI18n.format("progress.saving", name)) {
                         @Override
                         public void onSuccess() {
                             super.onSuccess();
-                            NocalhostNotifier.getInstance(project).notifySuccess(name + " saved", "");
+                            NocalhostNotifier.getInstance(project).notifySuccess(NocalhostI18n.format("success.saved", name), "");
                         }
 
                         @Override
                         public void onThrowable(@NotNull Throwable ex) {
-                            ErrorUtil.dealWith(project, "Failed to save dev config",
-                                    "Error occurred while saving dev config", ex);
+                            ErrorUtil.dealWith(project, NocalhostI18n.get("error.saveDevConfig"),
+                                    NocalhostI18n.get("error.saveDevConfig.content"), ex);
                         }
 
                         @SneakyThrows
@@ -142,8 +143,8 @@ public class ConfigFile extends VirtualFile {
                     });
                 });
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading service status error",
-                        "Error occurs while loading service status", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.loadServiceStatus"),
+                        NocalhostI18n.get("error.loadServiceStatus.content"), e);
             }
         });
     }

@@ -12,6 +12,7 @@ import com.intellij.ui.content.ContentManagerListener;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostErrorWindow;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostLogs;
@@ -59,7 +60,7 @@ public class NocalhostConsoleWindowFactory implements ToolWindowFactory, DumbAwa
         NocalhostOutputWindow nocalhostOutputWindow = new NocalhostOutputWindow(project);
 
         ContentManager contentManager = toolWindow.getContentManager();
-        Content content = ContentFactory.getInstance().createContent(nocalhostOutputWindow, "OUTPUT", false);
+        Content content = ContentFactory.getInstance().createContent(nocalhostOutputWindow, NocalhostI18n.get("console.output"), false);
         content.setCloseable(false);
         content.setDisposer(nocalhostOutputWindow);
         contentManager.addContent(content);

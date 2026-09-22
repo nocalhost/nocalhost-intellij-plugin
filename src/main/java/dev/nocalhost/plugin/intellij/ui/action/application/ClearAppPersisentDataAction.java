@@ -15,6 +15,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.dialog.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -29,7 +30,7 @@ public class ClearAppPersisentDataAction extends DumbAwareAction {
     private final String applicationName;
 
     public ClearAppPersisentDataAction(Project project, ApplicationNode node) {
-        super("Clear PVC");
+        super(NocalhostI18n.get("action.clearPVC"));
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
@@ -47,8 +48,8 @@ public class ClearAppPersisentDataAction extends DumbAwareAction {
                     new ClearPersistentDataDialog(project, kubeConfigPath, namespace, nhctlPVCItems).showAndGet();
                 });
             } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                ErrorUtil.dealWith(project, "Clear PVC error",
-                        "Error occurs while clearing PVC", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.clearPVC"),
+                        NocalhostI18n.get("error.clearPVC.content"), e);
             }
         });
     }

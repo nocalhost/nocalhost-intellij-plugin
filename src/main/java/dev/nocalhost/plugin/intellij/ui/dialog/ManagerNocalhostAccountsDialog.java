@@ -13,6 +13,7 @@ import java.awt.*;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.task.LogoutNocalhostAccountsTask;
@@ -31,7 +32,7 @@ public class ManagerNocalhostAccountsDialog extends DialogWrapper {
         super(project, true);
         this.project = project;
 
-        setOKButtonText("Logout");
+        setOKButtonText(NocalhostI18n.get("button.logout"));
         setOKActionEnabled(false);
 
         accountList.setCellRenderer(new ListItemCheckBox());
@@ -57,7 +58,7 @@ public class ManagerNocalhostAccountsDialog extends DialogWrapper {
     @Override
     protected @Nullable ValidationInfo doValidate() {
         if (accountList.getSelectedValuesList().size() == 0) {
-            return new ValidationInfo("Must select at least ONE account", accountList);
+            return new ValidationInfo(NocalhostI18n.get("validation.selectAccount"), accountList);
         }
         return null;
     }
@@ -86,8 +87,8 @@ public class ManagerNocalhostAccountsDialog extends DialogWrapper {
                                                       int index,
                                                       boolean isSelected,
                                                       boolean cellHasFocus) {
-            this.setText(value.getUsername() + " on " + value.getServer() + " before "
-                    + TokenUtil.expiredAt(value.getJwt()));
+            this.setText(value.getUsername() + " " + NocalhostI18n.get("common.on") + " " + value.getServer() + " "
+                    + NocalhostI18n.get("common.before") + " " + TokenUtil.expiredAt(value.getJwt()));
             this.setSelected(isSelected);
             return this;
         }

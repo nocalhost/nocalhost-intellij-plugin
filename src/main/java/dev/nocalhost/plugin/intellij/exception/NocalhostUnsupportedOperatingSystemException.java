@@ -1,5 +1,7 @@
 package dev.nocalhost.plugin.intellij.exception;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
+
 public class NocalhostUnsupportedOperatingSystemException extends RuntimeException {
     private String os;
 
@@ -9,6 +11,6 @@ public class NocalhostUnsupportedOperatingSystemException extends RuntimeExcepti
 
     @Override
     public String getMessage() {
-        return "Unsupported operating system: " + os;
+        return NocalhostI18n.format("error.unsupportedOS", os);
     }
 }

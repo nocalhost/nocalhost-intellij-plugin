@@ -10,11 +10,14 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.Getter;
 
 public class GitCloneStandabloneApplicationDialog extends DialogWrapper {
     private JPanel contentPane;
+    private JLabel gitUrlLabel;
+    private JLabel branchLabel;
     private JRadioButton defaultBranchRadioButton;
     private JRadioButton inputTheBranchOfRadioButton;
     private JBTextField gitUrlTextField;
@@ -27,7 +30,11 @@ public class GitCloneStandabloneApplicationDialog extends DialogWrapper {
 
     public GitCloneStandabloneApplicationDialog(Project project) {
         super(project, true);
-        setTitle("Config Standalone Application via Git Repository");
+        setTitle(NocalhostI18n.get("dialog.configStandaloneGit"));
+        gitUrlLabel.setText(NocalhostI18n.get("common.gitUrl"));
+        branchLabel.setText(NocalhostI18n.get("prompt.whichBranchToDeploy"));
+        defaultBranchRadioButton.setText(NocalhostI18n.get("common.defaultBranch"));
+        inputTheBranchOfRadioButton.setText(NocalhostI18n.get("common.inputBranch"));
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(defaultBranchRadioButton);
@@ -47,11 +54,11 @@ public class GitCloneStandabloneApplicationDialog extends DialogWrapper {
     @Override
     protected @Nullable ValidationInfo doValidate() {
         if (!StringUtils.isNotEmpty(gitUrlTextField.getText())) {
-            return new ValidationInfo("Must specify git URL", gitUrlTextField);
+            return new ValidationInfo(NocalhostI18n.get("validation.gitUrl"), gitUrlTextField);
         }
         if (inputTheBranchOfRadioButton.isSelected()
                 && !StringUtils.isNotEmpty(gitRefTextField.getText())) {
-            return new ValidationInfo("Must specify git branch", gitRefTextField);
+            return new ValidationInfo(NocalhostI18n.get("validation.gitBranch"), gitRefTextField);
         }
         return null;
     }

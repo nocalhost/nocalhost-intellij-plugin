@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
@@ -23,7 +24,7 @@ public class InstallStandaloneApplicationTask extends BaseBackgroundTask {
     public InstallStandaloneApplicationTask(Project project,
                                             String applicationName,
                                             NhctlInstallOptions opts) {
-        super(project, "Deploy Application: " + applicationName);
+        super(project, NocalhostI18n.format("progress.deployApplicationStandalone", applicationName));
 
         this.project = project;
         this.applicationName = applicationName;
@@ -46,14 +47,14 @@ public class InstallStandaloneApplicationTask extends BaseBackgroundTask {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
         NocalhostNotifier.getInstance(project).notifySuccess(
-                "Application " + applicationName + " deployed",
+                NocalhostI18n.format("success.applicationDeployedStandalone", applicationName),
                 "");
     }
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Application deployment error",
-                "Error occurred while deploying application " + applicationName, e);
+        ErrorUtil.dealWith(this.getProject(), NocalhostI18n.get("error.deployApplication"),
+                NocalhostI18n.format("error.deployApplicationStandalone.content", applicationName), e);
 
     }
 }

@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeContext;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlCreateKubeConfigCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
@@ -33,7 +34,7 @@ public class AddStandaloneClusterTask extends Task.Backgroundable {
     public AddStandaloneClusterTask(@Nullable Project project,
                                     String rawKubeConfig,
                                     KubeContext kubeContext) {
-        super(project, "Adding standalone clusters");
+        super(project, NocalhostI18n.get("progress.addStandaloneClusters"));
         this.kubeContext = kubeContext;
         this.rawKubeConfig = rawKubeConfig;
     }
@@ -80,12 +81,12 @@ public class AddStandaloneClusterTask extends Task.Backgroundable {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
         NocalhostNotifier.getInstance(getProject()).notifySuccess(
-                "Adding standalone clusters success", "");
+                NocalhostI18n.get("success.addStandaloneClusters"), "");
     }
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Adding standalone clusters error",
-                "Error occurred while adding standalone cluster", e);
+        ErrorUtil.dealWith(this.getProject(), NocalhostI18n.get("error.addStandaloneClusters"),
+                NocalhostI18n.get("error.addStandaloneClusters.content"), e);
     }
 }

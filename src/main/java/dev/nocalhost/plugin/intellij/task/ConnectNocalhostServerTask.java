@@ -11,6 +11,7 @@ import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.api.data.TokenResponse;
 import dev.nocalhost.plugin.intellij.api.data.UserInfo;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
@@ -33,7 +34,7 @@ public class ConnectNocalhostServerTask extends Task.Modal {
                                       String password,
                                       Runnable onSuccess,
                                       Runnable onFailure) {
-        super(project, "Connecting to Nocalhost Server", false);
+        super(project, NocalhostI18n.get("progress.connectNocalhostServer"), false);
         this.server = server;
         this.username = username;
         this.password = password;
@@ -57,7 +58,7 @@ public class ConnectNocalhostServerTask extends Task.Modal {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
         NocalhostNotifier.getInstance(getProject()).notifySuccess(
-                "Connected to Nocalhost server successfully",
+                NocalhostI18n.get("success.connectNocalhostServer"),
                 "");
     }
 
@@ -67,7 +68,7 @@ public class ConnectNocalhostServerTask extends Task.Modal {
             onFailure.run();
             NocalhostNotifier
                     .getInstance(getProject())
-                    .notifyError("Failed to connect to Nocalhost server", "Error occurred while connecting to Nocalhost server", ex.getMessage());
+                    .notifyError(NocalhostI18n.get("error.connectNocalhostServer"), NocalhostI18n.get("error.connectNocalhostServer.content"), ex.getMessage());
         });
     }
 }

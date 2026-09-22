@@ -20,6 +20,7 @@ import java.util.List;
 import javax.swing.*;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import icons.NocalhostIcons;
 import lombok.Setter;
@@ -105,6 +106,48 @@ public class ServiceActionGroup extends ActionGroup implements PopupElementWithA
 
     @Override
     public @Nls @Nullable String getInfoText() {
-        return result.getSyncthingStatus().getMessage();
+        return translateMessage(result.getSyncthingStatus().getMessage());
+    }
+
+    private static String translateMessage(@Nullable String message) {
+        if (StringUtils.isEmpty(message)) {
+            return message;
+        }
+        switch (message) {
+            case "DevMode Starting...":
+                return NocalhostI18n.get("sync.msg.devModeStarting");
+            case "Welcome to Nocalhost":
+                return NocalhostI18n.get("sync.msg.welcome");
+            case "Application not installed":
+                return NocalhostI18n.get("sync.msg.appNotInstalled");
+            case "Not in DevMode":
+                return NocalhostI18n.get("sync.msg.notInDevMode");
+            case "Other device is developing":
+                return NocalhostI18n.get("sync.msg.otherDeviceDeveloping");
+            case "No syncthing process found":
+                return NocalhostI18n.get("sync.msg.noSyncthingProcess");
+            case "Disconnected from sidecar":
+                return NocalhostI18n.get("sync.msg.disconnectedFromSidecar");
+            case "Disconnected":
+                return NocalhostI18n.get("sync.msg.disconnected");
+            case "Error":
+                return NocalhostI18n.get("sync.msg.error");
+            case "Scanning local changed...":
+                return NocalhostI18n.get("sync.msg.scanning");
+            default:
+        }
+        if (message.startsWith("Sync completed at: ")) {
+            return NocalhostI18n.format("sync.msg.syncCompleted",
+                    message.substring("Sync completed at: ".length()));
+        }
+        if (message.startsWith("Out of sync! : ")) {
+            return NocalhostI18n.format("sync.msg.outOfSync",
+                    message.substring("Out of sync! : ".length()));
+        }
+        if (message.startsWith("Upload to remote: ")) {
+            return NocalhostI18n.format("sync.msg.uploadToRemote",
+                    message.substring("Upload to remote: ".length()));
+        }
+        return message;
     }
 }

@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
@@ -57,6 +58,8 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     private JPanel dialogPanel;
     private JBTextArea txtHint;
     private JTabbedPane tabbedPane;
+    private JLabel selectContextsLabel;
+    private JLabel namespaceLabel;
     private JBTextField txtNamespace;
     private JComboBox<KubeContext> cmbContexts;
     private JBTextArea kubeconfigFilePasteTextField;
@@ -67,10 +70,15 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         this.project = project;
 
         setResizable(false);
-        setTitle("Connect to Cluster");
-        setOKButtonText("Add");
+        setTitle(NocalhostI18n.get("dialog.connectCluster"));
+        setOKButtonText(NocalhostI18n.get("button.add"));
 
-        txtNamespace.getEmptyText().setText("Enter a namespace if you don't have cluster-level role");
+        tabbedPane.setTitleAt(0, NocalhostI18n.get("cluster.tabLoadKubeConfig"));
+        tabbedPane.setTitleAt(1, NocalhostI18n.get("cluster.tabPasteAsText"));
+        selectContextsLabel.setText(NocalhostI18n.get("cluster.selectContexts"));
+        namespaceLabel.setText(NocalhostI18n.get("cluster.namespace"));
+
+        txtNamespace.getEmptyText().setText(NocalhostI18n.get("cluster.namespaceHint"));
         cmbContexts.setRenderer(new KubeContextRender());
         cmbContexts.addItemListener(e -> {
             if (ItemEvent.SELECTED == e.getStateChange()) {
@@ -109,7 +117,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
             }
         });
 
-        kubeconfigFileSelectTextField.addBrowseFolderListener("Select KubeConfig File", "",
+        kubeconfigFileSelectTextField.addBrowseFolderListener(NocalhostI18n.get("cluster.selectKubeConfigFile"), "",
                 null, FileChooseUtil.singleFileChooserDescriptor());
         kubeconfigFileSelectTextField.getTextField().getDocument().addDocumentListener(new DocumentAdapter() {
             @Override
@@ -153,13 +161,13 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
         switch (tabbedPane.getSelectedIndex()) {
             case 0:
                 if (!StringUtils.isNotEmpty(kubeconfigFileSelectTextField.getText())) {
-                    return new ValidationInfo("Please select KubeConfig file",
+                    return new ValidationInfo(NocalhostI18n.get("validation.selectKubeConfigFile"),
                             kubeconfigFileSelectTextField);
                 }
                 break;
             case 1:
                 if (!StringUtils.isNotEmpty(kubeconfigFilePasteTextField.getText())) {
-                    return new ValidationInfo("Please paste KubeConfig text",
+                    return new ValidationInfo(NocalhostI18n.get("validation.pasteKubeConfig"),
                             kubeconfigFilePasteTextField);
                 }
                 break;
@@ -167,7 +175,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 break;
         }
         if (cmbContexts.getSelectedIndex() == -1) {
-            return new ValidationInfo("Context is required", cmbContexts);
+            return new ValidationInfo(NocalhostI18n.get("validation.contextRequired"), cmbContexts);
         }
         return null;
     }
@@ -210,7 +218,7 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
     }
 
     private void doCheck(@NotNull KubeContext context) {
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Checking", true) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, NocalhostI18n.get("progress.checking"), true) {
             @Override
             public void onCancel() {
                 cancelCommand();
@@ -218,8 +226,8 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
 
             @Override
             public void onThrowable(@NotNull Throwable ex) {
-                ErrorUtil.dealWith(project, "Failed to check KubeConfig",
-                        "Error occurred while checking KubeConfig", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.checkKubeConfig"),
+                        NocalhostI18n.get("error.checkKubeConfig.content"), ex);
             }
 
             @Override
@@ -265,8 +273,8 @@ public class AddStandaloneClustersDialog extends DialogWrapper {
                 super.doOKAction();
             }
         } catch (Exception ex) {
-            ErrorUtil.dealWith(project, "Failed to add KubeConfig",
-                    "Error occurred while adding KubeConfig", ex);
+            ErrorUtil.dealWith(project, NocalhostI18n.get("error.addKubeConfig"),
+                    NocalhostI18n.get("error.addKubeConfig.content"), ex);
         }
     }
 

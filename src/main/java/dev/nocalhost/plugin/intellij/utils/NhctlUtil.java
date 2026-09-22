@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlGetCommand;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.data.NocalhostContext;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevPodCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
@@ -69,7 +70,7 @@ public final class NhctlUtil {
         } catch (Exception ex) {
             throw new ExecutionException(ex);
         }
-        throw new ExecutionException("Failed to get resource.");
+        throw new ExecutionException(NocalhostI18n.get("error.failedGetResource"));
     }
 
     public static @NotNull NhctlDescribeService getDescribeService(@NotNull Project project, @NotNull NocalhostContext context) throws ExecutionException {
@@ -87,7 +88,7 @@ public final class NhctlUtil {
         } catch (Exception ex) {
             throw new ExecutionException(ex);
         }
-        throw new ExecutionException("Failed to get resource.");
+        throw new ExecutionException(NocalhostI18n.get("error.failedGetResource"));
     }
 
     public static @NotNull String getDevPodName(Project project, @NotNull NocalhostContext context) throws ExecutionException {
@@ -101,7 +102,7 @@ public final class NhctlUtil {
         try {
             var pod = cmd.execute();
             if (StringUtils.isEmpty(pod)) {
-                throw new ExecutionException("Pod not found");
+                throw new ExecutionException(NocalhostI18n.get("error.podNotFound"));
             }
             return pod;
         } catch (Exception ex) {

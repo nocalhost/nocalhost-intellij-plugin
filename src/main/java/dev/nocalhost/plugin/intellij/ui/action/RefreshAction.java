@@ -7,12 +7,13 @@ import com.intellij.openapi.project.DumbAwareAction;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 
 public class RefreshAction extends DumbAwareAction {
 
     public RefreshAction() {
-        super("Refresh", "Refresh nocalhost data", AllIcons.Actions.Refresh);
+        super(NocalhostI18n.get("action.refresh"), NocalhostI18n.get("action.refresh.description"), AllIcons.Actions.Refresh);
     }
 
     @Override

@@ -23,6 +23,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -44,7 +45,7 @@ public class TerminalAction extends DumbAwareAction {
     private final String namespace;
 
     public TerminalAction(Project project, ResourceNode node) {
-        super("Open Remote Terminal", "", AllIcons.Debugger.Console);
+        super(NocalhostI18n.get("action.openRemoteTerminal"), "", AllIcons.Debugger.Console);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -76,8 +77,8 @@ public class TerminalAction extends DumbAwareAction {
 
                 if (pods.size() == 0) {
                     ApplicationManager.getApplication().invokeLater(() ->
-                            Messages.showMessageDialog("Pods are not ready. Please try later.",
-                                    "Open Terminal", null));
+                            Messages.showMessageDialog(NocalhostI18n.get("common.podsNotReady"),
+                                    NocalhostI18n.get("common.openTerminal"), null));
                     return;
                 }
 
@@ -87,8 +88,8 @@ public class TerminalAction extends DumbAwareAction {
                 }
                 selectContainer(pods.get(0));
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading service status error",
-                        "Error occurs while loading service status", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.loadServiceStatus"),
+                        NocalhostI18n.get("error.loadServiceStatus.content"), e);
             }
         });
     }
@@ -121,7 +122,7 @@ public class TerminalAction extends DumbAwareAction {
                 .map(e -> e.getMetadata().getName())
                 .collect(Collectors.toList());
         ApplicationManager.getApplication().invokeLater(() -> {
-            ListChooseDialog listChooseDialog = new ListChooseDialog(project, "Select Pod",
+            ListChooseDialog listChooseDialog = new ListChooseDialog(project, NocalhostI18n.get("common.selectPod"),
                     podNames);
             if (!listChooseDialog.showAndGet()) {
                 return;
@@ -147,7 +148,7 @@ public class TerminalAction extends DumbAwareAction {
         if (containers.size() > 1) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 ListChooseDialog listChooseDialog = new ListChooseDialog(project,
-                        "Select Container", containers);
+                        NocalhostI18n.get("common.selectContainer"), containers);
                 if (!listChooseDialog.showAndGet()
                         || !StringUtils.isNotEmpty(listChooseDialog.getSelectedValue())) {
                     return;

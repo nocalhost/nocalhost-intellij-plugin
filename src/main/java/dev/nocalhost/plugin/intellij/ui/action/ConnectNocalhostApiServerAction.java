@@ -7,13 +7,14 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.dialog.ConnectNocalhostServerDialog;
 
 public class ConnectNocalhostApiServerAction extends DumbAwareAction {
     private final Project project;
 
     public ConnectNocalhostApiServerAction(Project project) {
-        super("Connect to Nocalhost Server", "", AllIcons.General.User);
+        super(NocalhostI18n.get("action.connectNocalhostServer"), "", AllIcons.General.User);
         this.project = project;
     }
 

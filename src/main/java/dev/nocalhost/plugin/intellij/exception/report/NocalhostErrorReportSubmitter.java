@@ -26,6 +26,7 @@ import java.sql.Timestamp;
 import java.util.Properties;
 
 import dev.nocalhost.plugin.intellij.Version;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import io.sentry.SentryClient;
 import io.sentry.SentryClientFactory;
 import io.sentry.event.Event;
@@ -49,7 +50,7 @@ public class NocalhostErrorReportSubmitter extends ErrorReportSubmitter {
 
     @Override
     public @NotNull @NlsActions.ActionText String getReportActionText() {
-        return "Report to Nocalhost Developer";
+        return NocalhostI18n.get("errorReport.reportAction");
     }
 
     @Override
@@ -57,12 +58,12 @@ public class NocalhostErrorReportSubmitter extends ErrorReportSubmitter {
         Error error = generateError(events[0], additionalInfo);
         DataContext context = DataManager.getInstance().getDataContext(parentComponent);
         Project project = CommonDataKeys.PROJECT.getData(context);
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Sending error report") {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, NocalhostI18n.get("progress.sendingErrorReport")) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 postError(error);
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    Messages.showInfoMessage(parentComponent, "Thank you for submitting your report!", "Error Report");
+                    Messages.showInfoMessage(parentComponent, NocalhostI18n.get("success.errorReport"), NocalhostI18n.get("dialog.errorReport"));
                     consumer.consume(new SubmittedReportInfo(SubmittedReportInfo.SubmissionStatus.NEW_ISSUE));
                 });
             }

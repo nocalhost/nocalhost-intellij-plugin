@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUninstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
@@ -32,7 +33,7 @@ public class UninstallAppAction extends DumbAwareAction {
     private final String applicationName;
 
     public UninstallAppAction(Project project, ApplicationNode node) {
-        super("Uninstall Application", "", AllIcons.Actions.Uninstall);
+        super(NocalhostI18n.get("action.uninstallApp"), "", AllIcons.Actions.Uninstall);
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
@@ -42,12 +43,12 @@ public class UninstallAppAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        if (!MessageDialogBuilder.yesNo("Uninstall Application", "Uninstall application " + applicationName + "?").ask(project)) {
+        if (!MessageDialogBuilder.yesNo(NocalhostI18n.get("action.uninstallApp"), NocalhostI18n.format("confirm.uninstallApp", applicationName)).ask(project)) {
             return;
         }
         ProgressManager.getInstance().run(new BaseBackgroundTask(
                 null,
-                "Uninstalling application: " + applicationName
+                NocalhostI18n.format("progress.uninstallApp", applicationName)
         ) {
             @Override
             public void onSuccess() {
@@ -56,14 +57,14 @@ public class UninstallAppAction extends DumbAwareAction {
                         NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
                 NocalhostNotifier.getInstance(project).notifySuccess(
-                        "Application " + applicationName + " uninstalled",
+                        NocalhostI18n.format("success.uninstallApp", applicationName),
                         "");
             }
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Uninstalling application error",
-                        "Error occurred while uninstalling application", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.uninstallApplication"),
+                        NocalhostI18n.get("error.uninstallApplication.content"), e);
             }
 
             @SneakyThrows

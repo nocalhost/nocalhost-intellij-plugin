@@ -7,6 +7,7 @@ import com.intellij.openapi.ui.Messages;
 import org.apache.commons.lang3.StringUtils;
 
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 
 public final class NhctlOutputUtil {
     private static final String MESSAGE_TAG_WARNING = "[WARNING]";
@@ -17,7 +18,7 @@ public final class NhctlOutputUtil {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (StringUtils.startsWith(line, MESSAGE_TAG_WARNING)) {
                 String message = line.substring(MESSAGE_TAG_WARNING.length()).trim();
-                Messages.showMessageDialog(message, "Nhctl Command Warning", Messages.getWarningIcon());
+                Messages.showMessageDialog(message, NocalhostI18n.get("dialog.nhctlWarning"), Messages.getWarningIcon());
             }
             if (StringUtils.startsWith(line, MESSAGE_TAG_INFO)) {
                 String message = line.substring(MESSAGE_TAG_INFO.length()).trim();

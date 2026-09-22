@@ -9,6 +9,7 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 
 public final class NocalhostConsoleManager {
@@ -59,8 +60,8 @@ public final class NocalhostConsoleManager {
                 });
             });
         } catch (Exception e) {
-            ErrorUtil.dealWith(project, "Opening logs window error",
-                    "Error occurs while opening logs window", e);
+            ErrorUtil.dealWith(project, NocalhostI18n.get("error.openLogsWindow"),
+                    NocalhostI18n.get("error.openLogsWindow.content"), e);
         }
     }
 

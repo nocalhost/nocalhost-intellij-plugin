@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
@@ -23,7 +24,7 @@ public class UpgradeStandaloneApplicationTask extends BaseBackgroundTask {
     public UpgradeStandaloneApplicationTask(Project project,
                                             String applicationName,
                                             NhctlUpgradeOptions opts) {
-        super(project, "Upgrade Application: " + applicationName);
+        super(project, NocalhostI18n.format("progress.upgradeApplication", applicationName));
 
         this.project = project;
         this.applicationName = applicationName;
@@ -47,14 +48,14 @@ public class UpgradeStandaloneApplicationTask extends BaseBackgroundTask {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
         NocalhostNotifier.getInstance(project).notifySuccess(
-                "Application " + applicationName + " upgraded",
+                NocalhostI18n.format("success.applicationUpgraded", applicationName),
                 "");
     }
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Application upgrade error",
-                "Error occurred while upgrading application " + applicationName, e);
+        ErrorUtil.dealWith(this.getProject(), NocalhostI18n.get("error.upgradeApplicationStandalone"),
+                NocalhostI18n.format("error.upgradeApplicationStandalone.content", applicationName), e);
     }
 
 

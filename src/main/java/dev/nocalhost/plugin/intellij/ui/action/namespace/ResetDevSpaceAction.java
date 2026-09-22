@@ -17,6 +17,7 @@ import dev.nocalhost.plugin.intellij.api.NocalhostApi;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetDevSpaceOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.NamespaceNode;
@@ -35,7 +36,7 @@ public class ResetDevSpaceAction extends DumbAwareAction {
     private final String namespace;
 
     public ResetDevSpaceAction(Project project, NamespaceNode node) {
-        super("Reset", "", AllIcons.General.Reset);
+        super(NocalhostI18n.get("action.reset"), "", AllIcons.General.Reset);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -47,24 +48,24 @@ public class ResetDevSpaceAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent event) {
         final String name = node.getName();
 
-        if (!MessageDialogBuilder.yesNo("Reset DevSpace", "Reset " + name + "?").ask(project)) {
+        if (!MessageDialogBuilder.yesNo(NocalhostI18n.get("title.resetDevSpace"), NocalhostI18n.format("confirm.resetDevSpace", name)).ask(project)) {
             return;
         }
 
-        ProgressManager.getInstance().run(new BaseBackgroundTask(null, "Reset DevSpace: " + name) {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(null, NocalhostI18n.format("progress.resetDevSpace", name)) {
             @Override
             public void onSuccess() {
                 super.onSuccess();
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(
                         NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
                 NocalhostNotifier.getInstance(project).notifySuccess(
-                        "DevSpace " + name + " reset complete", "");
+                        NocalhostI18n.format("success.resetDevSpace", name), "");
             }
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Resetting dev space error",
-                        "Error occurs while resetting dev space", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.resetDevSpace"),
+                        NocalhostI18n.get("error.resetDevSpace.content"), e);
             }
 
             @SneakyThrows

@@ -36,6 +36,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListApplication;
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlCrdListCommand;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDeleteKubeConfigCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
@@ -132,7 +133,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 try {
                     sas = nocalhostApi.listServiceAccount(na.getServer(), na.getJwt());
                     if (sas.isEmpty()) {
-                        clusterNodes.add(new AccountNode(na, " Cluster not found"));
+                        clusterNodes.add(new AccountNode(na, " " + NocalhostI18n.get("tree.clusterNotFound")));
                     }
                 } catch (Exception ex) {
                     var summary = String.format(
@@ -141,7 +142,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                             na.getUsername()
                     );
                     ErrorUtil.console(project, summary, ex);
-                    clusterNodes.add(new AccountNode(na, " Unable to connect"));
+                    clusterNodes.add(new AccountNode(na, " " + NocalhostI18n.get("tree.unableToConnect")));
                 }
 
                 for (var sa : sas) {
@@ -200,7 +201,7 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                 cmd.execute();
             }
         } catch (Exception ex) {
-            ErrorUtil.dealWith(project, "Notify nhctl error", "Error occurred while notify nhctl.", ex);
+            ErrorUtil.dealWith(project, NocalhostI18n.get("error.notifyNhctl"), NocalhostI18n.get("error.notifyNhctl.content"), ex);
         }
     }
 
@@ -510,8 +511,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                         next.run();
                     });
                 } catch (Exception ex) {
-                    ErrorUtil.dealWith(project, "Failed to refresh CRD kinds",
-                            "Error occurred while loading CRD kinds", ex);
+                    ErrorUtil.dealWith(project, NocalhostI18n.get("error.refreshCrdKinds"),
+                            NocalhostI18n.get("error.refreshCrdKinds.content"), ex);
                 }
             });
         }
@@ -583,8 +584,8 @@ public class NocalhostTreeModel extends NocalhostTreeModelBase {
                     next.run();
                 });
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Failed to refresh CRD resources",
-                        "Error occurs while loading CRD resources", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.refreshCrdResources"),
+                        NocalhostI18n.get("error.refreshCrdResources.content"), e);
             }
         });
     }

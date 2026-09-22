@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.Constants;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -31,7 +32,7 @@ public class InstallDemoTask extends BaseBackgroundTask {
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     public InstallDemoTask(Project project, Path kubeConfigPath, String namespace) {
-        super(project, "Deploy demo", true);
+        super(project, NocalhostI18n.get("progress.deployDemo"), true);
         this.project = project;
         this.kubeConfigPath = kubeConfigPath;
         this.namespace = namespace;
@@ -44,7 +45,7 @@ public class InstallDemoTask extends BaseBackgroundTask {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
-        NocalhostNotifier.getInstance(project).notifySuccess("Demo deployed", "");
+        NocalhostNotifier.getInstance(project).notifySuccess(NocalhostI18n.get("success.demoDeployed"), "");
 
         ApplicationManager.getApplication().invokeLater(() -> {
             ProgressManager.getInstance().run(new BrowseDemoTask(project, kubeConfigPath, namespace));
@@ -53,8 +54,8 @@ public class InstallDemoTask extends BaseBackgroundTask {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Demo deployment error",
-                "Error occurred while deploying demo", e);
+        ErrorUtil.dealWith(this.getProject(), NocalhostI18n.get("error.deployDemo"),
+                NocalhostI18n.get("error.deployDemo.content"), e);
 
     }
 

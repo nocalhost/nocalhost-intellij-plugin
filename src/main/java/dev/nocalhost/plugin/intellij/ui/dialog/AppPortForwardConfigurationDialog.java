@@ -37,6 +37,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlAppPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardListOptions;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.VerticalFlowLayout;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -59,7 +60,7 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
 
     public AppPortForwardConfigurationDialog(Project project, ApplicationNode node) {
         super(project);
-        setTitle("Port forward configuration for application " + node.getName());
+        setTitle(NocalhostI18n.format("dialog.portForwardAppConfig", node.getName()));
 
         this.project = project;
         this.node = node;
@@ -80,7 +81,7 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
 
     @Override
     protected Action @NotNull [] createActions() {
-        myCancelAction.putValue(Action.NAME, "Close");
+        myCancelAction.putValue(Action.NAME, NocalhostI18n.get("button.close"));
         return new Action[]{getCancelAction()};
     }
 
@@ -90,7 +91,7 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
     }
 
     private void updatePortForwardList() {
-        ProgressManager.getInstance().run(new Task.Modal(project, "Loading Port Forward List", false) {
+        ProgressManager.getInstance().run(new Task.Modal(project, NocalhostI18n.get("progress.loadPortForward"), false) {
             private List<NhctlAppPortForward> devPortForwardList;
 
             @Override
@@ -101,8 +102,8 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Nocalhost port forward error",
-                        "Error occurred while loading port forward list", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.portForward"),
+                        NocalhostI18n.get("error.portForwardLoad.content"), e);
             }
 
             @SneakyThrows
@@ -157,7 +158,7 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
 
         JButton button = new StopButton();
         button.addActionListener(event -> {
-            if (!MessageDialogBuilder.yesNo("Port forward", "Stop port forward " + portForward.getPort() + " (" + portForward.getServiceName() + ")?").ask(project)) {
+            if (!MessageDialogBuilder.yesNo(NocalhostI18n.get("portforward.confirmTitle"), NocalhostI18n.format("portforward.confirmStop", portForward.getPort(), portForward.getServiceName())).ask(project)) {
                 return;
             }
 
@@ -172,10 +173,10 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
             }
 
             final String finalSudoPassword = sudoPassword;
-            ProgressManager.getInstance().run(new Task.Modal(project, "Stopping port forward " + portForward, false) {
+            ProgressManager.getInstance().run(new Task.Modal(project, NocalhostI18n.format("progress.stopPortForward", portForward), false) {
                 @Override
                 public void onThrowable(@NotNull Throwable e) {
-                    ErrorUtil.dealWith(project, "Nocalhost port forward error", "Error occurred while stopping port forward", e);
+                    ErrorUtil.dealWith(project, NocalhostI18n.get("error.portForward"), NocalhostI18n.get("error.portForwardStop.content"), e);
                 }
 
                 @Override
@@ -230,7 +231,7 @@ public class AppPortForwardConfigurationDialog extends DialogWrapper {
             setBorderColor(BorderColor);
             setFocusedBorderColor(BorderColor);
 
-            setText("Stop");
+            setText(NocalhostI18n.get("portforward.stop"));
             setWidth72(this);
         }
     }

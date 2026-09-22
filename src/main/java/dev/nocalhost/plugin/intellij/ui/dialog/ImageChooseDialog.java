@@ -14,6 +14,7 @@ import java.util.List;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.Getter;
 
@@ -41,7 +42,9 @@ public class ImageChooseDialog extends DialogWrapper {
     public ImageChooseDialog(@Nullable Project project) {
         super(project, true);
 
-        setTitle("Select Dev Mode Image");
+        setTitle(NocalhostI18n.get("dialog.selectDevImage"));
+        specifyRadioButton.setText(NocalhostI18n.get("image.specify"));
+        selectRadioButton.setText(NocalhostI18n.get("image.selectPrebuilt"));
 
         TextUiUtil.setCutCopyPastePopup(imageTextField);
 
@@ -67,10 +70,10 @@ public class ImageChooseDialog extends DialogWrapper {
     @Override
     protected @Nullable ValidationInfo doValidate() {
         if (specifyRadioButton.isSelected() && !StringUtils.isNotEmpty(imageTextField.getText())) {
-            return new ValidationInfo("Must specify an image", imageTextField);
+            return new ValidationInfo(NocalhostI18n.get("validation.specifyImage"), imageTextField);
         }
         if (selectRadioButton.isSelected() && !StringUtils.isNotEmpty(imageList.getSelectedValue())) {
-            return new ValidationInfo("Must select an image", imageList);
+            return new ValidationInfo(NocalhostI18n.get("validation.selectImage"), imageList);
         }
         return null;
     }

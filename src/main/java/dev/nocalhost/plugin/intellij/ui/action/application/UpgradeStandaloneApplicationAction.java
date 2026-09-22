@@ -23,6 +23,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedGitCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlUpgradeOptions;
 import dev.nocalhost.plugin.intellij.data.nocalhostconfig.Application;
 import dev.nocalhost.plugin.intellij.data.nocalhostconfig.NocalhostConfig;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.UpgradeStandaloneApplicationTask;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.ui.dialog.ConfigStandaloneHelmRepoApplicationDialog;
@@ -60,7 +61,7 @@ public class UpgradeStandaloneApplicationAction extends DumbAwareAction {
     private final AtomicReference<Path> configPath = new AtomicReference<>();
 
     public UpgradeStandaloneApplicationAction(Project project, ApplicationNode node) {
-        super("Upgrade Application");
+        super(NocalhostI18n.get("action.upgradeStandaloneApp"));
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -79,8 +80,8 @@ public class UpgradeStandaloneApplicationAction extends DumbAwareAction {
             case MANIFEST_TYPE_KUSTOMIZE_LOCAL:
                 Path localPath = FileChooseUtil.chooseSingleDirectory(
                         project,
-                        "Upgrade Standalone Application",
-                        "Select local directory which contains application configuration");
+                        NocalhostI18n.get("dialog.upgradeStandaloneApp"),
+                        NocalhostI18n.get("common.selectLocalDir"));
                 if (localPath == null) {
                     return;
                 }
@@ -99,7 +100,7 @@ public class UpgradeStandaloneApplicationAction extends DumbAwareAction {
                 break;
 
             default:
-                Messages.showErrorDialog("Unable to upgrade application type: " + node.getApplication().getType(), "Upgrade Application");
+                Messages.showErrorDialog(NocalhostI18n.format("error.unableUpgrade", node.getApplication().getType()), NocalhostI18n.get("action.upgradeStandaloneApp"));
                 break;
         }
     }
@@ -123,8 +124,8 @@ public class UpgradeStandaloneApplicationAction extends DumbAwareAction {
                 localPath.set(tempDir);
                 resolveConfig();
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Cloning git repository error",
-                        "Error occurs while cloing git repository", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.cloneGitRepo"),
+                        NocalhostI18n.get("error.cloneGitRepo.content"), e);
             }
         });
     }
@@ -135,12 +136,12 @@ public class UpgradeStandaloneApplicationAction extends DumbAwareAction {
                 Path nocalhostConfigDirectory = localPath.get().resolve(".nocalhost");
                 if (!Files.exists(nocalhostConfigDirectory)) {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(
-                            project, ".nocalhost directory not found.", "Upgrade Standalone Application"));
+                            project, NocalhostI18n.get("common.nocalhostDirNotFound"), NocalhostI18n.get("dialog.upgradeStandaloneApp")));
                 }
                 List<Path> configs = ConfigUtil.resolveConfigFiles(nocalhostConfigDirectory, kubeConfigPath, namespace);
                 if (configs.size() == 0) {
                     ApplicationManager.getApplication().invokeLater(() -> Messages.showErrorDialog(
-                            project, "No nocalhost config found.", "Upgrade Standalone Application"));
+                            project, NocalhostI18n.get("common.noNocalhostConfig"), NocalhostI18n.get("dialog.upgradeStandaloneApp")));
                 } else if (configs.size() == 1) {
                     configPath.set(configs.get(0));
                     checkApplicationType();
@@ -150,8 +151,8 @@ public class UpgradeStandaloneApplicationAction extends DumbAwareAction {
                             configs.stream().map(e -> e.getFileName().toString()).collect(Collectors.toSet()));
                 }
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Scanning config files error",
-                        "Error occurs while scanning config files", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.scanConfigFiles"),
+                        NocalhostI18n.get("error.scanConfigFiles.content"), e);
             }
         });
     }
@@ -167,12 +168,12 @@ public class UpgradeStandaloneApplicationAction extends DumbAwareAction {
             } else {
                 Messages.showErrorDialog(
                         project,
-                        "Manifest type " + upgradeType + " is not matched application type " + applicationType + ".",
-                        "Upgrade Standalone Application");
+                        NocalhostI18n.format("common.manifestTypeNotMatched", upgradeType, applicationType),
+                        NocalhostI18n.get("dialog.upgradeStandaloneApp"));
             }
         } catch (Exception e) {
-            ErrorUtil.dealWith(project, "Loading nocalhost config error",
-                    "Error occurs while loading nocalhost config", e);
+            ErrorUtil.dealWith(project, NocalhostI18n.get("error.loadNocalhostConfig"),
+                    NocalhostI18n.get("error.loadNocalhostConfig.content"), e);
         }
     }
 
@@ -245,7 +246,7 @@ public class UpgradeStandaloneApplicationAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             Path configPath = FileChooseUtil.chooseSingleFile(
                     project,
-                    "Please select your configuration file",
+                    NocalhostI18n.get("common.selectConfigFile"),
                     configDirectory,
                     files);
             if (configPath == null) {

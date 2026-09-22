@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDeleteKubeConfigCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
@@ -27,7 +28,7 @@ public class RemoveClusterAction extends DumbAwareAction {
     private final ClusterNode node;
 
     public RemoveClusterAction(Project project, ClusterNode node) {
-        super("Remove", "", AllIcons.Vcs.Remove);
+        super(NocalhostI18n.get("action.remove"), "", AllIcons.Vcs.Remove);
         this.project = project;
         this.node = node;
     }
@@ -36,7 +37,7 @@ public class RemoveClusterAction extends DumbAwareAction {
     public void actionPerformed(@NotNull AnActionEvent e) {
         ProgressManager.getInstance().run(new Task.Backgroundable(
                 project,
-                "Removing cluster"
+                NocalhostI18n.get("progress.removingCluster")
         ) {
 
             @Override

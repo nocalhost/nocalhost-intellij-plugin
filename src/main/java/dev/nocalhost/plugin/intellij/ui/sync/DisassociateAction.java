@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.data.NocalhostContext;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevAssociateCommand;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -21,7 +22,7 @@ public class DisassociateAction extends DumbAwareAction {
     private final NhctlDevAssociateQueryResult result;
 
     public DisassociateAction(@NotNull Project project, @NotNull NhctlDevAssociateQueryResult result) {
-        super("Disassociate from Current Directory");
+        super(NocalhostI18n.get("action.disassociate"));
         this.result = result;
         this.project = project;
     }
@@ -51,7 +52,7 @@ public class DisassociateAction extends DumbAwareAction {
                         manager.replace(null);
                     }
                 } catch (Exception ex) {
-                    ErrorUtil.dealWith(project, "Disassociate from Current Directory", "Error occurred while disassociate from current directory.", ex);
+                    ErrorUtil.dealWith(project, NocalhostI18n.get("action.disassociate"), NocalhostI18n.get("error.disassociate.content"), ex);
                 }
             });
         }

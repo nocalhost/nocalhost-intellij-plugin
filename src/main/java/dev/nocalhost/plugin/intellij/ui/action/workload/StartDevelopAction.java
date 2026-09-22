@@ -38,6 +38,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlRawConfig;
 import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevContainerListCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.DevModeService;
@@ -81,7 +82,7 @@ public class StartDevelopAction extends DumbAwareAction {
 
     public StartDevelopAction(Project project, ResourceNode node) {
         this(
-                "Start DevMode",
+                NocalhostI18n.get("action.startDevMode"),
                 project,
                 node,
                 NocalhostIcons.Status.DevStart,
@@ -93,7 +94,7 @@ public class StartDevelopAction extends DumbAwareAction {
 
     public static StartDevelopAction duplicate(Project project, ResourceNode node) {
         return new StartDevelopAction(
-                "Start DevMode (Duplicate)",
+                NocalhostI18n.get("action.startDevModeDuplicate"),
                 project,
                 node,
                 NocalhostIcons.Status.DevCopy,
@@ -105,7 +106,7 @@ public class StartDevelopAction extends DumbAwareAction {
 
     public static StartDevelopAction duplicateMesh(Project project, ResourceNode node) {
         return new StartDevelopAction(
-                "Start Mesh (Duplicate)",
+                NocalhostI18n.get("action.startMeshDuplicate"),
                 project,
                 node,
                 NocalhostIcons.Status.DevCopy,
@@ -155,8 +156,8 @@ public class StartDevelopAction extends DumbAwareAction {
                     if (StringUtils.equals(desService.getDevModeType(), DEV_MODE_DUPLICATE)) {
                         ApplicationManager.getApplication().invokeLater(() ->
                                 Messages.showMessageDialog(
-                                        "Dev mode has been started.",
-                                        "Start DevMode",
+                                        NocalhostI18n.get("common.devModeStartedMessage"),
+                                        NocalhostI18n.get("action.startDevMode"),
                                         null
                                 )
                         );
@@ -165,15 +166,15 @@ public class StartDevelopAction extends DumbAwareAction {
                     // the service in the `replace` mode currently
                     if ( ! StringUtils.equals(mode, DEV_MODE_DUPLICATE)) {
                         ApplicationManager.getApplication().invokeLater(() ->
-                                Messages.showMessageDialog("Dev mode has been started.",
-                                        "Start DevMode", null));
+                                Messages.showMessageDialog(NocalhostI18n.get("common.devModeStartedMessage"),
+                                        NocalhostI18n.get("action.startDevMode"), null));
                         return;
                     }
                 }
                 getContainers();
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading service status error",
-                        "Error occurs while loading service status", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.loadServiceStatus"),
+                        NocalhostI18n.get("error.loadServiceStatus.content"), e);
             }
         });
     }
@@ -194,13 +195,13 @@ public class StartDevelopAction extends DumbAwareAction {
                 getAssociate();
             }
         } catch (Exception ex) {
-            ErrorUtil.dealWith(project, "Failed to get containers", "Error occurs while get containers", ex);
+            ErrorUtil.dealWith(project, NocalhostI18n.get("error.failedGetContainers"), NocalhostI18n.get("error.failedGetContainers.content"), ex);
         }
     }
 
     private void selectContainer(List<String> containers) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            ListChooseDialog listChooseDialog = new ListChooseDialog(project, "Select Container",
+            ListChooseDialog listChooseDialog = new ListChooseDialog(project, NocalhostI18n.get("common.selectContainer"),
                     containers);
             if (listChooseDialog.showAndGet()) {
                 selectedContainer.set(listChooseDialog.getSelectedValue());
@@ -226,12 +227,12 @@ public class StartDevelopAction extends DumbAwareAction {
                     selectCodeSource();
                 }
             } catch (NocalhostExecuteCmdException e) {
-                ErrorUtil.dealWith(project, "Loading service profile error",
-                        "Error occurs while loading service profile", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.loadServiceProfile"),
+                        NocalhostI18n.get("error.loadServiceProfile.content"), e);
                 selectCodeSource();
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading service profile error",
-                        "Error occurs while loading service profile", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.loadServiceProfile"),
+                        NocalhostI18n.get("error.loadServiceProfile.content"), e);
             }
         });
     }
@@ -240,12 +241,12 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             int choice = Messages.showDialog(
                     project,
-                    "To start dev mode, you must specify source code directory.",
-                    "Start DevMode",
+                    NocalhostI18n.get("common.needSourceDir"),
+                    NocalhostI18n.get("action.startDevMode"),
                     new String[]{
-                            "Clone from Git Repo",
-                            "Open Local Directly",
-                            "Cancel"},
+                            NocalhostI18n.get("common.cloneFromGitRepo"),
+                            NocalhostI18n.get("common.openLocalDirectly"),
+                            NocalhostI18n.get("common.cancel")},
                     0,
                     Messages.getQuestionIcon());
             switch (choice) {
@@ -297,8 +298,8 @@ public class StartDevelopAction extends DumbAwareAction {
 
                 cloneGitRepository("");
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading dev image error",
-                        "Error occurs while loading dev image", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.loadDevImage"),
+                        NocalhostI18n.get("error.loadDevImage.content"), e);
             }
         });
     }
@@ -308,11 +309,11 @@ public class StartDevelopAction extends DumbAwareAction {
             String gitUrl = url;
             if (!StringUtils.isNotEmpty(gitUrl)) {
                 gitUrl = Messages.showInputDialog(
-                        project, "Specify git url.", "Start DevMode", null);
+                        project, NocalhostI18n.get("common.specifyGitUrl"), NocalhostI18n.get("action.startDevMode"), null);
             }
             if (StringUtils.isNotEmpty(gitUrl)) {
                 Path gitParent = FileChooseUtil.chooseSingleDirectory(project, "",
-                        "Select parent directory for git repository.");
+                        NocalhostI18n.get("common.selectParentDir"));
                 if (gitParent != null) {
                     String finalGitUrl = gitUrl;
                     ApplicationManager.getApplication().executeOnPooledThread(() -> {
@@ -332,8 +333,8 @@ public class StartDevelopAction extends DumbAwareAction {
                             setAssociate(gitParent.resolve(node.resourceName()).toAbsolutePath()
                                     .toString());
                         } catch (Exception e) {
-                            ErrorUtil.dealWith(project, "Cloning git repository error",
-                                    "Error occurs while cloning git repository", e);
+                            ErrorUtil.dealWith(project, NocalhostI18n.get("error.cloneGitRepo"),
+                                    NocalhostI18n.get("error.cloneGitRepo.content"), e);
                         }
                     });
                 }
@@ -344,7 +345,7 @@ public class StartDevelopAction extends DumbAwareAction {
     private void selectDirectory() {
         ApplicationManager.getApplication().invokeLater(() -> {
             Path codeSource = FileChooseUtil.chooseSingleDirectory(project, "",
-                    "Select source code directory.");
+                    NocalhostI18n.get("common.selectSourceDir"));
             if (codeSource != null) {
                 setAssociate(codeSource.toString());
             }
@@ -365,8 +366,8 @@ public class StartDevelopAction extends DumbAwareAction {
 
                 getImage();
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Associating source code directory error",
-                        "Error occurs while associating source code directory", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.associateSourceDir"),
+                        NocalhostI18n.get("error.associateSourceDir.content"), e);
             }
         });
     }
@@ -390,8 +391,8 @@ public class StartDevelopAction extends DumbAwareAction {
                 }
                 selectImage();
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Loading dev image",
-                        "Error occurs while loading dev image", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("progress.loadingDevImage"),
+                        NocalhostI18n.get("error.loadDevImage.content"), e);
             }
         });
     }
@@ -400,8 +401,8 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             header = Messages.showInputDialog(
                     project,
-                    "Please input header, eg: foo=bar",
-                    "Start DevMode",
+                    NocalhostI18n.get("prompt.inputHeader"),
+                    NocalhostI18n.get("action.startDevMode"),
                     null
             );
             if (StringUtils.isNotEmpty(header)) {
@@ -414,11 +415,11 @@ public class StartDevelopAction extends DumbAwareAction {
         ApplicationManager.getApplication().invokeLater(() -> {
             var yes = MessageDialogBuilder
                     .yesNo(
-                            "Start DevMode",
-                            "There is no development configuration for container `" + selectedContainer.get() + "`, please select an operation."
+                            NocalhostI18n.get("action.startDevMode"),
+                            NocalhostI18n.format("prompt.noDevConfigForContainer", selectedContainer.get())
                     )
-                    .yesText("Still enter development mode")
-                    .noText("Set development configuration with form")
+                    .yesText(NocalhostI18n.get("common.stillEnterDevMode"))
+                    .noText(NocalhostI18n.get("common.setDevConfigWithForm"))
                     .ask(project);
             if ( ! yes) {
                 openDevConfigTools();
@@ -443,8 +444,8 @@ public class StartDevelopAction extends DumbAwareAction {
                         }
                         startDevelop(projectPathReference.get());
                     } catch (Exception e) {
-                        ErrorUtil.dealWith(project, "Setting dev image",
-                                "Error occurs while setting dev image", e);
+                        ErrorUtil.dealWith(project, NocalhostI18n.get("progress.settingDevImage"),
+                                NocalhostI18n.get("error.setDevImage.content"), e);
                     }
                 });
             }
@@ -492,7 +493,7 @@ public class StartDevelopAction extends DumbAwareAction {
             if ( ! PathsUtil.isExists(path)) {
                 NocalhostNotifier
                         .getInstance(project)
-                        .notifyError("Failed to start dev", "The associated directory does not exist: [" + path + "]");
+                        .notifyError(NocalhostI18n.get("error.failedStartDev"), NocalhostI18n.format("error.associatedDirNotExist", path));
                 return;
             }
             if (PathsUtil.isSame(path, project.getBasePath())) {
@@ -533,8 +534,8 @@ public class StartDevelopAction extends DumbAwareAction {
             x.addParameter("application", node.applicationName());
             BrowserUtil.browse(x.build().toString());
         } catch (Exception ex) {
-            ErrorUtil.dealWith(project, "Failed to open browser",
-                    "Error occurred while opening browser", ex);
+            ErrorUtil.dealWith(project, NocalhostI18n.get("error.openBrowser"),
+                    NocalhostI18n.get("error.openBrowser.content"), ex);
         }
     }
 }

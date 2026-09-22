@@ -16,6 +16,7 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
@@ -31,7 +32,7 @@ public class OpenProjectAction extends DumbAwareAction {
     private final String namespace;
 
     public OpenProjectAction(Project project, ResourceNode node) {
-        super("Open Project", "", AllIcons.Actions.MenuOpen);
+        super(NocalhostI18n.get("action.openProject"), "", AllIcons.Actions.MenuOpen);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -45,7 +46,7 @@ public class OpenProjectAction extends DumbAwareAction {
             setAssociate(projectPath);
         } else {
             Path codeSource = FileChooseUtil.chooseSingleDirectory(project, "",
-                    "Select source code directory.");
+                    NocalhostI18n.get("common.selectSourceDir"));
             if (codeSource != null) {
                 setAssociate(codeSource.toString());
             }
@@ -63,8 +64,8 @@ public class OpenProjectAction extends DumbAwareAction {
 
                 openProject(projectPath);
             } catch (Exception e) {
-                ErrorUtil.dealWith(project, "Associate local directory error",
-                        "Error while associating local directory", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.associateLocalDir"),
+                        NocalhostI18n.get("error.associateLocalDir.content"), e);
             }
         });
     }

@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.LoadKubernetesResourceTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 
@@ -16,7 +17,7 @@ public class EditManifestAction extends DumbAwareAction {
     private final ResourceNode node;
 
     public EditManifestAction(Project project, ResourceNode node) {
-        super("Edit Manifest", "", AllIcons.Actions.Edit);
+        super(NocalhostI18n.get("action.editManifest"), "", AllIcons.Actions.Edit);
         this.project = project;
         this.node = node;
     }

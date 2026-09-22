@@ -10,10 +10,12 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 
 public class KustomizePathDialog extends DialogWrapper {
     private JPanel dialogPanel;
+    private JLabel specifyLabel;
     private JRadioButton useDefaultValuesRadioButton;
     private JRadioButton specifyOneRadioButton;
     private JBTextField specifyTextField;
@@ -23,7 +25,10 @@ public class KustomizePathDialog extends DialogWrapper {
     public KustomizePathDialog(Project project) {
         super(project, true);
         init();
-        setTitle("Select Kustomize Path");
+        setTitle(NocalhostI18n.get("dialog.selectKustomizePath"));
+        specifyLabel.setText(NocalhostI18n.get("kustomize.specify"));
+        useDefaultValuesRadioButton.setText(NocalhostI18n.get("kustomize.useDefault"));
+        specifyOneRadioButton.setText(NocalhostI18n.get("kustomize.specifyOne"));
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(useDefaultValuesRadioButton);
@@ -34,7 +39,7 @@ public class KustomizePathDialog extends DialogWrapper {
 
         useDefaultValuesRadioButton.setSelected(true);
         specifyOneRadioButton.setSelected(false);
-        specifyTextField.getEmptyText().appendText("Input the custom path of Kustomize");
+        specifyTextField.getEmptyText().appendText(NocalhostI18n.get("kustomize.pathHint"));
 
         TextUiUtil.setCutCopyPastePopup(specifyTextField);
     }
@@ -46,7 +51,7 @@ public class KustomizePathDialog extends DialogWrapper {
     @Override
     protected @Nullable ValidationInfo doValidate() {
         if (specifyOneRadioButton.isSelected() && StringUtils.isBlank(specifyTextField.getText())) {
-            return new ValidationInfo("Must specify path.", specifyTextField);
+            return new ValidationInfo(NocalhostI18n.get("validation.kustomizePath"), specifyTextField);
         }
         return null;
     }

@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDeleteKubeConfigCommand;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.NocalhostAccount;
@@ -22,7 +23,7 @@ public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
     private final List<NocalhostAccount> nocalhostAccounts;
 
     public LogoutNocalhostAccountsTask(Project project, List<NocalhostAccount> nocalhostAccounts) {
-        super(project, "Logging out Nocalhost accounts");
+        super(project, NocalhostI18n.get("progress.logoutAccounts"));
         this.nocalhostAccounts = nocalhostAccounts;
     }
 
@@ -56,7 +57,7 @@ public class LogoutNocalhostAccountsTask extends Task.Backgroundable {
             cmd.setKubeConfig(KubeConfigUtil.toPath(kubeConfig));
             cmd.execute();
         } catch (Exception ex) {
-            ErrorUtil.dealWith(getProject(), "Failed to notify nhctl", "Error occurs while notify nhctl.", ex);
+            ErrorUtil.dealWith(getProject(), NocalhostI18n.get("error.notifyNhctl"), NocalhostI18n.get("error.notifyNhctl.content"), ex);
         }
     }
 }

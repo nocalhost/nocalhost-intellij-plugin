@@ -15,12 +15,14 @@ import java.util.stream.Collectors;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.HelmValuesChooseState;
 import dev.nocalhost.plugin.intellij.utils.FileChooseUtil;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 
 public class HelmValuesChooseDialog extends DialogWrapper {
     private JPanel dialogPanel;
+    private JLabel specifyValuesLabel;
     private JRadioButton useDefaultValuesRadioButton;
     private JRadioButton specifyValuesYamlRadioButton;
     private JRadioButton specifyValuesRadioButton;
@@ -35,7 +37,11 @@ public class HelmValuesChooseDialog extends DialogWrapper {
     public HelmValuesChooseDialog(Project project) {
         super(true);
         init();
-        setTitle("Select Helm Values");
+        setTitle(NocalhostI18n.get("dialog.selectHelmValues"));
+        specifyValuesLabel.setText(NocalhostI18n.get("helm.specifyValues"));
+        useDefaultValuesRadioButton.setText(NocalhostI18n.get("helm.useDefaultValues"));
+        specifyValuesYamlRadioButton.setText(NocalhostI18n.get("helm.specifyValuesYaml"));
+        specifyValuesRadioButton.setText(NocalhostI18n.get("helm.specifyValuesRadio"));
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(useDefaultValuesRadioButton);
@@ -53,9 +59,9 @@ public class HelmValuesChooseDialog extends DialogWrapper {
         specifyValuesTextArea.setLineWrap(true);
         specifyValuesTextArea.setWrapStyleWord(true);
 
-        specifyValuesYamlTextField.addBrowseFolderListener("Select the value file path", "", project, FileChooseUtil.singleFileChooserDescriptor());
+        specifyValuesYamlTextField.addBrowseFolderListener(NocalhostI18n.get("helm.selectValuesFile"), "", project, FileChooseUtil.singleFileChooserDescriptor());
 
-        specifyValuesTextArea.getEmptyText().appendText("eg: key1=val1,key2=val2");
+        specifyValuesTextArea.getEmptyText().appendText(NocalhostI18n.get("helm.valuesHint"));
 
         TextUiUtil.setCutCopyPastePopup(
                 specifyValuesYamlTextField.getTextField(),
@@ -70,17 +76,17 @@ public class HelmValuesChooseDialog extends DialogWrapper {
     @Override
     protected @Nullable ValidationInfo doValidate() {
         if (specifyValuesYamlRadioButton.isSelected() && !StringUtils.isNotEmpty(specifyValuesYamlTextField.getText())) {
-            return new ValidationInfo("Must specify a values.yaml file.", specifyValuesYamlTextField);
+            return new ValidationInfo(NocalhostI18n.get("validation.valuesFile"), specifyValuesYamlTextField);
         }
         if (specifyValuesRadioButton.isSelected()) {
             if (StringUtils.isNotEmpty(specifyValuesTextArea.getText())) {
                 for (String entry : specifyValuesTextArea.getText().split(",")) {
                     if (entry.split("=").length != 2) {
-                        return new ValidationInfo("Values format cannot be accepted");
+                        return new ValidationInfo(NocalhostI18n.get("validation.valuesFormat"));
                     }
                 }
             } else {
-                return new ValidationInfo("Values cannot be empty");
+                return new ValidationInfo(NocalhostI18n.get("validation.valuesEmpty"));
             }
         }
         return null;

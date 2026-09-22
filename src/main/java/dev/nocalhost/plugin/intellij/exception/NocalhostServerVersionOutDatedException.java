@@ -1,6 +1,6 @@
 package dev.nocalhost.plugin.intellij.exception;
 
-import java.text.MessageFormat;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 
 public class NocalhostServerVersionOutDatedException extends Exception {
     private String server;
@@ -16,8 +16,8 @@ public class NocalhostServerVersionOutDatedException extends Exception {
 
     @Override
     public String getMessage() {
-        return MessageFormat.format(
-                "Server [{0}] version [{1}] is lower than required minimal version [{2}]",
+        return NocalhostI18n.format(
+                "error.serverVersionOutDated",
                 server,
                 currentVersion,
                 requiredMinimalVersion);

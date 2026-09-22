@@ -10,11 +10,15 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.Getter;
 
 public class ConfigStandaloneHelmRepoApplicationDialog extends DialogWrapper {
     private JPanel contentPane;
+    private JLabel nameLabel;
+    private JLabel chartUrlLabel;
+    private JLabel versionLabel;
     private JRadioButton defaultVersionRadioButton;
     private JRadioButton inputTheVersionOfRadioButton;
     private JBTextField nameTextField;
@@ -31,7 +35,12 @@ public class ConfigStandaloneHelmRepoApplicationDialog extends DialogWrapper {
     public ConfigStandaloneHelmRepoApplicationDialog(Project project) {
         super(project, true);
 
-        setTitle("Config Standalone Helm Repo Application");
+        setTitle(NocalhostI18n.get("dialog.configStandaloneHelm"));
+        nameLabel.setText(NocalhostI18n.get("common.name"));
+        chartUrlLabel.setText(NocalhostI18n.get("helm.chartUrl"));
+        versionLabel.setText(NocalhostI18n.get("prompt.whichVersionToInstall"));
+        defaultVersionRadioButton.setText(NocalhostI18n.get("common.defaultVersion"));
+        inputTheVersionOfRadioButton.setText(NocalhostI18n.get("common.inputChartVersion"));
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(defaultVersionRadioButton);
@@ -51,14 +60,14 @@ public class ConfigStandaloneHelmRepoApplicationDialog extends DialogWrapper {
     @Override
     protected @Nullable ValidationInfo doValidate() {
         if (!StringUtils.isNotEmpty(nameTextField.getText())) {
-            return new ValidationInfo("Must specify application name", nameTextField);
+            return new ValidationInfo(NocalhostI18n.get("validation.appName"), nameTextField);
         }
         if (!StringUtils.isNotEmpty(chartUrlTextField.getText())) {
-            return new ValidationInfo("Must specify chart url", chartUrlTextField);
+            return new ValidationInfo(NocalhostI18n.get("validation.chartUrl"), chartUrlTextField);
         }
         if (inputTheVersionOfRadioButton.isSelected()
                 && !StringUtils.isNotEmpty(versionTextField.getText())) {
-            return new ValidationInfo("Must specify chart version", versionTextField);
+            return new ValidationInfo(NocalhostI18n.get("validation.chartVersion"), versionTextField);
         }
         return null;
     }

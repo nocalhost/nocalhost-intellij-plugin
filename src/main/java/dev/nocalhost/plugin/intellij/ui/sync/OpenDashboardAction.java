@@ -8,13 +8,14 @@ import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 
 public class OpenDashboardAction extends DumbAwareAction {
     private final Project project;
     private final NhctlDevAssociateQueryResult result;
 
     public OpenDashboardAction(@NotNull Project project, @NotNull NhctlDevAssociateQueryResult result) {
-        super("Open Sync Dashboard");
+        super(NocalhostI18n.get("action.openSyncDashboard"));
         this.result = result;
         this.project = project;
     }
@@ -27,7 +28,7 @@ public class OpenDashboardAction extends DumbAwareAction {
         } catch (Exception ex) {
             NocalhostNotifier
                     .getInstance(project)
-                    .notifyError("Failed to open sync dashboard", "Error occurred while opening sync dashboard", ex.getMessage());
+                    .notifyError(NocalhostI18n.get("error.openSyncDashboard"), NocalhostI18n.get("error.openSyncDashboard.content"), ex.getMessage());
         }
     }
 }

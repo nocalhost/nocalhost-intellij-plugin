@@ -47,6 +47,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForward;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardEndOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardStartOptions;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.TaskModality;
 import dev.nocalhost.plugin.intellij.ui.VerticalFlowLayout;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -78,7 +79,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     public PortForwardConfigurationDialog(ResourceNode node, Project project) {
         super(project);
-        setTitle("Port forward configuration for service " + node.resourceName());
+        setTitle(NocalhostI18n.format("dialog.portForwardServiceConfig", node.resourceName()));
 
         this.node = node;
         this.project = project;
@@ -101,7 +102,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     @Override
     protected Action @NotNull [] createActions() {
-        myCancelAction.putValue(Action.NAME, "Close");
+        myCancelAction.putValue(Action.NAME, NocalhostI18n.get("button.close"));
         return new Action[]{getCancelAction()};
     }
 
@@ -111,7 +112,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
     }
 
     private void updatePortForwardList() {
-        ProgressManager.getInstance().run(new TaskModality(project, "Loading Port-Forward List", true) {
+        ProgressManager.getInstance().run(new TaskModality(project, NocalhostI18n.get("progress.loadPortForwardDash"), true) {
             private List<NhctlPortForward> devPortForwardList;
 
             @Override
@@ -122,8 +123,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Failed to loading port-forward list",
-                        "Error occurred while loading port-forward list", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.portForwardLoadFail"),
+                        NocalhostI18n.get("error.portForwardLoad.content"), e);
             }
 
             @Override
@@ -138,7 +139,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     private void setupStartPanel() {
         startTextField = new JBTextField();
-        startTextField.getEmptyText().appendText("single: 1234:1234, multiple: 1234:1234,5678:5678");
+        startTextField.getEmptyText().appendText(NocalhostI18n.get("portforward.inputHint"));
         startTextField.setMinimumSize(new Dimension(400, -1));
         startTextField.addCaretListener(e -> {
             boolean enabled = false;
@@ -214,8 +215,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             var desService = NhctlUtil.getDescribeService(project, node.resourceName(), node.controllerType(), namespace, node.applicationName(), kubeConfigPath);
             isDevMode = NhctlDescribeServiceUtil.developStarted(desService);
         } catch (Exception ex) {
-            ErrorUtil.dealWith(project, "Failed to port forward",
-                    "Error occurred while describe service", ex);
+            ErrorUtil.dealWith(project, NocalhostI18n.get("error.portForward"),
+                    NocalhostI18n.get("error.portForwardDescribe.content"), ex);
         }
 
         // nhctl will ignore `--pod` in dev mode
@@ -228,8 +229,8 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
                               .filter(KubeResource::canSelector)
                               .collect(Collectors.toList());
             } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Failed to port forward error",
-                        "Error occurred while get resources", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.portForward"),
+                        NocalhostI18n.get("error.portForwardGetResources.content"), ex);
             }
             if (pods != null && !pods.isEmpty()) {
                 List<String> names = pods.stream()
@@ -254,11 +255,11 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
         final String finalPod = pod;
         final String finalSudoPassword = sudoPassword;
-        ProgressManager.getInstance().run(new Task.Modal(project, "Starting port forward " + startTextField.getText(), true) {
+        ProgressManager.getInstance().run(new Task.Modal(project, NocalhostI18n.format("progress.startPortForward", startTextField.getText()), true) {
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Nocalhost port forward error",
-                        "Error occurred while starting port forward", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.portForward"),
+                        NocalhostI18n.get("error.portForwardStart.content"), e);
             }
 
             @Override
@@ -336,7 +337,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
         JButton button = new StopButton();
         button.addActionListener(event -> {
-            if (!MessageDialogBuilder.yesNo("Port forward", "Stop port forward " + portForward.portForwardStr() + "?").ask(project)) {
+            if (!MessageDialogBuilder.yesNo(NocalhostI18n.get("portforward.confirmTitle"), NocalhostI18n.format("portforward.confirmStopSvc", portForward.portForwardStr())).ask(project)) {
                 return;
             }
 
@@ -351,11 +352,11 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             }
 
             final String finalSudoPassword = sudoPassword;
-            ProgressManager.getInstance().run(new Task.Modal(project, "Stopping port forward " + portForward, false) {
+            ProgressManager.getInstance().run(new Task.Modal(project, NocalhostI18n.format("progress.stopPortForward", portForward), false) {
                 @Override
                 public void onThrowable(@NotNull Throwable e) {
-                    ErrorUtil.dealWith(project, "Nocalhost port forward error",
-                            "Error occurred while stopping port forward", e);
+                    ErrorUtil.dealWith(project, NocalhostI18n.get("error.portForward"),
+                            NocalhostI18n.get("error.portForwardStop.content"), e);
                 }
 
                 @Override
@@ -397,7 +398,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
 
     private String selectPod(List<String> pods) {
         if (pods.size() > 1) {
-            ListChooseDialog dialog = new ListChooseDialog(project, "Select Pod", pods);
+            ListChooseDialog dialog = new ListChooseDialog(project, NocalhostI18n.get("common.selectPod"), pods);
             if (dialog.showAndGet()) {
                 return dialog.getSelectedValue();
             } else {
@@ -423,7 +424,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             setBorderColor(BorderColor);
             setFocusedBorderColor(BorderColor);
 
-            setText("Start");
+            setText(NocalhostI18n.get("portforward.start"));
             setWidth72(this);
         }
     }
@@ -443,7 +444,7 @@ public class PortForwardConfigurationDialog extends DialogWrapper {
             setBorderColor(BorderColor);
             setFocusedBorderColor(BorderColor);
 
-            setText("Stop");
+            setText(NocalhostI18n.get("portforward.stop"));
             setWidth72(this);
         }
     }

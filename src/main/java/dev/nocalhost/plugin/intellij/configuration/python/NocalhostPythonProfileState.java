@@ -1,6 +1,5 @@
 package dev.nocalhost.plugin.intellij.configuration.python;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 
 import com.intellij.execution.ExecutionException;
@@ -29,10 +28,12 @@ import dev.nocalhost.plugin.intellij.commands.data.ServiceContainer;
 import dev.nocalhost.plugin.intellij.configuration.HotReload;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostRunnerContext;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostOutputAppendNotifier;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
+import dev.nocalhost.plugin.intellij.utils.ProgressUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -51,18 +52,30 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     }
 
     public void prepare() throws ExecutionException {
+        // prepare() 是在 EDT 上被调用的（ExecutionManager.startRunProfile 的回调），而它内部是一串
+        // 阻塞的 nhctl 子进程调用。放到模态进度框里执行，真正的工作跑在后台线程上。
+        ProgressUtil.<Void, ExecutionException>runWithModalProgress(
+                getEnvironment().getProject(),
+                NocalhostI18n.get("progress.prepareRunEnvironment"),
+                () -> {
+                    doPrepare();
+                    return null;
+                });
+    }
+
+    private void doPrepare() throws ExecutionException {
         var project = getEnvironment().getProject();
         var context = NocalhostContextManager.getInstance(project).getContext();
         if (context == null) {
-            throw new ExecutionException("Nocalhost context is null.");
+            throw new ExecutionException(NocalhostI18n.get("error.contextNull"));
         }
 
         var desService = NhctlUtil.getDescribeService(project, context);
         if (!NhctlDescribeServiceUtil.developStarted(desService)) {
-            throw new ExecutionException("Service is not in dev mode.");
+            throw new ExecutionException(NocalhostI18n.get("error.serviceNotInDevMode"));
         }
         if ( ! isProjectPathMatched(desService)) {
-            throw new ExecutionException("Project path does not match.");
+            throw new ExecutionException(NocalhostI18n.get("error.projectPathNotMatch"));
         }
 
         var devConfig = NhctlUtil.getDevConfig(context);
@@ -77,17 +90,17 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
             }
         }
         if (container == null) {
-            throw new ExecutionException("Service container config not found.");
+            throw new ExecutionException(NocalhostI18n.get("error.containerConfigNotFound"));
         }
 
         NocalhostRunnerContext.Command command = new NocalhostRunnerContext.Command(resolveRunCommand(container), resolveDebugCommand(container));
         if (!StringUtils.isNotEmpty(command.getDebug())) {
-            throw new ExecutionException("Failed to resolve debug command.");
+            throw new ExecutionException(NocalhostI18n.get("error.resolveDebugCommand"));
         }
 
         String port = resolveDebugPort(container);
         if (!StringUtils.isNotEmpty(port)) {
-            throw new ExecutionException("Remote debug port is not configured.");
+            throw new ExecutionException(NocalhostI18n.get("error.remoteDebugPortIsNotConfigured"));
         }
 
         refContext.set(new NocalhostRunnerContext(
@@ -136,12 +149,12 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
     public void startup() throws ExecutionException, IOException, NocalhostExecuteCmdException, InterruptedException {
         NocalhostRunnerContext dev = refContext.get();
         if (dev == null) {
-            throw new ExecutionException("Please call NocalhostPythonProfileState#prepare() before NocalhostPythonProfileState#startup().");
+            throw new ExecutionException(NocalhostI18n.get("error.callPythonPrepareFirst"));
         }
 
         var desService = NhctlUtil.getDescribeService(getEnvironment().getProject(), dev.getContext());
         if (!NhctlDescribeServiceUtil.developStarted(desService)) {
-            throw new ExecutionException("Service is not in dev mode.");
+            throw new ExecutionException(NocalhostI18n.get("error.serviceNotInDevMode"));
         }
 
         String debug = dev.getCommand().getDebug();
@@ -183,7 +196,7 @@ public class NocalhostPythonProfileState extends PyRemoteDebugCommandLineState {
         var context = NocalhostContextManager.getInstance(project).getContext();
 
         if (StringUtils.isEmpty(port)) {
-            throw new ExecutionException("Failed to resolve remote debug port.");
+            throw new ExecutionException(NocalhostI18n.get("error.resolveRemoteDebugPortFailed"));
         }
 
         var cmd = new GeneralCommandLine(Lists.newArrayList(

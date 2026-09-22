@@ -13,6 +13,7 @@ import java.util.List;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlListPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.dialog.ClearPersistentDataDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -27,7 +28,7 @@ public class ClearPersistentDataAction extends DumbAwareAction {
     private final String namespace;
 
     public ClearPersistentDataAction(Project project, ResourceNode node) {
-        super("Clear PVC");
+        super(NocalhostI18n.get("action.clearPVC"));
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -48,7 +49,7 @@ public class ClearPersistentDataAction extends DumbAwareAction {
                     dialog.showAndGet();
                 });
             } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Failed to list PVC", "Error occurred while listing PVC", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.failedListPVC"), NocalhostI18n.get("error.failedListPVC.content"), ex);
             }
         });
 

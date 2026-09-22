@@ -8,6 +8,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.SystemInfo;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -28,6 +29,7 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedCpuArchitectureException;
 import dev.nocalhost.plugin.intellij.exception.NocalhostUnsupportedOperatingSystemException;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.utils.NhctlUtil;
 import okhttp3.OkHttpClient;
@@ -38,10 +40,18 @@ import okhttp3.HttpUrl;
 public class NocalhostBinService {
     private static final Pattern NHCTL_VERSION_PATTERN = Pattern.compile("Version:\\sv(.+)");
 
+    /** 上一次下载失败的版本号 / 时间戳（毫秒），用于失败后的冷却，避免每次打开项目都重复下载并弹框。 */
+    private static final String KEY_DOWNLOAD_FAILED_VERSION = "nhctlDownloadFailedVersion";
+    private static final String KEY_DOWNLOAD_FAILED_AT = "nhctlDownloadFailedAt";
+
+    /** 下载失败后的冷却时间。 */
+    private static final long DOWNLOAD_FAILURE_COOLDOWN_MILLIS = 6 * 60 * 60 * 1000L;
+
     private final NhctlCommand nhctlCommand = ApplicationManager.getApplication().getService(NhctlCommand.class);
     private static NocalhostSettings settings = ApplicationManager.getApplication().getService(NocalhostSettings.class);
 
-    private final String nhctlVersion;
+    /** 随插件发布的 nhctl 版本（{@code config.properties} 里的 {@code nhctlVersion}）。 */
+    private final String bundledNhctlVersion;
     private final File nocalhostBin;
 
     private volatile boolean triedCoding = false;
@@ -54,8 +64,24 @@ public class NocalhostBinService {
             properties.load(in);
         } catch (IOException ignore) {
         }
-        nhctlVersion = properties.getProperty("nhctlVersion");
+        bundledNhctlVersion = properties.getProperty("nhctlVersion");
         nocalhostBin = new File(NhctlUtil.binaryPath());
+    }
+
+    /**
+     * 期望安装（或升级）到的 nhctl 版本。
+     *
+     * <p>默认使用随插件发布的 {@code config.properties: nhctlVersion}；如果该版本在
+     * <a href="https://github.com/nocalhost/nocalhost/releases">nocalhost release</a> 里已经不存在
+     * （下载始终失败），用户可以在 Settings | Tools | Nocalhost 里填写一个可用版本兜底，
+     * 不需要重新安装插件。
+     */
+    public String getExpectedNhctlVersion() {
+        String override = settings.getNhctlVersionOverride();
+        if (StringUtils.isNotBlank(override)) {
+            return override.trim();
+        }
+        return bundledNhctlVersion;
     }
 
     public void checkBin() {
@@ -74,12 +100,16 @@ public class NocalhostBinService {
         }
 
         if (shouldDownload) {
-            tryDownload(nhctlVersion, "Download Nocalhost Command Tool");
+            tryDownload(getExpectedNhctlVersion(), NocalhostI18n.get("progress.downloadNhctl"));
         }
     }
 
     public void checkVersion() {
         if (!settings.getCheckNhctlVersion()) {
+            return;
+        }
+        final String expectedVersion = getExpectedNhctlVersion();
+        if (StringUtils.isEmpty(expectedVersion)) {
             return;
         }
         try {
@@ -89,17 +119,25 @@ public class NocalhostBinService {
             }
 
             Version currentVersion = Version.valueOf(matcher.group(1));
-            Version requiredVersion = Version.valueOf(nhctlVersion);
+            Version requiredVersion = Version.valueOf(expectedVersion);
             int compare = currentVersion.compareTo(requiredVersion);
             if (compare < 0) {
-                tryDownload(nhctlVersion, "Upgrade Nocalhost Command Tool");
+                tryDownload(expectedVersion, NocalhostI18n.get("progress.upgradeNhctl"));
             }
-        } catch (InterruptedException | NocalhostExecuteCmdException | IOException e) {
-            Messages.showErrorDialog(e.getMessage(), "Get nhctl Version Error");
+        } catch (InterruptedException | NocalhostExecuteCmdException | IOException | IllegalArgumentException e) {
+            Messages.showErrorDialog(e.getMessage(), NocalhostI18n.get("error.getNhctlVersion"));
         }
     }
 
     private void tryDownload(String version, String title) {
+        if (StringUtils.isEmpty(version)) {
+            return;
+        }
+        if (isDownloadCoolingDown(version)) {
+            // 不久前已经失败过：继续使用现有的 nhctl，不再重复下载/弹框打扰用户
+            return;
+        }
+
         Exception downloadException;
         do {
             try {
@@ -109,10 +147,56 @@ public class NocalhostBinService {
                 downloadException = e;
             }
         } while ((!triedCoding || !triedGithub) && downloadException != null);
-        if (triedCoding && triedCoding && downloadException != null) {
+
+        if (downloadException == null) {
+            clearDownloadFailure(version);
+            return;
+        }
+        if (triedCoding || triedGithub) {
+            rememberDownloadFailure(version);
             final Exception finalDownloadException = downloadException;
             ApplicationManager.getApplication().invokeLater(() ->
-                    Messages.showErrorDialog(finalDownloadException.getMessage(), "Download nhctl Error"));
+                    Messages.showErrorDialog(buildDownloadFailureMessage(version, finalDownloadException),
+                            NocalhostI18n.get("error.downloadNhctl")));
+        }
+    }
+
+    private String buildDownloadFailureMessage(String version, Exception e) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(NocalhostI18n.format("error.downloadNhctl.message", version));
+        sb.append(System.lineSeparator()).append(System.lineSeparator());
+        sb.append(NocalhostI18n.get("error.downloadNhctl.hint"));
+        if (StringUtils.isNotBlank(e.getMessage())) {
+            sb.append(System.lineSeparator()).append(System.lineSeparator()).append(e.getMessage());
+        }
+        return sb.toString();
+    }
+
+    private static boolean isDownloadCoolingDown(String version) {
+        String failedVersion = settings.get(KEY_DOWNLOAD_FAILED_VERSION);
+        if (!StringUtils.equals(version, failedVersion)) {
+            return false;
+        }
+        String failedAt = settings.get(KEY_DOWNLOAD_FAILED_AT);
+        if (StringUtils.isEmpty(failedAt)) {
+            return false;
+        }
+        try {
+            return System.currentTimeMillis() - Long.parseLong(failedAt) < DOWNLOAD_FAILURE_COOLDOWN_MILLIS;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private static void rememberDownloadFailure(String version) {
+        settings.set(KEY_DOWNLOAD_FAILED_VERSION, version);
+        settings.set(KEY_DOWNLOAD_FAILED_AT, String.valueOf(System.currentTimeMillis()));
+    }
+
+    private static void clearDownloadFailure(String version) {
+        if (StringUtils.equals(version, settings.get(KEY_DOWNLOAD_FAILED_VERSION))) {
+            settings.del(KEY_DOWNLOAD_FAILED_VERSION);
+            settings.del(KEY_DOWNLOAD_FAILED_AT);
         }
     }
 
@@ -151,8 +235,8 @@ public class NocalhostBinService {
             return;
         }
 
-        indicator.setText(String.format("downloading %s v%s", downloadFilename, version));
-        indicator.setText2(String.format("from " + url.host()));
+        indicator.setText(NocalhostI18n.format("progress.downloading", downloadFilename, version));
+        indicator.setText2(NocalhostI18n.get("common.from") + " " + url.host());
 
         Files.createDirectories(binDir);
 

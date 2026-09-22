@@ -17,6 +17,7 @@ import java.nio.file.Path;
 
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.ui.vfs.KubeConfigFile;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
@@ -34,7 +35,7 @@ public class LoadKubernetesResourceTask extends BaseBackgroundTask {
     private VirtualFile virtualFile;
 
     public LoadKubernetesResourceTask(Project project, ResourceNode node) {
-        super(project, "Loading kubernetes resource");
+        super(project, NocalhostI18n.get("progress.loadKubernetesResource"));
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
@@ -48,8 +49,8 @@ public class LoadKubernetesResourceTask extends BaseBackgroundTask {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Nocalhost load kubernetes resource error",
-                "Error occurred while loading kubernetes resource yaml", e);
+        ErrorUtil.dealWith(this.getProject(), NocalhostI18n.get("error.loadKubernetesResource"),
+                NocalhostI18n.get("error.loadKubernetesResource.content"), e);
     }
 
     @SneakyThrows
@@ -70,7 +71,7 @@ public class LoadKubernetesResourceTask extends BaseBackgroundTask {
             }
         }
         if (selectedResource == null) {
-            throw new RuntimeException("Resource not found");
+            throw new RuntimeException(NocalhostI18n.get("error.resourceNotFound"));
         }
 
         String content = DataUtils.toYaml(selectedResource);

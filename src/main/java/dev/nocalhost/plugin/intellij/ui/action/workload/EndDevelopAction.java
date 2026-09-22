@@ -16,9 +16,11 @@ import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevEndOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
+import dev.nocalhost.plugin.intellij.service.NocalhostDebugReconnectService;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.KubeConfigUtil;
 import dev.nocalhost.plugin.intellij.utils.NhctlDescribeServiceUtil;
@@ -35,7 +37,7 @@ public class EndDevelopAction extends DumbAwareAction {
     private final String namespace;
 
     public EndDevelopAction(Project project, ResourceNode node) {
-        super("End DevMode", "", NocalhostIcons.Status.DevEnd);
+        super(NocalhostI18n.get("action.endDevMode"), "", NocalhostIcons.Status.DevEnd);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -61,35 +63,37 @@ public class EndDevelopAction extends DumbAwareAction {
                         endDevelop();
                     } else {
                         if (MessageDialogBuilder.yesNo(
-                                "End DevMode",
-                                "You are not the dev possessor of this service, are you sure to exit the DevMode?"
+                                NocalhostI18n.get("action.endDevMode"),
+                                NocalhostI18n.get("confirm.endDevMode")
                         ).ask(project)) {
                             endDevelop();
                         }
                     }
                 });
             } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Failed to load service status",
-                        "Error occurred while loading service status.", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.failedLoadServiceStatus"),
+                        NocalhostI18n.get("error.failedLoadServiceStatus.content"), ex);
             }
         });
     }
 
     private void endDevelop() {
-        ProgressManager.getInstance().run(new BaseBackgroundTask(null, "Ending develop") {
+        NocalhostDebugReconnectService.getInstance(project).suppressAutoReconnect("end dev mode", 120_000L);
+        // 退出 DevMode 时远端 JVM 会消失（且耗时可能较长），这段时间不要自动重连
+        ProgressManager.getInstance().run(new BaseBackgroundTask(null, NocalhostI18n.get("progress.endDevMode")) {
             @Override
             public void onSuccess() {
                 super.onSuccess();
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(
                         NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
-                NocalhostNotifier.getInstance(project).notifySuccess("DevMode ended", "");
+                NocalhostNotifier.getInstance(project).notifySuccess(NocalhostI18n.get("success.endDevMode"), "");
             }
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Ending devmode error",
-                        "Error occurred while ending devmode", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.endDevMode"),
+                        NocalhostI18n.get("error.endDevMode.content"), e);
             }
 
             @SneakyThrows

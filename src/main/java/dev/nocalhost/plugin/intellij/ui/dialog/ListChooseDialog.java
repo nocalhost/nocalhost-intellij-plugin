@@ -16,6 +16,7 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import lombok.Getter;
 
 public class ListChooseDialog extends DialogWrapper {
@@ -57,7 +58,7 @@ public class ListChooseDialog extends DialogWrapper {
     @Override
     protected @Nullable ValidationInfo doValidate() {
         if (!StringUtils.isNotEmpty(containerList.getSelectedValue())) {
-            return new ValidationInfo("Must select one item", containerList);
+            return new ValidationInfo(NocalhostI18n.get("validation.selectOneItem"), containerList);
         }
         return null;
     }

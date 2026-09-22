@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import icons.NocalhostIcons;
 
 public class NocalhostPythonConfigurationType implements ConfigurationType {
@@ -22,7 +23,7 @@ public class NocalhostPythonConfigurationType implements ConfigurationType {
     @Override
     @Nls(capitalization = Nls.Capitalization.Sentence)
     public String getConfigurationTypeDescription() {
-        return "Run and debug Python application with nocalhost";
+        return NocalhostI18n.get("config.python.description");
     }
 
     @Override

@@ -22,6 +22,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlCleanPVCOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPVCItem;
 import dev.nocalhost.plugin.intellij.exception.NocalhostExecuteCmdException;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 
 public class ClearPersistentDataDialog extends DialogWrapper {
@@ -39,7 +40,9 @@ public class ClearPersistentDataDialog extends DialogWrapper {
     public ClearPersistentDataDialog(Project project, Path kubeConfigPath, String namespace, List<NhctlPVCItem> nhctlPVCItems) {
         super(true);
         init();
-        setTitle("Clear PVC");
+        setTitle(NocalhostI18n.get("dialog.clearPVC"));
+        selectAllButton.setText(NocalhostI18n.get("button.selectAll"));
+        clearAllButton.setText(NocalhostI18n.get("button.clearAll"));
 
         this.project = project;
         this.kubeConfigPath = kubeConfigPath;
@@ -97,10 +100,10 @@ public class ClearPersistentDataDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
-        if (!MessageDialogBuilder.yesNo("Clear PVC", "This action will permanently delete PVC(s). Do you want to continue?").ask(project)) {
+        if (!MessageDialogBuilder.yesNo(NocalhostI18n.get("dialog.clearPVC"), NocalhostI18n.get("confirm.clearPVC")).ask(project)) {
             return;
         }
-        ProgressManager.getInstance().run(new Task.Modal(null, "Clearing persistent data", true) {
+        ProgressManager.getInstance().run(new Task.Modal(null, NocalhostI18n.get("progress.clearingPersistentData"), true) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setIndeterminate(false);
@@ -110,7 +113,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                     NhctlPVCItem item = nhctlPVCItems.get(i);
 
                     indicator.setFraction((i + 1.0) / nhctlPVCItems.size());
-                    indicator.setText(String.format("Clearing [name: %s, storage_class: %s, status: %s, capacity: %s]",
+                    indicator.setText(NocalhostI18n.format("progress.clearingPVCItem",
                             item.getName(), item.getStorageClass(), item.getStatus(), item.getCapacity()));
 
                     NhctlCleanPVCOptions opts = new NhctlCleanPVCOptions(kubeConfigPath, namespace);
@@ -120,8 +123,8 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                     try {
                         outputCapturedNhctlCommand.cleanPVC(opts);
                     } catch (IOException | InterruptedException | NocalhostExecuteCmdException e) {
-                        ErrorUtil.dealWith(this.getProject(), "Nocalhost clear persistent data error",
-                                "Error occurred while clearing persistent data", e);
+                        ErrorUtil.dealWith(this.getProject(), NocalhostI18n.get("error.clearPersistentData"),
+                                NocalhostI18n.get("error.clearPersistentData.content"), e);
                     }
                 }
             }
@@ -143,7 +146,7 @@ public class ClearPersistentDataDialog extends DialogWrapper {
                 boolean isSelected,
                 boolean cellHasFocus
         ) {
-            this.setText(String.format("name: %s, storage_class: %s, status: %s, capacity: %s",
+            this.setText(NocalhostI18n.format("common.pvcItemFormat",
                     value.getName(), value.getStorageClass(), value.getStatus(), value.getCapacity()));
             this.setSelected(isSelected);
             return this;

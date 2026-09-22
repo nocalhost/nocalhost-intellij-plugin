@@ -11,12 +11,12 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugProcessStarter;
 import com.intellij.xdebugger.XDebugSession;
-import com.intellij.xdebugger.XDebuggerManager;
 
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
+import dev.nocalhost.plugin.intellij.configuration.XDebugSessionCompat;
 
 public class NocalhostNodeDebugRunner implements ProgramRunner<RunnerSettings> {
     @Override
@@ -43,15 +43,12 @@ public class NocalhostNodeDebugRunner implements ProgramRunner<RunnerSettings> {
             var socket = conf.computeDebugAddress(state);
             var result = state.execute(environment.getExecutor(), this);
 
-            return XDebuggerManager
-                    .getInstance(environment.getProject())
-                    .startSession(environment, new XDebugProcessStarter() {
-                        @Override
-                        public @NotNull XDebugProcess start(@NotNull XDebugSession session) {
-                            return conf.createDebugProcess(socket, session, result, environment);
-                        }
-                    })
-                    .getRunContentDescriptor();
+            return XDebugSessionCompat.startSession(environment, new XDebugProcessStarter() {
+                @Override
+                public @NotNull XDebugProcess start(@NotNull XDebugSession session) {
+                    return conf.createDebugProcess(socket, session, result, environment);
+                }
+            });
         });
     }
 }

@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -28,7 +29,7 @@ public class ApplyAction extends DumbAwareAction {
     private final String applicationName;
 
     public ApplyAction(Project project, ApplicationNode node) {
-        super("Apply New Manifest");
+        super(NocalhostI18n.get("action.applyNewManifest"));
         this.project = project;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
         this.namespace = node.getNamespaceNode().getNamespace();
@@ -42,19 +43,19 @@ public class ApplyAction extends DumbAwareAction {
             return;
         }
 
-        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Applying Kubernetes Configuration") {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, NocalhostI18n.get("progress.apply")) {
             private String result = "";
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Nocalhost apply error",
-                        "Error occurred while applying kubernetes file", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.nocalhostApply"),
+                        NocalhostI18n.get("error.nocalhostApply.content"), e);
             }
 
             @Override
             public void onSuccess() {
                 super.onSuccess();
-                NocalhostNotifier.getInstance(project).notifySuccess("Kubernetes configuration applied", result);
+                NocalhostNotifier.getInstance(project).notifySuccess(NocalhostI18n.get("success.apply"), result);
             }
 
             @SneakyThrows

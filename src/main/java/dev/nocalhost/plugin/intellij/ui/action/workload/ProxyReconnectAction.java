@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlProxyCommand;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -19,7 +20,7 @@ public class ProxyReconnectAction extends DumbAwareAction {
     private final ResourceNode node;
 
     public ProxyReconnectAction(@NotNull Project project, @NotNull ResourceNode node) {
-        super("Resume ProxyMode", "", NocalhostIcons.VPN.Unhealthy);
+        super(NocalhostI18n.get("action.resumeProxyMode"), "", NocalhostIcons.VPN.Unhealthy);
         this.node = node;
         this.project = project;
     }
@@ -36,7 +37,7 @@ public class ProxyReconnectAction extends DumbAwareAction {
                 cmd.setKubeConfig(KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig()));
                 cmd.execute();
             } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Failed to resume proxy", "Error occurred while resuming proxy.", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.resumeProxy"), NocalhostI18n.get("error.resumeProxy.content"), ex);
             }
         });
     }

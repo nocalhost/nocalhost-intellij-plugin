@@ -27,6 +27,7 @@ import java.util.Date;
 import dev.nocalhost.plugin.intellij.commands.NhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlApplyOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.AllArgsConstructor;
@@ -96,23 +97,23 @@ public class KubeConfigFile extends VirtualFile {
 
     private void saveContent(String newContent) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (!MessageDialogBuilder.yesNo("Edit Manifest", "Apply this resource?").ask(project)) {
+            if (!MessageDialogBuilder.yesNo(NocalhostI18n.get("action.editManifest"), NocalhostI18n.get("confirm.applyResource")).ask(project)) {
                 return;
             }
-            ProgressManager.getInstance().run(new BaseBackgroundTask(null, "Applying " + name, false) {
+            ProgressManager.getInstance().run(new BaseBackgroundTask(null, NocalhostI18n.format("progress.applying", name), false) {
 
                 String result = "";
 
                 @Override
                 public void onSuccess() {
                     super.onSuccess();
-                    NocalhostNotifier.getInstance(project).notifySuccess(name + " applied", result);
+                    NocalhostNotifier.getInstance(project).notifySuccess(NocalhostI18n.format("success.applied", name), result);
                 }
 
                 @Override
                 public void onThrowable(@NotNull Throwable e) {
-                    ErrorUtil.dealWith(project, "Nocalhost apply error",
-                            "Error occurred while applying file", e);
+                    ErrorUtil.dealWith(project, NocalhostI18n.get("error.nocalhostApply"),
+                            NocalhostI18n.get("error.applyFile.content"), e);
                 }
 
                 @SneakyThrows

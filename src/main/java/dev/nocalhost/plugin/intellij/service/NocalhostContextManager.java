@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlAssociateQueryerCommand;
 import dev.nocalhost.plugin.intellij.data.NocalhostContext;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
@@ -53,8 +54,8 @@ public class NocalhostContextManager {
             ref.set(null);
             ErrorUtil.dealWith(
                     project,
-                    "Failed to refresh context",
-                    "Error occurred while refresh context",
+                    NocalhostI18n.get("error.refreshContext"),
+                    NocalhostI18n.get("error.refreshContext.content"),
                     ex
             );
         }

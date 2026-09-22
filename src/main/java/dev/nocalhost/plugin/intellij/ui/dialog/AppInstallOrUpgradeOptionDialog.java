@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.AppInstallOrUpgradeOption;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 
@@ -54,6 +55,7 @@ public class AppInstallOrUpgradeOptionDialog extends DialogWrapper {
 
         messageLabel.setText(messageLabelText);
         defaultRadioButton.setText(defaultRadioButtonText);
+        specifyOneRadioButton.setText(NocalhostI18n.get("common.specifyOne"));
         specifyOneTextField.getEmptyText().appendText(specifyOneTextFieldPlaceHolder);
 
         TextUiUtil.setCutCopyPastePopup(specifyOneTextField);

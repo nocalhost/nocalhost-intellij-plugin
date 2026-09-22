@@ -8,13 +8,14 @@ import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 
 public class SwitchAsCurrentAction extends DumbAwareAction {
     private final Project project;
     private final NhctlDevAssociateQueryResult result;
 
     public SwitchAsCurrentAction(@NotNull Project project, @NotNull NhctlDevAssociateQueryResult result) {
-        super("Switch This Service as Current Service");
+        super(NocalhostI18n.get("action.switchCurrentService"));
         this.result = result;
         this.project = project;
     }

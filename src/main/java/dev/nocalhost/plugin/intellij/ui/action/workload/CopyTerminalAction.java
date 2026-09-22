@@ -26,6 +26,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Container;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.KubeResource;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlGetCommand;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
@@ -47,7 +48,7 @@ public class CopyTerminalAction extends DumbAwareAction {
     private final String namespace;
 
     public CopyTerminalAction(Project project, ResourceNode node) {
-        super("Copy Terminal Exec Command");
+        super(NocalhostI18n.get("action.copyTerminalCommand"));
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -82,8 +83,8 @@ public class CopyTerminalAction extends DumbAwareAction {
 
                 if (pods.size() == 0) {
                     ApplicationManager.getApplication().invokeLater(() ->
-                            Messages.showMessageDialog("Pods are not ready. Please try later.",
-                                    "Open Terminal", null));
+                            Messages.showMessageDialog(NocalhostI18n.get("common.podsNotReady"),
+                                    NocalhostI18n.get("common.openTerminal"), null));
                     return;
                 }
 
@@ -93,8 +94,8 @@ public class CopyTerminalAction extends DumbAwareAction {
                 }
                 selectContainer(pods.get(0));
             } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Failed to load service status",
-                        "Error occurred while loading service status.", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.failedLoadServiceStatus"),
+                        NocalhostI18n.get("error.failedLoadServiceStatus.content"), ex);
             }
         });
     }
@@ -121,7 +122,7 @@ public class CopyTerminalAction extends DumbAwareAction {
                 .map(e -> e.getMetadata().getName())
                 .collect(Collectors.toList());
         ApplicationManager.getApplication().invokeLater(() -> {
-            ListChooseDialog listChooseDialog = new ListChooseDialog(project, "Select Pod",
+            ListChooseDialog listChooseDialog = new ListChooseDialog(project, NocalhostI18n.get("common.selectPod"),
                     podNames);
             if (!listChooseDialog.showAndGet()) {
                 return;
@@ -147,7 +148,7 @@ public class CopyTerminalAction extends DumbAwareAction {
         if (containers.size() > 1) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 ListChooseDialog listChooseDialog = new ListChooseDialog(project,
-                        "Select Container", containers);
+                        NocalhostI18n.get("common.selectContainer"), containers);
                 if (!listChooseDialog.showAndGet()
                         || !StringUtils.isNotEmpty(listChooseDialog.getSelectedValue())) {
                     return;
@@ -177,8 +178,8 @@ public class CopyTerminalAction extends DumbAwareAction {
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
 
-        NocalhostNotifier.getInstance(project).notifySuccess("Terminal command copied",
-                "Please open terminal and paste command to open new shell.");
+        NocalhostNotifier.getInstance(project).notifySuccess(NocalhostI18n.get("success.terminalCopied"),
+                NocalhostI18n.get("success.terminalCopied.content"));
     }
 
 }

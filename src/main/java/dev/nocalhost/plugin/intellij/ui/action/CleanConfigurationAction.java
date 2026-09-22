@@ -9,6 +9,7 @@ import com.intellij.openapi.ui.MessageDialogBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 
@@ -19,19 +20,19 @@ public class CleanConfigurationAction extends DumbAwareAction {
     private final Project project;
 
     public CleanConfigurationAction(Project project) {
-        super("Clean Configuration");
+        super(NocalhostI18n.get("action.cleanConfiguration"));
         this.project = project;
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        if (!MessageDialogBuilder.yesNo("Clean Configuration", "Do you confirm to clean all nocalhost configurations?").ask(project)) {
+        if (!MessageDialogBuilder.yesNo(NocalhostI18n.get("action.cleanConfiguration"), NocalhostI18n.get("confirm.cleanConfiguration")).ask(project)) {
             return;
         }
         nocalhostSettings.cleanStandaloneCluster();
         nocalhostSettings.cleanNocalhostAccount();
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
-        NocalhostNotifier.getInstance(project).notifySuccess("Clean configuration", "Finish cleaning nocalhost configurations");
+        NocalhostNotifier.getInstance(project).notifySuccess(NocalhostI18n.get("success.cleanConfiguration"), NocalhostI18n.get("success.cleanConfiguration.content"));
     }
 }

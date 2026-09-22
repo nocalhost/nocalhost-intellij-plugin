@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.console.NocalhostConsoleManager;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlProxyCommand;
@@ -19,7 +20,7 @@ public class ProxyConnectAction extends DumbAwareAction {
     private final ResourceNode node;
 
     public ProxyConnectAction(@NotNull Project project, @NotNull ResourceNode node) {
-        super("Start ProxyMode", "", NocalhostIcons.VPN.Healthy);
+        super(NocalhostI18n.get("action.startProxyMode"), "", NocalhostIcons.VPN.Healthy);
         this.node = node;
         this.project = project;
     }
@@ -36,7 +37,7 @@ public class ProxyConnectAction extends DumbAwareAction {
                 cmd.setKubeConfig(KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig()));
                 cmd.execute();
             } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Failed to start proxy", "Error occurred while starting proxy.", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.startProxy"), NocalhostI18n.get("error.startProxy.content"), ex);
             }
         });
     }

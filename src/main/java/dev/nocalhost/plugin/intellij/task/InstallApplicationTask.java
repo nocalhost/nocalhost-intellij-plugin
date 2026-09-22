@@ -18,6 +18,7 @@ import dev.nocalhost.plugin.intellij.api.data.Application;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlInstallOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import dev.nocalhost.plugin.intellij.utils.Constants;
@@ -39,7 +40,7 @@ public class InstallApplicationTask extends BaseBackgroundTask {
     private final OutputCapturedNhctlCommand outputCapturedNhctlCommand;
 
     public InstallApplicationTask(@Nullable Project project, Application application, NhctlInstallOptions opts) {
-        super(project, "Deploying application: " + application.getContext().getApplicationName(), true);
+        super(project, NocalhostI18n.format("progress.deployApplication", application.getContext().getApplicationName()), true);
         this.project = project;
         this.application = application;
         this.opts = opts;
@@ -54,7 +55,7 @@ public class InstallApplicationTask extends BaseBackgroundTask {
                 NocalhostTreeUpdateNotifier.NOCALHOST_TREE_UPDATE_NOTIFIER_TOPIC).action();
 
         NocalhostNotifier.getInstance(project).notifySuccess(
-                "Application " + application.getContext().getApplicationName() + " Deployed",
+                NocalhostI18n.format("success.applicationDeployed", application.getContext().getApplicationName()),
                 "");
 
         if (StringUtils.equals(Constants.DEMO_NAME, application.getContext().getApplicationName()) && BOOKINFO_GITS.contains(application.getContext().getApplicationUrl())) {
@@ -64,8 +65,8 @@ public class InstallApplicationTask extends BaseBackgroundTask {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Application deployment error",
-                "Error occurred while deploying application", e);
+        ErrorUtil.dealWith(this.getProject(), NocalhostI18n.get("error.deployApplication"),
+                NocalhostI18n.get("error.deployApplication.content"), e);
     }
 
     @SneakyThrows

@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.dialog.AppPortForwardConfigurationDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ApplicationNode;
 
@@ -14,7 +15,7 @@ public class AppPortForwardAction extends DumbAwareAction {
     private final ApplicationNode node;
 
     public AppPortForwardAction(Project project, ApplicationNode node) {
-        super("Port Forward");
+        super(NocalhostI18n.get("action.portForward"));
         this.project = project;
         this.node = node;
     }

@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 
 import org.jetbrains.annotations.NotNull;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.service.NocalhostContextManager;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeExpandNotifier;
 
@@ -15,7 +16,7 @@ public class LocateCurrentServiceAction extends DumbAwareAction {
     private final Project project;
 
     public LocateCurrentServiceAction(Project project) {
-        super("Locate Current Service", "", AllIcons.General.Locate);
+        super(NocalhostI18n.get("action.locateCurrentService"), "", AllIcons.General.Locate);
         this.project = project;
     }
 

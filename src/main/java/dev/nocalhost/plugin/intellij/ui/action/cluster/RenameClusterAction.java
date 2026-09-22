@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.data.kubeconfig.KubeConfig;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.settings.NocalhostSettings;
 import dev.nocalhost.plugin.intellij.settings.data.StandaloneCluster;
 import dev.nocalhost.plugin.intellij.topic.NocalhostTreeUpdateNotifier;
@@ -30,21 +31,21 @@ public class RenameClusterAction extends DumbAwareAction {
     private final ClusterNode node;
 
     public RenameClusterAction(Project project, ClusterNode node) {
-        super("Rename", "", AllIcons.Actions.Edit);
+        super(NocalhostI18n.get("action.rename"), "", AllIcons.Actions.Edit);
         this.project = project;
         this.node = node;
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        String name = Messages.showInputDialog(project, "Input cluster name", "Rename Standalone Cluster", null);
+        String name = Messages.showInputDialog(project, NocalhostI18n.get("common.inputClusterName"), NocalhostI18n.get("common.renameStandaloneCluster"), null);
         if (!StringUtils.isNotEmpty(name)) {
             return;
         }
 
         ProgressManager.getInstance().run(new Task.Backgroundable(
                 project,
-                "Renaming cluster"
+                NocalhostI18n.get("progress.renamingCluster")
         ) {
 
             @Override
@@ -56,8 +57,8 @@ public class RenameClusterAction extends DumbAwareAction {
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Renaming cluster error",
-                        "Error occurs while renaming cluster", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.renameCluster"),
+                        NocalhostI18n.get("error.renameCluster.content"), e);
             }
 
             @SneakyThrows

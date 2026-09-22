@@ -18,6 +18,7 @@ import dev.nocalhost.plugin.intellij.commands.data.NhctlGetOptions;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlGetResource;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlPortForwardListOptions;
 import dev.nocalhost.plugin.intellij.commands.data.kuberesource.Condition;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.utils.Constants;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 import lombok.SneakyThrows;
@@ -31,7 +32,7 @@ public class BrowseDemoTask extends BaseBackgroundTask {
     private final AtomicReference<String> productPagePort = new AtomicReference<>(null);
 
     public BrowseDemoTask(Project project, Path kubeConfigPath, String namespace) {
-        super(project, "Browse demo", true);
+        super(project, NocalhostI18n.get("progress.browseDemo"), true);
         this.kubeConfigPath = kubeConfigPath;
         this.namespace = namespace;
     }
@@ -92,7 +93,7 @@ public class BrowseDemoTask extends BaseBackgroundTask {
 
     @Override
     public void onThrowable(@NotNull Throwable e) {
-        ErrorUtil.dealWith(this.getProject(), "Demo browse error",
-                "Error occurred while browsing demo", e);
+        ErrorUtil.dealWith(this.getProject(), NocalhostI18n.get("error.browseDemo"),
+                NocalhostI18n.get("error.browseDemo.content"), e);
     }
 }

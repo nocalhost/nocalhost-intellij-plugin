@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.file.Paths;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlSyncStatusCommand;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
 
@@ -18,7 +19,7 @@ public class OverrideSyncAction extends DumbAwareAction {
     private final NhctlDevAssociateQueryResult result;
 
     public OverrideSyncAction(@NotNull Project project, @NotNull NhctlDevAssociateQueryResult result) {
-        super("Override Remote Changing According to Local Files");
+        super(NocalhostI18n.get("action.overrideSync"));
         this.result = result;
         this.project = project;
     }
@@ -36,7 +37,7 @@ public class OverrideSyncAction extends DumbAwareAction {
                 cmd.setApplicationName(result.getServicePack().getApplicationName());
                 cmd.execute();
             } catch (Exception ex) {
-                ErrorUtil.dealWith(project, "Failed to override sync", "Error occurred while override sync.", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.overrideSync"), NocalhostI18n.get("error.overrideSync.content"), ex);
             }
         });
     }

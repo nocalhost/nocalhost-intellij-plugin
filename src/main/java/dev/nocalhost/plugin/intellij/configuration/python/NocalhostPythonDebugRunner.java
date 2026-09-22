@@ -12,9 +12,11 @@ import com.intellij.execution.runners.ProgramRunner;
 import com.intellij.python.pro.debugger.remote.PyRemoteDebugConfiguration;
 import com.intellij.util.PathMappingSettings;
 import com.intellij.xdebugger.XDebugProcessStarter;
-import com.intellij.xdebugger.XDebuggerManager;
 
 import org.jetbrains.annotations.NotNull;
+
+import dev.nocalhost.plugin.intellij.configuration.XDebugSessionCompat;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -64,10 +66,7 @@ public class NocalhostPythonDebugRunner implements ProgramRunner<RunnerSettings>
             ServerSocket socket = createServerSocket(conf.getPort());
             ExecutionResult result = state.execute(environment.getExecutor(), NocalhostPythonDebugRunner.this);
             XDebugProcessStarter starter = new XDebugProcessStarterImpl(environment, conf, result, socket);
-            return XDebuggerManager
-                    .getInstance(environment.getProject())
-                    .startSession(environment, starter)
-                    .getRunContentDescriptor();
+            return XDebugSessionCompat.startSession(environment, starter);
         });
     }
 
@@ -76,7 +75,7 @@ public class NocalhostPythonDebugRunner implements ProgramRunner<RunnerSettings>
         try {
             return dev.getContainer().getDev().getWorkDir();
         } catch (Exception ex) {
-            throw new Exception("Please check your dev config.");
+            throw new Exception(NocalhostI18n.get("error.checkDevConfig"));
         }
     }
 }

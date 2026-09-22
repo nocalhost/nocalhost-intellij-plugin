@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateQueryResult;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.topic.NocalhostSyncUpdateNotifier;
 
 public class NocalhostSyncPopup {
@@ -28,7 +29,7 @@ public class NocalhostSyncPopup {
 
     public BranchActionGroupPopup asListPopup() {
         var statusBar = WindowManager.getInstance().getStatusBar(project);
-        var popup = new BranchActionGroupPopup("Nocalhost Sync Manage", project, (action) -> false, actions, "Nocalhost.Sync.Manage", DataManager.getInstance().getDataContext(statusBar.getComponent()));
+        var popup = new BranchActionGroupPopup(NocalhostI18n.get("sync.popupTitle"), project, (action) -> false, actions, "Nocalhost.Sync.Manage", DataManager.getInstance().getDataContext(statusBar.getComponent()));
         project.getMessageBus().connect(popup).subscribe(
                 NocalhostSyncUpdateNotifier.NOCALHOST_SYNC_UPDATE_NOTIFIER_TOPIC,
                 (NocalhostSyncUpdateNotifier) results -> update(popup, results)

@@ -77,7 +77,7 @@
               </grid>
             </children>
           </tabbedpane>
-          <component id="22a74" class="javax.swing.JLabel">
+          <component id="22a74" class="javax.swing.JLabel" binding="selectContextsLabel">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -110,7 +110,7 @@
               </component>
             </children>
           </grid>
-          <component id="8843d" class="javax.swing.JLabel">
+          <component id="8843d" class="javax.swing.JLabel" binding="namespaceLabel">
             <constraints>
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>

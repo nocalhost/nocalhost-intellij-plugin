@@ -8,12 +8,14 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.utils.TextUiUtil;
 import lombok.Getter;
 
 public class SudoPasswordDialog extends DialogWrapper {
     private JPanel dialogPanel;
     private JLabel messageLabel;
+    private JLabel passwordLabel;
     private JBPasswordField passwordField;
 
     @Getter
@@ -21,8 +23,9 @@ public class SudoPasswordDialog extends DialogWrapper {
 
     public SudoPasswordDialog(Project project, String command) {
         super(project);
-        setTitle("Sudo Password");
-        messageLabel.setText(command.trim() + " wants to make changes. Type your admin password to allow this.");
+        setTitle(NocalhostI18n.get("dialog.sudoPassword"));
+        passwordLabel.setText(NocalhostI18n.get("common.password"));
+        messageLabel.setText(NocalhostI18n.format("sudo.message", command.trim()));
         TextUiUtil.setCutCopyPastePopup(passwordField);
         init();
     }

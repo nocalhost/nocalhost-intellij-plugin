@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlResetServiceOptions;
 import dev.nocalhost.plugin.intellij.exception.NocalhostNotifier;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.ErrorUtil;
@@ -29,7 +30,7 @@ public class ResetAction extends DumbAwareAction {
     private final String namespace;
 
     public ResetAction(Project project, ResourceNode node) {
-        super("Reset Pod", "", AllIcons.General.Reset);
+        super(NocalhostI18n.get("action.resetPod"), "", AllIcons.General.Reset);
         this.project = project;
         this.node = node;
         this.kubeConfigPath = KubeConfigUtil.toPath(node.getClusterNode().getRawKubeConfig());
@@ -40,17 +41,17 @@ public class ResetAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        ProgressManager.getInstance().run(new BaseBackgroundTask(null, "Resetting " + node.resourceName()) {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(null, NocalhostI18n.format("progress.resetting", node.resourceName())) {
             @Override
             public void onSuccess() {
                 super.onSuccess();
-                NocalhostNotifier.getInstance(project).notifySuccess(node.resourceName() + " reset complete", "");
+                NocalhostNotifier.getInstance(project).notifySuccess(node.resourceName() + NocalhostI18n.get("success.reset"), "");
             }
 
             @Override
             public void onThrowable(@NotNull Throwable e) {
-                ErrorUtil.dealWith(project, "Resetting service error",
-                        "Error occurred while resetting service", e);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.resetService"),
+                        NocalhostI18n.get("error.resetService.content"), e);
             }
 
             @SneakyThrows

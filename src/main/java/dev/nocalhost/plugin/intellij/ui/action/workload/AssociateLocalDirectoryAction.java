@@ -19,6 +19,7 @@ import dev.nocalhost.plugin.intellij.commands.OutputCapturedNhctlCommand;
 import dev.nocalhost.plugin.intellij.commands.data.NhctlDevAssociateOptions;
 import dev.nocalhost.plugin.intellij.nhctl.NhctlDevContainerListCommand;
 import dev.nocalhost.plugin.intellij.task.BaseBackgroundTask;
+import dev.nocalhost.plugin.intellij.i18n.NocalhostI18n;
 import dev.nocalhost.plugin.intellij.ui.dialog.ListChooseDialog;
 import dev.nocalhost.plugin.intellij.ui.tree.node.ResourceNode;
 import dev.nocalhost.plugin.intellij.utils.DataUtils;
@@ -36,7 +37,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
     private final String namespace;
 
     public AssociateLocalDirectoryAction(Project project, ResourceNode resourceNode) {
-        super("Associate Local DIR");
+        super(NocalhostI18n.get("action.associateLocalDir"));
 
         this.project = project;
         this.node = resourceNode;
@@ -46,12 +47,12 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Associating project path") {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, NocalhostI18n.get("progress.associateProject")) {
 
             @Override
             public void onThrowable(@NotNull Throwable ex) {
-                ErrorUtil.dealWith(project, "Failed to associate project path",
-                        "Error occurred while associating project path", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.associateProject"),
+                        NocalhostI18n.get("error.associateProject.content"), ex);
             }
 
             @Override
@@ -71,7 +72,7 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
                     if (containers.size() == 1) {
                         container.set(containers.get(0));
                     } else {
-                        var dialog = new ListChooseDialog(project, "Select Container", containers);
+                        var dialog = new ListChooseDialog(project, NocalhostI18n.get("common.selectContainer"), containers);
                         if (dialog.showAndGet()) {
                             container.set(dialog.getSelectedValue());
                         } else {
@@ -89,11 +90,11 @@ public class AssociateLocalDirectoryAction extends DumbAwareAction {
     }
 
     private void associate(@NotNull Path dir) {
-        ProgressManager.getInstance().run(new BaseBackgroundTask(project, "Associating project path") {
+        ProgressManager.getInstance().run(new BaseBackgroundTask(project, NocalhostI18n.get("progress.associateProject")) {
             @Override
             public void onThrowable(@NotNull Throwable ex) {
-                ErrorUtil.dealWith(project, "Failed to associate project path",
-                        "Error occurred while associating project path", ex);
+                ErrorUtil.dealWith(project, NocalhostI18n.get("error.associateProject"),
+                        NocalhostI18n.get("error.associateProject.content"), ex);
             }
 
             @Override
