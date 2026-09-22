@@ -26,6 +26,9 @@ public class ApplicationSettingsConfigurable implements SearchableConfigurable {
     private JLabel languageLabel;
     private JCheckBox autoReconnectDebug;
     private JLabel autoReconnectDebugDescription;
+    private JLabel nhctlVersionOverrideLabel;
+    private JTextField nhctlVersionOverride;
+    private JLabel nhctlVersionOverrideDescription;
 
     public ApplicationSettingsConfigurable() {
         checkNhctlVersion.setSelected(settings.getCheckNhctlVersion());
@@ -38,6 +41,9 @@ public class ApplicationSettingsConfigurable implements SearchableConfigurable {
         autoReconnectDebug.setSelected(settings.getAutoReconnectDebug());
         autoReconnectDebug.setText(NocalhostI18n.get("settings.autoReconnectDebug"));
         autoReconnectDebugDescription.setText(NocalhostI18n.get("settings.autoReconnectDebug.description"));
+        nhctlVersionOverrideLabel.setText(NocalhostI18n.get("settings.nhctlVersionOverride"));
+        nhctlVersionOverride.setText(settings.getNhctlVersionOverride());
+        nhctlVersionOverrideDescription.setText(NocalhostI18n.get("settings.nhctlVersionOverride.description"));
     }
 
     @Override
@@ -59,6 +65,7 @@ public class ApplicationSettingsConfigurable implements SearchableConfigurable {
     public boolean isModified() {
         return settings.getCheckNhctlVersion() != checkNhctlVersion.isSelected()
                 || settings.getAutoReconnectDebug() != autoReconnectDebug.isSelected()
+                || !settings.getNhctlVersionOverride().equals(nhctlVersionOverride.getText().trim())
                 || !LANGUAGES[languageComboBox.getSelectedIndex()].equals(settings.getLanguage());
     }
 
@@ -66,6 +73,7 @@ public class ApplicationSettingsConfigurable implements SearchableConfigurable {
     public void apply() throws ConfigurationException {
         settings.setCheckNhctlVersion(checkNhctlVersion.isSelected());
         settings.setAutoReconnectDebug(autoReconnectDebug.isSelected());
+        settings.setNhctlVersionOverride(nhctlVersionOverride.getText());
         String language = LANGUAGES[languageComboBox.getSelectedIndex()];
         if (!language.equals(settings.getLanguage())) {
             settings.setLanguage(language);
@@ -83,5 +91,6 @@ public class ApplicationSettingsConfigurable implements SearchableConfigurable {
         languageComboBox.setSelectedIndex(
                 NocalhostI18n.LANG_ZH.equals(settings.getLanguage()) ? 1 : 0);
         autoReconnectDebug.setSelected(settings.getAutoReconnectDebug());
+        nhctlVersionOverride.setText(settings.getNhctlVersionOverride());
     }
 }

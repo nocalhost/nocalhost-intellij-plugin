@@ -180,6 +180,21 @@ public class NocalhostSettings implements PersistentStateComponent<NocalhostSett
         set("autoReconnectDebug", DataUtils.GSON.toJson(autoReconnectDebug));
     }
 
+    /**
+     * nhctl 版本覆盖（兜底用）。
+     *
+     * <p>留空表示使用插件内置的 {@code config.properties: nhctlVersion}。
+     * 如果内置版本在 nocalhost release 里已经不存在（下载始终失败），
+     * 用户可以在这里填写一个可用版本（例如 {@code 0.6.34}），不用重装插件就能恢复。
+     */
+    public String getNhctlVersionOverride() {
+        return StringUtils.trimToEmpty(get("nhctlVersionOverride"));
+    }
+
+    public synchronized void setNhctlVersionOverride(String nhctlVersionOverride) {
+        set("nhctlVersionOverride", StringUtils.trimToEmpty(nhctlVersionOverride));
+    }
+
     public String get(String key) {
         return hash.get(key);
     }

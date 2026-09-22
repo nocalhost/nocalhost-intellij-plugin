@@ -61,10 +61,26 @@ jobs:
         echo "NHCTL_VERSION=${GITHUB_REF#refs/*/}" | sed 's/v//g' >> $GITHUB_ENV
         echo "SERVER_VERSION=${{ secrets.MINIMUNM_VERSION_REQUIREMENT }}" | sed 's/v//g' >> $GITHUB_ENV
 
+    # 兜底：只在 nocalhost 仓库确实发布了对应版本的 nhctl 时才把 nhctlVersion 改成 tag 版本，
+    # 否则保留仓库里已有的可用版本，避免插件装完就下载 nhctl 失败。
+    - name: Resolve nhctl version
+      run: |
+        ASSET_URL="https://github.com/nocalhost/nocalhost/releases/download/v${NHCTL_VERSION}/nhctl-linux-amd64"
+        if curl -sSfI -L --max-time 20 "${ASSET_URL}" > /dev/null 2>&1; then
+          echo "NHCTL_RELEASE_VERSION=${NHCTL_VERSION}" >> $GITHUB_ENV
+        else
+          CURRENT=$(sed -n -E 's/^nhctlVersion=(.+)$/\1/p' src/main/resources/config.properties | head -n 1 | tr -d '\r')
+          if [ -z "${CURRENT}" ]; then
+            CURRENT="${NHCTL_VERSION}"
+          fi
+          echo "::warning::nocalhost release v${NHCTL_VERSION} has no nhctl asset, keep bundled nhctlVersion=${CURRENT}"
+          echo "NHCTL_RELEASE_VERSION=${CURRENT}" >> $GITHUB_ENV
+        fi
+
     - name: Build
       run: |
         sed -i "s/sentryDsn=/sentryDsn=${{secrets.INTELLIJ_PLUGIN_SENTRY_DSN}}/g" src/main/resources/config.properties
-        sed -i -E "s/nhctlVersion=(.+)/nhctlVersion=${{ env.NHCTL_VERSION }}/g" src/main/resources/config.properties
+        sed -i -E "s/nhctlVersion=(.+)/nhctlVersion=${{ env.NHCTL_RELEASE_VERSION }}/g" src/main/resources/config.properties
         sed -i -E "s/serverVersion=(.+)/serverVersion=${{ env.SERVER_VERSION }}/g" src/main/resources/config.properties
         sed -i -E "s/version=(.+)/version=${{ env.PLUGIN_VERSION }}/g" gradle.properties
         ./gradlew clean buildPlugin
