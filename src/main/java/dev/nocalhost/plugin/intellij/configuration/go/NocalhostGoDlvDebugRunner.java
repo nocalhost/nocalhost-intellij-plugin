@@ -18,7 +18,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugProcessStarter;
 import com.intellij.xdebugger.XDebugSession;
-import com.intellij.xdebugger.XDebuggerManager;
 
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +27,7 @@ import java.util.Objects;
 
 import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
 import dev.nocalhost.plugin.intellij.configuration.NocalhostRunner;
+import dev.nocalhost.plugin.intellij.configuration.XDebugSessionCompat;
 
 public class NocalhostGoDlvDebugRunner implements ProgramRunner<RunnerSettings> {
     @Override
@@ -63,7 +63,7 @@ public class NocalhostGoDlvDebugRunner implements ProgramRunner<RunnerSettings> 
         InetSocketAddress socketAddress = new InetSocketAddress("localhost", Integer.parseInt(debugPort));
         ExecutionResult executionResult = state.execute(environment.getExecutor(), runner);
 
-        return XDebuggerManager.getInstance(env.getProject()).startSession(env, new XDebugProcessStarter() {
+        return XDebugSessionCompat.startSession(env, new XDebugProcessStarter() {
             @Override
             @NotNull
             public XDebugProcess start(@NotNull XDebugSession session) throws ExecutionException {
@@ -75,6 +75,6 @@ public class NocalhostGoDlvDebugRunner implements ProgramRunner<RunnerSettings> 
                 process.connect(socketAddress);
                 return process;
             }
-        }).getRunContentDescriptor();
+        });
     }
 }

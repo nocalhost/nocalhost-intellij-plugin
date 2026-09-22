@@ -22,13 +22,13 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugProcessStarter;
 import com.intellij.xdebugger.XDebugSession;
-import com.intellij.xdebugger.XDebuggerManager;
 import com.intellij.xdebugger.impl.XDebugSessionImpl;
 
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import dev.nocalhost.plugin.intellij.configuration.NocalhostProfileState;
+import dev.nocalhost.plugin.intellij.configuration.XDebugSessionCompat;
 
 public class NocalhostJavaDebugRunner implements ProgramRunner<RunnerSettings> {
     private static final long DEFAULT_POLL_TIMEOUT = 10 * 60 * 1000; // 10 minute
@@ -66,7 +66,7 @@ public class NocalhostJavaDebugRunner implements ProgramRunner<RunnerSettings> {
         }
 
         final DebugProcessImpl debugProcess = debuggerSession.getProcess();
-        return XDebuggerManager.getInstance(env.getProject()).startSession(env, new XDebugProcessStarter() {
+        return XDebugSessionCompat.startSession(env, new XDebugProcessStarter() {
             @Override
             @NotNull
             public XDebugProcess start(@NotNull XDebugSession session) throws ExecutionException {
@@ -78,6 +78,6 @@ public class NocalhostJavaDebugRunner implements ProgramRunner<RunnerSettings> {
                 }
                 return JavaDebugProcess.create(session, debuggerSession);
             }
-        }).getRunContentDescriptor();
+        });
     }
 }
