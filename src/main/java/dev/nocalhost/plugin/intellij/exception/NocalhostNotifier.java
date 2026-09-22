@@ -12,6 +12,7 @@ import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.NlsContexts;
+import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 
 import org.apache.commons.lang3.StringUtils;
@@ -19,10 +20,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.event.HyperlinkEvent;
-
 import dev.nocalhost.plugin.intellij.topic.NocalhostExceptionPrintNotifier;
-import icons.NocalhostIcons;
 
 public class NocalhostNotifier {
 
@@ -64,21 +62,25 @@ public class NocalhostNotifier {
     public Notification notifyError(@NlsContexts.NotificationTitle @NotNull String title,
                                     @NlsContexts.NotificationContent @NotNull String message,
                                     @NotNull String eMessage) {
-        String content = String.format("<html>%s <a href=\"nocalhost.show\">Show More</a></html>", message);
-        return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, content, NotificationType.ERROR, new AnAction() {
+        // 注意：Notification 正文里的 <a href> 只有在注册了 NotificationListener 时才会响应点击，
+        // 这里改为给 AnAction 一个可见文案，点击该按钮才会展开详情。
+        return notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, title, message, NotificationType.ERROR, new AnAction("Show More") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console").activate(() -> {
-                    project.getMessageBus().syncPublisher(NocalhostExceptionPrintNotifier.NOCALHOST_EXCEPTION_PRINT_NOTIFIER_TOPIC)
-                           .action(title, message, eMessage);
-                });
+                ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Nocalhost Console");
+                if (toolWindow == null) {
+                    return;
+                }
+                toolWindow.activate(() -> project.getMessageBus()
+                        .syncPublisher(NocalhostExceptionPrintNotifier.NOCALHOST_EXCEPTION_PRINT_NOTIFIER_TOPIC)
+                        .action(title, message, eMessage));
             }
         });
     }
 
     public void notifyBinaryNotFound(String binary) {
-        String content = String.format("<html>%s binary not found. <a href=\"nocalhost.setting\">Setting</a></html>", binary);
-        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new AnAction() {
+        String content = String.format("%s binary not found.", binary);
+        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new AnAction("Setting") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 ShowSettingsUtil showSettingsUtil = ApplicationManager.getApplication().getService(ShowSettingsUtil.class);
@@ -88,8 +90,8 @@ public class NocalhostNotifier {
     }
 
     public void notifyVersionTips() {
-        String content = "<html>nocalhost plugin need upgrade. <a href=\"nocalhost.setting\">upgrade plugin</a></html>";
-        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new AnAction() {
+        String content = "nocalhost plugin need upgrade.";
+        notify(NOCALHOST_ERROR_NOTIFICATION, NOCALHOST_ERROR_NOTIFICATION_ID, "Nocalhost", content, NotificationType.ERROR, new AnAction("upgrade plugin") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 BrowserUtil.browse("https://plugins.jetbrains.com/plugin/16058-nocalhost/versions");
