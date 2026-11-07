@@ -31,15 +31,17 @@ jobs:
     needs: create-release
     strategy:
       matrix:
-        platform-version: [ 241, 242, 243, 251, 252, 253, 261, 262 ]
+        platform-version: [ 241, 242, 243, 251, 252, 253, 261, 262, 263 ]
         include:
           # IDEA 2025.3+ (platform 253/261) platform jars target Java 21;
-          # IDEA 2026.2 (platform 262) targets Java 25; older platforms build with Java 17
+          # IDEA 2026.2+ (platform 262/263) targets Java 25; older platforms build with Java 17
           - platform-version: 253
             java-version: 21
           - platform-version: 261
             java-version: 21
           - platform-version: 262
+            java-version: 25
+          - platform-version: 263
             java-version: 25
     env:
       ORG_GRADLE_PROJECT_platformVersion: ${{ matrix.platform-version }}

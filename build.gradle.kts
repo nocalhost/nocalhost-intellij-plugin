@@ -122,6 +122,12 @@ dependencies {
             bundledModule("intellij.platform.vcs.impl")
             bundledModule("intellij.platform.scriptDebugger.backend")
         }
+        if (platformVersion >= 263) {
+            // IDEA 2026.3 split com.intellij.util.io.socketConnection (e.g. ConnectionStatus,
+            // used by the Go debug runner) out of intellij.platform.ide.impl into its own
+            // bundled module, which is no longer on the default compile classpath.
+            bundledModule("intellij.platform.ide.socketConnection")
+        }
         bundledPlugins(listOf(
             javascriptDebuggerPlugin,
             javascriptPlugin,
