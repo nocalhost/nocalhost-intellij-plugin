@@ -2,12 +2,12 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 // IDEA 2026.2 (platform 262) bundles Kotlin 2.4.0, whose class metadata can only be read
-// by Kotlin compiler >= 2.3. Use Kotlin 2.4.0 for platform 262+, keep 2.2.20 for older platforms
-// so their generated class metadata stays readable by the older IDE-bundled stdlib.
+// by Kotlin compiler >= 2.3. Use Kotlin 2.4.0 for 262/263 and 2.2.20 for 261 so the generated
+// class metadata stays readable by the older IDE-bundled stdlib.
 // The Kotlin version must be chosen dynamically, so it is wired via buildscript classpath + apply.
 buildscript {
     val platformVersionNumber: Int =
-        (project.findProperty("platformVersion") as? String)?.toIntOrNull() ?: 262
+        (project.findProperty("platformVersion") as? String)?.toIntOrNull() ?: 263
     val kotlinVersion: String = if (platformVersionNumber >= 262) "2.4.0" else "2.2.20"
     repositories {
         mavenCentral()
@@ -100,21 +100,14 @@ intellijPlatform {
 }
 dependencies {
     intellijPlatform {
-        if (platformVersion >= 253) {
-            intellijIdea(ideaVersion)
-        } else {
-            intellijIdeaUltimate(ideaVersion)
-        }
+        intellijIdea(ideaVersion)
         compatiblePlugins(
             "Pythonid",
             "com.jetbrains.php",
             "org.jetbrains.plugins.go",
+            "PythonCore",
         )
-        if (!ideaVersion.startsWith("2024.1")) {
-            compatiblePlugins("PythonCore") // PythonCore new from 2024.2
-        }
-        if (platformVersion >= 253)
-            bundledModule("intellij.platform.scriptDebugger.ui")
+        bundledModule("intellij.platform.scriptDebugger.ui")
         if (platformVersion >= 262) {
             // IDEA 2026.2 moved these off the default compile classpath; add them explicitly.
             bundledModule("intellij.platform.util.commonsLangV2Shim")
@@ -138,15 +131,9 @@ dependencies {
     }
 }
 
-sourceSets {
-    main {
-        java.srcDirs("src/$platformVersion/main/java")
-    }
-}
-
 //Install other ide at your local and config these paths if you want to run other ide: RunGoland and so on
 val runIC by intellijPlatformTesting.runIde.registering {
-    type = if (platformVersion >= 253) IntelliJPlatformType.IntellijIdea else IntelliJPlatformType.IntellijIdeaCommunity
+    type = IntelliJPlatformType.IntellijIdea
 }
 val runGoland by intellijPlatformTesting.runIde.registering {
     type = IntelliJPlatformType.GoLand
@@ -155,7 +142,7 @@ val runWebStorm by intellijPlatformTesting.runIde.registering {
     type = IntelliJPlatformType.WebStorm
 }
 val runPyCharm by intellijPlatformTesting.runIde.registering {
-   type = if (platformVersion >= 253) IntelliJPlatformType.PyCharm else IntelliJPlatformType.PyCharmCommunity
+   type = IntelliJPlatformType.PyCharm
 }
 val runPhpStorm by intellijPlatformTesting.runIde.registering {
     type = IntelliJPlatformType.PhpStorm
