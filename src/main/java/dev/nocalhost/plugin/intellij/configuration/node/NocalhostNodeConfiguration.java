@@ -65,9 +65,9 @@ public class NocalhostNodeConfiguration
 
     /**
      * IDEA 2026.2 (platform 262) added a required {@code Project} parameter to the
-     * {@link WipWithExclusiveWebsocketChannelVmConnection} constructor, while older platforms
-     * only have the no-arg constructor. Resolve the constructor reflectively so the same
-     * source compiles and runs on all supported platform versions.
+     * {@link WipWithExclusiveWebsocketChannelVmConnection} constructor, while 261 only has the
+     * no-arg constructor. Resolve the constructor reflectively so the same source compiles and
+     * runs on all supported platforms (261/262/263).
      */
     @NotNull
     private static WipWithExclusiveWebsocketChannelVmConnection createVmConnection(@NotNull final Project project) {

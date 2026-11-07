@@ -72,10 +72,10 @@ public class XDebugProcessStarterImpl extends XDebugProcessStarter {
     }
 
     /**
-     * {@code PyDebugRunner.createConsoleCommunicationAndSetupActions} was removed in IDEA 2026.3
-     * (platform 263). On older platforms it is only a thin wrapper around
-     * {@code createConsoleCommunication}, which is still present on 263+. Resolve the method
-     * reflectively so the same source compiles and runs on every supported platform version.
+     * {@code PyDebugRunner.createConsoleCommunicationAndSetupActions} is present on 261/262 but
+     * was removed in IDEA 2026.3 (platform 263), where {@code createConsoleCommunication} is the
+     * replacement. Its parameter types changed between platform versions, so resolve the method
+     * reflectively to keep one source compiling and running on all supported platforms (261/262/263).
      */
     private void setupDebugConsole(@NotNull PyRemoteDebugProcess process, @NotNull XDebugSession session) {
         final Project project = getEnvironment().getProject();
